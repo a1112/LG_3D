@@ -4,12 +4,15 @@ import os
 import sys
 from threading import Thread
 
+from PySide6 import QtCore
 from PySide6.QtCore import QObject, Slot, Signal, Property
+
 from Log import DailyLogger
 
 
-class MonitorBase(QObject,Thread):
-    def __init__(self, configF,logFolder,parent=None):
+class MonitorBase(QObject, Thread):
+    def __init__(self, configF, logFolder, parent=None):
+        self.hasChange = False
         super().__init__(parent)
         Thread.__init__(self)
         self.configF = configF
@@ -24,7 +27,6 @@ class MonitorBase(QObject,Thread):
         self.monitorData_old = copy.deepcopy(self.monitorData)
         self.stateDict = {}
         self.start()
-        self.hasChange = False
 
     @Slot()
     def saveConfig(self):
@@ -42,7 +44,7 @@ class MonitorBase(QObject,Thread):
         return os.path.dirname(os.path.abspath(self.configFile))
 
     @Slot(str, result=str)
-    def dirName(self,path):
+    def dirName(self, path):
         return os.path.dirname(path)
 
     @Slot(result=str)

@@ -10,10 +10,11 @@ ApplicationWindow {
     height: Math.max(500,Screen.height/2.5)
     visible: true
 
-    property bool isDark: false
+    property bool isDark: true
 
     Material.theme: isDark?Material.Dark:Material.Light
-    title: qsTr("后台监控系统")
+    title: qsTr("管理平台")
     MainLayout{
     }
+
 }

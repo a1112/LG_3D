@@ -1,7 +1,8 @@
+import base64
 import json
 import time
 import winreg
-import base64
+
 from PySide6.QtCore import Slot, QObject
 
 keyDict = [
@@ -72,6 +73,7 @@ class SoftList(QObject):
     @Slot(result=bool)
     def hasNewSoft(self):
         return True
+
 
 if __name__ == "__main__":
     programs_details = getSoftList()

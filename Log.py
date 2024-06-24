@@ -2,11 +2,12 @@ import logging
 import os
 from datetime import datetime
 
+
 # 创建日志目录
 
 
 class DailyLogger:
-    def __init__(self,log_dir):
+    def __init__(self, log_dir):
         self.log_dir = log_dir
         os.makedirs(log_dir, exist_ok=True)
         self.logger = None
@@ -31,8 +32,9 @@ class DailyLogger:
             # 添加新的handler
             self.logger.addHandler(file_handler)
 
-    def log(self,message,level="info"):
+    def log(self, message, level="info"):
         """记录日志，同时确保日志文件是最新的。"""
+        print(f" {level}  {message}")
         self.setup_logger()
         if level == 'info':
             self.logger.info(message)
@@ -45,22 +47,17 @@ class DailyLogger:
         elif level == 'critical':
             self.logger.critical(message)
 
-    def info(self,message):
-        self.log(message,"info")
+    def info(self, message):
+        self.log(message, "info")
 
-    def debug(self,message):
-        self.log(message,"debug")
+    def debug(self, message):
+        self.log(message, "debug")
 
-    def warning(self,message):
-        self.log(message,"warning")
+    def warning(self, message):
+        self.log(message, "warning")
 
-    def error(self,message):
-        self.log(message,"error")
+    def error(self, message):
+        self.log(message, "error")
 
-    def critical(self,message):
-        self.log(message,"critical")
-
-# # 使用DailyLogger
-# daily_logger = DailyLogger()
-# daily_logger.log('info', "This is an info message.")
-# daily_logger.log('error', "This is an error message.")
+    def critical(self, message):
+        self.log(message, "critical")

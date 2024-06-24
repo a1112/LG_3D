@@ -8,14 +8,13 @@ import "DiskView"
 import "ToolBox"
 import "core"
 import "SoftViewPage"
+import "DeployView"
 Item {
     id:root
     anchors.fill: parent
     Material.accent: "#06967E"
     property Core core: Core{}
     property int tabWidth: 100
-
-
 
     ColumnLayout{
         anchors.fill: parent
@@ -39,6 +38,10 @@ Item {
                 TabButton {
                     width: tabWidth
                     text: qsTr("软件管理")
+                }
+                TabButton {
+                    width: tabWidth
+                    text: qsTr("部署工具")
                 }
                 TabButton {
                     width: tabWidth
@@ -84,7 +87,7 @@ Item {
                 width: parent.width
                 height: parent.height
                 sourceComponent:
-                    DiskViewPage{
+              DiskViewPage{
                 }
             }
             ProcessViewPage{
@@ -98,6 +101,13 @@ Item {
                 sourceComponent:
                     SoftView{
                 }
+            }
+            Loader{
+                asynchronous: true
+                width: parent.width
+                height: parent.height
+                sourceComponent:
+                DeployViewPage{}
             }
             Loader{
                 asynchronous: true

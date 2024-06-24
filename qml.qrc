@@ -26,5 +26,11 @@
         <file>qml/DiskView/DiskMonItem.qml</file>
         <file>qml/DiskView/DiskMonItemItem.qml</file>
         <file>qml/DiskView/DiskLabelBase.qml</file>
+        <file>qml/DeployView/DeployViewPage.qml</file>
+        <file>qml/DeployView/QuickView/QuickPageView.qml</file>
+        <file>qml/DeployView/QuickView/LabelBase.qml</file>
+        <file>qml/DeployView/QuickView/ItemDelegateBase.qml</file>
+        <file>qml/DeployView/QuickView/CommonData.qml</file>
+        <file>qml/DeployView/QuickView/ItemDelegateText.qml</file>
     </qresource>
 </RCC>

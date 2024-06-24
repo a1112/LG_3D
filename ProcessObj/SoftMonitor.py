@@ -20,9 +20,9 @@ class SoftMonitor(MonitorBase):
     def __init__(self, parent=None):
         configF = "config/SoftMonitor.json"
         logFolder = "logs/SoftMonitor"
-        super().__init__(configF,logFolder,parent)
+        super().__init__(configF, logFolder, parent)
 
-    def _start_exe_(self,exe, args):
+    def _start_exe_(self, exe, args):
         self.log.info(f"执行 \"{exe}\" {args}")
         return win32api.ShellExecute(win32gui.GetDesktopWindow(), 'open', exe, args, '', 1)
 
@@ -90,20 +90,20 @@ class SoftMonitor(MonitorBase):
     @Slot(QtCore.QJsonValue)
     def addApp(self, app: QtCore.QJsonValue):
         app = app.toVariant()
-        self.log.debug("添加数据"+json.dumps(app, indent=4, ensure_ascii=False))
+        self.log.debug("添加数据" + json.dumps(app, indent=4, ensure_ascii=False))
         app["delay"] = tryGetInt(app["delay"])
 
         self.monitorData.append(app)
         self.set_config_change(True)
 
     @Slot(int)
-    def remove(self,index):
-        self.log.debug("移除数据"+json.dumps(self.monitorData[index], indent=4, ensure_ascii=False))
+    def remove(self, index):
+        self.log.debug("移除数据" + json.dumps(self.monitorData[index], indent=4, ensure_ascii=False))
         self.monitorData.pop(index)
         self.set_config_change(True)
 
-    @Slot(int,result=dict)
-    def index(self,index):
+    @Slot(int, result=dict)
+    def index(self, index):
         return self.monitorData[index]
 
     def run(self):

@@ -2,9 +2,9 @@ import base64
 from pathlib import Path
 
 from PySide6 import QtCore
-from PySide6.QtQuick import QQuickImageProvider
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QPixmap
+from PySide6.QtQuick import QQuickImageProvider
 from icoextract import IconExtractor
 
 from SoftList import globSoftList
@@ -21,8 +21,8 @@ class IconImageProvider(QQuickImageProvider):
                 return QPixmap()
             if id in globSoftList:
                 id = globSoftList[id]["DisplayIcon"]
-            id=id.replace("\"", "",999)
-            id=id.replace("%5C","/",999)
+            id = id.replace("\"", "", 999)
+            id = id.replace("%5C", "/", 999)
             pixmap = QPixmap()
             if "," in id:
                 id = id.split(",")[0]
@@ -36,7 +36,6 @@ class IconImageProvider(QQuickImageProvider):
         except:
             return QPixmap()
             # print(globSoftList[id])
-
 
 
 if __name__ == "__main__":

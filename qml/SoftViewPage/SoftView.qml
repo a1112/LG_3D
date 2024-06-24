@@ -14,7 +14,6 @@ Item {
     ListModel{
         id: model_
     }
-
     Timer{
         interval: 1000
         running: true
@@ -26,9 +25,7 @@ Item {
             restart()
             }
         }
-
     }
-
     function flush(){
         model_.clear()
          softInfoText = softList.getSoftList()
@@ -39,10 +36,6 @@ Item {
     }
     ColumnLayout{
         anchors.fill: parent
-        // ItemDelegate{
-        //     Layout.fillWidth: true
-        //     height: 1
-        // }
         ListView{
             spacing: 3
             Layout.fillWidth: true
@@ -54,12 +47,5 @@ Item {
                 height: 50
             }
         }
-
-
         }
-
-    Label{
-        text: softInfoText
-        anchors.centerIn: parent
-    }
 }

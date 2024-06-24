@@ -1,7 +1,8 @@
 import os
 import time
-from threading import Thread
 from pathlib import Path
+from threading import Thread
+
 from PySide6.QtCore import QObject, Slot, Signal, Property
 
 
@@ -47,7 +48,7 @@ class PathInfo(QObject, Thread):
         return self._path
 
     pathChanged = Signal(str)
-    path = Property(str,getPath,setPath,notify=pathChanged)
+    path = Property(str, getPath, setPath, notify=pathChanged)
 
     def setExists(self, exists):
         if exists != self._exists:
@@ -58,7 +59,7 @@ class PathInfo(QObject, Thread):
         return self._exists
 
     existsChanged = Signal(bool)
-    exists = Property(bool,getExists,setExists,notify=existsChanged)
+    exists = Property(bool, getExists, setExists, notify=existsChanged)
 
     def setContent(self, content):
         if content != self._content:
@@ -69,7 +70,7 @@ class PathInfo(QObject, Thread):
         return self._content
 
     contentChanged = Signal(int)
-    content = Property(int,getContent,setContent,notify=contentChanged)
+    content = Property(int, getContent, setContent, notify=contentChanged)
 
     def setSize(self, size):
         if size != self._size:
@@ -80,7 +81,7 @@ class PathInfo(QObject, Thread):
         return self._size
 
     sizeChanged = Signal(int)
-    size = Property(int,getSize,setSize,notify=sizeChanged)
+    size = Property(int, getSize, setSize, notify=sizeChanged)
 
     def run(self):
         while True:
@@ -88,7 +89,7 @@ class PathInfo(QObject, Thread):
             self.setExists(path.exists())
             if path.exists():
                 self.setContent(len(list(path.iterdir())))
-                self.setSize(get_folder_size(str(path)))#path.stat().st_size)
+                self.setSize(get_folder_size(str(path)))  # path.stat().st_size)
             else:
                 self.setContent(0)
                 self.setSize(0)  # path.stat().st_size)
