@@ -1,0 +1,13 @@
+{
+  "signalUrl": "http://127.0.0.1:6005/currentCoil",
+  "camera": [
+    {
+      "sn": "24150211",
+        "name": "L_D",
+      "saveFolder": "F:\\",
+      "key": "Cap_L_D",
+      "serverIp": "0.0.0.0",
+        "serverPort": 6101
+    }
+  ]
+}

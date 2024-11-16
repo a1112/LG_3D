@@ -1,0 +1,16 @@
+tqdm
+Pillow
+opencv-python
+scikit-image
+sqlalchemy
+ultralytics
+pymysql
+uvicorn
+fastapi
+sqlalchemy_utils
+cryptography
+psutil
+GPUtil
+GPUtil
+timm
+colorlog

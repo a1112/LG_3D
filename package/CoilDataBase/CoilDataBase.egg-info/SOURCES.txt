@@ -1,0 +1,14 @@
+setup.cfg
+setup.py
+CoilDataBase/Alarm.py
+CoilDataBase/Coil.py
+CoilDataBase/__init__.py
+CoilDataBase/coilTest.py
+CoilDataBase/core.py
+CoilDataBase/tool.py
+CoilDataBase.egg-info/PKG-INFO
+CoilDataBase.egg-info/SOURCES.txt
+CoilDataBase.egg-info/dependency_links.txt
+CoilDataBase.egg-info/requires.txt
+CoilDataBase.egg-info/top_level.txt
+CoilDataBase/models/__init__.py

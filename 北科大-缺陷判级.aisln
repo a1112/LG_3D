@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT Type="Advanced Installer Solution" CreateVersion="21.3.1" version="21.3.1" Id="{E1514E25-46EC-4618-BDE9-9C26A9B2C9C9}">
+  <PROJECT Path="..\update\dist\update\NewDefectView\北科大-缺陷判级.aip" Id="{A6167777-80B1-4DE2-8CFA-24BB4C8B9F45}" Startup="true"/>
+  <PROJECT Path="LG_3D.aip" Id="{40FC97A3-80C5-410E-AFB2-3D4620D52361}" Startup="false"/>
+</DOCUMENT>
