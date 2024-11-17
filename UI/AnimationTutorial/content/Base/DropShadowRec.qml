@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
 Rectangle {
+    id:rec
     layer.enabled: true
-    property alias verticalOffset:drops.verticalOffset
-    property alias horizontalOffset:drops.horizontalOffset
-    DropShadowBase{
-            id:drops
-        }
-    layer.effect:drops
+    property real verticalOffset:5
+    property real horizontalOffset:5
+    layer.effect:DropShadowBase{
+        verticalOffset:rec.verticalOffset
+        horizontalOffset:rec.horizontalOffset
+    }
 }

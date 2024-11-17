@@ -18,7 +18,6 @@ Item {
         TopHeader{      // 标题界面
             Layout.fillWidth: true
             implicitHeight: coreStyle.topHeight
-            z:999
         }
         SplitView{
             Layout.fillWidth: true
