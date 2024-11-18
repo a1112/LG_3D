@@ -1,1 +1,7 @@
 /二级/logs/
+/node/.ipynb_checkpoints/
+/package/CoilDataBase/build/
+/package/CoilDataBase/CoilDataBase.egg-info/
+/UI/AnimationTutorial/build/
+/服务/.github/
+/服务/.idea/
