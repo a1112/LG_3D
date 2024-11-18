@@ -8,7 +8,8 @@ engine = create_engine('mysql+pymysql://root:nercar@localhost:3306/Coil',
                        max_overflow=20,
                        pool_timeout=30,
                        pool_recycle=3600,
-                       pool_pre_ping=True
+                       pool_pre_ping=True,
+                       echo=False
                        )
 if not database_exists(engine.url):
     create_database(engine.url)

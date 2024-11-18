@@ -64,4 +64,6 @@ def clearByCoilId(coilId):
         session.query(models.AlarmFlatRoll).filter(models.AlarmFlatRoll.secondaryCoilId == coilId).delete()
         session.query(models.TaperShapePoint).filter(models.TaperShapePoint.secondaryCoilId == coilId).delete()
         session.query(models.AlarmTaperShape).filter(models.AlarmTaperShape.secondaryCoilId == coilId).delete()
+        session.query(models.AlarmLooseCoil).filter(models.AlarmLooseCoil.secondaryCoilId == coilId).delete()
+        session.query(models.AlarmInfo).filter(models.AlarmInfo.secondaryCoilId == coilId).delete()
         session.commit()

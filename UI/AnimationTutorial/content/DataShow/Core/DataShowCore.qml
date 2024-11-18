@@ -140,7 +140,7 @@ Item {
 
     property bool txChartView: true
 
-    property bool telescopedJointView: true
+    property bool telescopedJointView: true // 是否显示塔形
 
     property ListModel pointData: surfaceData.pointData
 

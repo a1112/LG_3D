@@ -4,6 +4,7 @@ import QtQuick.Layouts
  import QtCharts
 import "../../ChartBase"
 Item{
+    clip:true
     id:root
     visible: dataShowCore.telescopedJointView
     Layout.fillWidth: true

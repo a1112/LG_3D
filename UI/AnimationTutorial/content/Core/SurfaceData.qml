@@ -3,6 +3,8 @@ import "../Model"
 Item {
     id:root
     property int rootViewIndex: 0
+    readonly property bool is2DrootView:rootViewIndex==0
+    readonly property bool is3DrootView:rootViewIndex==1
 
 
     property real scan3dScaleZ: 0.016229506582021713

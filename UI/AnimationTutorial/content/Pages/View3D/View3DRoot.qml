@@ -10,11 +10,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick3D
 import QtQuick3D.Effects
-
+import QtQuick.Layouts
 
 Item {
     property Core3D core3D: Core3D{}
-
+    Layout.fillWidth:true
+    Layout.fillHeight:true
+    anchors.fill:parent
     View3D {
         id: view3D
         anchors.fill: parent

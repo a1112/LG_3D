@@ -1,8 +1,56 @@
 from typing import List
 
+from sqlalchemy.orm import joinedload, subqueryload
+
 from .core import Session
 from .models import *
 from .tool import to_dict
+
+def getAllJoinQuery(session: Session):
+    return  session.query(SecondaryCoil)\
+                .options(
+                    subqueryload(SecondaryCoil.childrenCoil),
+                    subqueryload(SecondaryCoil.childrenCoilState),
+                    subqueryload(SecondaryCoil.childrenCoilDefect),
+                    subqueryload(SecondaryCoil.childrenCoilAlarmStatus),
+                    subqueryload(SecondaryCoil.childrenAlarmFlatRoll),
+                    subqueryload(SecondaryCoil.childrenTaperShapePoint),
+                    subqueryload(SecondaryCoil.childrenAlarmInfo),
+                    subqueryload(SecondaryCoil.childrenPlcData),
+                    subqueryload(SecondaryCoil.childrenAlarmTaperShape),
+                    subqueryload(SecondaryCoil.childrenAlarmLooseCoil),
+                    subqueryload(SecondaryCoil.childrenDetectionSpeed),
+                )
+
+def  getAllJoinDataByNum(num,max=None):
+    with Session() as session:
+        if max:
+            return getAllJoinQuery(session).filter(SecondaryCoil.Id<max).order_by(SecondaryCoil.Id.desc())[:num]
+        return getAllJoinQuery(session).order_by(SecondaryCoil.Id.desc())[:num]
+
+def getAllJoinDataByTime(startTime,endTime):
+    with Session() as session:
+        return getAllJoinQuery(session).filter(SecondaryCoil.CreateTime>=startTime , SecondaryCoil.CreateTime<=endTime).order_by(SecondaryCoil.Id.desc()).all()
+
+def getJoinQuery(session: Session,byCoil=True):
+    """
+    对于联合数据的查询
+    Args:
+        session:
+
+    Returns:
+
+    """
+    byCoil=True
+    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo)).options(subqueryload(SecondaryCoil.childrenCoil))
+
+    if byCoil:
+        lastCoil = session.query(Coil).order_by(Coil.Id.desc()).first()
+        query = query.filter(SecondaryCoil.Id <= lastCoil.SecondaryCoilId)
+    return query
+    # return session.query(SecondaryCoil)\
+    #                         .join(Coil)\
+    #                         .join(AlarmInfo).order_by(SecondaryCoil.Id.desc())
 
 
 def addSecondaryCoil(coil:SecondaryCoil):
@@ -31,6 +79,10 @@ def addSecondaryCoil(coil:SecondaryCoil):
 
 # Base.metadata.drop_all(engine, tables=[SecondaryCoil.__table__])
 
+def addObj(obj):
+    with Session() as session:
+        session.add(obj)
+        session.commit()
 
 def getSecondaryCoil(num:int, desc=True)->List[SecondaryCoil]:
     """
@@ -131,25 +183,38 @@ def deleteCoil(id_):
         session.commit()
 
 
-def getCoilList(num,coilId=None):
-    with Session() as session:
-        query = session.query(Coil,SecondaryCoil).join(SecondaryCoil)
+def getCoilList(num,coilId=None,byCoil=False):
+    byCoil=True
+    with (Session() as session):
+        query = getJoinQuery(session,byCoil=byCoil)
+
         if coilId:
-            query = query.filter(Coil.SecondaryCoilId > coilId)
-        return query.order_by(Coil.Id.desc())[:num]
+            query = query.filter(SecondaryCoil.Id > coilId)
+        return query.order_by(SecondaryCoil.Id.desc())[:num]
 
 
 def searchByCoilNo(coilNo):
     with Session() as session:
-        query = session.query(Coil,SecondaryCoil).join(SecondaryCoil)
+        query = getJoinQuery(session)
         return query.filter(SecondaryCoil.CoilNo.like(f"%{coilNo}%")).all()
 
 
-def searchByCoilId(coilId):
+def getIdlistByCoilNo(coilNo,endCoilNo):
     with Session() as session:
-        query = session.query(Coil,SecondaryCoil,CoilState).join(SecondaryCoil)
-        return query.filter(SecondaryCoil.CoilNo == coilId).all()
+        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coilNo,SecondaryCoil.CoilNo<=endCoilNo).all()
 
+def searchByCoilId(coilId,endCoilId=None):
+
+    with Session() as session:
+        query = getJoinQuery(session)
+        if endCoilId:
+            return query.filter(SecondaryCoil.Id >= coilId,SecondaryCoil.Id<=endCoilId).all()
+        return query.filter(SecondaryCoil.Id == coilId).all()
+
+def searchByDateTime(startTime,endTimeq):
+    with Session() as session:
+        query = getJoinQuery(session)
+        return query.filter(SecondaryCoil.CreateTime>=startTime , SecondaryCoil.CreateTime<=endTimeq).all()
 
 def addCoilState(coilState):
     with Session() as session:
@@ -204,3 +269,5 @@ def getCoilStateByCoilId(coilId,surface):
     with Session() as session:
         return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId,
                                                     CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
+
+

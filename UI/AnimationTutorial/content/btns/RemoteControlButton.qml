@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 // 远程 图标
 ImageButton {
     tipText:"远程"
