@@ -2,10 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
-import "../../Base" as Base
+// import Qt5Compat.GraphicalEffects
+// import "../../Base" as Base
 import "../../btns"
-import "../../DataShow/Foot"
+// import "../../DataShow/Foot"
 import "../../GlobalView"
 Item {
     id:root
@@ -58,17 +58,29 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
-        Row{
-            CheckRec{
-                 checkColor: "#52FFFFFF"
-                text: "恢复"
-            }
-        }
+
 
 
         TopCoilTools{
         }
-        TopWindowModelChangeButton {}
+
+        Row{
+            // CheckRec{
+            //      checkColor: "#52FFFFFF"
+            //     text: "恢复"
+            // }
+            spacing:10
+            ToolsButton{
+               height:35
+               width:height
+               onClicked:{
+                    toolsMenu.popup()
+               }
+
+            }
+                    TopWindowModelChangeButton {}
+        }
+
 
 }
 }

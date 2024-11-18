@@ -11,6 +11,7 @@ import "PopupView/Backup"
 import "PopupView/ReDetection"
 import "PopupView/ApiListPop"
 import "PopupView/GlobalAlarm"
+import "PopupView/ToolsMenu"
 import "SettingPage"
 import "Style"
 import "Pages/AlarmPage"
@@ -18,7 +19,7 @@ import "Pages/AlarmPage"
 ApplicationWindow {
     id:app
     visible: true
-    flags: Qt.Window
+
     visibility:control.visibility
     x:50;y:50
     Material.theme: coreStyle.theme
@@ -26,8 +27,7 @@ ApplicationWindow {
     height: Screen.height-100
     title: "LG3D "
     Material.accent: coreStyle.accentColor
-    CoreAction{
-    }
+    CoreAction{}
 
     property CppInterFace cpp:CppInterFace{}
 
@@ -54,6 +54,8 @@ ApplicationWindow {
     function openSettingView(){
         coreSetting_view.open()
     }
+
+
     MsgPopView{id:msg_popup}
     SettingPageView{id:coreSetting_view}
     ConnectDialog{//连接设置
@@ -77,6 +79,10 @@ ApplicationWindow {
     ApiListPopView{
         id:apiListPop
     }
+    ToolsMenuView{
+        id:toolsMenu
+    }
+
 }
 
 
