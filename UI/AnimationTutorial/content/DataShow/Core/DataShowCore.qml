@@ -2,13 +2,18 @@ import QtQuick 2.15
 import "../../Model"
 Item {
     // OBJ
+    property CircleConfig circleConfig:CircleConfig{
+    }
+    property AdjustConfig adjustConfig:AdjustConfig{
 
+}
 
     function flush(){
         surfaceData.error_visible=false
         flushDefect()
     }
     property int chartShowType: 0
+
     property var defectDict: {}
 
     property ListModel currentDefectDictModel:ListModel{
