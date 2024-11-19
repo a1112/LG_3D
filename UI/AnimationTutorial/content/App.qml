@@ -12,6 +12,7 @@ import "PopupView/ReDetection"
 import "PopupView/ApiListPop"
 import "PopupView/GlobalAlarm"
 import "PopupView/ToolsMenu"
+import "Tool/Graphs"
 import "SettingPage"
 import "Style"
 import "Pages/AlarmPage"
@@ -19,6 +20,8 @@ import "Pages/AlarmPage"
 ApplicationWindow {
     id:app
     visible: true
+
+
 
     visibility:control.visibility
     x:50;y:50
@@ -83,6 +86,9 @@ ApplicationWindow {
         id:toolsMenu
     }
 
+    ToolGraphs{ // 图表格弹窗
+        id:toolGraths
+    }
 }
 
 

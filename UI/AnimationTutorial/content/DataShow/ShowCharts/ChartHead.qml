@@ -1,4 +1,5 @@
-import QtQuick 2.15
+import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls.Material
 Item {
     width: row.width
@@ -15,8 +16,11 @@ Item {
     HoverHandler{
         id:hh
     }
-    Row{
+    RowLayout{
+        anchors.fill:parent
+   }
 
+    Row{
         id:row
         spacing: 2
         ItemDelegate{
@@ -67,5 +71,9 @@ Item {
                 dataShowCore.chartShowType = 1
             }
         }
+
+
     }
-}
+
+        }
+

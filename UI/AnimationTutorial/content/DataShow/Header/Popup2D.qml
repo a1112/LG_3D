@@ -18,10 +18,11 @@ Popup{
     x: parent.width - width-30
     Material.elevation: 12
 
+    property alias hovered :hoverHandlerPop.hovered
+
     ShowViewListView{
         id:showViewListView
         implicitHeight: 100
-        width: 300
     }
     HoverHandler{
         id:hoverHandlerPop

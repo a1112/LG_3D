@@ -14,16 +14,6 @@ Item{
     property var lineData: surfaceData.lineData
     property CoreCharts coreCharts : CoreCharts{
     }
-
-    // function findZValue(arr, n) {
-    //   for (let i = 0; i < arr.length - 1; i++) {
-    //     if (arr[i][0] <= n && arr[i + 1][0] > n) {
-    //       return arr[i][2];
-    //     }
-    //   }
-    //   return null; // 如果没有找到符合条件的值，返回 null
-    // }
-
     function findZValue(arr, n) {
       let left = 0;
       let right = arr.length - 2;
@@ -75,15 +65,19 @@ Item{
         return false
     }
 
+
+
     function putLineData(lineSeri,x_list,z_list){
-        lineSeri.clear()
-        for (var i = 0; i < x_list.length; i++) {
-            // 过滤
+
+        lineSeri.append(x_list[0], z_list[0])
+        for (var i = 1; i < x_list.length-1; i++) {
+
             if (isFilter(z_list,i,5,300)){
                 continue
                     }
             lineSeri.append(x_list[i], z_list[i])
-    }
+        }
+        lineSeri.append(x_list[x_list.length-1], z_list[x_list.length-1])
     }
 
 
@@ -116,20 +110,28 @@ Item{
         line_data=[]
         drawMedianLine()
         let ij=0
-        let item_line_data_x=[]
-        let item_line_data_z=[]
+        l1.clear()
         for (var i = 0; i < lineData.length; i++) {
+            let item_line_data_x=[]
+            let item_line_data_z=[]
             let itemData = lineData[i]
             let points = itemData.points
-            for (var j = 0; j < points.length; j++) {
+            var j = 0;
+            item_line_data_x.push(getDistance(points[j][0],points[j][1])+10)
+            item_line_data_z.push(-999)
+            for (j; j < points.length; j++) {
                 let value = getDistance(points[j][0],points[j][1])
                 item_line_data_x.push(value)
                 item_line_data_z.push(getZValue(points[j][2]))
                 ij+=1
             }
+
+            item_line_data_x.push(getDistance(points[points.length-1][0],points[points.length-1][1])-10)
+            item_line_data_z.push(-999)
+            putLineData(l1,item_line_data_x,item_line_data_z)
+
         }
 
-        putLineData(l1,item_line_data_x,item_line_data_z)
 
     }
     Item{
@@ -217,7 +219,7 @@ Item{
         x:5+ ((dataShowCore.hoverdXmm-dataShowCore.showLeftmm)/
           (dataShowCore.showRightmm-dataShowCore.showLeftmm))* (chartView.width-35)
         color: "red"
-                  opacity:0.5
+        opacity:0.8
         onXChanged: {
             for (var i = 0; i < lineData.length; i++) {
                let findZ =  findZValue(lineData[i].points,dataShowCore.hoverdX)

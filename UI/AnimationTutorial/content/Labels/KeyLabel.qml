@@ -1,7 +1,7 @@
 
 import QtQuick.Controls
 Label {
-font.pixelSize: 18
+font.pixelSize: 17
 font.family: "Microsoft YaHei"
 
 }

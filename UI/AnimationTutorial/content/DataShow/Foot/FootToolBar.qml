@@ -38,7 +38,12 @@ Item {
         }
         Item{
             Layout.fillWidth: true
-            height: 1
+            implicitHeight: 1
+        }
+
+        Item{
+            Layout.fillWidth: true
+            implicitHeight: 1
         }
         Label{
             text: "No:"

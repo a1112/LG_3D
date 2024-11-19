@@ -48,11 +48,6 @@ Item {
                     }
                 }
             }
-            // Rectangle{
-            //     anchors.fill: parent
-            //     color: "#000"
-            //     opacity: 0.3
-            // }
             Image {
                 cache: true
                 id: image2

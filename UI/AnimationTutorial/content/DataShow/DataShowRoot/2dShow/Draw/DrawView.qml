@@ -13,6 +13,8 @@ Item {
         parseInt(inner_circle_centre[3]*dataShowCore.canvasScale),
         parseInt(inner_circle_centre[4]*dataShowCore.canvasScale)]
     property var inner_ellipse: surfaceData.inner_ellipse
+
+
     property var ellipse: {
         "center": {"x": inner_ellipse[0][0]*dataShowCore.canvasScale-inner_ellipse[1][1]*dataShowCore.canvasScale/2
             ,
@@ -22,10 +24,6 @@ Item {
             "minor_axis": inner_ellipse[1][0]*dataShowCore.canvasScale},
         "angle": inner_ellipse[2]
     }
-    // [inner_ellipse[0][0]*dataShowCore.canvasScale,
-    // inner_ellipse[0][1]*dataShowCore.canvasScale,
-    // inner_ellipse[1][0]*dataShowCore.canvasScale,
-    // inner_ellipse[1][1]*dataShowCore.canvasScale]
     property var lineData: surfaceData.lineData
 
     onLineDataChanged: {
@@ -91,32 +89,13 @@ Item {
                       "a " + (ellipse.axes.major_axis / 2) + "," + (ellipse.axes.minor_axis / 2) + " 0 1,0 -" +
                       ellipse.axes.major_axis + ",0"
             }
-
-            // 使用 rotation 属性进行旋转
-            // rotation: ellipse.angle
-            // transformOrigin: Item.Center
         }
 
     }
 
-    Shape {
-        ShapePath{
-            strokeWidth: 2
-            strokeColor: "#aaa2b9bc"
-            startX: surfaceData.inner_circle_centre[0]*dataShowCore.canvasScale
-            startY: surfaceData.inner_circle_centre[1]*dataShowCore.canvasScale
 
-            id:p
-            PathLine{
-                relativeX:dataShowCore.perpendicularPoint.x*dataShowCore.canvasScale-p.startX
-                relativeY:dataShowCore.perpendicularPoint.y*dataShowCore.canvasScale-p.startY
-            }
-        }}
 
-    CentreView{
-        x: inner_ellipse[0][0]*dataShowCore.canvasScale
-        y: inner_ellipse[0][1]*dataShowCore.canvasScale
-    }
+
     Rectangle{
         width: 4
         height: 4
@@ -126,73 +105,8 @@ Item {
         border.color: "orange"
         x:dataShowCore.perpendicularPoint.x*dataShowCore.canvasScale-2
         y:dataShowCore.perpendicularPoint.y*dataShowCore.canvasScale-2
-        // Label{
-        //     background: Rectangle{
-        //         color: "#772e2e2e"
-        //     }
-        //     x:30
-        //     text:"x:"+ ((dataShowCore.perpendicularPoint.x-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX).toFixed(1)
-        // }
-        // Label{
-        //     background: Rectangle{
-        //         color: "#772e2e2e"
-        //     }
-        //     y:30
-        //     text:"y:"+ ((surfaceData.inner_circle_centre[1]-dataShowCore.perpendicularPoint.y)*surfaceData.scan3dScaleY).toFixed(1)
-        // }
     }
 
-    Repeater{
-        model:dataShowCore.pointData
-        delegate: Rectangle{
-                            property real z_mm:0
-            x:p_x*dataShowCore.canvasScale-4
-            y:p_y*dataShowCore.canvasScale-4
-            width: 8
-            height: 8
-            radius: 4
-            color:"#00000000"
-            border.width: 2
-            border.color: "green"
-            Label{
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-                color:"yellow"
-                anchors.right: parent.left
-                anchors.top: parent.bottom
-                anchors.horizontalCenterOffset:15
-                anchors.verticalCenterOffset:15
-
-                text:z_mm
-
-                function get_zValue(){
-
-                    api.get_zValueData(surfaceData.key,surfaceData.coilId,
-                                       p_x,
-                                       p_y,
-                                       (result)=>{
-                                            console.log(result)
-                                           z_mm = (result*surfaceData.scan3dScaleZ-dataShowCore.medianZ).toFixed(2)
-                                       },
-                                       (error)=>{
-                                           console.log("get_zValueData error:",error)
-                                       }
-                                    )
-                }
-                Component.onCompleted:get_zValue()
-            }
-        }
-
-    }
-    // Item{
-    //     width:parent.width
-    //     y:parent.height/2-50
-    //     height:100
-    //     DataShowItemCharts{  //  charts
-    //         types:0
-    //         anchors.fill: parent
-    //     }
-    // }
-
+    DrawEllipse{}// 绘制 拟合椭圆
+    DrawPoint{} // 绘制 标记点
 }

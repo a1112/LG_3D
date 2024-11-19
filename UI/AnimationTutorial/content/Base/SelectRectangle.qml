@@ -1,4 +1,4 @@
-import QtQuick 2.14
+import QtQuick
 Rectangle{
 border.width: 1
 border.color: "#0078D7"

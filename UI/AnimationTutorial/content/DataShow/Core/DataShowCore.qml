@@ -45,6 +45,11 @@ Item {
 
     // 画布数据
     property real canvasScale: minScale // 画布缩放比例
+
+    function toPx(x){
+        return x*canvasScale
+    }
+
     onCanvasScaleChanged: {
         if(canvasScale<minScale){
             canvasScale = minScale

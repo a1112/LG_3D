@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../btns"
 import "../Foot"
-
+import "../../Labels"
 import "../Core"
 HeaderBase {
     id:root
@@ -12,12 +12,13 @@ HeaderBase {
 
     RowLayout{
         anchors.fill: parent
-        spacing: 3
+        spacing: 20
         Row{
             spacing: 5
             ScaleBtn{}
             GammaBtn{}
         }
+            ToolBtns{}
         Item{
             Layout.fillWidth: true
             implicitHeight: 1
@@ -93,7 +94,7 @@ HeaderBase {
         }
     }
 
-    property bool in2D:hoverHandler2D.hovered||hoverHandlerPop.hovered
+    property bool in2D:hoverHandler2D.hovered||popup.hovered
     onIn2DChanged: {
         if(in2D){
             popup.open()
@@ -106,6 +107,7 @@ HeaderBase {
 
     Popup2D{
         id: popup
+
     }
     TitleMenu{
         id:titleMenu

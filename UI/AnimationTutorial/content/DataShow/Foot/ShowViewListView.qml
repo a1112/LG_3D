@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 Item {
     id:root
+    width:100*(surfaceData.viewDataModel.count)
     ListView{
         spacing: 5
     height: parent.height
@@ -24,8 +25,8 @@ Item {
             sourceSize.height: parent.height
         }
         onClicked: {
+                surfaceData.rootViewIndex=0
                 surfaceData.setViewSource(key)
-
         }
         onDoubleClicked: {
              surfaceData.setViewSource(key)

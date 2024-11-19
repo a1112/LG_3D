@@ -23,13 +23,6 @@ Item {
             anchors.right: parent.right
             RowLayout{
                 id:rowr
-                // Column{
-                //     CheckDelegate{
-                //         checked: dataShowCore.defect_show_enable
-                //         height:30
-                //         text: "缺陷显示"
-                //     }
-                // }
                 Column{
                     id:row
 
