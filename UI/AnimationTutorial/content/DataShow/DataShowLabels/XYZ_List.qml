@@ -23,8 +23,8 @@ Item {
                             )
         }
         title:"点 "+index
-        x_mm:dataShowCore.pxtomm(p_x).toFixed(0)
-        y_mm:dataShowCore.pxtomm(p_y).toFixed(0)
+        x_mm:dataShowCore.pxtoPos(p_x).toFixed(0)
+        y_mm:dataShowCore.pxtoPos(p_y).toFixed(0)
         onX_mmChanged:{
            get_zValue()
         }

@@ -118,25 +118,28 @@ Item {
     function toPx(x){
         return x*canvasScale
     }
-
+    function toMm(w){
+        return w/canvasScale*surfaceData.scan3dScaleX
+    }
     function pxto_top(px){
         return parseInt(px/canvasScale)
     }
-    function pxtomm(px){
+
+    function pxtoPos(px){
         return (px-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
     }
     property point perpendicularPoint: surfaceData.perpendicularPoint_xy(hoverdX,hoverdY)
     property int perpendicularPointX: perpendicularPoint.x
     property int perpendicularPointY: perpendicularPoint.y
-    property real perpendicularPointXmm: pxtomm(perpendicularPointX).toFixed(1)
-    property real perpendicularPointYmm: pxtomm(perpendicularPointY).toFixed(1)
+    property real perpendicularPointXmm: pxtoPos(perpendicularPointX).toFixed(1)
+    property real perpendicularPointYmm: pxtoPos(perpendicularPointY).toFixed(1)
 
 
     property point hoverPoint: Qt.point(0,0) // 鼠标悬停点
     property int hoverdX: (hoverPoint.x+flick.contentX)/canvasScale
     property int hoverdY: (hoverPoint.y+flick.contentY)/canvasScale
-    property real hoverdXmm: pxtomm(hoverdX).toFixed(1)
-    property real hoverdYmm: pxtomm(hoverdY).toFixed(1)
+    property real hoverdXmm: pxtoPos(hoverdX).toFixed(1)
+    property real hoverdYmm: pxtoPos(hoverdY).toFixed(1)
     property real hoverdZmm : 0
     property real chartsHoverdZmm: 0
 

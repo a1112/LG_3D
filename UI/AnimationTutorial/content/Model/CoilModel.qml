@@ -1,7 +1,7 @@
-import QtQuick 2.15
+import QtQuick
 
-Item {
-    property int coilId: 0
+QtObject {
+    property int coilId: 0  // 二级ID
     property string coilNo: ""
     property string coilType: ""
     property string coilInside: ""
@@ -13,12 +13,9 @@ Item {
     property string coilToNext: ""
     property string nextCode: "0"
     property string nextInfo: ""
-    property var coilTime:new Date()
-    property string coilTimeString:Qt.formatDateTime(coilTime,"yyyy_MM_dd hh_mm_ss")
-    property var coilCreateTime: {return []}
 
-    property var dataString:Qt.formatDateTime(coilTime,"yyyy年MM月dd日")
-    property var timeString:Qt.formatDateTime(coilTime,"hh点mm分ss秒")
+    property DateTimeProject coilCreateTime: DateTimeProject{}
+    property DateTimeProject coilDetectionTime: DateTimeProject{}
 
     property int coilCheckStatus: 0
     property int coilDefectCountS: 0
@@ -42,7 +39,8 @@ Item {
         coilWidth = coil.Width
         coilWeight = coil.Weight
         coilActWidth = coil.ActWidth
-        coilCreateTime = coil.CreateTime
+        // coilDetectionTime = coil.DetectionTime
+        // coilCreateTime = coil.CreateTime//coil.CreateTime
         coilCheckStatus = coil.CheckStatus
         coilDefectCountS = coil.DefectCountS
         coilDefectCountL = coil.DefectCountL
@@ -52,11 +50,8 @@ Item {
         coilMsg = coil.Msg
         nextInfo = coil.NextInfo
         nextCode = coil.NextCode
-
-        coilTime = new Date(coilCreateTime["year"],coilCreateTime["month"]-1,coilCreateTime["day"],
-                            coilCreateTime["hour"],coilCreateTime["minute"],coilCreateTime["second"])
-
-
+        coilCreateTime.initByDict(coil.CreateTime)
+        coilDetectionTime.initByDict(coil.DetectionTime)
         for (let key in coil.AlarmInfo){
             if (key=="S"){
                 alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo[key])

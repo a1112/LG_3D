@@ -22,6 +22,7 @@ CardBase {
     //         }
     //     }
     // }
+
     content_body:Item{
         id:col
         width:root.width
@@ -34,7 +35,7 @@ CardBase {
             Layout.fillHeight: true
             FlowRowItem{
                 title:"流水号"
-                value:core.currentCoilModel.coilId
+                value:core.currentCoilModel["coilId"]
                 valueColor:Material.color(Material.Green)
             }
             FlowRowItem{
@@ -67,11 +68,28 @@ CardBase {
             }
             FlowRowItem{
                 title:"日期 "
-                value:core.currentCoilModel.dataString
+                value:core.currentCoilModel.coilDetectionTime.dataString
             }
             FlowRowItem{
                 title:"时间 "
-                value:core.currentCoilModel.timeString
+                value:core.currentCoilModel.coilDetectionTime.timeString
+            }
+        }
+    }
+    MouseArea{
+        anchors.fill:parent
+        acceptedButtons:Qt.RightButton
+        onClicked:{
+        menu.popup()
+        }
+    }
+    Menu{
+        id:menu
+
+        MenuItem{
+            text:"更多信息..."
+            onClicked:{
+               app.showDefectInfo()
             }
         }
     }

@@ -10,9 +10,10 @@ Item {
     property alias content_body: content_row.children
     property bool isShow: true
     property bool showError:false
-    clip:true
     height: isShow? max_height : 35
     SplitView.preferredHeight:isShow?max_height:35
+
+
     onIsShowChanged:{
         content_body.visible=isShow
     }
@@ -24,6 +25,7 @@ Item {
         Material.elevation: 6
     }
     Rectangle{
+        opacity:0.5
         color:"transparent"
         anchors.fill: parent
         border.color: showError?app.coreStyle.cardBorderErrorColor:app.coreStyle.cardBorderColor

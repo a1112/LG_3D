@@ -47,7 +47,6 @@ CardBase {
         onClicked:{
         menu.popup()
         }
-
     }
     Menu{
         id:menu

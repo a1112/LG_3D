@@ -58,27 +58,11 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
-
-
-
-        TopCoilTools{
-        }
-
+        TopCoilTools{}
         Row{
-            // CheckRec{
-            //      checkColor: "#52FFFFFF"
-            //     text: "恢复"
-            // }
             spacing:10
-            ToolsButton{
-               height:35
-               width:height
-               onClicked:{
-                    toolsMenu.popup()
-               }
-
-            }
-                    TopWindowModelChangeButton {}
+            TopToolsButton{}
+            TopWindowModelChangeButton {}
         }
 
 

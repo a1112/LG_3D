@@ -268,7 +268,7 @@ Menu {
             width: parent.width
             height: parent.height
             Label{
-            text: "信息"
+            text: "详细信息"
             Layout.alignment: Qt.AlignHCenter
             font.bold: true
             font.pointSize:24

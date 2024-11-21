@@ -1,8 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import "../Base"
+import QtQuick
+import QtQuick.Controls
+
 BaseBaseLabel {
-    property string toolText: ""
+    // property string toolText: ""
     font.family:"Microsoft YaHei"
     // : fontConfig.baseFontInfo
 //    font:fontInfo.font
