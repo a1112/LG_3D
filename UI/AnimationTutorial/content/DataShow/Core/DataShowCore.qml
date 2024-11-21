@@ -2,16 +2,17 @@ import QtQuick 2.15
 import "../../Model"
 Item {
     // OBJ
-    property CircleConfig circleConfig:CircleConfig{
+    id:root
+    property CircleConfig circleConfig:CircleConfig{}
+    property AdjustConfig adjustConfig:AdjustConfig{}
+     property var controls:  DataShowControl{
+        hoverPoint:root.hoverPoint
     }
-    property AdjustConfig adjustConfig:AdjustConfig{
-
-}
-
     function flush(){
         surfaceData.error_visible=false
         flushDefect()
     }
+      // 图标的显示方式
     property int chartShowType: 0
 
     property var defectDict: {}
@@ -35,8 +36,6 @@ Item {
                        )
     }
 
-
-
     readonly property int coilId: surfaceData.coilId
     onCoilIdChanged: {
         flush()
@@ -50,10 +49,6 @@ Item {
 
     // 画布数据
     property real canvasScale: minScale // 画布缩放比例
-
-    function toPx(x){
-        return x*canvasScale
-    }
 
     onCanvasScaleChanged: {
         if(canvasScale<minScale){
@@ -119,6 +114,11 @@ Item {
         flick.contentX = newX-point.x
         flick.contentY = newY-point.y
     }
+
+    function toPx(x){
+        return x*canvasScale
+    }
+
     function pxto_top(px){
         return parseInt(px/canvasScale)
     }
@@ -231,12 +231,6 @@ Item {
                                                            )
         surfaceData.error_visible=true
     }
-
-    property real image_gamma: 0.7
-
-    property bool image_gamma_enable_btn: true
-    readonly property bool image_is_gray: surfaceData.currentViewKey=="GRAY"
-    readonly property bool image_gamma_enable: image_gamma_enable_btn && image_is_gray
 
     property bool defect_show_enable: true
 }

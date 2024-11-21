@@ -6,8 +6,6 @@ import "Core"
 DataShowBackground {
     id: root
 
-
-    property DataShowControl dataShowControls: DataShowControl{}
     SplitView{
         anchors.fill: parent
         DataShowView{

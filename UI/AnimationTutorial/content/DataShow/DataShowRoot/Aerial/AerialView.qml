@@ -67,8 +67,6 @@ Item {
                 // dataShowCore.canvasWidth=rec.width/parent.width * dataShowCore.canvasContentWidth
                 // dataShowCore.canvasHeight=rec.height/parent.height * dataShowCore.canvasContentHeight
             }
-
-
         }
 
 
