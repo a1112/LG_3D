@@ -9,6 +9,8 @@ import "../Foot"
 Item {
     width:700
     height:1000
+    Layout.fillWidth: true
+    Layout.fillHeight:true
     Item{
         anchors.fill: parent
         id: dataShow2DView

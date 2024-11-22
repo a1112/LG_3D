@@ -18,12 +18,9 @@ Item {
         SplitView.fillHeight: true
         currentIndex:root.surfaceData.rootViewIndex
         DataShowRootView{   // 2D  data
-            Layout.fillWidth: true
-            Layout.fillHeight:true
         }
         Data3DLayout{
-            Layout.fillWidth: true
-            Layout.fillHeight:true
+
         }
     }
 

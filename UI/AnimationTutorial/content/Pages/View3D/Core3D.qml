@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-
+    // 移动值
     property real objectOffsetY: 0
     property real objectOffsetX: 0
     property real objectOffsetZ: 0
@@ -21,7 +21,7 @@ Item {
     property real tempOfseetY: 0
     property real tempOfseetZ: 0
 
-    function setMouseStart(x, y) {
+    function setMouseMoveStart(x, y) {
         mouseStartX = x
         mouseStartY = y
         startOffsetX = cameraOffsetX
@@ -37,7 +37,30 @@ Item {
 
     }
 
-    function setMouseEnd(x, y) {
+    function setMouseMoveEnd(x, y) {
+        tempOfseetX = 0
+        tempOfseetX = 0
+    }
+
+    property real objectRotationX: 0
+    property real objectRotationY: 0
+    property real objectRotationZ: 270
+
+    function setMouseRotateStart(x, y) {
+        mouseStartX = x
+        mouseStartY = y
+        startOffsetX = objectRotationX
+        startOffsetY = objectRotationY
+    }
+
+    function setMouseRotate(x, y) {
+        tempOfseetX = (x - mouseStartX)
+        tempOfseetY = (y - mouseStartY)
+        objectRotationX = startOffsetX - tempOfseetX
+        objectRotationY = startOffsetY + tempOfseetY
+    }
+
+    function setMouseRotateMoveEnd(x, y) {
         tempOfseetX = 0
         tempOfseetX = 0
     }

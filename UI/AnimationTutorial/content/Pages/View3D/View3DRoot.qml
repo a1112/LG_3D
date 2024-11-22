@@ -1,17 +1,9 @@
-
-
-/*
-This is a UI file (.ui.qml) that is intended to be edited in Qt Design Studio only.
-It is supposed to be strictly declarative and only uses a subset of QML. If you edit
-this file manually, you might introduce QML code that is not supported by Qt Design Studio.
-Check out https://doc.qt.io/qtcreator/creator-quick-ui-forms.html for details on .ui.qml files.
-*/
 import QtQuick
 import QtQuick.Controls
 import QtQuick3D
 import QtQuick3D.Effects
 import QtQuick.Layouts
-
+import QtQuick3D.Helpers
 Item {
     property Core3D core3D: Core3D{}
     Layout.fillWidth:true
@@ -20,7 +12,20 @@ Item {
     View3D {
         id: view3D
         anchors.fill: parent
+
         // environment: sceneEnvironment
+        environment: SceneEnvironment {
+            id: sceneEnvironment
+                 backgroundMode: SceneEnvironment.SkyBox
+                 lightProbe: Texture {
+                     textureData: ProceduralSkyTextureData{}
+                 }
+                 InfiniteGrid {
+
+                     gridInterval: 1000
+                 }
+             }
+
         Node {
             id: scene
             DirectionalLight {
@@ -36,33 +41,53 @@ Item {
                 csmSplit1: 10
             }
 
+
+
+
+            // Node3D {
+            //     id:modelNode
+            //     eulerRotation.z: sceneEnvironment.eulerRotation.z
+            //     eulerRotation.y: sceneEnvironment.eulerRotation.y
+            //     eulerRotation.x: sceneEnvironment.eulerRotation.x
+
+
+            //     // eulerRotation.z: core3D.objectRotationZ
+            //     // eulerRotation.y: core3D.objectRotationY
+            //     // eulerRotation.x: core3D.objectRotationX
+            //     // z: core3D.objectOffsetZ
+            //     // x: core3D.objectOffsetX
+            //     // y: core3D.objectOffsetY
+            // }
             PerspectiveCamera {
                 x:core3D.cameraOffsetX
                 y:core3D.cameraOffsetY
                 z:core3D.cameraOffsetZ
                 id: sceneCamera
-            }
+                clipFar: 10000000
 
-            Loader {
-                source: "Node3D.qml"
-            }
-
-            Node3D {
-                id:modelNode
-                eulerRotation.z: 270
-                eulerRotation.y: 0
-                eulerRotation.x: 0
-                z: core3D.objectOffsetZ
-                x: core3D.objectOffsetX
-                y: core3D.objectOffsetY
             }
         }
-    }
-    Control3D{}
 
-Item {
-    id: __materialLibrary__
-}
+        Node3D {
+            id:modelNode
+            // eulerRotation.z: core3D.objectRotationZ
+            // eulerRotation.y: core3D.objectRotationY
+            // eulerRotation.x: core3D.objectRotationX
+            z: core3D.objectOffsetZ+500
+            x: core3D.objectOffsetX
+            y: core3D.objectOffsetY
+        }
+
+    }
+    OrbitCameraController {
+        origin: scene
+        camera: sceneCamera
+
+    }
+    WasdController {
+        controlledObject: sceneCamera
+    }
+    // Control3D{}
 }
 
 

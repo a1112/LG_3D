@@ -1,13 +1,16 @@
-import QtQuick 2.15
+import QtQuick
+import QtQuick.Controls
 import "../../Model"
 Item {
     // OBJ
     id:root
     property CircleConfig circleConfig:CircleConfig{}
     property AdjustConfig adjustConfig:AdjustConfig{}
-     property var controls:  DataShowControl{
+    property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
+    property TopDataManage topDataManage : TopDataManage{}
+
     function flush(){
         surfaceData.error_visible=false
         flushDefect()

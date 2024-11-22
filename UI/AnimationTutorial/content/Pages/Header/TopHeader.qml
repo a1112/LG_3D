@@ -46,19 +46,15 @@ Item {
             Layout.fillHeight: true
         }
         TopMsg{}
-        Item{
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        FillLayout{
             GlobalErrorView{    // 全局报警
                 anchors.centerIn: parent
             }
         }
         TitleLabel{}
-        Item{
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+        FillLayout{}
         TopCoilTools{}
+        FillLayout{}
         Row{
             spacing:10
             TopToolsButton{}
