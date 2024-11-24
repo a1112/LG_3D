@@ -9,6 +9,6 @@ Row {
     }
     Label{
         font.bold: true
-        text:surfaceData.rootViewIndex==0?surfaceData.currentViewKey: "3D"
+        text:surfaceData.is2DrootView?surfaceData.currentViewKey: "3D"
     }
 }

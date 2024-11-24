@@ -9,6 +9,9 @@ Item {
     property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
+    property DataShowControl3D controls3D:  DataShowControl3D{
+
+    }
     property TopDataManage topDataManage : TopDataManage{}
 
     function flush(){

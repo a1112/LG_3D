@@ -21,7 +21,6 @@ Item {
                      textureData: ProceduralSkyTextureData{}
                  }
                  InfiniteGrid {
-
                      gridInterval: 1000
                  }
              }
@@ -61,7 +60,7 @@ Item {
             PerspectiveCamera {
                 x:core3D.cameraOffsetX
                 y:core3D.cameraOffsetY
-                z:core3D.cameraOffsetZ
+                z:core3D.cameraOffsetZ+1000
                 id: sceneCamera
                 clipFar: 10000000
 
@@ -73,18 +72,20 @@ Item {
             // eulerRotation.z: core3D.objectRotationZ
             // eulerRotation.y: core3D.objectRotationY
             // eulerRotation.x: core3D.objectRotationX
-            z: core3D.objectOffsetZ+500
+            z: core3D.objectOffsetZ
             x: core3D.objectOffsetX
             y: core3D.objectOffsetY
         }
 
     }
     OrbitCameraController {
+        enabled: dataShowCore.controls3D.isRotateModel
         origin: scene
         camera: sceneCamera
 
     }
     WasdController {
+        enabled: dataShowCore.controls3D.isMoveModel
         controlledObject: sceneCamera
     }
     // Control3D{}

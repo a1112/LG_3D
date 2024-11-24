@@ -21,6 +21,8 @@ Item {
     property real tempOfseetY: 0
     property real tempOfseetZ: 0
 
+
+
     function setMouseMoveStart(x, y) {
         mouseStartX = x
         mouseStartY = y

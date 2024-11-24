@@ -30,6 +30,10 @@ HeaderBase {
             Layout.fillWidth: true
             implicitHeight: 1
         }
+        View3DChangeItem{
+
+        }
+
         // CheckRec{
         //     visible: false
         //     height: 20
