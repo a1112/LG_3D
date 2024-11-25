@@ -25,6 +25,8 @@ BaseConfigFolder=Path("D://CONFIG_3D")
 configFile =BaseConfigFolder/"configs/Server3D.json"
 alarmConfigFile = BaseConfigFolder/r"configs/Alarm.json"
 infoConfigFile = BaseConfigFolder/r"configs/Info.json"
+controlConfigFile = BaseConfigFolder/r"configs/Control.json"
+
 if isLoc:
     configFile = BaseConfigFolder/r"configs/Server3DLoc2.json"
 # elif args.config:
@@ -33,6 +35,7 @@ if isLoc:
 ServerConfig = json.load(open(configFile, 'r',encoding="utf-8"))
 alarmConfig = json.load(open(alarmConfigFile, 'r',encoding="utf-8"))
 infoConfig = json.load(open(infoConfigFile, 'r',encoding="utf-8"))
+controlConfig = json.load(open(controlConfigFile, 'r',encoding="utf-8"))
 
 VERSION=[0,1,11]
 VERSION_String = ".".join([str(i) for i in VERSION])
@@ -51,4 +54,7 @@ def setConsoleMode():
 if not isLoc:
     setConsoleMode()
 
+dataBaseApiPort = 6011
+serverApiPort = 6010
+imageApiport = 6012
 

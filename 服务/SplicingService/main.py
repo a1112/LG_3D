@@ -49,10 +49,10 @@ class ImageMosaicThread(Thread):
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()
-                try:
-                    lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
-                except :
-                    lastCoilSecondaryCoilId = 0
+                # try:
+                #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
+                # except :
+                #     lastCoilSecondaryCoilId = 0
                 for secondaryCoilIndex in range(len(listData)):
                     secondaryCoil = listData[secondaryCoilIndex]
                     logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个")
@@ -125,7 +125,3 @@ class ImageMosaicThread(Thread):
 
     def getReDetectionMsg(self):
         pass
-
-# imageMosaicList[0].setJoin(1749)
-# image = imageMosaicList[0].getJoinImage()
-# image.show()

@@ -20,9 +20,6 @@ import "Pages/AlarmPage"
 ApplicationWindow {
     id:app
     visible: true
-
-
-
     visibility:control.visibility
     x:50;y:50
     Material.theme: coreStyle.theme
