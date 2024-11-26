@@ -80,6 +80,7 @@ class ImageMosaicThread(Thread):
                             logger.error(f"image is None {secondaryCoil.Id}")
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
+
                     if self.saveDataBase:
                         print("saveDataBase")
                         Coil.addCoil({

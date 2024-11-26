@@ -1,3 +1,5 @@
+from typing import List
+
 from CoilDataBase import Alarm
 from property.Base import DataIntegration
 
@@ -21,11 +23,11 @@ def detection(dataIntegration:DataIntegration):
     grading(dataIntegration)
     levelDict = {}
 
-
-
-
     Alarm.addAlarmFlatRoll(
         dataIntegration.alarmFlat_Roll
     )
     for alarmTaperShape in dataIntegration.alarmTaperShapeList:
         addAlarmTaperShape(dataIntegration,alarmTaperShape)
+
+def detectionAll(dataIntegrationList:List[DataIntegration]):
+    pass

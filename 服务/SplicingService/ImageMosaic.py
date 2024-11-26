@@ -306,6 +306,9 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         """
         return self.consumer.get()
 
+    def getData(self):
+        return self.dataIntegration
+
     def hasFolder(self, coilId):
         """
         文件夹是否存在
