@@ -60,6 +60,8 @@ CoreModel_ {
         }
     }
 
+
+
     property SurfaceData surfaceL: SurfaceData{
         currentCoilModel: core.currentCoilModel
         key:"L"

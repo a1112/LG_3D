@@ -4,7 +4,6 @@ import QtQuick.Controls.Material
 import "../../btns"
 import "../../Pages/Header"
 Row {
-
     CheckRec{
         visible:false
         height: 20

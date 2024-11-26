@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Dialogs
 import QtQuick.Controls
 import ConsoleController 1.0
+import "../Controls/Menu"
 Menu{
 
     property var colorFunc

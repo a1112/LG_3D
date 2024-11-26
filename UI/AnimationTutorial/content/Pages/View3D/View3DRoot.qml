@@ -63,8 +63,8 @@ Item {
                 z:core3D.cameraOffsetZ+1000
                 id: sceneCamera
                 clipFar: 10000000
-
             }
+
         }
 
         Node3D {
@@ -75,6 +75,7 @@ Item {
             z: core3D.objectOffsetZ
             x: core3D.objectOffsetX
             y: core3D.objectOffsetY
+            scale: core3D.objectScale
         }
 
     }

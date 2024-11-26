@@ -30,8 +30,15 @@ HeaderBase {
             Layout.fillWidth: true
             implicitHeight: 1
         }
-        View3DChangeItem{
+        Row{
+            spacing: 10
+            visible: surfaceData.is3DrootView
+            View3DZScaleBtn{
+                anchors.verticalCenter:parent.verticalCenter
+            }
+            View3DChangeItem{
 
+            }
         }
 
         // CheckRec{

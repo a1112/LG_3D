@@ -2,8 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import "../../Style"
+import "../../Controls/Menu"
 ItemDelegate{
-    visible: surfaceData.is3DrootView
+
     text: dataShowCore.controls3D.control3DModelName+" ▼"
     font.family: "Material Icons"
     height: 25

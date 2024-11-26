@@ -14,17 +14,21 @@ Item{
     Column{
         spacing: 5
         CheckRecItem{
-            text: "塔\n形\n曲\n线"
+            text: "塔形曲线".split("").join('\n')
             height:100
+            currentShowModel:dataShowCore.topDataManage.lineShowModel
+
         }
         CheckRecItem{
-            text: "数\n据"
+            text: "数据".split("").join('\n')
             height:50
+            currentShowModel:dataShowCore.topDataManage.dataInfoShowModel
         }
 
         CheckRecItem{
-            text: "缺\n陷"
+            text: "缺陷".split("").join('\n')
             height:50
+            currentShowModel:dataShowCore.topDataManage.defectShowModel
         }
     }
 }

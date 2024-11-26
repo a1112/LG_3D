@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "Header"
+
 import "DataShowRoot"
 import "Foot"
 import "ShowCharts"
@@ -15,11 +15,9 @@ ColumnLayout{
         orientation: Qt.Vertical
 
         Loader{
-            // active: surfaceData.is2DrootView && dataShowCore.telescopedJointView
             SplitView.fillWidth: true
             SplitView.preferredHeight: 240
             asynchronous: true
-            // visible: dataShowCore.telescopedJointView && dataShowCore.chartShowType==0
             sourceComponent:RowLayout{
                 Layout.fillWidth: true
                 DataShowItemSelectView{

@@ -1,5 +1,6 @@
 import QtQuick
-import Qt.labs.settings
+
+import "Settings"
 Item {
 
     id:root
@@ -26,7 +27,7 @@ Item {
 
     property bool useLoc: false
 
-    Settings{
+    BaseSettings{
         property alias useImageCache: root.useImageCache
         property alias maxImageCache: root.maxImageCache
         property alias useSharedFolder: root.useSharedFolder
@@ -41,7 +42,6 @@ Item {
         property alias imageServerPort: root.imageServerPort
         property alias dataPort: root.dataPort
         property alias plcPort: root.plcPort
-
         category: "AppSettings"
         fileName: "settings.ini"
     }

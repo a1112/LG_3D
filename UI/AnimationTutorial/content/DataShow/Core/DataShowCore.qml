@@ -1,18 +1,23 @@
 import QtQuick
-import QtQuick.Controls
 import "../../Model"
-Item {
+import "../../Core"
+import "_base_"
+DataShowCore_ {
     // OBJ
     id:root
-    property CircleConfig circleConfig:CircleConfig{}
-    property AdjustConfig adjustConfig:AdjustConfig{}
+    property SurfaceData surfaceData
+
+    property Binds binds :Binds{
+    surfaceData:root.surfaceData
+    }
+
+    property AdjustConfig adjustConfig:binds.adjustConfig
     property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
     property DataShowControl3D controls3D:  DataShowControl3D{
-
     }
-    property TopDataManage topDataManage : TopDataManage{}
+    property TopDataManage topDataManage :binds.topDataManage
 
     function flush(){
         surfaceData.error_visible=false
@@ -60,14 +65,6 @@ Item {
         if(canvasScale<minScale){
             canvasScale = minScale
         }
-    }
-
-    property bool errorScaleSignal: false
-    property string errorScaleColor:"red"
-    function setMaxErrorScale(col){
-        errorScaleColor = col
-        errorScaleSignal = true
-
     }
 
     property int canvasWidth: flick.width

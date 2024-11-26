@@ -2,6 +2,9 @@ import QtQuick
 
 Item {
     // 移动值
+
+    property real objectScaleZ: dataShowCore.controls3D.scaleZ
+    property vector3d objectScale: Qt.vector3d(1, 1, objectScaleZ)
     property real objectOffsetY: 0
     property real objectOffsetX: 0
     property real objectOffsetZ: 0

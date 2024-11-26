@@ -2,7 +2,6 @@ import QtQuick
 
 Item {
 
-
     property real image_gamma: 0.7
     property bool image_gamma_enable_btn: true
     readonly property bool image_is_gray: surfaceData.currentViewKey=="GRAY"

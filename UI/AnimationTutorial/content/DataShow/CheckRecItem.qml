@@ -8,8 +8,11 @@ CheckRec {
 
     checked:dataShowCore.topDataManage.currentShowModel==currentShowModel
 
-    onClicked: {
-        dataShowCore.topDataManage.currentShowModel = currentShowModel
+    MouseArea{
+        anchors.fill:parent
+        onClicked:{
+            dataShowCore.topDataManage.currentShowModel = currentShowModel
+        }
     }
 
     property bool selected:checked
