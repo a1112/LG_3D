@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 
 from CONFIG import serverConfigProperty
+from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .CoilMaskModel import CoilDetectionModel
 
 from CoilDataBase.Coil import addDefects
@@ -96,6 +97,7 @@ def commitDefects(defectDict,dataIntegration):
         defectList
     )
 
+@DetectionSpeedRecord.timing_decorator("检测数据计时 检出分类")
 def detection(dataIntegration):
     npyData = dataIntegration.npyData
     joinImage = dataIntegration.joinImage
@@ -133,5 +135,6 @@ def detection(dataIntegration):
     commitDefects(defectDict,dataIntegration)
 
 
-
-
+def detectionAll(dataIntegrationList):
+    for dataIntegration in dataIntegrationList:
+        detection(dataIntegration)

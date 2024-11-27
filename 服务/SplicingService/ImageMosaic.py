@@ -8,7 +8,6 @@ from PIL import Image
 
 from Save3D.save import D3Saver
 
-from alg import detection
 from property.ErrorBase import ServerDetectionException
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from . import tool
@@ -266,12 +265,6 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         self.save3D(dataIntegration)
         self.saveJson(dataIntegration)
 
-    @DetectionSpeedRecord.timing_decorator("检测数据计时 检出分类")
-    def __detection__(self, dataIntegration):
-        # 检测的入口
-
-        detection.detection(dataIntegration)
-
     def run(self):
         # 拼接后的主函数
         self.imageSaver = ImageSaver(self.managerQueue)
@@ -298,7 +291,7 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                 error_message = traceback.format_exc()
                 logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
                 dataIntegration.addServerDetectionError(e)
-                continue
+                print("continue Server")
             except Exception as e:
                 error_message = traceback.format_exc()
                 # raise e

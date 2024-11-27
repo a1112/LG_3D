@@ -15,4 +15,6 @@ def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
 def _detectionAlarmLooseCoilAll_(dataIntegrationList):
     print("_detectionAlarmLooseCoilAll_")
     for dataIntegration in dataIntegrationList:
+        if dataIntegration.hasDetectionError():
+            continue
         _detectionAlarmLooseCoil_(dataIntegration)

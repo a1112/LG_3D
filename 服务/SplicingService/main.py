@@ -15,7 +15,7 @@ from threading import Thread
 from CoilDataBase import Coil
 from CoilDataBase import tool as CoilDataBaseTool
 from utils.Log import logger
-
+from alg import detection as cv_detection
 
 class ImageMosaicThread(Thread):
     def __init__(self,managerQueue):
@@ -84,6 +84,7 @@ class ImageMosaicThread(Thread):
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
                     AlarmDetection.detectionAll(dataIntegrationList)
+                    cv_detection.detectionAll(dataIntegrationList)
                     if self.saveDataBase:
                         print("saveDataBase")
                         Coil.addCoil({

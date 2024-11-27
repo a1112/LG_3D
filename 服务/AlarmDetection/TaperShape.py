@@ -116,4 +116,6 @@ def _detectionTaperShape_(dataIntegration: DataIntegration):
 
 def _detectionTaperShapeAll_(dataIntegrationList):
     for dataIntegration in dataIntegrationList:
+        if dataIntegration.hasDetectionError():
+            continue
         _detectionTaperShape_(dataIntegration)

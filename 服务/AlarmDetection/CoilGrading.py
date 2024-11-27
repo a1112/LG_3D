@@ -98,4 +98,6 @@ def grading(dataIntegration:DataIntegration):
 
 def gradingAll(dataIntegrationList:List[DataIntegration]):
     for dataIntegration in dataIntegrationList:
+        if dataIntegration.hasDetectionError():
+            continue
         grading(dataIntegration)

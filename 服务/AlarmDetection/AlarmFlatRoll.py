@@ -96,6 +96,8 @@ def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
 
 def _detectionAlarmFlatRollAll_(dataIntegrationList: List[DataIntegration]):
     for dataIntegration in dataIntegrationList:
+        if dataIntegration.hasDetectionError():
+            continue
         _detectionAlarmFlatRoll_(dataIntegration)
 
 if __name__ == "__main__":

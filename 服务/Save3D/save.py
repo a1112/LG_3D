@@ -190,17 +190,11 @@ def toMesh(obj,managerQueue):
 def _get_point_cloud_(data, managerQueue):
     from scipy.ndimage import median_filter
     coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm,[pixel_x_precision,pixel_y_precision,pixel_z_precision] = data
-
     npyData[mask == 0] = 0
-    matrix = median_filter(npyData, size=3)
+    matrix = median_filter(npyData, size=ControlManagement.control.median_filter_size)
     # 对数据进行下采样
-    matrix = downsample_data_with_convolution(matrix, serverConfigProperty.downsampleSize)
+    matrix = downsample_data_with_convolution(matrix, ControlManagement.control.downsampleSize)
     rows, cols = matrix.shape
-    # 像素精度和中心点
-    # pixel_x_precision = 0.34  # x方向的像素精度
-    # pixel_y_precision = 0.34  # y方向的像素精度
-    # pixel_z_precision = 0.016  # z方向的像素精度
-
     cx, cy = circleConfig["inner_circle"]['ellipse'][0]  # 中心点x坐标
     # 生成x和y坐标的网格
     x_indices = np.arange(rows) - cx
@@ -243,7 +237,7 @@ def _save_3d(data, managerQueue):
 
     t3=time.time()
     logger.debug(f"generate_mesh_from_point_cloud {t3-t2}")
-    o3d.visualization.draw_geometries([mesh])
+    # o3d.visualization.draw_geometries([mesh])
     # 保存彩色的.obj文件
     save_colored_obj(mesh, colors, str(saveFile))
     t4=time.time()

@@ -109,6 +109,7 @@ class DataIntegration:
     数据整合
     """
     def __init__(self, coilId,saveFolder, direction, key):
+        self._hasDetectionError_ = None
         self.coilId = coilId
         self.direction = direction
         self.key = key
@@ -304,3 +305,7 @@ class DataIntegration:
                 msg=errorMsg
             )
         )
+        self._hasDetectionError_=True
+
+    def hasDetectionError(self):
+        return self._hasDetectionError_

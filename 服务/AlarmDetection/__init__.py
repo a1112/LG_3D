@@ -39,6 +39,8 @@ def detectionAll(dataIntegrationList:List[DataIntegration]):
     gradingAll(dataIntegrationList)
 
     for dataIntegration in dataIntegrationList:
+        if dataIntegration.hasDetectionError():
+            continue
         Alarm.addAlarmFlatRoll(
             dataIntegration.alarmFlat_Roll
         )
