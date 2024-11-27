@@ -1,3 +1,5 @@
+from typing import List
+
 from CoilDataBase.models import AlarmFlatRoll
 from PIL import Image
 import cv2
@@ -67,6 +69,7 @@ def get_data(mask):
 
 def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     mask = dataIntegration.npy_mask
+    print(mask)
     circle_data_out,circle_data_in = get_data(mask)
     accuracy_x=dataIntegration.scan3dCoordinateScaleX
     accuracy_y=dataIntegration.scan3dCoordinateScaleX
@@ -92,8 +95,9 @@ def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     )
     dataIntegration.alarmFlat_Roll = alarmFlat_Roll
 
-
-
+def _detectionAlarmFlatRollAll_(dataIntegrationList: List[DataIntegration]):
+    for dataIntegration in dataIntegrationList:
+        _detectionAlarmFlatRoll_(dataIntegration)
 
 if __name__ == "__main__":
     # 读取 png 文件

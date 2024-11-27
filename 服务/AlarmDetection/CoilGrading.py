@@ -95,3 +95,7 @@ def grading(dataIntegration:DataIntegration):
     )
     print("add alarmInfo")
     addObj(alarmInfo)
+
+def gradingAll(dataIntegrationList:List[DataIntegration]):
+    for dataIntegration in dataIntegrationList:
+        grading(dataIntegration)

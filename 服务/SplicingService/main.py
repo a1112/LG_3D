@@ -7,6 +7,7 @@ from queue import Queue
 
 import logging
 
+import AlarmDetection
 from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap
 from .ImageMosaic import ImageMosaic
@@ -72,15 +73,17 @@ class ImageMosaicThread(Thread):
                             logger.error(f"setOK: {setOk}")
                             status[imageMosaic.key] = ErrorMap["DataFolderError"]
                             continue
+                    dataIntegrationList=[]
                     for imageMosaic in self.imageMosaicList:    # 获取图片
                         if status[imageMosaic.key] < 0:
                             continue
-                        image = imageMosaic.getJoinImage()
-                        if image is None:
+                        dataIntegration=imageMosaic.getData()
+                        dataIntegrationList.append(dataIntegration) # 检测
+                        if dataIntegration.isNone():
                             logger.error(f"image is None {secondaryCoil.Id}")
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
-
+                    AlarmDetection.detectionAll(dataIntegrationList)
                     if self.saveDataBase:
                         print("saveDataBase")
                         Coil.addCoil({

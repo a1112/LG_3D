@@ -14,7 +14,7 @@ for mosaic in imageMosaicThrea.imageMosaicList[::-1]:
         try:
             mosaic.setSave(True)
             mosaic.setCoilId(i)
-            mosaic.getJoinImage()
+            mosaic.getData()
         except BaseException:
             pass
 

@@ -113,14 +113,13 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
 
     @DetectionSpeedRecord.timing_decorator("保存3D数据计时")
     def save3D(self,dataIntegration:DataIntegration):
-        npyData = dataIntegration.npyData
         configDatas = dataIntegration.configDatas
         circleConfig = dataIntegration.circleConfig
         maskImage = dataIntegration.npy_mask
         coilId=dataIntegration.coilId
 
-        self._save_( dataIntegration.npyData, self.saveFolder / coilId / "3D.npy")
         start = dataIntegration.median_non_zero + serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
+        self._save_(dataIntegration.npyData, self.saveFolder / coilId / "3D.npy")
         step = serverConfigProperty.colorToValue_mm // dataIntegration.scan3dCoordinateScaleZ - serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
         dataIntegration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
         dataIntegration.set("colorToValue_mm", serverConfigProperty.colorToValue_mm)
@@ -164,6 +163,9 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
             configDatas.append(data["json"])
         return datas, configDatas
 
+    def getAllKey(self):
+        return "2D","MASK","3D"
+
     @DetectionSpeedRecord.timing_decorator("拼接图像计时")
     def __stitching__(self,dataIntegration:DataIntegration):
         minH = 0
@@ -175,10 +177,9 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                     minH = data["rec"][1]
                 if data["rec"][1] + data["rec"][3] > maxH:
                     maxH = data["rec"][1] + data["rec"][3]
-        for data in datas:
-            data['2D'] = data['2D'][minH:maxH, :]
-            data['MASK'] = data['MASK'][minH:maxH, :]
-            data['3D'] = data['3D'][minH:maxH, :]
+        for data in datas:# 裁剪，减低计算
+            for key in self.getAllKey():
+                data[key] = data[key][minH:maxH, :]
 
         horizontalProjectionList = tool.getHorizontalProjectionList([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontalProjectionList)
@@ -187,12 +188,10 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
 
         minHeight = min([data["2D"].shape[0] for data in datas])
         for index in range(len(datas)):
-            # l_p = cross_points[index-1][0]
             r_p = 0
             if index > 0:
                 l_p = cross_points[index - 1][0]
                 r_p = cross_points[index - 1][1]
-                print(cross_points)
                 w = datas[index - 1]['2D'].shape[1]
                 if w - l_p > serverConfigProperty.max_clip_mun:
                     l_p = w
@@ -224,6 +223,7 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         joinImage = cv2.flip(joinImage, 1)
         joinMaskImage = cv2.flip(joinMaskImage, 1)
         npyData = cv2.flip(npyData, 1)
+        tool.showImage(joinImage)
 
         box = tool.crop_black_border(joinMaskImage)
         x, y, w, h = box
@@ -232,7 +232,6 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         joinMaskImage = joinMaskImage[y:y + h, x:x + w]
         joinImage = joinImage[y:y + h, x:x + w]
         npyData = npyData[y:y + h, x:x + w]
-
         circleConfig = getCircleConfigByMask(joinMaskImage)
         dataIntegration.circleConfig = circleConfig
         dataIntegration.set("width", int(w))
@@ -286,7 +285,7 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
 
                 self.save_all_data(dataIntegration)
                 dataIntegration.currentSecondaryCoil=self.currentSecondaryCoil
-                AlarmDetection.detection(dataIntegration)
+                # AlarmDetection.detection(dataIntegration)
                 dataIntegration.commit()
             except Exception as e:
                 error_message = traceback.format_exc()
@@ -296,18 +295,10 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                     import six
                     six.reraise(Exception, e)
             finally:
-                self.consumer.put(dataIntegration.pil_image)
-
-    def getJoinImage(self):
-        """
-        消费者，下一道工序
-        Returns:
-
-        """
-        return self.consumer.get()
+                self.consumer.put(dataIntegration)
 
     def getData(self):
-        return self.dataIntegration
+        return self.consumer.get()
 
     def hasFolder(self, coilId):
         """

@@ -3,13 +3,15 @@ from typing import List
 from CoilDataBase import Alarm
 from property.Base import DataIntegration
 
-from .AlarmFlatRoll import _detectionAlarmFlatRoll_
-from .CoilGrading import grading
-from .TaperShape import _detectionTaperShape_ , addAlarmTaperShape
-from .AlarmLooseCoil import _detectionAlarmLooseCoil_
+from .AlarmFlatRoll import _detectionAlarmFlatRoll_, _detectionAlarmFlatRollAll_
+from .CoilGrading import grading, gradingAll
+from .TaperShape import _detectionTaperShape_, addAlarmTaperShape, _detectionTaperShapeAll_
+from .AlarmLooseCoil import _detectionAlarmLooseCoil_, _detectionAlarmLooseCoilAll_
+
+
 def detection(dataIntegration:DataIntegration):
     """
-      检测的入口
+      检测的入口 old
     Args:
         dataIntegration:
         data:
@@ -21,7 +23,6 @@ def detection(dataIntegration:DataIntegration):
     _detectionTaperShape_(dataIntegration)      # 塔形检测
     _detectionAlarmLooseCoil_(dataIntegration)  # 松卷检测
     grading(dataIntegration)
-    levelDict = {}
 
     Alarm.addAlarmFlatRoll(
         dataIntegration.alarmFlat_Roll
@@ -29,5 +30,17 @@ def detection(dataIntegration:DataIntegration):
     for alarmTaperShape in dataIntegration.alarmTaperShapeList:
         addAlarmTaperShape(dataIntegration,alarmTaperShape)
 
+
+
 def detectionAll(dataIntegrationList:List[DataIntegration]):
-    pass
+    _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
+    _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
+    _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测
+    gradingAll(dataIntegrationList)
+
+    for dataIntegration in dataIntegrationList:
+        Alarm.addAlarmFlatRoll(
+            dataIntegration.alarmFlat_Roll
+        )
+        for alarmTaperShape in dataIntegration.alarmTaperShapeList:
+            addAlarmTaperShape(dataIntegration, alarmTaperShape)

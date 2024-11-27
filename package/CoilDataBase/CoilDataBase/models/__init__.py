@@ -306,6 +306,8 @@ class AlarmInfo(Base):
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmInfo")
 
 
+
+
 # class CoilAlarmInfo(Base):
 #     __tablename__ = 'CoilAlarmInfo'
 #     Id = Column(Integer, primary_key=True, autoincrement=True)

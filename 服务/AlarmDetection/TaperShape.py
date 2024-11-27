@@ -113,3 +113,7 @@ def _detectionTaperShape_(dataIntegration: DataIntegration):
 
     dataIntegration.detectionLineData = coilLineDataList
 
+
+def _detectionTaperShapeAll_(dataIntegrationList):
+    for dataIntegration in dataIntegrationList:
+        _detectionTaperShape_(dataIntegration)

@@ -155,7 +155,8 @@ class DataIntegration:
     def get_save_url(self,*args):
         return Path(self.saveFolder, str(self.coilId),*args)
 
-
+    def isNone(self):
+        return self.npyData is None
 
     @property
     def median_non_zero(self):

@@ -3,6 +3,13 @@ import numpy
 import numpy as np
 from PIL import Image
 
+def showImage(image):
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+    cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("image", 800, 800)
+    cv2.imshow("image", image)
+    cv2.waitKey(0)
 
 def getMask(gray_image):
     if isinstance(gray_image, Image.Image):
@@ -237,6 +244,7 @@ def getHorizontalProjectionList(imageList):
 
 def getCircleConfigByMask(mask):
     # 获取圆参数
+    # showImage(mask)
     if isinstance(mask, Image.Image):
         mask = np.array(mask)
     mask = cv2.bitwise_not(mask)

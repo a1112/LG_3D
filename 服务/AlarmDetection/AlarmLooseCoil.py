@@ -11,3 +11,8 @@ def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
         d.dataIntegration=dataIntegration
         d.detection()
         addAlarmLooseCoil(d.getAlarmLooseCoil())
+
+def _detectionAlarmLooseCoilAll_(dataIntegrationList):
+    print("_detectionAlarmLooseCoilAll_")
+    for dataIntegration in dataIntegrationList:
+        _detectionAlarmLooseCoil_(dataIntegration)
