@@ -5,8 +5,9 @@ from typing import List
 
 import numpy as np
 
-from CoilDataBase.Coil import addCoilState
+from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmFlatRoll, AlarmTaperShape, SecondaryCoil
+from CoilDataBase.models import ServerDetectionError
 
 
 def sublist_with_indices(input_list, x,offset=0):
@@ -290,3 +291,16 @@ class DataIntegration:
             height=self.dictData.get("height"),
             jsonData=str(json.dumps(dictData)),
         ))
+
+    def addServerDetectionError(self,errorMsg,errorType="ServerDetectionError"):
+        """
+        添加服务器检测错误
+        """
+        addServerDetectionError(
+            ServerDetectionError(
+                secondaryCoilId=self.coilId,
+                surface=self.key,
+                errorType=errorType,
+                msg=errorMsg
+            )
+        )

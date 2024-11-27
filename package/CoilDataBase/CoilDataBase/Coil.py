@@ -20,6 +20,7 @@ def getAllJoinQuery(session: Session):
                     subqueryload(SecondaryCoil.childrenAlarmTaperShape),
                     subqueryload(SecondaryCoil.childrenAlarmLooseCoil),
                     subqueryload(SecondaryCoil.childrenDetectionSpeed),
+                    subqueryload(SecondaryCoil.childrenServerDetectionError),
                 )
 
 def  getAllJoinDataByNum(num,max=None):
@@ -271,3 +272,5 @@ def getCoilStateByCoilId(coilId,surface):
                                                     CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 
+def addServerDetectionError(error:ServerDetectionError):
+    return addObj(error)

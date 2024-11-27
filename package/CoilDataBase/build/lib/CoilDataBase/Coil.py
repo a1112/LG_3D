@@ -271,3 +271,7 @@ def getCoilStateByCoilId(coilId,surface):
                                                     CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 
+def addServerDetectionError(error:ServerDetectionError):
+    with Session() as session:
+        session.add(error)
+        session.commit()

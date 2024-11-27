@@ -16,7 +16,7 @@ import "Tool/Graphs"
 import "SettingPage"
 import "Style"
 import "Pages/AlarmPage"
-
+import "GlobalView"
 ApplicationWindow {
     id:app
     visible: true
@@ -54,8 +54,6 @@ ApplicationWindow {
     function openSettingView(){
         coreSetting_view.open()
     }
-
-
     MsgPopView{id:msg_popup}
     SettingPageView{id:coreSetting_view}
     ConnectDialog{//连接设置
@@ -85,6 +83,10 @@ ApplicationWindow {
 
     ToolGraphs{ // 图表格弹窗
         id:toolGraths
+    }
+
+    GlobGlobErrorView{
+
     }
 }
 

@@ -1,16 +1,15 @@
 import QtQuick
-import QtQuick.Controls
+
 import QtQuick.Controls.Material
-import QtQuick.Layouts
-import "../Base"
+
 import "../animation"
 Row {
     height:30
     spacing:10
     visible:coreModel.coreGlobalError.hasError
     Item{
-        width:30
-        height:30
+        height:parent.height
+        width:height
         AnimErrorImage{
                 fillMode:Image.PreserveAspectFit
             anchors.fill:parent

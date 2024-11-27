@@ -23,6 +23,8 @@ class ControlManagement:
         self.config=controlConfig
         self.configFile=controlConfigFile
 
+        self.minMaskDetectErrorSize=2000    # mask 检测最小报警值
+
     def get(self):
         return ControlProperty(self.config)
 

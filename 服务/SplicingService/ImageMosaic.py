@@ -9,6 +9,7 @@ from PIL import Image
 from Save3D.save import D3Saver
 
 from alg import detection
+from property.ErrorBase import ServerDetectionException
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from . import tool
 
@@ -16,7 +17,7 @@ from CONFIG import SaveImageType, RendererList, serverConfigProperty, isLoc
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
-
+from ControlManagement import control
 from property.Base import DataIntegration
 import AlarmDetection
 
@@ -166,6 +167,9 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
     def getAllKey(self):
         return "2D","MASK","3D"
 
+    def raiseError(self,message):
+        raise ServerDetectionException(message)
+
     @DetectionSpeedRecord.timing_decorator("拼接图像计时")
     def __stitching__(self,dataIntegration:DataIntegration):
         minH = 0
@@ -223,7 +227,7 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         joinImage = cv2.flip(joinImage, 1)
         joinMaskImage = cv2.flip(joinMaskImage, 1)
         npyData = cv2.flip(npyData, 1)
-        tool.showImage(joinImage)
+
 
         box = tool.crop_black_border(joinMaskImage)
         x, y, w, h = box
@@ -232,6 +236,10 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         joinMaskImage = joinMaskImage[y:y + h, x:x + w]
         joinImage = joinImage[y:y + h, x:x + w]
         npyData = npyData[y:y + h, x:x + w]
+        if np.max(joinMaskImage.shape) < control.minMaskDetectErrorSize:
+            self.raiseError(f"算法错误： mask shape: {joinMaskImage.shape} 小于 {control.minMaskDetectErrorSize}")
+        # tool.showImage(joinMaskImage)
+
         circleConfig = getCircleConfigByMask(joinMaskImage)
         dataIntegration.circleConfig = circleConfig
         dataIntegration.set("width", int(w))
@@ -282,11 +290,15 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                 dataIntegration.setOriginalData(dataIntegration.datas)
                 # 裁剪 2D 3D MASK
                 self.__stitching__(dataIntegration)
-
                 self.save_all_data(dataIntegration)
                 dataIntegration.currentSecondaryCoil=self.currentSecondaryCoil
                 # AlarmDetection.detection(dataIntegration)
                 dataIntegration.commit()
+            except ServerDetectionException as e:
+                error_message = traceback.format_exc()
+                logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
+                dataIntegration.addServerDetectionError(e)
+                continue
             except Exception as e:
                 error_message = traceback.format_exc()
                 # raise e
@@ -294,6 +306,7 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                 if isLoc:
                     import six
                     six.reraise(Exception, e)
+
             finally:
                 self.consumer.put(dataIntegration)
 

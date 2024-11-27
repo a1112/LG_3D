@@ -66,7 +66,6 @@ class DataFolder(ControlManagement.BaseDataFolder):
         return self.consumer.get()
 
     def setCoilId(self, coilId):
-        print(f"setCoilId {coilId}")
         self.producer.put(coilId)
 
     def mkLink(self, coilId):

@@ -1,6 +1,11 @@
 from .models import *
 from .core import Session
 
+def addObj(obj):
+    with Session() as session:
+        session.add(obj)
+        session.commit()
+
 def addAlarmFlatRoll(alarmFlatRoll):
     with Session() as session:
         session.add(alarmFlatRoll)
@@ -12,14 +17,10 @@ def getAlarmFlatRoll(coilId):
         return session.query(AlarmFlatRoll).where(coilId==AlarmFlatRoll.secondaryCoilId)[:2]
 
 def addAlarmTaperShape(alarmTaperShape):
-    with Session() as session:
-        session.add(alarmTaperShape)
-        session.commit()
+    return addObj(alarmTaperShape)
 
 def addAlarmLooseCoil(alarmLooseCoil):
-    with Session() as session:
-        session.add(alarmLooseCoil)
-        session.commit()
+    return addObj(alarmLooseCoil)
 
 def getAlarmTaperShape(coilId):
     with Session() as session:

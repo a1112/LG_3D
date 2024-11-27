@@ -69,7 +69,6 @@ def get_data(mask):
 
 def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     mask = dataIntegration.npy_mask
-    print(mask)
     circle_data_out,circle_data_in = get_data(mask)
     accuracy_x=dataIntegration.scan3dCoordinateScaleX
     accuracy_y=dataIntegration.scan3dCoordinateScaleX
