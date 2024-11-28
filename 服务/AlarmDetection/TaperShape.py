@@ -1,7 +1,7 @@
 import pymssql
 import numpy as np
 
-from property.Base import CoilLineData, DataIntegration
+from property.Base import CoilLineData, DataIntegration, DataIntegrationList
 from CONFIG import alarmConfigProperty
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
@@ -114,8 +114,6 @@ def _detectionTaperShape_(dataIntegration: DataIntegration):
     dataIntegration.detectionLineData = coilLineDataList
 
 
-def _detectionTaperShapeAll_(dataIntegrationList):
+def _detectionTaperShapeAll_(dataIntegrationList:DataIntegrationList):
     for dataIntegration in dataIntegrationList:
-        if dataIntegration.hasDetectionError():
-            continue
         _detectionTaperShape_(dataIntegration)

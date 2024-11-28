@@ -1,4 +1,4 @@
-from property.Base import DataIntegration
+from property.Base import DataIntegration, DataIntegrationList
 from CoilDataBase import Alarm
 
 
@@ -12,9 +12,7 @@ def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
         d.detection()
         addAlarmLooseCoil(d.getAlarmLooseCoil())
 
-def _detectionAlarmLooseCoilAll_(dataIntegrationList):
+def _detectionAlarmLooseCoilAll_(dataIntegrationList:DataIntegrationList):
     print("_detectionAlarmLooseCoilAll_")
     for dataIntegration in dataIntegrationList:
-        if dataIntegration.hasDetectionError():
-            continue
         _detectionAlarmLooseCoil_(dataIntegration)

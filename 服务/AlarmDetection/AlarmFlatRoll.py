@@ -4,7 +4,7 @@ from CoilDataBase.models import AlarmFlatRoll
 from PIL import Image
 import cv2
 import numpy as np
-from property.Base import DataIntegration
+from property.Base import DataIntegration, DataIntegrationList
 
 
 class AlarmFlatRollItemData:
@@ -94,10 +94,8 @@ def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     )
     dataIntegration.alarmFlat_Roll = alarmFlat_Roll
 
-def _detectionAlarmFlatRollAll_(dataIntegrationList: List[DataIntegration]):
+def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
     for dataIntegration in dataIntegrationList:
-        if dataIntegration.hasDetectionError():
-            continue
         _detectionAlarmFlatRoll_(dataIntegration)
 
 if __name__ == "__main__":

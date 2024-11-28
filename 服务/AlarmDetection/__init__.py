@@ -1,7 +1,8 @@
 from typing import List
 
 from CoilDataBase import Alarm
-from property.Base import DataIntegration
+from property.Base import DataIntegration, DataIntegrationList
+from utils.DetectionSpeedRecord import DetectionSpeedRecord
 
 from .AlarmFlatRoll import _detectionAlarmFlatRoll_, _detectionAlarmFlatRollAll_
 from .CoilGrading import grading, gradingAll
@@ -31,8 +32,8 @@ def detection(dataIntegration:DataIntegration):
         addAlarmTaperShape(dataIntegration,alarmTaperShape)
 
 
-
-def detectionAll(dataIntegrationList:List[DataIntegration]):
+@DetectionSpeedRecord.timing_decorator("判级时间")
+def detectionAll(dataIntegrationList:DataIntegrationList):
     _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
     _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测

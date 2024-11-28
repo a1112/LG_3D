@@ -309,3 +309,27 @@ class DataIntegration:
 
     def hasDetectionError(self):
         return self._hasDetectionError_
+
+class DataIntegrationList:
+    """
+    综合数据- List
+    """
+    def __init__(self):
+        self.index = 0
+        self.dataIntegrationList:List[DataIntegration] = []
+
+    def append(self,dataIntegration:DataIntegration):
+        self.dataIntegrationList.append(dataIntegration)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index < len(self.dataIntegrationList):
+            dataIntegration = self.dataIntegrationList[self.index]
+            if dataIntegration.isNone():
+                return self.__next__()
+            self.index += 1
+            return dataIntegration
+        else:
+            raise StopIteration

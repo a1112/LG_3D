@@ -4,7 +4,7 @@ from CoilDataBase.models import SecondaryCoil, AlarmFlatRoll, AlarmTaperShape, A
 from CoilDataBase.Coil import addObj
 from CONFIG import alarmConfigProperty, infoConfigProperty
 from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig
-from property.Base import CoilLineData, DataIntegration
+from property.Base import CoilLineData, DataIntegration, DataIntegrationList
 
 
 def gradingAlarmFlatRoll(alarmFlat_Roll:AlarmFlatRoll,alarmFlatRollConfig:AlarmFlatRollConfig):
@@ -96,8 +96,6 @@ def grading(dataIntegration:DataIntegration):
     print("add alarmInfo")
     addObj(alarmInfo)
 
-def gradingAll(dataIntegrationList:List[DataIntegration]):
+def gradingAll(dataIntegrationList:DataIntegrationList):
     for dataIntegration in dataIntegrationList:
-        if dataIntegration.hasDetectionError():
-            continue
         grading(dataIntegration)

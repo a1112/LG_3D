@@ -5,6 +5,9 @@ class AlarmGradResult:
         self.configMsg = configMsg
 
 class AlarmFlatRollConfig:
+    """
+    垂直松卷 等级判断
+    """
     def __init__(self, config):
         self.config = config
         self.name = config['name']

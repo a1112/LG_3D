@@ -10,6 +10,7 @@ import logging
 import AlarmDetection
 from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap
+from property.Base import DataIntegrationList
 from .ImageMosaic import ImageMosaic
 from threading import Thread
 from CoilDataBase import Coil
@@ -54,7 +55,9 @@ class ImageMosaicThread(Thread):
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
                 #     lastCoilSecondaryCoilId = 0
+
                 for secondaryCoilIndex in range(len(listData)):
+                    defectionTime1 = time.time()
                     secondaryCoil = listData[secondaryCoilIndex]
                     logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个")
                     if maxSecondaryCoilId - secondaryCoil.Id>2:
@@ -73,7 +76,7 @@ class ImageMosaicThread(Thread):
                             logger.error(f"setOK: {setOk}")
                             status[imageMosaic.key] = ErrorMap["DataFolderError"]
                             continue
-                    dataIntegrationList=[]
+                    dataIntegrationList=DataIntegrationList()
                     for imageMosaic in self.imageMosaicList:    # 获取图片
                         if status[imageMosaic.key] < 0:
                             continue
@@ -83,8 +86,13 @@ class ImageMosaicThread(Thread):
                             logger.error(f"image is None {secondaryCoil.Id}")
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
+                    defectionTime2 = time.time()
+                    print(f"图像检测时间 {defectionTime2-defectionTime1}")
                     AlarmDetection.detectionAll(dataIntegrationList)
                     cv_detection.detectionAll(dataIntegrationList)
+                    defectionTime3 = time.time()
+                    print(f"算法检测时间 {defectionTime3-defectionTime2}")
+                    print(f"完整检测时间 {defectionTime3 - defectionTime1}")
                     if self.saveDataBase:
                         print("saveDataBase")
                         Coil.addCoil({
@@ -98,7 +106,7 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        time.sleep(10)
+                        time.sleep(5)
                     # if self.debugType:
                     #     if self.endCoilId <= secondaryCoil.Id:
                     #         return -1
