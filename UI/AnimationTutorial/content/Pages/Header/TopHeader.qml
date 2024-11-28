@@ -30,9 +30,9 @@ Item {
     }
     RowLayout{
         anchors.fill: parent
-        spacing: 30
+        spacing: 10
         Item{
-            Layout.preferredWidth: 20
+            Layout.preferredWidth: 1
             Layout.preferredHeight: 1
         }
         TopIcon{}
@@ -53,8 +53,13 @@ Item {
         }
         TitleLabel{}
         FillLayout{}
-        TopCoilTools{}
+        GlobalServerMsg{}
         FillLayout{}
+        TopCoilTools{}
+        Item{
+            implicitWidth: 20
+            Layout.fillHeight: true
+        }
         Row{
             spacing:10
             TopToolsButton{}

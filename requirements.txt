@@ -9,7 +9,6 @@ scikit-learn
 matplotlib
 jsonargparse
 anomalib
-rich
 lightning
 torch
 torchvision
@@ -39,3 +38,4 @@ psutil
 GPUtil
 pymssql
 PyMySQL
+harvesters

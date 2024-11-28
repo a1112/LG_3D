@@ -1,5 +1,8 @@
+from CoilDataBase.core import get_engine
+from CoilDataBase.models import Base
 
-from Coil import get_coil
+get_engine("sqlite:///CoilDataBase.db")
 
-if __name__ == '__main__':
-    print(get_coil(10))
+tables = [
+    table.name for table in Base.metadata.tables.values()
+]

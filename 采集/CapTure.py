@@ -9,7 +9,7 @@ from Camera import SickCamera
 import DataSave
 from Log import logger
 import Server
-
+from CameraControl import CameraControl
 class CapTure(Thread):
     #  原始数据保存
     def __init__(self, cameraInfo):
@@ -22,6 +22,7 @@ class CapTure(Thread):
         self.globCapInfo = {}
         self.camera = None
         self.dataSave = ImageDataSave(self.saveFolder)
+        self.cameraControl = CameraControl(self)
         self.coil:DataSave.SecondaryCoil = None
         Server.startServer(cameraInfo,self)
 

@@ -171,17 +171,18 @@ def save_colored_obj(mesh, colors, filename):
     # o3d.io.write_triangle_mesh(filename, mesh)
     with open(filename, 'w') as f:
         for vertex, color in zip(np.asarray(mesh.vertices), colors):
-            f.write(f"v {vertex[0]} {vertex[1]} {vertex[2]} {color[0]} {color[1]} {color[2]}\n")
-        for triangle in np.asarray(mesh.triangles):
-            f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
-
+            colorStr=f"{color[0]} {color[1]} {color[2]}"
+            f.write(f"v {vertex[0]} {vertex[1]} {colorStr} {color[2]}\n")
+        # for triangle in np.asarray(mesh.triangles):
+        #     f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
+        for triangle in np.asarray(mesh.triangles)+1:
+            f.write(f"f {triangle[0]} {triangle[1]} {triangle[2]}\n")
 
 def toMesh(obj,managerQueue):
     cmdBalsam = serverConfigProperty.balsam
     cmd = f"{cmdBalsam} {obj}"
     print(cmd)
     workPath = os.path.dirname(obj)
-
     subprocess.check_call(cmd, shell=True, cwd=workPath)
     print(cmd+ "end")
     # os.system(cmd)
@@ -211,12 +212,10 @@ def _get_point_cloud_(data, managerQueue):
     # 删除z < 0 的点
     # point_cloud = point_cloud[point_cloud[:, 2] >= 10]
 
-
-
     mean_values2[2]=median_non_mm
     point_cloud[:, :] -= mean_values2
-    print("point_cloud.mean")
-    print(point_cloud.mean(axis=0))
+    # print("point_cloud.mean")
+    # print(point_cloud.mean(axis=0))
 
     point_cloud = point_cloud[point_cloud[:, 2] >= - 150]
     point_cloud = point_cloud[point_cloud[:, 2] <= 500]

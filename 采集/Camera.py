@@ -1,5 +1,4 @@
 import time
-from threading import Thread
 
 from harvesters.core import ImageAcquirer,Buffer
 
