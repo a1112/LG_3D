@@ -63,7 +63,6 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     p1,p2 = get_intersection_points(p1,p2,w,h)
     p1 = [int(p1[0]),int(p1[1])]
     p2 = [int(p2[0]),int(p2[1])]
-    print(p1,p2)
     rr, cc = line(p1[0], p1[1], p2[0], p2[1])
     # 找到 mask_image 的边界
     # boundaries = find_boundaries(mask_image, mode='inner')

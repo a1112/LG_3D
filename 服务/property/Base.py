@@ -8,6 +8,7 @@ import numpy as np
 from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmFlatRoll, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
+from property.detection3D import FlatRollData
 
 
 def sublist_with_indices(input_list, x,offset=0):
@@ -143,7 +144,7 @@ class DataIntegration:
         self.datas=None
         self.configDatas=None
 
-        self.alarmFlat_Roll:AlarmFlatRoll | None =None
+        self.flatRollData:FlatRollData | None =None
         self.detectionLineData= []
         self.alarmTaperShapeList:List[AlarmTaperShape]=[]
         self.json_data : dict={}

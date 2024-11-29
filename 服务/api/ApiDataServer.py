@@ -3,16 +3,12 @@ import time
 
 import cv2
 import numpy as np
-from fastapi import Request
 
-from .DataGet import DataGet, noFindImageByte
+from tools.DataGet import DataGet
 from .api_core import app
-from CONFIG import serverConfigProperty
-from fastapi import Response
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from PIL import Image
-from pathlib import Path
-from .data3dTool import getLengthData
+from tools.data3dTool import getLengthData
 
 
 @app.get("/coilData/heightData/{surfaceKey:str}/{coil_id:str}")

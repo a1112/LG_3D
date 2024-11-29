@@ -1,6 +1,6 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
-from .ApiCache import previewCache, imageCache,_3dDataCache
+from api.ApiCache import previewCache, imageCache,_3dDataCache
 from CONFIG import serverConfigProperty
 serverConfigProperty:ServerConfigProperty
 

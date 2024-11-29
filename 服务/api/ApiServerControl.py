@@ -5,7 +5,7 @@
 from typing import Dict
 
 from .api_core import app
-from ControlManagement import control
+from Globs import control
 
 
 @app.get("/control/config")

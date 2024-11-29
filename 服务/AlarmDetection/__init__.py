@@ -25,11 +25,11 @@ def detection(dataIntegration:DataIntegration):
     _detectionAlarmLooseCoil_(dataIntegration)  # 松卷检测
     grading(dataIntegration)
 
-    Alarm.addAlarmFlatRoll(
-        dataIntegration.alarmFlat_Roll
-    )
-    for alarmTaperShape in dataIntegration.alarmTaperShapeList:
-        addAlarmTaperShape(dataIntegration,alarmTaperShape)
+    # Alarm.addAlarmFlatRoll(
+    #     dataIntegration.alarmFlat_Roll
+    # )
+    # for alarmTaperShape in dataIntegration.alarmTaperShapeList:
+    #     addAlarmTaperShape(dataIntegration,alarmTaperShape)
 
 
 @DetectionSpeedRecord.timing_decorator("判级时间")
@@ -39,11 +39,7 @@ def detectionAll(dataIntegrationList:DataIntegrationList):
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测
     gradingAll(dataIntegrationList)
 
-    for dataIntegration in dataIntegrationList:
-        if dataIntegration.hasDetectionError():
-            continue
-        Alarm.addAlarmFlatRoll(
-            dataIntegration.alarmFlat_Roll
-        )
-        for alarmTaperShape in dataIntegration.alarmTaperShapeList:
-            addAlarmTaperShape(dataIntegration, alarmTaperShape)
+    # for dataIntegration in dataIntegrationList:
+    #
+    #     for alarmTaperShape in dataIntegration.alarmTaperShapeList:
+    #         addAlarmTaperShape(dataIntegration, alarmTaperShape)

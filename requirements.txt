@@ -39,3 +39,9 @@ GPUtil
 pymssql
 PyMySQL
 harvesters
+CoilDataBase
+timm
+scikit-image
+open3d
+argparse
+six

@@ -5,34 +5,21 @@ from PIL import Image
 import cv2
 import numpy as np
 from property.Base import DataIntegration, DataIntegrationList
+from property.detection3D.FlatRollData import FlatRollData,CircleDataItem
 
-
-class AlarmFlatRollItemData:
-    def __init__(self):
-        pass
-
-
-class CircleDataItem:
-    def __init__(self, data):
-        self.data = data
-        self.circle = data["circle"]
-        self.ellipse = data["ellipse"]
-        self.inner_circle = data["inner_circle"]
-
-
-def contour_to_data(contour):
+def contour_to_data(contour,key):
+    # 计算外接圆
     (circlexX, circlexY), circlexRadius = cv2.minEnclosingCircle(contour)
     rect = cv2.minAreaRect(contour)
     (box_x, box_y), (box_w, box_h), box_angle = rect
     # 计算内接圆（在最小包围矩形中）
     inner_circle_radius = min(box_w, box_h) / 2
-    inner_circle_center = (box_x, box_y)
     ellipse = cv2.fitEllipse(contour)
     return CircleDataItem({
         "circle":[int(circlexX), int(circlexY), int(circlexRadius)],
         "ellipse":ellipse,
-        "inner_circle":[inner_circle_center, inner_circle_radius]
-    })
+        "inner_circle":[box_x, box_y, inner_circle_radius]
+    },key)
 
 def get_inner_circle_contour(mask):
     # 获取内圆轮廓
@@ -55,12 +42,12 @@ def get_inner_circle_contour(mask):
         if distance < min_distance:
             min_distance = distance
             closest_contour = contour
-    return contour_to_data(closest_contour)
+    return contour_to_data(closest_contour,"in")
 
 def get_circle_contour(mask):
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     max_contour = max(contours, key=cv2.contourArea)
-    return contour_to_data(max_contour)
+    return contour_to_data(max_contour,"out")
 
 def get_data(mask):
     return get_circle_contour(mask), get_inner_circle_contour(mask)
@@ -70,31 +57,14 @@ def get_data(mask):
 def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     mask = dataIntegration.npy_mask
     circle_data_out,circle_data_in = get_data(mask)
-    accuracy_x=dataIntegration.scan3dCoordinateScaleX
-    accuracy_y=dataIntegration.scan3dCoordinateScaleX
-    level=1
-    errorStr = ""
-    alarmFlat_Roll = AlarmFlatRoll(
-        secondaryCoilId=dataIntegration.coilId,
-        surface=dataIntegration.key,
-        out_circle_width=circle_data_out.ellipse[1][0] * accuracy_x,
-        out_circle_height=circle_data_out.ellipse[1][1] * accuracy_x,
-        out_circle_center_x=circle_data_out.ellipse[0][0] * accuracy_x,
-        out_circle_center_y=circle_data_out.ellipse[0][1] * accuracy_x,
-        out_circle_radius=circle_data_out.ellipse[2] * accuracy_x,
-        inner_circle_width=circle_data_in.ellipse[1][0] * accuracy_x,
-        inner_circle_height=circle_data_in.ellipse[1][1] * accuracy_x,
-        inner_circle_center_x=circle_data_in.ellipse[0][0] * accuracy_x,
-        inner_circle_center_y=circle_data_in.ellipse[0][1] * accuracy_x,
-        inner_circle_radius=circle_data_in.ellipse[2] * accuracy_x,
-        accuracy_x=accuracy_x,
-        accuracy_y=accuracy_y,
-        level=level,
-        err_msg=errorStr
-    )
-    dataIntegration.alarmFlat_Roll = alarmFlat_Roll
+    flatRollData = FlatRollData(dataIntegration,circle_data_in, circle_data_out)
+    dataIntegration.flatRollData = flatRollData
+    return flatRollData
 
 def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
+    """
+    全局检测
+    """
     for dataIntegration in dataIntegrationList:
         _detectionAlarmFlatRoll_(dataIntegration)
 

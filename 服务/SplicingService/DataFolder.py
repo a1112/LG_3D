@@ -6,30 +6,28 @@ import time
 import cv2
 import numpy as np
 from PIL import Image
-
-import threading
-import multiprocessing
+from multiprocessing import Process
 from multiprocessing import JoinableQueue as MulQueue
 from queue import Queue as ThreadQueue
 
 from CONFIG import serverConfigProperty, isLoc
-from SplicingService.Glob import cmdThread
+from tools.Glob import cmdThread
 
-from . import tool
+from tools import tool
 
 from utils import Log
+import Globs
 logger = Log.logger
-import ControlManagement
 
-class DataFolder(ControlManagement.BaseDataFolder):
+
+class DataFolder(Globs.control.BaseDataFolder):
     def __init__(self, fd):
         super().__init__()
         fd=json.loads(fd)
         folderConfig,saveFolder,direction = fd
 
         # self.managerQueue=managerQueue
-        print(issubclass(super,ControlManagement.ProcessClass))
-        if issubclass(DataFolder,ControlManagement.ProcessClass):
+        if isinstance(Globs.control.BaseDataFolder, Process):
             self.producer = MulQueue()  # 生产者
             self.consumer = MulQueue()  # 消费者
         else:

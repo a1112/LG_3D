@@ -1,5 +1,5 @@
 from CONFIG import imageApiport
-from api import ApiImageServer,app
+from api.ApiImageServer import app
 import uvicorn
 
 if __name__ == '__main__':

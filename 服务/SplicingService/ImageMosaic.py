@@ -2,23 +2,25 @@ import json
 import traceback
 from pathlib import Path
 import logging
+from typing import List, Optional
+
 import cv2
 import numpy as np
+import six
 from PIL import Image
 
 from Save3D.save import D3Saver
 
 from property.ErrorBase import ServerDetectionException
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from . import tool
+from tools import tool
 
 from CONFIG import SaveImageType, RendererList, serverConfigProperty, isLoc
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
-from ControlManagement import control
+from Globs import control
 from property.Base import DataIntegration
-import AlarmDetection
 
 import threading
 import multiprocessing
@@ -27,19 +29,22 @@ from queue import Queue as ThreadQueue
 
 from utils.Log import logger
 
-import ControlManagement
+import Globs
 
 
 def getCircleConfigByMask(mask):
     return tool.getCircleConfigByMask(mask)
 
 
-class ImageMosaic(ControlManagement.BaseImageMosaic):
+class ImageMosaic(Globs.control.BaseImageMosaic):
     def __init__(self,config,managerQueue):
+        self.dataFolderList:List[DataFolder] = []
+        self.d3Saver: Optional[D3Saver] = None
+        self.imageSaver: Optional[ImageSaver] = None
         self.managerQueue=managerQueue
         self.currentSecondaryCoil=None
         process=False
-        if isinstance(ImageMosaic.__base__,multiprocessing.Process):
+        if isinstance(Globs.control.BaseImageMosaic,multiprocessing.Process):
             process=True
         if process:
             multiprocessing.Process.__init__(self)
@@ -139,9 +144,6 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
             if name not in RendererList:
                 continue
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
-            if name == "JET":
-                jetF = depth_map_color
-                self.jetImage = jetF
             image = Image.fromarray(depth_map_color)
             self._save_image_(dataIntegration,image,name)
             self.colorImageDict[name] = image
@@ -153,15 +155,20 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
     def joinSaver(self):
         self.imageSaver.join()
 
-    @DetectionSpeedRecord.timing_decorator("__getAllData__")
-    def __getAllData__(self):
+    @DetectionSpeedRecord.timing_decorator("数据获取 __getAllData__")
+    def __getAllData__(self,dataIntegration):
+        # 设置 任务
+        for dataFolder in self.dataFolderList:
+            dataFolder.setCoilId(dataIntegration.coilId)
+        #  获取数据
         datas = []
         configDatas = []
         for dataFolder in self.dataFolderList:  # 获取所有的图片
             data = dataFolder.getData()
             datas.append(data)
             configDatas.append(data["json"])
-        return datas, configDatas
+        #   待修改，使用工具类型进行封装
+        dataIntegration.datas, dataIntegration.configDatas = datas, configDatas
 
     def getAllKey(self):
         return "2D","MASK","3D"
@@ -276,10 +283,10 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
         while True:
             dataIntegration = DataIntegration(self.producer.get(), self.saveFolder, self.direction, self.key)
             try:
-                for dataFolder in self.dataFolderList:
-                    dataFolder.setCoilId(dataIntegration.coilId)
                 logger.info(f"ImageMosaic {dataIntegration.coilId}")
-                dataIntegration.datas, dataIntegration.configDatas = self.__getAllData__()  # 获取全部的拼接数据
+
+                self.__getAllData__(dataIntegration)  # 获取全部的拼接数据
+
                 dataIntegration.setOriginalData(dataIntegration.datas)
                 # 裁剪 2D 3D MASK
                 self.__stitching__(dataIntegration)
@@ -297,7 +304,6 @@ class ImageMosaic(ControlManagement.BaseImageMosaic):
                 # raise e
                 logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
                 if isLoc:
-                    import six
                     six.reraise(Exception, e)
 
             finally:

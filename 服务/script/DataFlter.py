@@ -5,7 +5,7 @@ if __name__ == '__main__':
 
 from SplicingService.ImageMosaic import ImageMosaic
 from SplicingService.DataFolder import DataFolder
-from SplicingService.main import ImageMosaicThread
+from SplicingService.ImageMosaicThread import ImageMosaicThread
 imageMosaicThrea=ImageMosaicThread(None)
 imageMosaicThrea.start()
 from PIL import Image

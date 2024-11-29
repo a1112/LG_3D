@@ -36,8 +36,6 @@ def findLRValue(line,offset=0):
 def split_line(detLine,maskLine,noneDataValue,ceter_x,ceter_y):
     c1 = CoilLineData()
     c2 = CoilLineData()
-
-
     l_line_p=findLRValue(maskLine[:ceter_x])
     r_line_p=findLRValue(maskLine[ceter_x:],ceter_x)
     l_mm_v = findTaperShapeValue(detLine[l_line_p[0]:l_line_p[1]],noneDataValue)
@@ -59,10 +57,16 @@ def addAlarmTaperShape(dataIntegration: DataIntegration,alarmTaperShape: AlarmTa
     alarmTaperShape.surface=dataIntegration.key
     Alarm.addAlarmTaperShape(alarmTaperShape)
 
+def getPointByRotationAngle(dataIntegration: DataIntegration,rotation_angle):
+    pass
+def detectionTaperShapeByRotationAngle(dataIntegration: DataIntegration,rotation_angle):
+    pass
+def detectionTaperShapeByArea(dataIntegration: DataIntegration):
+    pass
 
 def _detectionTaperShape_(dataIntegration: DataIntegration):
     print("塔形检测")
-    x_cet_mm,y_cet_mm,accuracy_x=(dataIntegration.alarmFlat_Roll.inner_circle_center_x,
+    x_cet_mm,y_cet_mm,accuracy_x=(dataIntegration.flatRollData.inner_circle_center_x,
                        dataIntegration.alarmFlat_Roll.inner_circle_center_y,
                        dataIntegration.alarmFlat_Roll.accuracy_x)
     cx, cy=int(x_cet_mm/accuracy_x),int(y_cet_mm/accuracy_x)
@@ -115,5 +119,8 @@ def _detectionTaperShape_(dataIntegration: DataIntegration):
 
 
 def _detectionTaperShapeAll_(dataIntegrationList:DataIntegrationList):
+    """
+    no doc
+    """
     for dataIntegration in dataIntegrationList:
         _detectionTaperShape_(dataIntegration)

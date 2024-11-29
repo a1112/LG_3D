@@ -3,7 +3,6 @@ import subprocess
 import time
 import traceback
 
-import numpy as np
 from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
@@ -13,9 +12,8 @@ import threading
 import multiprocessing
 from multiprocessing import JoinableQueue as MulQueue
 from queue import Queue as ThreadQueue
-import ControlManagement
 from utils.Log import logger
-
+import Globs
 
 def gaussian_kernel(size, sigma=1):
     """生成高斯卷积核。"""
@@ -62,7 +60,6 @@ def apply_jet_colormap(z_coords, minV=None, maxV=None):
 
 
 import numpy as np
-import open3d as o3d
 
 
 def generate_mesh_from_point_cloud_pcl(point_cloud):
@@ -77,7 +74,6 @@ def generate_mesh_from_point_cloud_pcl(point_cloud):
             生成的三角网格。
     """
     from scipy.spatial import Delaunay
-    import numpy as np
     import trimesh
 
 
@@ -192,9 +188,9 @@ def _get_point_cloud_(data, managerQueue):
     from scipy.ndimage import median_filter
     coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm,[pixel_x_precision,pixel_y_precision,pixel_z_precision] = data
     npyData[mask == 0] = 0
-    matrix = median_filter(npyData, size=ControlManagement.control.median_filter_size)
+    matrix = median_filter(npyData, size=Globs.control.median_filter_size)
     # 对数据进行下采样
-    matrix = downsample_data_with_convolution(matrix, ControlManagement.control.downsampleSize)
+    matrix = downsample_data_with_convolution(matrix, Globs.control.downsampleSize)
     rows, cols = matrix.shape
     cx, cy = circleConfig["inner_circle"]['ellipse'][0]  # 中心点x坐标
     # 生成x和y坐标的网格
@@ -251,8 +247,8 @@ class D3Saver:
     """
     def __init__(self,managerQueue):
         self.managerQueue=managerQueue
-        self.num_processes = ControlManagement.D3SaverWorkNum
-        self.type_=ControlManagement.D3SaverThreadType
+        self.num_processes = Globs.control.D3SaverWorkNum
+        self.type_= Globs.control.D3SaverThreadType
         if self.type_=="multiprocessing":
             self.queue = MulQueue(maxsize=2)
         else:

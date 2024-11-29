@@ -56,7 +56,8 @@ from pathlib import Path
 from queue import Queue as ThreadQueue
 import numpy as np
 from PIL import Image
-import ControlManagement
+import Globs
+
 
 class ImageSaver:
     """
@@ -64,8 +65,8 @@ class ImageSaver:
     """
     def __init__(self,managerQueue):
         self.managerQueue=managerQueue
-        self.num_processes =  ControlManagement.ImageSaverWorkNum
-        self.type_=ControlManagement.ImageSaverThreadType
+        self.num_processes =  Globs.control.ImageSaverWorkNum
+        self.type_= Globs.control.ImageSaverThreadType
         if self.type_=="multiprocessing":
             self.queue = MulQueue(maxsize=10)
         else:

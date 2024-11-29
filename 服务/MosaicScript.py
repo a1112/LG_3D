@@ -1,14 +1,11 @@
 import multiprocessing
 
-import CONFIG
 import Init
-from SplicingService.main import ImageMosaicThread
+from SplicingService.ImageMosaicThread import ImageMosaicThread
+
 Init.logDir =logDir= 'logs/服务日志_restart'
 
-from SplicingService import ImageMosaic,ImageSaver
-
 if __name__ == '__main__':
-    import uvicorn
     manager = multiprocessing.Manager()
     managerQueue = manager.Queue()
     imageMosaicThread = ImageMosaicThread(managerQueue)

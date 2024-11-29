@@ -3,13 +3,15 @@ from .core import Session
 
 def addObj(obj):
     with Session() as session:
-        session.add(obj)
-        session.commit()
+        if isinstance(obj,list):
+            [session.add(o) for o in obj]
+        else:
+            session.add(obj)
+        session.flush()
+        # session.commit()
 
 def addAlarmFlatRoll(alarmFlatRoll):
-    with Session() as session:
-        session.add(alarmFlatRoll)
-        session.commit()
+    return addObj(alarmFlatRoll)
 
 
 def getAlarmFlatRoll(coilId):

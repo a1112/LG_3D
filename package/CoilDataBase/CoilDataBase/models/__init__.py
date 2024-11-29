@@ -37,6 +37,8 @@ class SecondaryCoil(Base):
     childrenDetectionSpeed = relationship("DetectionSpeed", back_populates="parent")
     childrenServerDetectionError = relationship("ServerDetectionError", back_populates="parent")
 
+    childrenDataEllipse = relationship("DataEllipse", back_populates="parent")
+
 class Coil(Base):
     """
     检测数据
@@ -155,7 +157,6 @@ class  CoilAlarmStatus(Base):
     alarmDefect = Column(Integer)
     crateTime = Column(DateTime, server_default=func.now())
     data = Column(Text())
-
     parent = relationship("SecondaryCoil", back_populates="childrenCoilAlarmStatus")
 
 class AlarmFlatRoll(Base):
@@ -350,6 +351,24 @@ class ServerDetectionError(Base):
     msg = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenServerDetectionError")
 
+class DataEllipse(Base):
+    __tablename__ = 'DataEllipse'
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    surface = Column(String(2))
+
+    type = Column(String(10))
+    center_x = Column(Float)
+    center_y = Column(Float)
+    width = Column(Float)
+    height = Column(Float)
+    rotation_angle = Column(Float)
+
+    level = Column(Integer)
+    err_msg = Column(Text)
+    crateTime = Column(DateTime, server_default=func.now())
+    data = Column(Text)
+    parent = relationship("SecondaryCoil", back_populates="childrenDataEllipse")
 # class CoilAlarmInfo(Base):
 #     __tablename__ = 'CoilAlarmInfo'
 #     Id = Column(Integer, primary_key=True, autoincrement=True)
