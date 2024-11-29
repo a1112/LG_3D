@@ -32,8 +32,8 @@ from utils.Log import logger
 import Globs
 
 
-def getCircleConfigByMask(mask):
-    return tool.getCircleConfigByMask(mask)
+def getAllKey():
+    return "2D","MASK","3D"
 
 
 class ImageMosaic(Globs.control.BaseImageMosaic):
@@ -170,9 +170,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         #   待修改，使用工具类型进行封装
         dataIntegration.datas, dataIntegration.configDatas = datas, configDatas
 
-    def getAllKey(self):
-        return "2D","MASK","3D"
-
     def raiseError(self,message):
         raise ServerDetectionException(message)
 
@@ -188,7 +185,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 if data["rec"][1] + data["rec"][3] > maxH:
                     maxH = data["rec"][1] + data["rec"][3]
         for data in datas:# 裁剪，减低计算
-            for key in self.getAllKey():
+            for key in getAllKey():
                 data[key] = data[key][minH:maxH, :]
 
         horizontalProjectionList = tool.getHorizontalProjectionList([data["MASK"] for data in datas])
@@ -246,7 +243,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             self.raiseError(f"算法错误： mask shape: {joinMaskImage.shape} 小于 {control.minMaskDetectErrorSize}")
         # tool.showImage(joinMaskImage)
 
-        circleConfig = getCircleConfigByMask(joinMaskImage)
+        circleConfig = tool.getCircleConfigByMask(joinMaskImage)
         dataIntegration.circleConfig = circleConfig
         dataIntegration.set("width", int(w))
         dataIntegration.set("height", int(h))

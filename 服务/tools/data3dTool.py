@@ -7,9 +7,13 @@ import numpy as np
 
 
 def get_intersection_points(p1, p2, width, height):
+    """
+    获取两条线段的交点
+
+    :return: 交点列表
+    """
     x1, y1 = p1
     x2, y2 = p2
-    print(p1,p2,width,height)
     intersection_points = []
 
     def add_point_if_on_boundary(x, y):
@@ -94,7 +98,6 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
         # 获取当前和下一个交点
         pl = (intersection_rr[i], intersection_cc[i])
         pr = (intersection_rr[i + 1], intersection_cc[i + 1])
-        print(pl,pr)
         # 使用 Bresenham's line algorithm 获取 pl 和 pr 之间的所有点
         segment_rr, segment_cc = line(pl[0], pl[1], pr[0], pr[1])
         # 从 npy 数据中提取这些点对应的值
@@ -116,9 +119,26 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
 
     return lines
 
+def getP2ByRotate(p1,rotate,length=100):
+    p2 = [p1[0] + np.cos(rotate) * length, p1[1] + np.sin(rotate) * length]
+    return p2
 
-def getLengthData(npy_data, mask_image, p1, p2):
-    p1 = [int(p1[0]),int(p1[1])]
-    p2 = [int(p2[0]),int(p2[1])]
+def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
+    p1 = [int(p1[0]), int(p1[1])]
+    p2 = [int(p2[0]), int(p2[1])]
     segment_points = extract_segment_values(npy_data, mask_image, p1, p2)
+    if ray: # 射线模式
+        def directionEqual(direction1, direction2): # 计算两个方向是否相等
+            return direction1[0] == direction2[0] and direction1[1] == direction2[1]
+        direction = (p2[0] - p1[0], p2[1] - p1[1] )
+        segment_points = [l for l in segment_points if directionEqual(direction, (l["points"][0][0]-p1[0], l["points"][0][1]-p1[1]))]
+
     return segment_points
+
+def getLengthDataByRotate(npy_data, mask_image, p1, rotate,ray=False):
+    p2 = getP2ByRotate(p1,rotate)
+    return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
+
+def getLengthData(npy_data, mask_image, p1, p2,ray=False):
+    return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
+

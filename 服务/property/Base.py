@@ -1,7 +1,7 @@
 import datetime
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -144,13 +144,13 @@ class DataIntegration:
         self.datas=None
         self.configDatas=None
 
-        self.flatRollData:FlatRollData | None =None
+        self.flatRollData: Optional[FlatRollData] =None
         self.detectionLineData= []
         self.alarmTaperShapeList:List[AlarmTaperShape]=[]
         self.json_data : dict={}
         self.circleConfig={}
 
-        self.currentSecondaryCoil:SecondaryCoil|None=None
+        self.currentSecondaryCoil: Optional[SecondaryCoil] =None
 
 
         self.__median_non_zero__=None

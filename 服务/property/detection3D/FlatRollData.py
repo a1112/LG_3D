@@ -1,7 +1,11 @@
+from typing import Optional
+
 from CoilDataBase.Alarm import addObj
 from CoilDataBase.models import AlarmFlatRoll
 
 from .Base import BaseData
+from .. import Point2D
+
 
 class CircleDataCircle:
     def __init__(self, data):
@@ -41,14 +45,18 @@ class FlatRollData(BaseData):
     """
     def __init__(self,dataIntegration,inner_circle=None,out_circle=None):
         super().__init__(dataIntegration)
-        self.inner_circle:CircleDataItem|None = inner_circle
-        self.out_circle:CircleDataItem|None = out_circle
+        self.inner_circle: Optional[CircleDataItem] = inner_circle
+        self.out_circle: Optional[CircleDataItem] = out_circle
 
     def set_out_circle(self, circle: CircleDataItem):
         self.out_circle = circle
 
     def set_inner_circle(self, circle: CircleDataItem):
         self.inner_circle = circle
+
+    def get_center(self):
+        return Point2D(self.inner_circle.ellipse.center_x,
+                self.inner_circle.ellipse.center_y)
 
     def getAlarmFlatRoll(self):
         return AlarmFlatRoll(
