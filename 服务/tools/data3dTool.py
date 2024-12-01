@@ -5,11 +5,13 @@ from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
 
+from property import Point2D
+from property.Data3D import LineData
+
 
 def get_intersection_points(p1, p2, width, height):
     """
     获取两条线段的交点
-
     :return: 交点列表
     """
     x1, y1 = p1
@@ -18,7 +20,7 @@ def get_intersection_points(p1, p2, width, height):
 
     def add_point_if_on_boundary(x, y):
         if 0 <= x <= width and 0 <= y <= height:
-            intersection_points.append([x, y])
+            intersection_points.append(Point2D(x,y))
 
     if x1 != x2 and y1 != y2:
         # 计算斜率和截距
@@ -62,6 +64,7 @@ def get_intersection_points(p1, p2, width, height):
 
 def extract_segment_values(npy_data, mask_image, p1, p2):
     # 使用 Bresenham's line algorithm 获取 p1 和 p2 之间的所有点
+    lineData = LineData(npy_data,mask_image,p1, p2)
     h,w = mask_image.shape
 
     p1,p2 = get_intersection_points(p1,p2,w,h)
@@ -94,6 +97,7 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     # 初始化存储线段的列表
     lines = []
     # 提取每一对交点之间的线段值
+
     for i in range(0, len(intersection_rr) - 1, 2):
         # 获取当前和下一个交点
         pl = (intersection_rr[i], intersection_cc[i])
@@ -110,11 +114,11 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
                 "points": segment_points,
                 "pointL": [int(pl[0]), int(pl[1])],
                 "pointR": [int(pr[0]), int(pr[1])],
-                "min":int(np.min(segment_values)),
-                "max":int(np.max(segment_values)),
-                "mean":int(np.mean(segment_values)),
-                "std":int(np.std(segment_values)),
-                "median":int(np.median(segment_values)),
+                # "min":int(np.min(segment_values)),
+                # "max":int(np.max(segment_values)),
+                # "mean":int(np.mean(segment_values)),
+                # "std":int(np.std(segment_values)),
+                # "median":int(np.median(segment_values)),
             })
 
     return lines
@@ -127,7 +131,7 @@ def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
     p1 = [int(p1[0]), int(p1[1])]
     p2 = [int(p2[0]), int(p2[1])]
     segment_points = extract_segment_values(npy_data, mask_image, p1, p2)
-    if ray: # 射线模式
+    if ray: # 射线模式,只对线段进行判断
         def directionEqual(direction1, direction2): # 计算两个方向是否相等
             return direction1[0] == direction2[0] and direction1[1] == direction2[1]
         direction = (p2[0] - p1[0], p2[1] - p1[1] )

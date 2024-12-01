@@ -37,7 +37,7 @@
 #include "import_qml_components_plugins.h"
 #include "import_qml_plugins.h"
 #include "filedownloader.h"
-#include "ConsoleController.h"
+#include "consolecontroller.h"
 
 std::string getComputerName() {
     char computerName[MAX_COMPUTERNAME_LENGTH + 1];

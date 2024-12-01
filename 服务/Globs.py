@@ -5,7 +5,12 @@
 """
 from SplicingService import ImageMosaicThread
 from utils.ControlManagement import ControlManagement
+from utils.ServerMsg import ServerMsg
 
-imageMosaicThread:ImageMosaicThread = None
 
-control = ControlManagement()
+imageMosaicThread:ImageMosaicThread = None  # 主进程
+
+control = ControlManagement()       # 控制管理
+
+serverMsg=ServerMsg()
+

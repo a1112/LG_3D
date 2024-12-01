@@ -19,6 +19,12 @@ def detectionTaperShapeByArea(dataIntegration: DataIntegration):
 
 def _detectionTaperShape_(dataIntegration: DataIntegration):
     print("塔形检测")
+
+    # 角度检测
+    for rotate in [i* 10 for i in range(36)]:
+        detectionTaperShapeByRotationAngle(dataIntegration,rotate)
+
+    return
     x_cet_mm,y_cet_mm,accuracy_x=(dataIntegration.flatRollData.inner_circle_center_x,
                        dataIntegration.alarmFlat_Roll.inner_circle_center_y,
                        dataIntegration.alarmFlat_Roll.accuracy_x)

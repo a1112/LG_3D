@@ -52,8 +52,7 @@ def split_line(detLine,maskLine,noneDataValue,ceter_x,ceter_y):
 
     return l_mm_v,r_mm_v, [c1,c2]
 
-def getPointByRotationAngle(dataIntegration: DataIntegration,rotation_angle):
-    pass
+
 def detectionTaperShapeByRotationAngle(dataIntegration: DataIntegration,rotation_angle):
     """
     获取中心点 x,y ,根据角都计算.
@@ -63,4 +62,4 @@ def detectionTaperShapeByRotationAngle(dataIntegration: DataIntegration,rotation
     p_center = dataIntegration.flatRollData.get_center()
     npyData=dataIntegration.npyData
     mask=dataIntegration.npy_mask
-    getLengthDataByRotate(npyData, mask, p_center, rotation_angle,ray=True)
+    return getLengthDataByRotate(npyData, mask, p_center, rotation_angle,ray=True)

@@ -19,6 +19,9 @@ from utils.Log import logger
 from alg import detection as cv_detection
 
 class ImageMosaicThread(Thread):
+    """
+
+    """
     def __init__(self,managerQueue):
         super().__init__()
         self.managerQueue = managerQueue
@@ -107,6 +110,7 @@ class ImageMosaicThread(Thread):
                         })
                     if isLoc:
                         time.sleep(5)
+
                     # if self.debugType:
                     #     if self.endCoilId <= secondaryCoil.Id:
                     #         return -1

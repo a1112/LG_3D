@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # managerQueue = Queue()
     from SplicingService.ImageMosaicThread import ImageMosaicThread
     import uvicorn
-    imageMosaicThread = ImageMosaicThread(managerQueue)
+    imageMosaicThread = ImageMosaicThread(managerQueue)  # 主进程
     imageMosaicThread.start()
     GlobalSignalHandling(managerQueue).start()
     from api import app

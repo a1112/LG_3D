@@ -47,8 +47,20 @@ async  def wsReDetectionTask(websocket: WebSocket):
 
     await asyncio.gather(receive_messages(), send_messages())
 
+@app.get("/getServerState")
+async def getServerState():
+    return Globs.serverMsg.msgList
+
 @app.websocket("/ws/DetectionState")
 async  def wsDetectionState(websocket: WebSocket):
+    """
+    获取检测状态
+    Args:
+        websocket:
+
+    Returns:
+
+    """
     await websocket.accept()
     async def receive_messages():
         while True:
