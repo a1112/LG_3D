@@ -81,5 +81,6 @@ def _detectionTaperShapeAll_(dataIntegrationList:DataIntegrationList):
     """
     no doc
     """
+    print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
         _detectionTaperShape_(dataIntegration)

@@ -16,6 +16,7 @@ Item {
         }
     }
     function level2Source(level){
+        return ""
         if(level<=1){
             return ""
         }else if(level==2){

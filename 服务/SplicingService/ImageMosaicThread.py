@@ -109,8 +109,11 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        time.sleep(5)
-
+                        sleepTime=60
+                        print(f"loc model sleep {sleepTime}")
+                        "避免性能问题"
+                        time.sleep(sleepTime)
+                        print(f"loc model sleep {sleepTime} end")
                     # if self.debugType:
                     #     if self.endCoilId <= secondaryCoil.Id:
                     #         return -1

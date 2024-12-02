@@ -369,6 +369,9 @@ class DataEllipse(Base):
     crateTime = Column(DateTime, server_default=func.now())
     data = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenDataEllipse")
+
+
+
 # class CoilAlarmInfo(Base):
 #     __tablename__ = 'CoilAlarmInfo'
 #     Id = Column(Integer, primary_key=True, autoincrement=True)

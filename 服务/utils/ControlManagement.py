@@ -14,13 +14,15 @@ class ControlManagement(ThreadClass):
         self.ImageSaverWorkNum = 5
         self.minMaskDetectErrorSize=2000    # mask 检测最小报警值
         self.median_filter_size = 3
-        self.downsampleSize = 1
+        self.downsampleSize = 3 # 如果下采样 1，数据将会非常庞大
         self.BaseImageMosaic = ThreadClass
         self.ImageSaverThreadType = "thread"
         self.D3SaverWorkNum = 3
         self.D3SaverThreadType = "multiprocessing"
         self.BaseDataFolder = ProcessClass
         self.exportTimeFormat = "%Y-%m-%d %H:%M:%S"
+        self.upperLimit = 75
+        self.lowerLimit = -75
         self.start()
 
     def get(self):

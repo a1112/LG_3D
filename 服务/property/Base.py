@@ -8,6 +8,7 @@ import numpy as np
 from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmFlatRoll, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
+from Globs import control
 from property.detection3D import FlatRollData
 
 
@@ -239,12 +240,12 @@ class DataIntegration:
 
     @property
     def upperLimit(self):
-        self.dictData["upperLimit"] = 75 / self.scan3dCoordinateScaleZ
+        self.dictData["upperLimit"] = control.upperLimit / self.scan3dCoordinateScaleZ
         return self.dictData["upperLimit"]
 
     @property
     def lowerLimit(self):
-        self.dictData["lowerLimit"] = -75 / self.scan3dCoordinateScaleZ
+        self.dictData["lowerLimit"] = control.lowerLimit / self.scan3dCoordinateScaleZ
         return self.dictData["lowerLimit"]
 
     def setTelescopedAlarms(self):
@@ -265,7 +266,7 @@ class DataIntegration:
 
     def commit(self):
         # 数据提交
-        dictData=self.dictData
+        # dictData=self.dictData
         # dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
@@ -328,9 +329,10 @@ class DataIntegrationList:
     def __next__(self):
         if self.index < len(self.dataIntegrationList):
             dataIntegration = self.dataIntegrationList[self.index]
+            self.index += 1
             if dataIntegration.isNone():
                 return self.__next__()
-            self.index += 1
             return dataIntegration
         else:
+            self.index=0
             raise StopIteration

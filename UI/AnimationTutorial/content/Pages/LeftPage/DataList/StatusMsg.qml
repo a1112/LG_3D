@@ -34,16 +34,26 @@ Row {
     //     radius: 3
     //     color: Status_L==-3?"black":Status_L==-2?"red":"green"
     // }
-    AlarmRectangleItem{
-        level:listItemCoil.flatRollGrad
-    }
-    AlarmRectangleItem{
-    level:listItemCoil.taperShapeGrad
-    }AlarmRectangleItem{
-    level:listItemCoil.looseCoilGrad
-    }AlarmRectangleItem{
-    level:listItemCoil.defectGrad
-    }
+        AlarmRectangleItem{
+            level:Math.max(
+                      listItemCoil.flatRollGrad,
+                      listItemCoil.taperShapeGrad,
+                      listItemCoil.looseCoilGrad,
+                      listItemCoil.defectGrad
+                      )
+
+        }
+
+    // AlarmRectangleItem{
+    //     level:listItemCoil.flatRollGrad
+    // }
+    // AlarmRectangleItem{
+    // level:listItemCoil.taperShapeGrad
+    // }AlarmRectangleItem{
+    // level:listItemCoil.looseCoilGrad
+    // }AlarmRectangleItem{
+    // level:listItemCoil.defectGrad
+    // }
 
     }
 }

@@ -140,9 +140,9 @@ Item {
 
     property CoilModel currentCoilModel
 
-    function setCoilId(coilId_){
+    function setCoilId(coilId_,type_="JET"){
         coilId = coilId_
-        source = getSource(coilId_,"GRAY",false)
+        source = getSource(coilId_,type_,false)
         viewDataModel.clear()
         coreModel.allViewKeys.forEach(function(viewKey){
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})

@@ -135,6 +135,14 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     @DetectionSpeedRecord.timing_decorator("数据获取 __getAllData__")
     def __getAllData__(self,dataIntegration):
         # 设置 任务
+        """
+        对于最新的数据，应该同步完成，缺乏实时模式
+        Args:
+            dataIntegration:
+
+        Returns:
+
+        """
         for dataFolder in self.dataFolderList:
             dataFolder.setCoilId(dataIntegration.coilId)
         #  获取数据

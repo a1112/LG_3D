@@ -65,6 +65,7 @@ def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
     """
     全局检测
     """
+    print("AlarmFlatRollAll")
     for dataIntegration in dataIntegrationList:
         _detectionAlarmFlatRoll_(dataIntegration)
 

@@ -296,11 +296,12 @@ def get_intersection_points(p1, p2, width, height):
     """
     x1, y1 = p1
     x2, y2 = p2
+
     intersection_points = []
 
     def add_point_if_on_boundary(x, y):
         if 0 <= x <= width and 0 <= y <= height:
-            intersection_points.append(Point2D(x,y))
+            intersection_points.append(Point2D(int(x),int(y)))
 
     if x1 != x2 and y1 != y2:
         # 计算斜率和截距
@@ -339,4 +340,5 @@ def get_intersection_points(p1, p2, width, height):
             p[0] = width - 1
         if p[1] >= height:
             p[1] = height - 1
-    return intersection_points
+    return intersection_points[:2]
+

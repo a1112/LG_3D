@@ -108,8 +108,6 @@ Item {
     }
 
     DrawEllipse{}// 绘制 拟合椭圆
-
     DrawSurvey{}// 绘制 测量
-
     DrawPoint{} // 绘制 标记点
 }

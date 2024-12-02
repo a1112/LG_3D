@@ -5,6 +5,7 @@ from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
 
+from property import Point2D
 from property.Data3D import LineData
 from tools.tool import get_intersection_points
 
@@ -18,6 +19,8 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     p1 = [int(p1[0]),int(p1[1])]
     p2 = [int(p2[0]),int(p2[1])]
     rr, cc = line(p1[0], p1[1], p2[0], p2[1])
+    print(rr,cc)
+    return lineData
     # 找到 mask_image 的边界
     # boundaries = find_boundaries(mask_image, mode='inner')
     # 筛选出与 mask_image 边界相交的点
@@ -70,23 +73,40 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
 
     return lines
 
-def getP2ByRotate(p1,rotate,length=100):
-    p2 = [p1[0] + np.cos(rotate) * length, p1[1] + np.sin(rotate) * length]
-    return p2
+
+def getP2ByRotate(p1, rotate, length=1000):
+    """
+    通过旋转角度和长度，计算从点 p1 得到的新点 p2。
+
+    :param p1: 起始点 (x1, y1)
+    :param rotate: 旋转角度 (弧度制)
+    :param length: 旋转后新点与 p1 的距离 (默认值: 1000)
+    :return: 新点 p2 (Point2D)
+    """
+    # 使用旋转公式计算新的点
+    x2 = p1[0] + np.cos(rotate) * length
+    y2 = p1[1] + np.sin(rotate) * length
+
+    # 创建并返回新点
+    return Point2D(x2, y2)
 
 def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
-    p1 = [int(p1[0]), int(p1[1])]
-    p2 = [int(p2[0]), int(p2[1])]
-    segment_points = extract_segment_values(npy_data, mask_image, p1, p2)
-    if ray: # 射线模式,只对线段进行判断
-        def directionEqual(direction1, direction2): # 计算两个方向是否相等
-            return direction1[0] == direction2[0] and direction1[1] == direction2[1]
-        direction = (p2[0] - p1[0], p2[1] - p1[1] )
-        segment_points = [l for l in segment_points if directionEqual(direction, (l["points"][0][0]-p1[0], l["points"][0][1]-p1[1]))]
+    p1 = Point2D(int(p1[0]), int(p1[1]))
+    p2 = Point2D(int(p2[0]), int(p2[1]))
+    # segment_points = extract_segment_values(npy_data, mask_image, p1, p2)
+    lineData = LineData(npy_data, mask_image, p1, p2)
+    # print(len(list(lineData.mask_image_line_points())))
+    # input("pause")
+    # if ray: # 射线模式,只对线段进行判断
+    #     def directionEqual(direction1, direction2): # 计算两个方向是否相等
+    #         return direction1[0] == direction2[0] and direction1[1] == direction2[1]
+    #     direction = (p2[0] - p1[0], p2[1] - p1[1] )
+    #     segment_points = [l for l in segment_points if directionEqual(direction, (l["points"][0][0]-p1[0], l["points"][0][1]-p1[1]))]
 
-    return segment_points
+    return lineData
 
 def getLengthDataByRotate(npy_data, mask_image, p1, rotate,ray=False):
+    rotate=np.pi/180*rotate
     p2 = getP2ByRotate(p1,rotate)
     return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
 

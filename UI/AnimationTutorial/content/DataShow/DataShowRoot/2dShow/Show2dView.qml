@@ -27,6 +27,7 @@ Item {
             id:scrollBarH
         }
         Item{
+
             id:canvas
             width: dataShowCore.canvasContentWidth
             height: dataShowCore.canvasContentHeight

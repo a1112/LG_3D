@@ -1,6 +1,7 @@
 import numpy as np
 
 from property.Base import CoilLineData, DataIntegration
+from property.Data3D import LineData
 from tools.data3dTool import getLengthData, getLengthDataByRotate
 
 
@@ -57,8 +58,11 @@ def detectionTaperShapeByRotationAngle(dataIntegration: DataIntegration,rotation
     获取中心点 x,y ,根据角都计算.
     只适计算射线
     """
-
     p_center = dataIntegration.flatRollData.get_center()
     npyData=dataIntegration.npyData
     mask=dataIntegration.npy_mask
-    return getLengthDataByRotate(npyData, mask, p_center, rotation_angle,ray=True)
+
+
+    lineData = getLengthDataByRotate(npyData, mask, p_center, rotation_angle,ray=True)
+    lineData:LineData
+    print(lineData.detTaperShape())

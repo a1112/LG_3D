@@ -1,6 +1,8 @@
 import multiprocessing
-import Globs
 
+import uvicorn
+
+import Globs
 from utils.GlobalSignalHandling import GlobalSignalHandling
 from CONFIG import serverApiPort
 
@@ -18,7 +20,6 @@ if __name__ == '__main__':
     managerQueue = manager.Queue()
     # managerQueue = Queue()
     from SplicingService.ImageMosaicThread import ImageMosaicThread
-    import uvicorn
     imageMosaicThread = ImageMosaicThread(managerQueue)  # 主进程
     imageMosaicThread.start()
     GlobalSignalHandling(managerQueue).start()
