@@ -22,11 +22,6 @@ from .ImageSaver import ImageSaver
 from Globs import control
 from property.Base import DataIntegration
 
-import threading
-import multiprocessing
-from multiprocessing import JoinableQueue as MulQueue
-from queue import Queue as ThreadQueue
-
 from utils.Log import logger
 
 import Globs
@@ -38,27 +33,14 @@ def getAllKey():
 
 class ImageMosaic(Globs.control.BaseImageMosaic):
     def __init__(self,config,managerQueue):
+        super().__init__()
         self.dataFolderList:List[DataFolder] = []
         self.d3Saver: Optional[D3Saver] = None
         self.imageSaver: Optional[ImageSaver] = None
         self.managerQueue=managerQueue
         self.currentSecondaryCoil=None
-        process=False
-        if isinstance(Globs.control.BaseImageMosaic,multiprocessing.Process):
-            process=True
-        if process:
-            multiprocessing.Process.__init__(self)
-            self.producer = MulQueue()  # 生产者
-            self.consumer = MulQueue()  # 消费者
-        else:
-
-            threading.Thread.__init__(self)
-            self.producer = ThreadQueue()
-            self.consumer = ThreadQueue()
-
-        config=json.loads(config)
-        self.process=process
         self.colorImageDict = {}
+        config=json.loads(config)
         self.config = config
         self.key = config["key"]
         self.saveFolder = Path(config["saveFolder"])
@@ -68,11 +50,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.save3D_data = getattr(config, "save3D_data", True)
         self.save = True
         self.saveFolder.mkdir(parents=True, exist_ok=True)
-
-        # for dataFolder in self.dataFolderList:
-        #     dataFolder.setSaveFolder(self.saveFolder)
-        #     dataFolder.setDirection(self.direction)
-
         self.dataList = []
         self.start()
 
@@ -276,6 +253,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.dataFolderList =[]
         for folderConfig in self.config["folderList"]:
             fdDt=[folderConfig,self.config["saveFolder"],self.config["direction"]]
+            print(json.dumps(fdDt))
             self.dataFolderList.append(DataFolder(json.dumps(fdDt)))
         while True:
             dataIntegration = DataIntegration(self.producer.get(), self.saveFolder, self.direction, self.key)

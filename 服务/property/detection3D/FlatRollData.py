@@ -1,6 +1,5 @@
 from typing import Optional
 
-from CoilDataBase.Alarm import addObj
 from CoilDataBase.models import AlarmFlatRoll
 
 from .Base import BaseData

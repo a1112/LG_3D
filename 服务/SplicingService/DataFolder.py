@@ -6,9 +6,9 @@ import time
 import cv2
 import numpy as np
 from PIL import Image
-from multiprocessing import Process
-from multiprocessing import JoinableQueue as MulQueue
-from queue import Queue as ThreadQueue
+# from multiprocessing import Process
+# from multiprocessing import JoinableQueue as MulQueue
+# from queue import Queue as ThreadQueue
 
 from CONFIG import serverConfigProperty, isLoc
 from tools.Glob import cmdThread
@@ -23,16 +23,19 @@ logger = Log.logger
 class DataFolder(Globs.control.BaseDataFolder):
     def __init__(self, fd):
         super().__init__()
+        self.saveMaskFolder = None
+        self.saveMask = None
+        self.imageMosaicList = None
         fd=json.loads(fd)
         folderConfig,saveFolder,direction = fd
-
-        # self.managerQueue=managerQueue
-        if isinstance(Globs.control.BaseDataFolder, Process):
-            self.producer = MulQueue()  # 生产者
-            self.consumer = MulQueue()  # 消费者
-        else:
-            self.producer = ThreadQueue()
-            self.consumer = ThreadQueue()
+        #
+        # # self.managerQueue=managerQueue
+        # if issubclass(Globs.control.BaseDataFolder, Process):
+        #     self.producer = MulQueue()  # 生产者
+        #     self.consumer = MulQueue()  # 消费者
+        # else:
+        #     self.producer = ThreadQueue()
+        #     self.consumer = ThreadQueue()
         self.direction =direction# "L"
         self.saveFolder = Path(saveFolder)
         self.folderConfig = folderConfig
@@ -136,7 +139,6 @@ class DataFolder(Globs.control.BaseDataFolder):
         return exists
 
     def run(self):
-
         self.imageMosaicList = []
         self.saveMask = serverConfigProperty.saveJoinMask
         if self.saveMask:

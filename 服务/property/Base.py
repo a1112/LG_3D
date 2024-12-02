@@ -266,7 +266,7 @@ class DataIntegration:
     def commit(self):
         # 数据提交
         dictData=self.dictData
-        dictData["startTime"]=dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
+        # dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
             surface=self.key,
@@ -290,8 +290,8 @@ class DataIntegration:
             upperArea_percent=self.dictData.get("upperArea_percent"),
             mask_area=self.dictData.get("mask_area"),
             width=self.dictData.get("width"),
-            height=self.dictData.get("height"),
-            jsonData=str(json.dumps(dictData)),
+            height=self.dictData.get("height")
+            # jsonData=str(json.dumps(dictData)),
         ))
 
     def addServerDetectionError(self,errorMsg,errorType="ServerDetectionError"):

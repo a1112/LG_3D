@@ -1,15 +1,12 @@
 
-import threading
-from multiprocessing import Process
-from threading import Thread
-
 from CONFIG import controlConfig, controlConfigFile
 from property.ControlProperty import ControlProperty
+from property.WorkerBase import WorkerThreadBase,WorkerProcessBase
 
-ThreadClass = Thread
-ProcessClass = Process
+ThreadClass = WorkerThreadBase
+ProcessClass = WorkerProcessBase
 
-class ControlManagement(threading.Thread):
+class ControlManagement(ThreadClass):
     def __init__(self):
         super().__init__()
         self.config=controlConfig
@@ -18,11 +15,12 @@ class ControlManagement(threading.Thread):
         self.minMaskDetectErrorSize=2000    # mask 检测最小报警值
         self.median_filter_size = 3
         self.downsampleSize = 1
-        self.BaseImageMosaic = threading.Thread
+        self.BaseImageMosaic = ThreadClass
         self.ImageSaverThreadType = "thread"
         self.D3SaverWorkNum = 3
         self.D3SaverThreadType = "multiprocessing"
         self.BaseDataFolder = ProcessClass
+        self.exportTimeFormat = "%Y-%m-%d %H:%M:%S"
         self.start()
 
     def get(self):

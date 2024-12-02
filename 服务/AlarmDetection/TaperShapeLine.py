@@ -1,7 +1,6 @@
 import numpy as np
 
 from property.Base import CoilLineData, DataIntegration
-from script.Data3DLengthDataGetTest import mask_image
 from tools.data3dTool import getLengthData, getLengthDataByRotate
 
 

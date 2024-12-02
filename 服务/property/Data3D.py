@@ -1,8 +1,10 @@
 """
 封装3D数据拼接
 """
-from tools.data3dTool import get_intersection_points
 from skimage.draw import line
+
+from tools.tool import get_intersection_points
+
 
 class LineData:
     """

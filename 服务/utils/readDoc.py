@@ -1,3 +1,8 @@
+"""
+    本地化文档 docs,redoc
+    暂时未实现
+"""
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.openapi.docs import (

@@ -1,11 +1,11 @@
 import pymssql
 import numpy as np
 
-from property.Base import DataIntegration, DataIntegrationList
+from property.Base import DataIntegrationList
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
 
-from TaperShapeLine import *
+from .TaperShapeLine import *
 
 
 def addAlarmTaperShape(dataIntegration: DataIntegration,alarmTaperShape: AlarmTaperShape):

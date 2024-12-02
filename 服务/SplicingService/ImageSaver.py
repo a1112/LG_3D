@@ -62,6 +62,7 @@ import Globs
 class ImageSaver:
     """
     使用多进程执行
+    修改为 继承
     """
     def __init__(self,managerQueue):
         self.managerQueue=managerQueue

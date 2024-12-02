@@ -1,10 +1,12 @@
-import multiprocessing
 import subprocess
 from threading import Thread
-from multiprocessing import Manager, current_process
-multiprocessing.Process
+from multiprocessing import current_process
+
 
 class GlobalSignalHandling(Thread):
+    """
+    在主进程处理的程序
+    """
     def __init__(self,managerQueue):
         Thread.__init__(self)
         self.managerQueue = managerQueue

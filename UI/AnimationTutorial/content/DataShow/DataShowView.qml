@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import "Core"
 import "../Core"
+import "../GlobalView"
 Item{
     id:root
     property SurfaceData surfaceData
@@ -12,5 +13,7 @@ Item{
 
     Data2DLayout{}
 
+    GlobItemErrorView{
 
+    }
 }

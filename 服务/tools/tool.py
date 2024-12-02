@@ -3,6 +3,9 @@ import numpy
 import numpy as np
 from PIL import Image
 
+from property import Point2D
+
+
 def showImage(image):
     if isinstance(image, Image.Image):
         image = np.array(image)
@@ -284,3 +287,56 @@ def getCircleConfigByMask(mask):
             "inner_circle":[inner_circle_center, inner_circle_radius]
         }
     }
+
+
+def get_intersection_points(p1, p2, width, height):
+    """
+    获取两条线段的交点
+    :return: 交点列表
+    """
+    x1, y1 = p1
+    x2, y2 = p2
+    intersection_points = []
+
+    def add_point_if_on_boundary(x, y):
+        if 0 <= x <= width and 0 <= y <= height:
+            intersection_points.append(Point2D(x,y))
+
+    if x1 != x2 and y1 != y2:
+        # 计算斜率和截距
+        m = (y2 - y1) / (x2 - x1)
+        c = y1 - m * x1
+
+        # 求与上边界的交点 (y = 0)
+        x_top = (0 - c) / m
+        add_point_if_on_boundary(x_top, 0)
+
+        # 求与下边界的交点 (y = height)
+        x_bottom = (height - c) / m
+        add_point_if_on_boundary(x_bottom, height)
+
+        # 求与左边界的交点 (x = 0)
+        y_left = m * 0 + c
+        add_point_if_on_boundary(0, y_left)
+
+        # 求与右边界的交点 (x = width)
+        y_right = m * width + c
+        add_point_if_on_boundary(width, y_right)
+    elif x1 == x2:
+        # 线垂直时，只会与上下边界相交
+        add_point_if_on_boundary(x1, 0)
+        add_point_if_on_boundary(x1, height)
+    elif y1 == y2:
+        # 线水平时，只会与左右边界相交
+        add_point_if_on_boundary(0, y1)
+        add_point_if_on_boundary(width, y1)
+    for p in intersection_points:
+        if p[0] < 0:
+            p[0] = 0
+        if p[1] < 0:
+            p[1] = 0
+        if p[0] >= width:
+            p[0] = width - 1
+        if p[1] >= height:
+            p[1] = height - 1
+    return intersection_points

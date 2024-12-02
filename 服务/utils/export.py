@@ -1,14 +1,16 @@
+from io import BytesIO
 import datetime
+
+import xlsxwriter
+
 from CoilDataBase import Coil
 from CoilDataBase.models import SecondaryCoil, AlarmFlatRoll, PlcData, CoilState, AlarmInfo, AlarmTaperShape, \
     AlarmLooseCoil
-import xlsxwriter
-import xlsxwriter
-from io import BytesIO
+import Globs
 
 def formatTime(time):
     time:datetime.datetime
-    return time.strftime('%Y-%m-%d %H:%M:%S')
+    return time.strftime(Globs.control.exportTimeFormat)
 
 def spitDataList(dataList,one=False):
     defectDict={"S":[],"L":[]}
@@ -97,9 +99,9 @@ def getItemData(secondaryCoil:SecondaryCoil):
                     key + "端 扁卷报警信息": alarmInfo.flatRollMsg,
                 })
     alarmTaperShapeDict=spitDataList(secondaryCoil.childrenAlarmTaperShape,one = True)
-    for key, value in alarmTaperShapeDict.items():
-        if value:
-            alarmTaperShape=value
+    for key, alarmTaperShape in alarmTaperShapeDict.items():
+        alarmTaperShape:AlarmTaperShape
+        if alarmTaperShape:
             alarmTaperShape:AlarmTaperShape
             resData.update({
                 key+"端 检测角度":alarmTaperShape.rotation_angle,
@@ -119,9 +121,8 @@ def getItemData(secondaryCoil:SecondaryCoil):
 
 
 
-    for key, value in alarmLooseCoilDict.items():
-        if value:
-            alarmLooseCoil=value
+    for key, alarmLooseCoil in alarmLooseCoilDict.items():
+        if alarmLooseCoil:
             alarmLooseCoil:AlarmLooseCoil
             resData.update({
                 key+"端 松卷检测角度":alarmLooseCoil.rotation_angle,
@@ -170,7 +171,8 @@ def exportDataByTime(startTime,endTime):
         for key in keyList:
             try:
                 row.append(itemData[key])
-            except:
+            except (Exception,) as e:
+                print(e)
                 row.append("")
         data.append(row)
     # 写入数据
@@ -194,8 +196,8 @@ def exportDataByTime(startTime,endTime):
     return output,file_size
 
 
-def exportDataSimple(num=50,max=None):
-    secondaryCoilList =  Coil.getAllJoinDataByNum(num,max)
+def exportDataSimple(num=50, maxCoil=None):
+    secondaryCoilList =  Coil.getAllJoinDataByNum(num, maxCoil)
 
     workbook = xlsxwriter.Workbook("数据导出测试.xlsx")
     worksheet = workbook.add_worksheet("完整数据表")
@@ -213,7 +215,8 @@ def exportDataSimple(num=50,max=None):
         for key in keyList:
             try:
                 row.append(itemData[key])
-            except:
+            except (Exception,) as e:
+                print(e)
                 row.append("")
         data.append(row)
     # 写入数据
@@ -233,6 +236,6 @@ def exportDataSimple(num=50,max=None):
     # 保存并关闭工作簿
     workbook.close()
 
-if __name__ == '__main__':
-    dt = exportDataSimple(1000,23060)
-    print(dt)
+# if __name__ == '__main__':
+    # dt = exportDataSimple(1000,23060)
+    # print(dt)
