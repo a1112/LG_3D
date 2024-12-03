@@ -1,11 +1,87 @@
 """
 封装3D数据拼接
 """
+import json
+
+import cv2
 import numpy as np
+from matplotlib import pyplot as plt
 from skimage.draw import line
 
+import tools.tool
+from property import Point3D
+from tools.alg import IQR_outliers
 from tools.tool import get_intersection_points
 
+from CoilDataBase.models import LineData as LineDataModel
+from CoilDataBase.models import PointData as PointDataModel
+
+def find_line_max_min(line,noneDataValue,useIQR=True,type_=None):
+    """
+    找到线段的最大最小值
+    """
+    if not type_ is None:
+        type_="_"+type_
+    else:
+        type_=""
+    line=line[line[:, 2] > noneDataValue]
+    values = line[:, 2]
+    # # 提取第三列数据作为y轴的值
+    # y = line[:, 2]
+    # # 提取第一列数据作为x轴的值
+    # x = line[:, 0]
+    # # 创建折线图
+    # plt.plot(x, y, marker='o', linestyle='-', color='b', label='Data')
+    # # 添加标题和标签
+    # plt.title('折线图示例')
+    # plt.xlabel('X轴 (第一列数据)')
+    # plt.ylabel('Y轴 (第三列数据)')
+    # # 显示图例
+    # plt.legend()
+    # # 显示图形
+    # plt.grid(True)
+    # plt.show()
+    # 获取前n个最大值的索引
+    n = 50   # 你可以选择n的值
+    max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
+    # 获取前n个最小值的索引
+    min_indices = np.argsort(values)[:n]  # 排序并获取最小值的前n个索引
+    max_index=max_indices[0]
+    min_index=min_indices[0]
+    if useIQR:
+        iqr_max_outliers = IQR_outliers(values[max_indices])  # 异常值
+        iqr_min_outliers = IQR_outliers(values[min_indices])  # 异常值
+        for i in max_indices:
+            if values[i] in iqr_max_outliers:
+                continue
+            max_index=i
+            break
+        for i in min_indices:
+            if values[i] in iqr_min_outliers:
+                continue
+            min_index=i
+            break
+    return PointData(line[max_index],"max"+type_),PointData(line[min_index],"min"+type_)
+
+
+class PointData(Point3D):
+    """
+    点数据
+    """
+    def __init__(self, point,type_="point"):
+        self.type_ = type_
+        super().__init__(point[0], point[1], point[2])
+
+    def pointDataModel(self,dataIntegration):
+        return PointDataModel(
+            secondaryCoilId=dataIntegration.secondaryCoilId,
+            surface=dataIntegration.key,
+            type = self.type_,
+            x=float(self.x),
+            y=float(self.y),
+            z=float(self.z),
+            z_mm=float(dataIntegration.z_to_mm(self.z))
+        )
 
 class LineData:
     """
@@ -13,11 +89,44 @@ class LineData:
     """
 
     def __init__(self, npy_data,mask_image,p1, p2):
+        self._ray_line_ = None
+        self._ray_data_ = None
+        self.rotation_angle = None
+        self.useIQR = True
+        self.outer_max_point = None
+        self.outer_min_point = None
+        self.inner_min_point = None
+        self.inner_max_point = None
+        self.dataIntegration = None
+        self._points_=[]
         self.npy_data = npy_data
         self.mask_image = mask_image
         self.p1 = p1
         self.p2 = p2
         self.image_threshold = 100
+
+    @property
+    def points(self):
+        if not self._points_:
+            self._points_ = self.all_image_line_points()
+        return self._points_
+
+    @property
+    def ray_data(self):
+        if  self._ray_data_ is None:
+            self._ray_data_ = self.all_image_line_points(mask=True,ray=True).astype(np.int32)
+        return self._ray_data_
+
+    @property
+    def ray_line(self):
+        if self._ray_line_ is None:
+            arr=self.ray_data
+            non_zero_indices = np.where(arr[:, 2] != 0)[0]
+            # 起始索引和结束索引
+            start_index = non_zero_indices[0]
+            end_index = non_zero_indices[-1]
+            self._ray_line_ = arr[start_index:end_index]
+        return self._ray_line_
 
     def get_edge_point(self):
         """
@@ -29,7 +138,7 @@ class LineData:
     def point_hasData(self,point):
         return point>self.image_threshold
 
-    def all_image_line_points(self, mask=False, ray=False):
+    def all_image_line_points(self, mask=True, ray=True):
         """
         获取 直线经过图像 的所有点 x，y ,z
         """
@@ -52,7 +161,6 @@ class LineData:
         """
         过滤mask外的点
         Returns:
-
         """
         return self.all_image_line_points(mask=True)
 
@@ -84,72 +192,64 @@ class LineData:
             lines.append(lineItem)
         return lines
 
-    def get_line_points(self,mask=True,ray=False):
-        """
-        获取线段的所有点
-        """
-        p1, p2 = self.get_edge_point()
-        rr, cc = line(p1.x, p1.y, p2.x, p2.y)
-        if not mask:
-            return rr, cc
-        intersection_rr = []
-        intersection_cc = []
-        self.mask_image[cc[0], rr[0]] = 0
-        self.mask_image[cc[-1], rr[-1]] = 0
-        hasSteel = False
-        for r, z in zip(rr, cc):
-            if self.point_hasData(self.mask_image[z, r]):
-                intersection_rr.append(r)
-                intersection_cc.append(z)
-                hasSteel = True
-            elif self.point_hasData(self.mask_image[z, r]) and hasSteel:
-                intersection_rr.append(r)
-                intersection_cc.append(z)
-                hasSteel = False
-        # 初始化存储线段的列表
-        lines = []
-        # 提取每一对交点之间的线段值
+    def setDataIntegration(self,dataIntegration):
+        self.dataIntegration = dataIntegration
 
-        for i in range(0, len(intersection_rr) - 1):
-            # 获取当前和下一个交点
-            pl = (intersection_rr[i], intersection_cc[i])
-            pr = (intersection_rr[i + 1], intersection_cc[i + 1])
-            # 使用 Bresenham's line algorithm 获取 pl 和 pr 之间的所有点
-            segment_rr, segment_cc = line(pl[0], pl[1], pr[0], pr[1])
-            # 从 npy 数据中提取这些点对应的值
-            segment_values = self.npy_data[segment_cc, segment_rr]
-            # 将这些点的坐标和对应的值组合在一起
-            segment_points = list(
-                zip(list(segment_rr.tolist()), list(segment_cc.tolist()), list(segment_values.tolist())))
-
-            if len(segment_points) > 100:
-                lines.append({
-                    "len": len(segment_points),
-                    "points": segment_points,
-                    "pointL": [int(pl[0]), int(pl[1])],
-                    "pointR": [int(pr[0]), int(pr[1])],
-                    # "min":int(np.min(segment_values)),
-                    # "max":int(np.max(segment_values)),
-                    # "mean":int(np.mean(segment_values)),
-                    # "std":int(np.std(segment_values)),
-                    # "median":int(np.median(segment_values)),
-                })
-
-        return lines
-
-    def get_line_json(self):
-        pass
+    def setRotationAngle(self, angle):
+        self.rotation_angle = angle
 
     def detTaperShape(self):
         """
         返回到 内外塔形的最大最小值
         Returns:
         """
-        points = self.all_image_line_points(mask=True, ray=True)
-        arr = np.array(list(points))
+        points = self.ray_data
+        arr = points
         non_zero_indices = np.where(arr[:, 2] != 0)[0]
         # 起始索引和结束索引
         start_index = non_zero_indices[0]
         end_index = non_zero_indices[-1]
-        print(arr[start_index],"  ",arr[end_index])
-        input()
+        center_index = (start_index+end_index)//2
+        inner_points = arr[start_index:center_index]
+        outer_points = arr[center_index:end_index]
+        # 最值检测
+        self.inner_max_point,self.inner_min_point=find_line_max_min(inner_points,10,self.useIQR,type_="inner")
+        self.outer_max_point,self.outer_min_point =find_line_max_min(outer_points, 10,self.useIQR,type_="outer")
+
+    def allPointDataModel(self, dataIntegration):
+        return [self.inner_min_point.pointDataModel(dataIntegration),
+                self.inner_max_point.pointDataModel(dataIntegration),
+                self.outer_min_point.pointDataModel(dataIntegration),
+                self.outer_max_point.pointDataModel(dataIntegration)
+                ]
+
+
+    def lineDataModel(self,dataIntegration):
+        return LineDataModel(
+            secondaryCoilId=dataIntegration.secondaryCoilId,
+            surface=dataIntegration.key,
+            type="TaperShape",
+            center_x=dataIntegration.flatRollData.get_center().x,
+            center_y=dataIntegration.flatRollData.get_center().y,
+            width=dataIntegration.width,
+            height=dataIntegration.height,
+            rotation_angle=self.rotation_angle,
+            x1=self.p1.x,
+            y1=self.p1.y,
+            x2=self.p2.x,
+            y2=self.p2.y,
+            data=json.dumps(self.ray_line.tolist()),
+            inner_min_value=self.inner_min_point.z,
+            inner_min_value_mm=dataIntegration.z_to_mm(self.inner_min_point.z),
+            inner_max_value=self.inner_max_point.z,
+            inner_max_value_mm=dataIntegration.z_to_mm(self.inner_max_point.z),
+            outer_min_value=self.outer_min_point.z,
+            outer_min_value_mm=dataIntegration.z_to_mm(self.outer_min_point.z),
+            outer_max_value=self.outer_max_point.z,
+            outer_max_value_mm=dataIntegration.z_to_mm(self.outer_max_point.z)
+        )
+
+class Data3D:
+    def __init__(self, data):
+        self.data = data
+

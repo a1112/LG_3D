@@ -57,29 +57,25 @@ class FlatRollData(BaseData):
         return Point2D(self.inner_circle.ellipse.center_x,
                 self.inner_circle.ellipse.center_y)
 
-    def getAlarmFlatRoll(self):
+    def getAlarmFlatRoll(self,dataIntegration=None):
+        if dataIntegration is None:
+            dataIntegration = self.dataIntegration
         return AlarmFlatRoll(
-            secondaryCoilId=self.dataIntegration.coilId,
-            surface=self.dataIntegration.key,
-            out_circle_width=self.out_circle.circle[2],
-            out_circle_height=self.out_circle.circle[2],
-            out_circle_center_x=self.out_circle.circle[0],
-            out_circle_center_y=self.out_circle.circle[1],
-            out_circle_radius=self.out_circle.circle[2],
-            inner_circle_width=self.inner_circle.circle[2],
-            inner_circle_height=self.inner_circle.circle[2],
-            inner_circle_center_x=self.inner_circle.circle[0],
-            inner_circle_center_y=self.inner_circle.circle[1],
-            inner_circle_radius=self.inner_circle.circle[2],
-            accuracy_x=self.dataIntegration.accuracy_x,
-            accuracy_y=self.dataIntegration.accuracy_y,
-            accuracy_z=self.dataIntegration.accuracy_z,
+            secondaryCoilId=dataIntegration.coilId,
+            surface=dataIntegration.key,
+            out_circle_width=self.out_circle.ellipse.width,
+            out_circle_height=self.out_circle.ellipse.height,
+            out_circle_center_x=self.out_circle.ellipse.center_x,
+            out_circle_center_y=self.out_circle.ellipse.center_y,
+            out_circle_radius=self.out_circle.circle.radius,
+            inner_circle_width=self.inner_circle.ellipse.width,
+            inner_circle_height=self.inner_circle.ellipse.height,
+            inner_circle_center_x=self.inner_circle.ellipse.center_x,
+            inner_circle_center_y=self.inner_circle.ellipse.center_y,
+            inner_circle_radius=self.inner_circle.circle.radius,
+            accuracy_x=dataIntegration.accuracy_x,
+            accuracy_y=dataIntegration.accuracy_y,
         )
-    def __del__(self):
-
-        pass
-
-
     #     return AlarmFlatRoll(
     #     secondaryCoilId=dataIntegration.coilId,
     #     surface=dataIntegration.key,

@@ -55,7 +55,7 @@ class Point3D(Point2D):
 
     @property
     def z(self) -> Union[int, float]:
-        return self.args[2]
+        return float(self.args[2])
 
     @z.setter
     def z(self, value: Union[int, float]):

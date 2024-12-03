@@ -74,7 +74,7 @@ def grading(dataIntegration:DataIntegration):
     # 获取去向
     nextCode =str(chr(int(dataIntegration.currentSecondaryCoil.Weight)))
     nextName = infoConfigProperty.getNext(nextCode)
-    flatRollGradInfo = gradingAlarmFlatRoll(dataIntegration.alarmFlat_Roll,alarmConfigProperty.getAlarmFlatRollConfig(nextCode))
+    # flatRollGradInfo = gradingAlarmFlatRoll(dataIntegration.alarmFlat_Roll,alarmConfigProperty.getAlarmFlatRollConfig(nextCode))
     taperShapeGradInfo = gradingAlarmTaperShape(dataIntegration.alarmTaperShapeList,alarmConfigProperty.getTaperShapeConfig(nextCode))
     alarmLooseCoilInfo = gradingAlarmLooseCoil(dataIntegration.detectionLineData,alarmConfigProperty.getLooseCoilConfig(nextCode))
 

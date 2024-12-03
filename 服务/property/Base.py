@@ -131,6 +131,8 @@ class DataIntegration:
         self.scan3dCoordinateScaleY = None
         self.scan3dCoordinateScaleZ = None
 
+        self.lineDataDict = {}
+
         import numpy as np
         self.npyData:np.array = None
         # self._image_ = None
@@ -156,11 +158,38 @@ class DataIntegration:
 
         self.__median_non_zero__=None
 
+    @property
+    def secondaryCoilId(self):
+        return self.coilId
+
+    @property
+    def surface(self):
+        return self.key
+
+    @property
+    def width(self):
+        return self.npyData.shape[1]
+
+    @property
+    def height(self):
+        return self.npyData.shape[0]
+
+    def z_to_mm(self,z_value):
+        return float((z_value-self.median_non_zero)*self.scan3dCoordinateScaleZ)
+
     def get_save_url(self,*args):
         return Path(self.saveFolder, str(self.coilId),*args)
 
     def isNone(self):
         return self.npyData is None
+
+    @property
+    def accuracy_x(self):
+        return self.scan3dCoordinateScaleX
+
+    @property
+    def accuracy_y(self):
+        return self.scan3dCoordinateScaleY
 
     @property
     def median_non_zero(self):

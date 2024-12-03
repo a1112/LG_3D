@@ -39,6 +39,10 @@ class SecondaryCoil(Base):
 
     childrenDataEllipse = relationship("DataEllipse", back_populates="parent")
 
+    childrenLineData = relationship("LineData", back_populates="parent")
+    childrenPointData = relationship("PointData", back_populates="parent")
+    childrenAlarmFlatRollData = relationship("AlarmFlatRollData", back_populates="parent")
+
 class Coil(Base):
     """
     检测数据
@@ -370,36 +374,58 @@ class DataEllipse(Base):
     data = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenDataEllipse")
 
+class AlarmFlatRollData(Base):
+    __tablename__ = 'AlarmFlatRollData'
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    surface = Column(String(2))
+    level = Column(Integer)
+    err_msg = Column(Text)
+    crateTime = Column(DateTime, server_default=func.now())
+    data = Column(Text)
+    parent = relationship("SecondaryCoil", back_populates="childrenAlarmFlatRollData")
 
+class LineData(Base):
+    __tablename__ = 'LineData'
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    surface = Column(String(2))
+    type = Column(String(20))
+    center_x = Column(Float)
+    center_y = Column(Float)
+    width = Column(Float)
+    height = Column(Float)
+    rotation_angle = Column(Float)
+    x1 = Column(Float)
+    y1 = Column(Float)
+    x2 = Column(Float)
+    y2 = Column(Float)
+    data = Column(Text)
+    inner_min_value = Column(Float)
+    inner_min_value_mm = Column(Float)
+    inner_max_value = Column(Float)
+    inner_max_value_mm = Column(Float)
+    outer_min_value = Column(Float)
+    outer_min_value_mm = Column(Float)
+    outer_max_value = Column(Float)
+    outer_max_value_mm = Column(Float)
+    crateTime = Column(DateTime, server_default=func.now())
 
-# class CoilAlarmInfo(Base):
-#     __tablename__ = 'CoilAlarmInfo'
-#     Id = Column(Integer, primary_key=True, autoincrement=True)
-#     secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    parent = relationship("SecondaryCoil", back_populates="childrenLineData")
 
-t={'coilId': '6554',
-   'direction': 'R',
-   'startTime': datetime.datetime(2024, 8, 16, 14, 8, 38, 301792),
-   'scan3dCoordinateScaleX': 0.3415023386478424,
-   'scan3dCoordinateScaleY': 1.0, 'scan3dCoordinateScaleZ': 0.01680760271847248,
-   'crossPoints': [(2313, 60), (2311, 65)], 'rotate': -90, 'crop_box': (0, 1430, 5932, 5459),
-   'x_rotate': 10, 'median_3d': 42575.23971781661, 'median_3d_mm': 690.9751332314569,
-   'colorFromValue_mm': -20, 'colorToValue_mm': 20, 'start': 41342.23971781661, 'step': 2465.0,
-   'upperLimit': 5949.688463905355, 'lowerLimit': -5949.688463905355, 'lowerArea': 96031, 'upperArea': 2085,
-   'lowerArea_percent': 0.004192965026328996, 'upperArea_percent': 9.103656194245564e-05, 'mask_area': 22902886,
-   'width': 5932, 'height': 5459, 'circleConfig': {'inner_circle': {'circlex': [2950, 2993, 1140],
-                                                                    'ellipse': ((2959.546142578125, 2979.77978515625),
-                                                                                (2215.0205078125, 2247.829833984375),
-                                                                                71.07267761230469),
-    'inner_circle': [(2939.515380859375, 2977.1162109375), 1108.7459716796875]}}}
+class PointData(Base):
+    __tablename__ = 'PointData'
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    surface = Column(String(2))
+    type = Column(String(10))
+    x = Column(Float)
+    y = Column(Float)
+    z = Column(Float)
+    z_mm = Column(Float)
+    data = Column(Text)
 
+    crateTime = Column(DateTime, server_default=func.now())
 
-# class AlarmSettings(Base):
-#     __tablename__ = 'AlarmSettings'
-#     Id = Column(Integer, primary_key=True, autoincrement=True)
-#     SecondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
-#     alarmType = Column(String(20))
-#     alarmValue = Column(Float)
-#     alarmStatus = Column(Integer)
-#     alarmTime = Column(DateTime, server_default=func.now())
-#     alarmData = Column(Text())  # 报警数据
+    parent = relationship("SecondaryCoil", back_populates="childrenPointData")
+

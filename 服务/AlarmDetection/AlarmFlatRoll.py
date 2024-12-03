@@ -1,6 +1,6 @@
 from typing import List
 
-from CoilDataBase.models import AlarmFlatRoll
+from CoilDataBase import Alarm
 from PIL import Image
 import cv2
 import numpy as np
@@ -61,14 +61,18 @@ def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
     dataIntegration.flatRollData = flatRollData
     return flatRollData
 
+def commitData(dataIntegration: DataIntegration,flatRollData):
+    Alarm.addObj(flatRollData.getAlarmFlatRoll(dataIntegration))
+
+
 def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
     """
     全局检测
     """
     print("AlarmFlatRollAll")
     for dataIntegration in dataIntegrationList:
-        _detectionAlarmFlatRoll_(dataIntegration)
-
+        flatRollData = _detectionAlarmFlatRoll_(dataIntegration)
+        commitData(dataIntegration,flatRollData)
 if __name__ == "__main__":
     # 读取 png 文件
     image_path = 'test.png'
