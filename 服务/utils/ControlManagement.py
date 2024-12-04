@@ -20,7 +20,9 @@ class ControlManagement(ThreadClass):
         self.D3SaverWorkNum = 3
         self.D3SaverThreadType = "multiprocessing"
         self.BaseDataFolder = ProcessClass
-        self.exportTimeFormat = "%Y-%m-%d %H:%M:%S"
+        self.baseTimeFormat = "%Y-%m-%d %H:%M:%S"
+        self.exportTimeFormat = self.baseTimeFormat
+        self.logTimeFormat = self.baseTimeFormat
         self.upperLimit = 75
         self.lowerLimit = -75
         self.start()

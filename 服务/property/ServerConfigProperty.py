@@ -54,7 +54,7 @@ class ServerConfigProperty:
         self.max3dSaveThread = serverConfig["max3dSaveThread"]
         self.downsampleSize = serverConfig["downsampleSize"]
         self.clip_num = serverConfig["clip_num"]
-        self.max_clip_mun = serverConfig["max_clip_mun"]
+        self.max_clip_mun = 500#serverConfig["max_clip_mun"]
 
 
     def get_file(self, coil_id, surfaceKey, type_,mask=False):

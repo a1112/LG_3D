@@ -6,12 +6,12 @@ from PIL import Image
 from property import Point2D
 
 
-def showImage(image):
+def showImage(image,name="image"):
     if isinstance(image, Image.Image):
         image = np.array(image)
-    cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("image", 800, 800)
-    cv2.imshow("image", image)
+    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(name, 800, 800)
+    cv2.imshow(name, image)
     cv2.waitKey(0)
 
 def getMask(gray_image):
@@ -78,26 +78,47 @@ def crop_max_image_black_edges(key,image, starPos):
     column_no_black_count = np.sum(image > 100, axis=0)
     left_index = starPos[0]
     right_index = w - starPos[1]
-    maxL = left_index+150
-    maxR = right_index-150
+    maxL = left_index+300   # 规定最大裁剪
+    minR = right_index-300  # 规定最大裁剪
     # 从左侧找到第一个非黑色列
-    l_threshold = 0.1 if "D" in key else 0.2
-    r_threshold = 0.2
-
-    while left_index < maxL and column_no_black_count[left_index]/(column_no_black_count[maxL]+1) < l_threshold:
+    l_threshold = 0.05 if "D" in key else 0.25
+    r_threshold = 0.25
+    # while left_index > maxL or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[maxL+100]) < l_threshold:
+    #     left_index += 1
+    l_limit=700
+    while True:
+        if left_index > maxL:
+            break
+        if column_no_black_count[left_index] > l_limit:
+            break
         left_index += 1
 
+
     # 从右侧找到第一个非黑色列
-    while right_index > maxR and column_no_black_count[right_index]/(column_no_black_count[maxR]+1) < r_threshold:
+    # while right_index < maxR and column_no_black_count[right_index]>5*255: #/(column_no_black_count[maxR-100]) < r_threshold:
+    #     right_index -= 1
+    r_limit=10 if "D" in key else 700
+    while True:
+        if right_index<minR:
+            break
+        if column_no_black_count[right_index] > r_limit:
+            break
         right_index -= 1
 
+    # print(f"{key} {maxL} {maxR} left_index {left_index}  right_index {w-right_index}")
+    # showImage(image)
     # 保存裁剪后的图像
     if "D" in key:
-        x = left_index-15
+        x = left_index
     else:
-        x = left_index+5
-    r = right_index-5
-    return [x,0,r-x,h]
+        x = left_index+50
+
+    if "D" in key:
+        width = right_index-x
+    else:
+        width = right_index-x -50
+
+    return [x,0,width,h]
 
 
 def cropImage(image, cropLeft, cropRight):
@@ -113,9 +134,9 @@ def cropImage(image, cropLeft, cropRight):
 def horizontal_projection_first_nonzero(mask):
     if isinstance(mask, Image.Image):
         mask = np.array(mask)
-    height = mask.shape[0]
+    # height = mask.shape[0]
     # 使用np.argmax找到第一个非零值的索引
-    non_zero_indices = np.argmax(mask > 100, axis=0)
+    non_zero_indices = np.argmax(mask > 150, axis=0)
     # 处理整列都是零的情况
     # non_zero_indices[np.all(mask == 0, axis=0)] = height
     return non_zero_indices
@@ -142,22 +163,26 @@ def getDiff(abs_diff, num=0):
 
 def find_cross_points(projections):
     cross_points = []
+    # print("projections")
+    # print(projections)
+    # input()
     for i in range(1, len(projections)):
         l_ = projections[i - 1]
         r_ = projections[i]
+        l_len = len(l_)
         abs_diff_l_r = np.abs(l_ - r_[0])
         f_l_List = getDiff(abs_diff_l_r, 0)
         if f_l_List:
             f_l_index = f_l_List[-1]
         else:
-            f_l_index = len(l_)
+            f_l_index = l_len
         abs_diff_r_l = np.abs(r_ - l_[-1])
         f_r_list = getDiff(abs_diff_r_l, 0)
         if f_r_list:
             f_r_index = f_r_list[0]
         else:
             f_r_index = 0
-        cross_points.append((int(f_l_index), int(f_r_index)))
+        cross_points.append((int(l_len-f_l_index), int(f_r_index)))
     return cross_points
 
 

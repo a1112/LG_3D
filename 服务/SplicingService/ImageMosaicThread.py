@@ -18,9 +18,10 @@ from CoilDataBase import tool as CoilDataBaseTool
 from utils.Log import logger
 from alg import detection as cv_detection
 
+import Globs
+
 class ImageMosaicThread(Thread):
     """
-
     """
     def __init__(self,managerQueue):
         super().__init__()
@@ -97,7 +98,6 @@ class ImageMosaicThread(Thread):
                     print(f"算法检测时间 {defectionTime3-defectionTime2}")
                     print(f"完整检测时间 {defectionTime3 - defectionTime1}")
                     if self.saveDataBase:
-                        print("saveDataBase")
                         Coil.addCoil({
                             "SecondaryCoilId": secondaryCoil.Id,
                             "DefectCountS": 0,
@@ -109,7 +109,7 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        sleepTime=60
+                        sleepTime=20
                         print(f"loc model sleep {sleepTime}")
                         "避免性能问题"
                         time.sleep(sleepTime)
@@ -128,7 +128,7 @@ class ImageMosaicThread(Thread):
     def addMsg(self,msg,level=logging.DEBUG):
         self.reDetectionSet.add( {
             "Base":"ImageMosaicThread",
-            "time":datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "time":datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
             "msg":msg,
             "level":logging.getLevelName(level),
         })

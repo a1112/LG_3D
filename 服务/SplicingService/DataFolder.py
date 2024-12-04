@@ -11,31 +11,28 @@ from PIL import Image
 # from queue import Queue as ThreadQueue
 
 from CONFIG import serverConfigProperty, isLoc
+from SplicingService.DataFolderLog import DataFolderLog
 from tools.Glob import cmdThread
 
 from tools import tool
+from tools.data3dTool import auto_data_leveling_3d
 
 from utils import Log
 import Globs
 logger = Log.logger
 
 
+
+
 class DataFolder(Globs.control.BaseDataFolder):
     def __init__(self, fd):
         super().__init__()
+        self.coilAreaModel = None
         self.saveMaskFolder = None
         self.saveMask = None
         self.imageMosaicList = None
         fd=json.loads(fd)
         folderConfig,saveFolder,direction = fd
-        #
-        # # self.managerQueue=managerQueue
-        # if issubclass(Globs.control.BaseDataFolder, Process):
-        #     self.producer = MulQueue()  # 生产者
-        #     self.consumer = MulQueue()  # 消费者
-        # else:
-        #     self.producer = ThreadQueue()
-        #     self.consumer = ThreadQueue()
         self.direction =direction# "L"
         self.saveFolder = Path(saveFolder)
         self.folderConfig = folderConfig
@@ -125,6 +122,9 @@ class DataFolder(Globs.control.BaseDataFolder):
         npy = np.vstack(npyList)
         if rec:
             npy = npy[:, rec[0]:rec[0] + rec[2]]
+
+        auto_data_leveling_3d()
+
         return npy
 
     def hasData(self, coilId):
@@ -150,8 +150,9 @@ class DataFolder(Globs.control.BaseDataFolder):
         self.coilAreaModel = CoilAreaModel()
         while True:
             coilId = self.producer.get()
-            logger.info(f"DataFolder {coilId} start")
+            # logger.info(f"DataFolder {coilId} start")
             data = {}
+            dataFolderLog = DataFolderLog(self)
             try:
                 jsonDatas, stemList = self.loadJson(coilId)
                 image2D, imageMask, rec, steelRec = self.load2D(coilId, stemList)
@@ -160,8 +161,6 @@ class DataFolder(Globs.control.BaseDataFolder):
                 data["2D"] = image2D
                 data["rec"] = steelRec
                 data["MASK"] = imageMask
-
-
                 data["3D"] = cv2.bitwise_and(image3D, image3D, mask=imageMask)
                 data["3D"] = image3D
                 self.mkLink(coilId)

@@ -7,7 +7,7 @@ function get_zValue(){
                        p_x,
                        p_y,
                        (result)=>{
-                           z_mm = (result*surfaceData.scan3dScaleZ-dataShowCore.medianZ).toFixed(2)
+                           z_value = result*1.0
                        },
                        (error)=>{
                            console.log("get_zValueData error:",error)
@@ -15,7 +15,7 @@ function get_zValue(){
                     )
 }
 
-property real z_mm:0
+property real z_value:0
 x:dataShowCore.toPx(p_x)-4
 y:dataShowCore.toPx(p_y)-4
 width: 8
@@ -33,7 +33,7 @@ anchors.right: parent.left
 anchors.top: parent.bottom
 anchors.horizontalCenterOffset:15
 anchors.verticalCenterOffset:15
-text:z_mm
+text:surfaceData.i_to_info(z_value)
 }
 Component.onCompleted:get_zValue()
 }

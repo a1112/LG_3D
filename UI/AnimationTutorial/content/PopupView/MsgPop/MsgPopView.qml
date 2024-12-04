@@ -128,12 +128,26 @@ Menu {
                                  var cData = coilStateData[i]
                                  var msg_item= msg_l
                                  // console.log("getCoilState result",cData["surface"])
+                                 console.log("cData[median_3d_mm].toFixed(2)")
+                                 console.log(cData["median_3d_mm"].toFixed(2))
                                  if (cData["surface"]==="S")
                                      {
-                                    msg_item= msg_s
+                                        msg_item= msg_s
+                                     coreModel.surfaceS.medianZ=cData["median_3d_mm"].toFixed(2)
+                                     coreModel.surfaceS.medianZInt=cData["median_3d"].toFixed(2)
+
+                                    }
+                                    else
+                                 {
+                                    coreModel.surfaceL.medianZ=cData["median_3d_mm"].toFixed(2)
+                                    coreModel.surfaceL.medianZInt=cData["median_3d"].toFixed(2)
                                  }
+
                                 let model=msg_item.model
-                                msg_item.model.clear()
+                                 msg_item.model.clear()
+
+
+
                                  model.append({
                                                   key: "标定X",
                                                   value: cData["scan3dCoordinateScaleX"].toFixed(4)+""

@@ -174,8 +174,19 @@ class DataIntegration:
     def height(self):
         return self.npyData.shape[0]
 
+    def x_to_mm(self,x_value):
+        return x_value*self.scan3dCoordinateScaleX
+
     def z_to_mm(self,z_value):
         return float((z_value-self.median_non_zero)*self.scan3dCoordinateScaleZ)
+
+    def zero_mm(self):
+        return self.z_to_mm(0)
+
+    def point_to_mm(self,arr):
+        arr=arr.copy()
+        arr[:, 2] = (arr[:, 2] - self.median_non_zero) * self.scan3dCoordinateScaleZ
+        return arr
 
     def get_save_url(self,*args):
         return Path(self.saveFolder, str(self.coilId),*args)
@@ -212,7 +223,8 @@ class DataIntegration:
             # 创建一个新的矩阵，应用条件变换
             # transformed_matrix = np.where(matrix < n, matrix, 2 * a - matrix)
             self.npyData = np.where(self.npyData < max(self.__median_non_zero__-300//self.scan3dCoordinateScaleZ,10), np.zeros(self.npyData.shape), 2 * self.__median_non_zero__ - self.npyData)
-
+            self.set("median_3d", self.__median_non_zero__)
+            self.set("median_3d_mm", self.median_3d_mm)
         return self.__median_non_zero__
 
     @property
@@ -295,8 +307,10 @@ class DataIntegration:
 
     def commit(self):
         # 数据提交
-        # dictData=self.dictData
-        # dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
+        print("commit")
+        print(self.dictData.get("median_3d"))
+        dictData=self.dictData
+        dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
             surface=self.key,
@@ -320,8 +334,8 @@ class DataIntegration:
             upperArea_percent=self.dictData.get("upperArea_percent"),
             mask_area=self.dictData.get("mask_area"),
             width=self.dictData.get("width"),
-            height=self.dictData.get("height")
-            # jsonData=str(json.dumps(dictData)),
+            height=self.dictData.get("height"),
+            jsonData=str(json.dumps(dictData))
         ))
 
     def addServerDetectionError(self,errorMsg,errorType="ServerDetectionError"):

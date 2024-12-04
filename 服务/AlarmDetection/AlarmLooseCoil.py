@@ -2,6 +2,27 @@ from property.Base import DataIntegration, DataIntegrationList
 from CoilDataBase import Alarm
 from property.Data3D import LineData
 
+import numpy as np
+
+
+# Function to group consecutive rows
+def group_consecutive(arr):
+    groups = []
+    current_group = [arr[0]] if arr.size > 0 else []
+
+    for i in range(1, len(arr)):
+        if arr[i, 0] == arr[i - 1, 0] + 1:  # Check if consecutive
+            current_group.append(arr[i])
+        else:
+            groups.append(np.array(current_group))
+            current_group = [arr[i]]
+
+    if current_group:
+
+        groups.append(np.array(current_group))  # Append the last group
+
+    return groups
+
 
 class AlarmLooseData:
     def __init__(self,lineDatas):
@@ -18,8 +39,21 @@ class AlarmLooseData:
             lineData2=self.lineDataDicts[rotate][1]
             lineData1:LineData
             lineData2:LineData
-            print(lineData1.ray_line)
-            input()
+            ray1=lineData1.ray_line_mm
+            ray2=lineData2.ray_line_mm
+            # print(lineData1.zero_mm)
+            # print(ray1.shape)
+            # print(ray2.shape)
+            # print(ray1)
+            lineData1.none_data_sub
+            lineData2.none_data_sub
+            # print(lineData1.none_data_sub)
+            # print(lineData2.none_data_sub)
+            # # grouped_subsegments = group_consecutive(subsegment)
+            # # oldHasdata = False
+            # # for index,point in enumerate(ray1):
+            # #     hasData=lineData1.mmNoneData(point[2])
+            # input()
 
 
 def addAlarmLooseCoil(alarmloose):

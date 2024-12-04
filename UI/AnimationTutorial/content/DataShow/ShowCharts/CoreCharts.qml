@@ -5,10 +5,10 @@ Item {
 
     property real tickSizeZ: 12
     property int tickCountZ: drawHeight/20
-    property real medianZ: dataShowCore.medianZ
-    onMedianZChanged:{
-        surfaceData.medianZ = medianZ
-    }
+    readonly property real medianZ: dataShowCore.medianZ
+    // onMedianZChanged:{
+    //     surfaceData.medianZ = medianZ
+    // }
 
 
     property real offsetZ: 0

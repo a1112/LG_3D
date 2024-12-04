@@ -113,3 +113,11 @@ def getLengthDataByRotate(npy_data, mask_image, p1, rotate,ray=False):
 def getLengthData(npy_data, mask_image, p1, p2,ray=False):
     return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
 
+
+def auto_data_leveling_3d():
+    """
+    自动数据配平
+    Returns:
+
+    """
+    pass

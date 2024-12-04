@@ -16,15 +16,7 @@ DataShowBackground {
 
     SplitView{
         anchors.fill: parent
-        DataShowView{
-            dataShowCore : DataShowCore{
-                surfaceData:coreModel.surfaceL
-                binds:control.lockControl?binds_base:binds_l
-            }
-            id: dataShowView_L
-            surfaceData:coreModel.surfaceL
-            SplitView.preferredWidth : root.is_half?root.viewWidth_half:root.viewWidth
-        }
+
         DataShowView{
             id: dataShowView_R
             dataShowCore : DataShowCore{
@@ -34,6 +26,17 @@ DataShowBackground {
             surfaceData:coreModel.surfaceS
             SplitView.preferredWidth: root.is_half?root.viewWidth_half:root.viewWidth
         }
+
+        DataShowView{
+            dataShowCore : DataShowCore{
+                surfaceData:coreModel.surfaceL
+                binds:control.lockControl?binds_base:binds_l
+            }
+            id: dataShowView_L
+            surfaceData:coreModel.surfaceL
+            SplitView.preferredWidth : root.is_half?root.viewWidth_half:root.viewWidth
+        }
+
     }
 
 }

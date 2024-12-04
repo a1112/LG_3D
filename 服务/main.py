@@ -4,14 +4,14 @@ import uvicorn
 
 import Globs
 from utils.GlobalSignalHandling import GlobalSignalHandling
-from CONFIG import serverApiPort
+from CONFIG import serverApiPort, isLoc
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
 
-# if isLoc:
-#     from CoilDataBase.Coil import deleteCoil
-#     deleteCoil(23000)
+if isLoc:
+    from CoilDataBase.Coil import deleteCoil
+    deleteCoil(23000)
 
 
 if __name__ == '__main__':

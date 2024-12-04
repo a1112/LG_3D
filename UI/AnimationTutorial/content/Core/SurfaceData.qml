@@ -7,10 +7,21 @@ Item {
     readonly property bool is3DrootView:rootViewIndex==1
 
 
-    property real scan3dScaleZ: 0.016229506582021713
-    property real scan3dScaleX: 0.33693358302116394
-    property real scan3dScaleY: 0.33693358302116394
+    readonly property real scan3dScaleZ: 0.016229506582021713
+    readonly property real scan3dScaleX: 0.33693358302116394
+    readonly property real scan3dScaleY: 0.33693358302116394
+    property real medianZInt: 0
     property real medianZ: 0.0
+
+    function i_to_info(value){
+        if(value<0.01)
+            return "-inf"
+        return ""+iz_to_mm(value)
+    }
+
+    function iz_to_mm(value){
+        return ((value-medianZInt)*scan3dScaleZ).toFixed(2)
+    }
 
     function getZValue(z){
         return ((z*scan3dScaleZ).toFixed(2)-medianZ)
@@ -140,7 +151,7 @@ Item {
 
     property CoilModel currentCoilModel
 
-    function setCoilId(coilId_,type_="JET"){
+    function setCoilId(coilId_,type_="GRAY"){
         coilId = coilId_
         source = getSource(coilId_,type_,false)
         viewDataModel.clear()

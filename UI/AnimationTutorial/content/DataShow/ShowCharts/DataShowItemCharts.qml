@@ -15,6 +15,8 @@ Item{
     property CoreCharts coreCharts : CoreCharts{
     }
     function findZValue(arr, n) {
+        if (arr===undefined) return
+
       let left = 0;
       let right = arr.length - 2;
       while (left <= right) {
@@ -84,7 +86,7 @@ Item{
 
     function drawMedianLine(){
         medianLine.clear()
-        dataShowCore.medianZ = lineData[0].median*surfaceData.scan3dScaleZ
+        // dataShowCore.medianZ = lineData[0].median*surfaceData.scan3dScaleZ
         medianLine.append(-20000, 0)
         medianLine.append(20000, 0)
         drawWr()

@@ -89,6 +89,8 @@ class LineData:
     """
 
     def __init__(self, npy_data,mask_image,p1, p2):
+        self._zero_mm_ = None
+        self._ray_line_mm_ = None
         self._ray_line_ = None
         self._ray_data_ = None
         self.rotation_angle = None
@@ -118,6 +120,15 @@ class LineData:
         return self._ray_data_
 
     @property
+    def zero_mm(self):
+        if self._zero_mm_ is None:
+            self._zero_mm_ = self.dataIntegration.zero_mm()
+        return self._zero_mm_
+
+    def mmNoneData(self,mmValue):
+        return mmValue<self.zero_mm+10
+
+    @property
     def ray_line(self):
         if self._ray_line_ is None:
             arr=self.ray_data
@@ -128,12 +139,57 @@ class LineData:
             self._ray_line_ = arr[start_index:end_index]
         return self._ray_line_
 
+    @property
+    def ray_line_mm(self):
+        if self._ray_line_mm_ is None:
+            self._ray_line_mm_ = self.dataIntegration.point_to_mm(self.ray_line)
+        return self._ray_line_mm_
     def get_edge_point(self):
         """
         获取与图像边缘相交的两个点
         """
         h, w = self.mask_image.shape
         return get_intersection_points(self.p1, self.p2, w, h)
+
+    @property
+    def count(self):
+        return len(self.ray_line)
+
+    @property
+    def length(self):
+        ray_line=self.ray_line
+        p_start=ray_line[0]
+        p_end=ray_line[-1]
+        return np.sqrt((p_start[0]-p_end[0])**2+(p_start[1]-p_end[1])**2)
+    @property
+    def length_mm(self):
+        return self.dataIntegration.x_to_mm(self.length)
+
+    @property
+    def unit_distance_mm(self):
+        return self.length_mm/self.count
+
+
+    @property
+    def none_data_sub(self):
+        indices = np.where(self.ray_line_mm[:, 2] < self.zero_mm + 10)[0]
+        segments = []
+        unit_distance_mm = self.unit_distance_mm
+        if len(indices) > 0:
+            # Start with the first segment
+            start = indices[0]
+            length = 1
+
+            for i in range(1, len(indices)):
+                if indices[i] == indices[i - 1] + 1:
+                    length += 1
+                else:
+                    segments.append((int(start), int(length),float(start*unit_distance_mm),float(length*unit_distance_mm)))  # End the current segment
+                    start = indices[i]
+                    length = 1
+            segments.append((int(start), int(length),float(start*unit_distance_mm),float(length*unit_distance_mm)))
+
+        return segments
 
     def point_hasData(self,point):
         return point>self.image_threshold

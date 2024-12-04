@@ -4,8 +4,10 @@ import time
 import cv2
 import numpy as np
 
+from property import Point2D
 from property.Data3D import LineData
 from tools.DataGet import DataGet
+from tools.data3dTool import getLengthData
 from .api_core import app
 from fastapi.responses import StreamingResponse
 from PIL import Image
@@ -21,9 +23,10 @@ async def getHeightData(surfaceKey, coil_id: str, x1: int = 0, y1: int = 0, x2: 
     mask_image = np.array(mask_image)
     if not y2 and not x2:
         x2, y2 = x1 + 10, y1
-    lineData = LineData(npy_data, mask_image, (x1, y1), (x2, y2))
+    lineData = LineData(npy_data, mask_image, Point2D(x1, y1), Point2D(x2, y2))
     # lenData = getLengthData(npy_data, mask_image, (x1, y1), (x2, y2))
-    return lineData.mask_image_line_points()
+    return lineData.all_image_line_points().tolist()
+    # return lineData
 
 
 @app.get("/coilData/heightPoint/{surfaceKey:str}/{coil_id:str}")

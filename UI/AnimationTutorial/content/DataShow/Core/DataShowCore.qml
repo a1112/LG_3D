@@ -181,12 +181,13 @@ DataShowCore_ {
         errorDrawerTimer.restart()
     }
 
-    property int medianZ:0
+    property int medianZInt:surfaceData.medianZInt
     property int rangeZ: 20
     property real renderScale: 1
     property bool autoRender: false
 
-    property int medianZValue: parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
+    readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
+    readonly property real medianZ: surfaceData.medianZ
     property var defectsData: []
     onDefectsDataChanged: {
         if(defectsData.length>0){
