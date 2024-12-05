@@ -12,14 +12,14 @@ from tools.tool import get_intersection_points
 
 def extract_segment_values(npy_data, mask_image, p1, p2):
     # 使用 Bresenham's line algorithm 获取 p1 和 p2 之间的所有点
-    lineData = LineData(npy_data,mask_image,p1, p2)
-    h,w = mask_image.shape
+    lineData = LineData(npy_data, mask_image, p1, p2)
+    h, w = mask_image.shape
 
-    p1,p2 = get_intersection_points(p1, p2, w, h)
-    p1 = [int(p1[0]),int(p1[1])]
-    p2 = [int(p2[0]),int(p2[1])]
+    p1, p2 = get_intersection_points(p1, p2, w, h)
+    p1 = [int(p1[0]), int(p1[1])]
+    p2 = [int(p2[0]), int(p2[1])]
     rr, cc = line(p1[0], p1[1], p2[0], p2[1])
-    print(rr,cc)
+    print(rr, cc)
     return lineData
     # 找到 mask_image 的边界
     # boundaries = find_boundaries(mask_image, mode='inner')
@@ -35,12 +35,12 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     mask_image[cc[0], rr[0]] = 0
     mask_image[cc[-1], rr[-1]] = 0
     hasSteel = False
-    for r,z in zip(rr,cc):
-        if mask_image[z,r] > 100 and not hasSteel:
+    for r, z in zip(rr, cc):
+        if mask_image[z, r] > 100 and not hasSteel:
             intersection_rr.append(r)
             intersection_cc.append(z)
             hasSteel = True
-        elif mask_image[z,r] < 100 and hasSteel:
+        elif mask_image[z, r] < 100 and hasSteel:
             intersection_rr.append(r)
             intersection_cc.append(z)
             hasSteel = False
@@ -55,9 +55,9 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
         # 使用 Bresenham's line algorithm 获取 pl 和 pr 之间的所有点
         segment_rr, segment_cc = line(pl[0], pl[1], pr[0], pr[1])
         # 从 npy 数据中提取这些点对应的值
-        segment_values = npy_data[segment_cc,segment_rr]
+        segment_values = npy_data[segment_cc, segment_rr]
         # 将这些点的坐标和对应的值组合在一起
-        segment_points = list(zip(list(segment_rr.tolist()), list(segment_cc.tolist()),list(segment_values.tolist())))
+        segment_points = list(zip(list(segment_rr.tolist()), list(segment_cc.tolist()), list(segment_values.tolist())))
         if len(segment_points) > 100:
             lines.append({
                 "len": len(segment_points),
@@ -90,6 +90,7 @@ def getP2ByRotate(p1, rotate, length=1000):
     # 创建并返回新点
     return Point2D(x2, y2)
 
+
 def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
     p1 = Point2D(int(p1[0]), int(p1[1]))
     p2 = Point2D(int(p2[0]), int(p2[1]))
@@ -105,16 +106,19 @@ def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
 
     return lineData
 
-def getLengthDataByRotate(npy_data, mask_image, p1, rotate,ray=False):
-    rotate=np.pi/180*rotate
-    p2 = getP2ByRotate(p1,rotate)
-    return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
 
-def getLengthData(npy_data, mask_image, p1, p2,ray=False):
-    return getLengthDataByPoints(npy_data, mask_image, p1, p2,ray)
+def getLengthDataByRotate(npy_data, mask_image, p1, rotate, ray=False):
+    rotate = np.pi / 180 * rotate
+    p2 = getP2ByRotate(p1, rotate)
+    return getLengthDataByPoints(npy_data, mask_image, p1, p2, ray)
 
 
-def auto_data_leveling_3d():
+def getLengthData(npy_data, mask_image, p1, p2, ray=False):
+    return getLengthDataByPoints(npy_data, mask_image, p1, p2, ray)
+
+
+
+def auto_data_leveling_3d(data3D):
     """
     自动数据配平
     Returns:

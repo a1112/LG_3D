@@ -19,9 +19,8 @@ from tools.data3dTool import auto_data_leveling_3d
 
 from utils import Log
 import Globs
+
 logger = Log.logger
-
-
 
 
 class DataFolder(Globs.control.BaseDataFolder):
@@ -31,9 +30,9 @@ class DataFolder(Globs.control.BaseDataFolder):
         self.saveMaskFolder = None
         self.saveMask = None
         self.imageMosaicList = None
-        fd=json.loads(fd)
-        folderConfig,saveFolder,direction = fd
-        self.direction =direction# "L"
+        fd = json.loads(fd)
+        folderConfig, saveFolder, direction = fd
+        self.direction = direction  # "L"
         self.saveFolder = Path(saveFolder)
         self.folderConfig = folderConfig
         self.source = Path(folderConfig["source"])
@@ -43,8 +42,8 @@ class DataFolder(Globs.control.BaseDataFolder):
 
         self.start()
 
-    def checkDetectionEnd(self,coilId):
-        return self.staticCheckDetectionEnd(self.source,coilId)
+    def checkDetectionEnd(self, coilId):
+        return self.staticCheckDetectionEnd(self.source, coilId)
 
     @staticmethod
     def staticCheckDetectionEnd(source, coilId):
@@ -122,17 +121,14 @@ class DataFolder(Globs.control.BaseDataFolder):
         npy = np.vstack(npyList)
         if rec:
             npy = npy[:, rec[0]:rec[0] + rec[2]]
-
-        auto_data_leveling_3d()
-
         return npy
 
     def hasData(self, coilId):
         return self.staticHasData(self.source, coilId)
 
     @staticmethod
-    def staticHasData(source,coilId):
-        source=Path(source)
+    def staticHasData(source, coilId):
+        source = Path(source)
         exists = (source / coilId).exists()
         if not exists:
             logger.error(f"DataFolder {coilId} does not exist.  {source / coilId}")
@@ -145,7 +141,6 @@ class DataFolder(Globs.control.BaseDataFolder):
             self.saveMaskFolder = self.source.parent / "SaveMask" / self.folderName
             self.saveMaskFolder.mkdir(parents=True, exist_ok=True)
 
-
         from alg.CoilMaskModel import CoilAreaModel
         self.coilAreaModel = CoilAreaModel()
         while True:
@@ -156,13 +151,16 @@ class DataFolder(Globs.control.BaseDataFolder):
             try:
                 jsonDatas, stemList = self.loadJson(coilId)
                 image2D, imageMask, rec, steelRec = self.load2D(coilId, stemList)
-                image3D = self.load3D(coilId, rec, stemList, jsonDatas)
+                data3D = self.load3D(coilId, rec, stemList, jsonDatas)
                 data["json"] = jsonDatas
                 data["2D"] = image2D
                 data["rec"] = steelRec
                 data["MASK"] = imageMask
-                data["3D"] = cv2.bitwise_and(image3D, image3D, mask=imageMask)
-                data["3D"] = image3D
+
+                data3D = cv2.bitwise_and(data3D, data3D, mask=imageMask)
+                data3D = auto_data_leveling_3d(data3D)
+                data["3D"] = data3D
+
                 self.mkLink(coilId)
                 if self.saveMask:
                     Image.fromarray(image2D).save(self.saveMaskFolder / f"{coilId}_{self.folderName}_GRAY.png")
