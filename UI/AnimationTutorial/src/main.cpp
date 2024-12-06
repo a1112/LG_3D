@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         // 仅在 Windows 系统上启用控制台
     std::string computerName = getComputerName();
     std::vector <std::string> args {"DESKTOP-94ADH1G"};
-    if (std::find(args.begin(), args.end(), computerName) == args.end()) {
+    if (std::find(args.begin(), args.end(), computerName) != args.end()) {
         AllocConsole();
         freopen("CONOUT$", "w", stdout);
         freopen("CONOUT$", "w", stderr);
