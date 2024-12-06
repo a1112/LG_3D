@@ -6,8 +6,17 @@ import "../../Header"
 ColumnLayout {
     height: 35
     spacing: 5
-    DateTimeSelectItem{
-        title_:"起始日期:"
+    // DateTimeSelectItem{
+    //     title_:"起始日期:"
+    //     id:fromDateSelect
+    //     dateTime_:DateTime{
+    //         hour:0
+    //         minute:0
+    //         second:0
+    //     }
+    // }
+    DateTimeSelectLineItem{
+        title_:"起始:"
         id:fromDateSelect
         dateTime_:DateTime{
             hour:0
@@ -15,16 +24,23 @@ ColumnLayout {
             second:0
         }
     }
-    Rectangle{
-        Layout.fillWidth: true
-        implicitHeight: 2
-    }
-    DateTimeSelectItem{
-        title_:"结束日期:"
+
+    // Rectangle{
+    //     Layout.fillWidth: true
+    //     implicitHeight: 2
+    // }
+    DateTimeSelectLineItem{
+        title_:"结束:"
         id:toDateSelect
         dateTime_:DateTime{
         }
     }
+    // DateTimeSelectItem{
+    //     title_:"结束日期:"
+    //     id:toDateSelect
+    //     dateTime_:DateTime{
+    //     }
+    // }
     RowLayout{
         implicitHeight: 30
         Layout.fillWidth: true

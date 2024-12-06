@@ -28,6 +28,7 @@ CardBase{
 
     content_body:
         SwipeView{
+        clip: true
         Layout.fillWidth: true
         Layout.fillHeight: true
         currentIndex: leftCore.searchPageIndex
@@ -36,7 +37,7 @@ CardBase{
 
         onCurrentIndexChanged: {
             leftCore.searchPageIndex = currentIndex
-            max_height = [95,225,95][currentIndex]
+            max_height = [95,120,95][currentIndex]
         }
 
         SearchByCoilNo {
