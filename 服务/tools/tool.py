@@ -199,8 +199,7 @@ def crop_black_border(gray):
     return x, y, w, h
 
 
-def hstack3D(npyList,n_=100,num=10):
-
+def hstack3D(npyList,n_=100,num=10, joinMaskImage=None):
     def nZeeroIndexes(array,n, minValue=0):
         indices = []
         for i in range(len(array)//n):
@@ -227,6 +226,7 @@ def hstack3D(npyList,n_=100,num=10):
             npyList[index] = npyList[index]-meanR+meanL
         else:
             pass
+
     return np.hstack(npyList)
 
 

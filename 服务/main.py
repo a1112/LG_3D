@@ -11,7 +11,7 @@ from CONFIG import serverApiPort, isLoc
 
 if isLoc:
     from CoilDataBase.Coil import deleteCoil
-    deleteCoil(23000)
+    deleteCoil(23006)
 
 
 if __name__ == '__main__':

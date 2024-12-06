@@ -42,7 +42,7 @@ def find_line_max_min(line,noneDataValue,useIQR=True,type_=None):
     # plt.grid(True)
     # plt.show()
     # 获取前n个最大值的索引
-    n = 50   # 你可以选择n的值
+    n = 100   # 你可以选择n的值
     max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
     # 获取前n个最小值的索引
     min_indices = np.argsort(values)[:n]  # 排序并获取最小值的前n个索引

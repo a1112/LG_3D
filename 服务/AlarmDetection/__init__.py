@@ -1,6 +1,3 @@
-from typing import List
-
-from CoilDataBase import Alarm
 from property.Base import DataIntegration, DataIntegrationList
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 
@@ -15,10 +12,8 @@ def detection(dataIntegration:DataIntegration):
       检测的入口 old
     Args:
         dataIntegration:
-        data:
     Returns:
     """
-
     #  提交松卷数据
     _detectionAlarmFlatRoll_(dataIntegration)   # 扁卷检测
     _detectionTaperShape_(dataIntegration)      # 塔形检测
@@ -37,7 +32,7 @@ def detectionAll(dataIntegrationList:DataIntegrationList):
     _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
     _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测
-    # gradingAll(dataIntegrationList)
+    gradingAll(dataIntegrationList)
 
     # for dataIntegration in dataIntegrationList:
     #

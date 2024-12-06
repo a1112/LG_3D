@@ -102,6 +102,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         start = dataIntegration.median_non_zero + serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
         self._save_(dataIntegration.npyData, self.saveFolder / coilId / "3D.npy")
+
+
         step = serverConfigProperty.colorToValue_mm // dataIntegration.scan3dCoordinateScaleZ - serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
         dataIntegration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
         dataIntegration.set("colorToValue_mm", serverConfigProperty.colorToValue_mm)
@@ -112,6 +114,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         npy__ =  dataIntegration.npyData.copy()
         non_zero_elements = npy__[npy__ != 0]
         a, b = start, start + step
+
         # 将图像裁剪到指定的范围 [a, b]
         depth_map_clipped = np.clip(npy__, a, b)
         # 将裁剪后的图像缩放到 [0, 255] 的范围
@@ -123,6 +126,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 continue
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
             depth_map_color[mask_zero] = [0, 0, 0]  # [0, 0, 0] 表示黑色
+
+            tool.showImage(depth_map_color) # 显示
+
             image = Image.fromarray(depth_map_color)
             self._save_image_(dataIntegration,image,name)
             self.colorImageDict[name] = image
@@ -172,7 +178,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 if data["rec"][1] + data["rec"][3] > maxH:
                     maxH = data["rec"][1] + data["rec"][3]
         for data in datas:# 裁剪，减低计算
-            for key in getAllKey():
+            for key in ["2D","MASK","3D"]:
                 data[key] = data[key][minH:maxH, :]
         horizontalProjectionList = tool.getHorizontalProjectionList([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontalProjectionList)
@@ -213,7 +219,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         # tool.showImage(joinImage,"joinImage")
         # tool.showImage(joinMaskImage,"joinImage_mask")
         # npyData = np.hstack([data["3D"] for data in datas])
-        npyData = tool.hstack3D([data["3D"] for data in datas])
+
+        npyData = tool.hstack3D([data["3D"] for data in datas],joinMaskImage=joinMaskImage)
 
         if self.rotate == 90:
             joinImage = np.rot90(joinImage,1)
@@ -245,9 +252,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         dataIntegration.set("width", int(w))
         dataIntegration.set("height", int(h))
         dataIntegration.set("circleConfig", circleConfig)
-        if self.x_rotate:   # x、旋转
-            npyData = tool.rotate_around_x_axis(npyData, self.x_rotate)
-            dataIntegration.set("x_rotate", self.x_rotate)
+        # if self.x_rotate:   # x、旋转
+        #     npyData = tool.rotate_around_x_axis(npyData, self.x_rotate)
+        #     dataIntegration.set("x_rotate", self.x_rotate)
 
         dataIntegration.npyData = npyData
         dataIntegration.joinImage = joinImage

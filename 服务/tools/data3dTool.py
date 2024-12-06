@@ -124,4 +124,4 @@ def auto_data_leveling_3d(data3D):
     Returns:
 
     """
-    pass
+    return data3D
