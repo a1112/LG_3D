@@ -12,10 +12,7 @@ import "DateTimeSelectPop"
         height: 20
         property string title_:""
 
-        Item{
-            Layout.fillWidth: true
-            implicitHeight: 1
-        }
+
         Label{
             color:Material.color(Material.Blue)
             font.bold:true

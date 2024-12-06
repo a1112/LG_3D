@@ -38,6 +38,7 @@ Item {
     ColumnLayout{
         id:columnLayout
         width: parent.width
+        spacing: 5
         Item{
             Layout.alignment: Qt.AlignHCenter
             implicitHeight :title_row.height

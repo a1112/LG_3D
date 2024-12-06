@@ -14,7 +14,7 @@ Item {
             width:root.width
             SimpleValueAlarm{
                 width:col.width
-                title:"扁卷     :"
+                title:"扁       卷:"
                 value:coreAlarmInfo.coreFlatRoll.innerDiameter.toFixed(0)
                 height: 30
                 level: coreAlarmInfo.coreFlatRoll.alarmLevel
@@ -31,7 +31,7 @@ Item {
             SimpleValueAlarm{
                 width:col.width
                 height: 30
-                title:"内圈塔形 :"
+                title:"内圈塔形:"
                 value:coreAlarmInfo.coreTaperShape.innerTaper.toFixed(0)
                 toolTipText:"塔形 > 10 mm 3级报警  当前值："+coreAlarmInfo.coreTaperShape.innerTaper
                 level: value>75? 3 : 1
@@ -39,7 +39,7 @@ Item {
             SimpleValueAlarm{
                 width:col.width
                 height: 30
-                title:"松卷     :"
+                title:"松       卷:"
                 value:coreAlarmInfo.coreLooseCoil.max_width
                 toolTipText:"松卷最宽 > 25  mm 3级报警"
                 level: value>=10? 3 : 1

@@ -100,6 +100,7 @@ DataShowCore_ {
     property bool viewRendererMaxMinValue: false
     property bool viewDefectListView: true
 
+    property int checkRendererIndex:0
 
     property real minScale:Math.min(canvasHeight/sourceWidth,canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
     property real maxScale: 1.0 // 最大缩放比例

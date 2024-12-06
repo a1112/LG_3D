@@ -6,6 +6,10 @@ ColumnLayout {
     height: 35
     RowLayout {
         Label{
+            color:Material.color(Material.Blue)
+            font.bold:true
+            font.family: "Microsoft YaHei UI"
+            font.pointSize: 14
             text: "卷号:"
         }
         Item{

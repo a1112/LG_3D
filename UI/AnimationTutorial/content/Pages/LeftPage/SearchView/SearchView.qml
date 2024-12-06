@@ -37,7 +37,7 @@ CardBase{
 
         onCurrentIndexChanged: {
             leftCore.searchPageIndex = currentIndex
-            max_height = [95,120,95][currentIndex]
+            max_height = [95,130,95][currentIndex]
         }
 
         SearchByCoilNo {

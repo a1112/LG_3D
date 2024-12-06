@@ -8,6 +8,10 @@ ColumnLayout {
     RowLayout {
         Label{
             text: "流水号:"
+            color:Material.color(Material.Blue)
+            font.bold:true
+            font.family: "Microsoft YaHei UI"
+            font.pointSize: 14
         }
         Item{
             Layout.fillWidth: true

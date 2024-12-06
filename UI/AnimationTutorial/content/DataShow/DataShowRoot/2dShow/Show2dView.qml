@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Qt5Compat.GraphicalEffects
 import "../Aerial"
+import "ViewChang"
 
 import "../../Comps"
 import "Draw"
@@ -60,7 +61,8 @@ Item {
         source: dataShowCore.source
         y:root.height - height-scrollBarH.height
     }
-
+    ViewChangView{
+    }
     HoverHandler{
         id:hoverHandler
         onHoveredChanged: dataShowCore.imageShowHovered=hovered
