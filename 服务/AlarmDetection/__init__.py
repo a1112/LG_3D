@@ -32,7 +32,7 @@ def detectionAll(dataIntegrationList:DataIntegrationList):
     _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
     _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测
-    gradingAll(dataIntegrationList)
+    # gradingAll(dataIntegrationList)
 
     # for dataIntegration in dataIntegrationList:
     #

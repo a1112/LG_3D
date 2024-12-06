@@ -85,7 +85,7 @@ def crop_max_image_black_edges(key,image, starPos):
     r_threshold = 0.25
     # while left_index > maxL or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[maxL+100]) < l_threshold:
     #     left_index += 1
-    l_limit=700
+    l_limit=200
     while True:
         if left_index > maxL:
             break
@@ -97,7 +97,7 @@ def crop_max_image_black_edges(key,image, starPos):
     # 从右侧找到第一个非黑色列
     # while right_index < maxR and column_no_black_count[right_index]>5*255: #/(column_no_black_count[maxR-100]) < r_threshold:
     #     right_index -= 1
-    r_limit=10 if "D" in key else 700
+    r_limit=10 if "D" in key else 200
     while True:
         if right_index<minR:
             break
@@ -114,7 +114,7 @@ def crop_max_image_black_edges(key,image, starPos):
         x = left_index+50
 
     if "D" in key:
-        width = right_index-x
+        width = right_index-x+20
     else:
         width = right_index-x -50
 

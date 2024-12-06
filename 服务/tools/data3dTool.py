@@ -118,10 +118,83 @@ def getLengthData(npy_data, mask_image, p1, p2, ray=False):
 
 
 
-def auto_data_leveling_3d(data3D):
+def auto_data_leveling_3d(data, mask):
     """
     自动数据配平
     Returns:
 
     """
-    return data3D
+    dev_th = 100  # 去除z偏差超过这个范围的值
+    sample_inv = 100  # 采样间隔
+    h, w = data.shape[:2]
+    if mask is None:
+        mask = np.zeros(data.shape, np.uint8)
+        # 求模板,第一步,去除为0的
+        ind1 = np.argwhere(abs(data) >= 0.00001)
+        if min(ind1.shape) > 0:
+            mask[ind1[:, 0], ind1[:, 1]] = 1
+            temp_med = np.median(data[ind1[:, 0], ind1[:, 1]])
+        else:
+            temp_med = np.median(data)
+        # 求模板,第2步,去除偏离平面较大的
+        ind2 = np.argwhere(abs(data - temp_med) >= dev_th)
+        if min(ind2.shape) > 0:
+            mask[ind2[:, 0], ind2[:, 1]] = 0
+        # mask = get_max_contour(mask)
+    # 过滤干扰
+    # cv2.namedWindow("mask", 0)
+    # cv2.imshow("mask", mask*128)
+    # cv2.waitKey(0)
+    # 调平来去除旋转干扰, 限制一定范围
+    xx, yy, zz = [], [], []
+    for i in range(0, data.shape[0], sample_inv):
+        for j in range(0, data.shape[1], sample_inv):
+            if mask[i, j] > 0:
+                xx.append(j)
+                yy.append(i)
+                zz.append(data[i, j])
+    # 滤除可能的噪点
+    mean = np.mean(zz)
+    std = np.std(zz)
+    thres1 = mean + 0.5 * std
+    thres2 = mean - 0.5 * std
+    filterInd = [i for i in range(0, len(zz)) if thres2 < zz[i] < thres1]
+
+    xx = [xx[i] for i in filterInd]
+    yy = [yy[i] for i in filterInd]
+    zz = [zz[i] for i in filterInd]
+    #
+    xx, yy, zz = np.array(xx, np.float64), np.array(yy, np.float64), np.array(zz, np.float64)
+
+    A00, A11, A22 = np.sum(xx ** 2), np.sum(yy ** 2), zz.shape[0]
+    A01 = A10 = np.sum(xx * yy)
+    A02 = A20 = np.sum(xx)
+    A12 = A21 = np.sum(yy)
+    A = np.array([[A00, A01, A02],
+                  [A10, A11, A12],
+                  [A20, A21, A22]])
+    B00 = np.sum(xx * zz)
+    B10 = np.sum(yy * zz)
+    B20 = np.sum(zz)
+    B = np.array([[B00], [B10], [B20]])
+    A_inv = np.linalg.inv(A)
+    M = np.dot(A_inv, B)
+
+    bCountErr = True
+    if bCountErr is True:
+        R = 0
+        for i in range(0, zz.shape[0]):
+            R = R + (M[0, 0] * xx[i] + M[1, 0] * yy[i] + M[2, 0] - zz[i]) ** 2
+        print("平面拟合误差为：", R)
+    # 各数据点坐标到直线的距离
+    X = np.linspace(0, w, w)
+    X = X[np.newaxis, :]
+    X_New = np.repeat(X, h, axis=0)
+
+    Y = np.linspace(0, h, h)
+    Y = Y[:, np.newaxis]
+    Y_New = np.repeat(Y, w, axis=1)
+
+    Temp = (M[0, 0] * X_New + M[1, 0] * Y_New + M[2, 0])
+    res = data - Temp
+    return res
