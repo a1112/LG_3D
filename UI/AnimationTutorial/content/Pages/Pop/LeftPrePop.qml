@@ -14,14 +14,18 @@ Popup {
     x: left.width+20
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
 
-
+    Label{
+        text:"数据摘要"
+        anchors.left: parent.Left
+        color:Material.color(Material.Orange)
+    }
 
     Column{
         id:col
         spacing:10
 
         TitleLabel{
-            text: "数据摘要"
+            text:core.currentCoilModel.coilNo
             color:Material.color(Material.Blue)
             anchors.horizontalCenter:parent.horizontalCenter
             font.pointSize: 20
@@ -45,8 +49,10 @@ Popup {
             }
         }
     }
-
-
+    CoilInfo{
+        width:  col.width
+        height: 100
+    }
     TextArea{
         text:leftCore.leftMsg
 
