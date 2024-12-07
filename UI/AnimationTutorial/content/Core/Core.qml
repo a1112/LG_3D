@@ -9,11 +9,11 @@ Item {
     readonly property bool isLast:coilIndex==0
     property int coilIndex: 0
     onCoilIndexChanged: {
-                let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
+        let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
+
         if (c_data.SecondaryCoilId===currentCoilModel.coilId) {
             return
         }
-
         currentCoilModel.setCoil(c_data)
         if (currentCoilModel.coilStatus_L>=0) {
             coreModel.surfaceL.hasData = true

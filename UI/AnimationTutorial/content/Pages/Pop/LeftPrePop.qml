@@ -21,9 +21,10 @@ Popup {
         spacing:10
 
         TitleLabel{
-            text: "数据简要"
+            text: "数据摘要"
             color:Material.color(Material.Blue)
             anchors.horizontalCenter:parent.horizontalCenter
+            font.pointSize: 20
         }
 
         Row{

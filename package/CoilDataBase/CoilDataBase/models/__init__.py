@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKe
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 Base = declarative_base()
 
 
@@ -33,7 +34,7 @@ class SecondaryCoil(Base):
     childrenAlarmInfo = relationship("AlarmInfo", back_populates="parent")
     childrenPlcData = relationship("PlcData", back_populates="parent")
     childrenAlarmTaperShape = relationship("AlarmTaperShape", back_populates="parent")
-    childrenAlarmLooseCoil  = relationship("AlarmLooseCoil", back_populates="parent")
+    childrenAlarmLooseCoil = relationship("AlarmLooseCoil", back_populates="parent")
     childrenDetectionSpeed = relationship("DetectionSpeed", back_populates="parent")
     childrenServerDetectionError = relationship("ServerDetectionError", back_populates="parent")
 
@@ -43,6 +44,7 @@ class SecondaryCoil(Base):
     childrenPointData = relationship("PointData", back_populates="parent")
     childrenAlarmFlatRollData = relationship("AlarmFlatRollData", back_populates="parent")
 
+
 class Coil(Base):
     """
     检测数据
@@ -50,7 +52,7 @@ class Coil(Base):
     """
     __tablename__ = 'Coil'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    SecondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    SecondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     DetectionTime = Column(DateTime, server_default=func.now())
     DefectCountS = Column(Integer)
     DefectCountL = Column(Integer)
@@ -60,14 +62,14 @@ class Coil(Base):
     Grade = Column(Integer)
     Msg = Column(Text())
 
-    parent=relationship("SecondaryCoil", back_populates="childrenCoil")
+    parent = relationship("SecondaryCoil", back_populates="childrenCoil")
 
 
 class CoilState(Base):
     """状态数据"""
     __tablename__ = 'CoilState'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     startTime = Column(DateTime, server_default=func.now())
     scan3dCoordinateScaleX = Column(Float)
@@ -94,13 +96,14 @@ class CoilState(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenCoilState")
 
+
 class CoilDefect(Base):
     """
     缺陷数据
     """
     __tablename__ = 'CoilDefect'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     defectClass = Column(Integer)
     defectName = Column(String(10))
@@ -138,7 +141,7 @@ class PlcData(Base):
     """
     __tablename__ = 'PlcData'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     location_S = Column(Float)
     location_L = Column(Float)
     location_laser = Column(Float)
@@ -147,11 +150,12 @@ class PlcData(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenPlcData")
 
-class  CoilAlarmStatus(Base):
+
+class CoilAlarmStatus(Base):
     """报警数据"""
     __tablename__ = 'CoilAlarmStatus'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     level = Column(Integer)
     alarmStatus = Column(Integer)
@@ -163,13 +167,14 @@ class  CoilAlarmStatus(Base):
     data = Column(Text())
     parent = relationship("SecondaryCoil", back_populates="childrenCoilAlarmStatus")
 
+
 class AlarmFlatRoll(Base):
     """
     扁卷检测
     """
     __tablename__ = 'AlarmFlatRoll'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     out_circle_width = Column(Float)
     out_circle_height = Column(Float)
@@ -197,7 +202,7 @@ class TaperShapePoint(Base):
     """
     __tablename__ = 'TaperShapePoint'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     x = Column(Integer)
     y = Column(Integer)
@@ -209,13 +214,14 @@ class TaperShapePoint(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenTaperShapePoint")
 
+
 class DeepPoint(Base):
     """
     深度点
     """
     __tablename__ = 'DeepPoint'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     x = Column(Integer)
     y = Column(Integer)
@@ -223,12 +229,13 @@ class DeepPoint(Base):
     y_mm = Column(Float)
     value = Column(Float)
     value_int = Column(Integer)
-    by_user=Column(Integer)
+    by_user = Column(Integer)
     draw = Column(Integer)
     level = Column(Integer)
     err_msg = Column(Text)
     crateTime = Column(DateTime, server_default=func.now())
     data = Column(Text())
+
 
 class AlarmTaperShape(Base):
     """
@@ -236,7 +243,7 @@ class AlarmTaperShape(Base):
     """
     __tablename__ = 'AlarmTaperShape'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     out_taper_max_x = Column(Integer)
     out_taper_max_y = Column(Integer)
@@ -261,13 +268,14 @@ class AlarmTaperShape(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmTaperShape")
 
+
 class AlarmLooseCoil(Base):
     """
     松卷
     """
     __tablename__ = 'AlarmLooseCoil'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     max_width = Column(Float)
 
@@ -280,19 +288,21 @@ class AlarmLooseCoil(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmLooseCoil")
 
+
 class DetectionSpeed(Base):
     """
     检测速度
     """
     __tablename__ = 'DetectionSpeed'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     startTime = Column(DateTime, server_default=func.now())
     endTime = Column(DateTime, server_default=func.now())
     allTime = Column(Float)
 
     parent = relationship("SecondaryCoil", back_populates="childrenDetectionSpeed")
+
 
 class NextCodeDict(Base):
     """
@@ -310,28 +320,29 @@ class AlarmInfo(Base):
     """
     __tablename__ = 'AlarmInfo'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     nextCode = Column(String(2))
     nextName = Column(String(10))
 
-    taperShapeGrad = Column(Integer)    # 塔形检测  报警等级
-    taperShapeMsg=Column(Text)          # 塔形检测  报警信息
+    taperShapeGrad = Column(Integer)  # 塔形检测  报警等级
+    taperShapeMsg = Column(Text)  # 塔形检测  报警信息
 
-    looseCoilGrad = Column(Integer)     # 松卷检测  报警等级
-    looseCoilMsg=Column(Text)           # 松卷检测  报警等级
+    looseCoilGrad = Column(Integer)  # 松卷检测  报警等级
+    looseCoilMsg = Column(Text)  # 松卷检测  报警等级
 
-    flatRollGrad=Column(Integer)        # 扁卷检测  报警等级
-    flatRollMsg=Column(Text)            # 扁卷检测  报警等级
+    flatRollGrad = Column(Integer)  # 扁卷检测  报警等级
+    flatRollMsg = Column(Text)  # 扁卷检测  报警等级
 
-    defectGrad=Column(Integer)          # 缺陷检测  报警等级
-    defectMsg=Column(Text)              # 缺陷检测  报警等级
+    defectGrad = Column(Integer)  # 缺陷检测  报警等级
+    defectMsg = Column(Text)  # 缺陷检测  报警等级
 
-    grad = Column(Integer)              # 综合  报警等级
+    grad = Column(Integer)  # 综合  报警等级
     crateTime = Column(DateTime, server_default=func.now())
-    data = Column(Text())               # 综合  报警数据
+    data = Column(Text())  # 综合  报警数据
 
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmInfo")
+
 
 class CapTrueLog(Base):
     """
@@ -339,26 +350,28 @@ class CapTrueLog(Base):
     """
     __tablename__ = 'CapTrueLog'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     cameraId = Column(Integer)
     cameraName = Column(String(10))
     capTrueStartTime = Column(DateTime, server_default=func.now())
     capTrueEndTime = Column(DateTime, server_default=func.now())
 
+
 class ServerDetectionError(Base):
     __tablename__ = 'ServerDetectionError'
-    Id=Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     errorType = Column(String(20))
     time = Column(DateTime, server_default=func.now())
     msg = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenServerDetectionError")
 
+
 class DataEllipse(Base):
     __tablename__ = 'DataEllipse'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
 
     type = Column(String(10))
@@ -374,10 +387,11 @@ class DataEllipse(Base):
     data = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenDataEllipse")
 
+
 class AlarmFlatRollData(Base):
     __tablename__ = 'AlarmFlatRollData'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     level = Column(Integer)
     err_msg = Column(Text)
@@ -385,10 +399,11 @@ class AlarmFlatRollData(Base):
     data = Column(Text)
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmFlatRollData")
 
+
 class LineData(Base):
     __tablename__ = 'LineData'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     type = Column(String(20))
     center_x = Column(Float)
@@ -413,10 +428,11 @@ class LineData(Base):
 
     parent = relationship("SecondaryCoil", back_populates="childrenLineData")
 
+
 class PointData(Base):
     __tablename__ = 'PointData'
     Id = Column(Integer, primary_key=True, autoincrement=True)
-    secondaryCoilId = Column(Integer,ForeignKey('SecondaryCoil.Id'))
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
     surface = Column(String(2))
     type = Column(String(10))
     x = Column(Float)
@@ -428,4 +444,3 @@ class PointData(Base):
     crateTime = Column(DateTime, server_default=func.now())
 
     parent = relationship("SecondaryCoil", back_populates="childrenPointData")
-
