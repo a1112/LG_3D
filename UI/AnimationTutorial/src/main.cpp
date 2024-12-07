@@ -60,8 +60,9 @@ int main(int argc, char *argv[])
     #ifdef _WIN32
         // 仅在 Windows 系统上启用控制台
     std::string computerName = getComputerName();
-    std::vector <std::string> args {"DESKTOP-94ADH1G"};
-    if (std::find(args.begin(), args.end(), computerName) != args.end()) {
+    //  將下述PC保留控制台
+    std::vector <std::string> args {"DESKTOP-94ADH1G","LCX_ACE","DESKTOP-TEM8G6F"};
+    if (std::find(args.begin(), args.end(), computerName) == args.end()) {
         AllocConsole();
         freopen("CONOUT$", "w", stdout);
         freopen("CONOUT$", "w", stderr);

@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-
 import "DataShowRoot"
+import "DataShowItem"
 import "Foot"
-import "ShowCharts"
 import "MaxMinValue"
 ColumnLayout{
     anchors.fill:parent
@@ -16,17 +15,29 @@ ColumnLayout{
 
         Loader{
             SplitView.fillWidth: true
-            SplitView.preferredHeight: 240
+            SplitView.preferredHeight: 333
             asynchronous: true
             sourceComponent:RowLayout{
                 Layout.fillWidth: true
                 DataShowItemSelectView{
                     Layout.fillHeight: true
                 }
-                DataShowItemCharts{  //  charts
+
+                StackLayout{
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    currentIndex: dataShowCore.topDataManage.currentShowModel
+
+                    DataShowItemDefects{  // 缺陷显示
+                    }
+
+                    DataShowItemInfos{
+                    }
+
+                    DataShowItemCharts{  //  charts
+                    }
                 }
+
             }
         }
         DataShowRootLayout{

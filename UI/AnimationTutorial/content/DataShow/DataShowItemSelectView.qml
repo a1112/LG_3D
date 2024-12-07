@@ -12,23 +12,50 @@ Item{
         opacity:0.1
     }
     Column{
-        spacing: 5
+        spacing: 10
         CheckRecItem{
-            text: "塔形曲线".split("").join('\n')
+            text: "缺陷信息".split("").join('\n')
+            height:100
+            currentShowModel:dataShowCore.topDataManage.defectShowModel
+        }
+
+        CheckRecItem{
+            text: "数据信息".split("").join('\n')
+            height:100
+            currentShowModel:dataShowCore.topDataManage.dataInfoShowModel
+        }
+        CheckRecItem{
+            text: "曲线信息".split("").join('\n')
             height:100
             currentShowModel:dataShowCore.topDataManage.lineShowModel
 
         }
-        CheckRecItem{
-            text: "数据".split("").join('\n')
-            height:50
-            currentShowModel:dataShowCore.topDataManage.dataInfoShowModel
+
+    }
+
+    MouseArea{
+        anchors.fill:parent
+        acceptedButtons:Qt.RightButton
+        onClicked:{
+            menu.popup()
+        }
+    }
+
+
+    Menu{
+        id:menu
+        MenuItem{
+            text:"曲线数据返回"
+            onClicked:{
+                Qt.openUrlExternally(api.oldHeightDatUrl)
+
+            }
         }
 
-        CheckRecItem{
-            text: "缺陷".split("").join('\n')
-            height:50
-            currentShowModel:dataShowCore.topDataManage.defectShowModel
-        }
+        // MenuItem{
+
+        // }
+
+
     }
 }

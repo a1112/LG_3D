@@ -138,20 +138,28 @@ Item {
         source=getSource(coilId,currentViewKey)
     }
 
+    property string default_key:"GRAY"
     property string source: ""
     property string error_source: ""
     property bool error_visible: true
     property bool error_auto: true
     property int tower_warning_show_opacity: 50
 
+
+    function getSouceByKey(_viewKey_){
+        return getSource(coilId,_viewKey_,false)
+    }
     function setViewSource(_viewKey_){
+        default_key=_viewKey_
         currentViewKey = _viewKey_
-        source = getSource(coilId,_viewKey_,false)
+        source = getSouceByKey(_viewKey_)
     }
 
     property CoilModel currentCoilModel
 
-    function setCoilId(coilId_,type_="GRAY"){
+    function setCoilId(coilId_){
+        // 切换时进行的设置
+        let type_= default_key
         coilId = coilId_
         source = getSource(coilId_,type_,false)
         viewDataModel.clear()
@@ -221,7 +229,6 @@ Item {
     }
 
     function getSource(_coilId_,_viewKey_, preView=false){
-
         if(coreSetting.useLoc){
             return getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
         }

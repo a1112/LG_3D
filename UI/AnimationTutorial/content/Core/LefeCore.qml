@@ -17,9 +17,7 @@ Item {
     property int searchPageIndex   : 0
     onHovedCoilIdChanged: {
 
-
-        preSourceModelS.setProperty(0,"image_source",
-                                    coreModel.surfaceS.getSource(hovedCoilId,"GRAY",true))
+        preSourceModelS.setProperty(0,"image_source",coreModel.surfaceS.getSource(hovedCoilId,"GRAY",true))
         preSourceModelS.setProperty(1,"image_source",coreModel.surfaceS.getSource(hovedCoilId,"JET",true))
         preSourceModelL.setProperty(0,"image_source",coreModel.surfaceL.getSource(hovedCoilId,"GRAY",true))
         preSourceModelL.setProperty(1,"image_source",coreModel.surfaceL.getSource(hovedCoilId,"JET",true))

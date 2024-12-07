@@ -62,6 +62,9 @@ Item {
         y:root.height - height-scrollBarH.height
     }
     ViewChangView{
+        y:root.height - height-scrollBarH.height
+        x:root.width-width-scrollBarV.width-50
+
     }
     HoverHandler{
         id:hoverHandler
