@@ -6,14 +6,12 @@ Home-page: https://github.com/a1112/CoilDataBase
 Author: lcx
 Author-email: 1042815796@qq.com
 License: GPL 3.0
+Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved ::  GPL 3.0
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
-Requires-Dist: sqlalchemy
-Requires-Dist: pyyaml
-Requires-Dist: tqdm
-Requires-Dist: pyyaml
 
 README.md
+

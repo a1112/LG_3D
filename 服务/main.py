@@ -9,9 +9,9 @@ from CONFIG import serverApiPort, isLoc
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
 
-if isLoc:
-    from CoilDataBase.Coil import deleteCoil
-    deleteCoil(23006)
+# if isLoc:
+#     from CoilDataBase.Coil import deleteCoil
+#     deleteCoil(23006)
 
 
 if __name__ == '__main__':

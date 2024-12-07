@@ -31,6 +31,7 @@ foreach(RESOURCES_FILE ${RESOURCES_FILES_ABS})
     list(APPEND RESOURCES_FILES ${RESOURCES_FILE_REL})
 endforeach()
 
+
 qt6_add_qml_module(content
     URI "content"
     VERSION 1.0
@@ -39,4 +40,6 @@ qt6_add_qml_module(content
         fonts/fonts.txt
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
+
+
     )

@@ -154,8 +154,6 @@ class DataIntegration:
         self.circleConfig={}
 
         self.currentSecondaryCoil: Optional[SecondaryCoil] =None
-
-
         self.__median_non_zero__=None
 
     @property
