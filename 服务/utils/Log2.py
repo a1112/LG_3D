@@ -24,14 +24,14 @@ log_dir = Init.logDir
 Path(log_dir).mkdir(parents=True, exist_ok=True)
 
 # 设置日志文件路径
-filename = os.path.join(log_dir, f"%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log")
+filename = os.path.join(log_dir, f"TX_%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log")
 
 # 创建文件处理器，按日期进行滚动
 file_handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
-file_handler.suffix = f"%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log"
+file_handler.suffix = f"TX_%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log"
 
 # 设置文件日志格式
-file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+file_formatter = logging.Formatter('TX_%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                                     datefmt='%Y-%m-%d %H:%M:%S')
 file_handler.setFormatter(file_formatter)
 
@@ -43,7 +43,7 @@ console_handler.setLevel(logging.DEBUG)
 
 # 使用彩色日志格式输出到控制台
 console_formatter = colorlog.ColoredFormatter(
-    '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    'TX_%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     log_colors={
         'DEBUG': 'cyan',

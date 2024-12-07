@@ -8,6 +8,7 @@ import tools.tool
 from property.Base import DataIntegrationList
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
+from utils.Log2 import logger
 
 from .TaperShapeLine import *
 
@@ -107,6 +108,8 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     ind = np.argwhere(mask==0)
     npyData[ind[:, 0], ind[:, 1]]=0
     inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a = count_taper(npyData, img_2d)
+    logger.debug([dataIntegration.coilId,"内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a])
+    logger.debug(["外圈塔形:", outer_taper, "半径:", outer_ind_max_r, "角度:", outer_ind_max_a])
 
     # th_3d = 100
     # import cv2
@@ -197,10 +200,11 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
                 z_value = []
                 for j in range(0, deep_num):
                     num.append(0)
+                    z_value.append([])
                 for j in range(0, len(data_deep[i])):
                     t_ind = int(min(data_deep[i][j] // deep_inv, deep_num - 1))
                     num[t_ind] += 1
-                    z_value.append(data_deep[i][j])
+                    z_value[t_ind].append(data_deep[i][j])
                 num = np.array(num)
                 t_ind = np.argwhere(num > 100)
                 if t_ind.shape[0] > 0:
@@ -213,7 +217,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
                 data_alarm.append(0)
 
         data_alarm_all.append(data_alarm)
-        print(len(data_alarm), data_alarm)
+        # print(len(data_alarm), data_alarm)
     # 根据所有的报警
     data_alarm_all = np.array(data_alarm_all)
     r, a = data_alarm_all.shape[:2]
@@ -229,8 +233,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
     inner_ind_max_a = angle_inv*inner_ind_max_col
     outer_ind_max_r = r_list[outer_ind_max_row] * fe
     outer_ind_max_a = angle_inv * outer_ind_max_col
-    print("内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a)
-    print("外圈塔形:", outer_taper, "半径:", outer_ind_max_r, "角度:", outer_ind_max_a)
+
     return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a
 
 
