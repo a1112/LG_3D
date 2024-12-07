@@ -17,8 +17,9 @@ class ControlManagement(ThreadClass):
         self.downsampleSize = 3 # 如果下采样 1，数据将会非常庞大
         self.BaseImageMosaic = ThreadClass
         self.ImageSaverThreadType = "thread"
-        self.D3SaverWorkNum = 3
+        self.D3SaverWorkNum = 10
         self.D3SaverThreadType = "multiprocessing"
+        self.D3SaverThreadMaxsize = 10
         self.BaseDataFolder = ProcessClass
         self.baseTimeFormat = "%Y-%m-%d %H:%M:%S"
         self.exportTimeFormat = self.baseTimeFormat

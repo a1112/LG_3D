@@ -20,10 +20,12 @@ from alg import detection as cv_detection
 
 import Globs
 
+
 class ImageMosaicThread(Thread):
     """
     """
-    def __init__(self,managerQueue):
+
+    def __init__(self, managerQueue):
         super().__init__()
         self.managerQueue = managerQueue
         self.listData = []
@@ -31,18 +33,18 @@ class ImageMosaicThread(Thread):
         self.debugType = False
         self.imageMosaicList = []
         # 重新识别的排队机制
-        self.reDetectionSet=set()
-        self.reDetectionMsg=Queue()
+        self.reDetectionSet = set()
+        self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
-            self.imageMosaicList.append(ImageMosaic(json.dumps(surface),self.managerQueue))
+            self.imageMosaicList.append(ImageMosaic(json.dumps(surface), self.managerQueue))
         try:
-            self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId   # 最新的 数据
-            self.endCoilId = Coil.getSecondaryCoil(1)[0].Id         # 目标数据
+            self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
+            self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据
         except IndexError:
             self.startCoilId = 0
 
-    def checkDetectionEnd(self,secondaryCoilId):
+    def checkDetectionEnd(self, secondaryCoilId):
         for imageMosaic in self.imageMosaicList:
             if not imageMosaic.checkDetectionEnd(secondaryCoilId):
                 logger.error("checkDetectionEnd ")
@@ -64,38 +66,38 @@ class ImageMosaicThread(Thread):
                     defectionTime1 = time.time()
                     secondaryCoil = listData[secondaryCoilIndex]
                     logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个")
-                    if maxSecondaryCoilId - secondaryCoil.Id>2:
-                        logger.debug("清理数据"+str(secondaryCoil.Id))
+                    if maxSecondaryCoilId - secondaryCoil.Id > 2:
+                        logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
-                    if secondaryCoilIndex >= len(listData)-2:
+                    if secondaryCoilIndex >= len(listData) - 2:
                         if not self.checkDetectionEnd(secondaryCoil.Id):
                             break
                     self.startCoilId = secondaryCoil.Id
                     status = {}
                     for imageMosaic in self.imageMosaicList:  # 设置 ID
                         setOk = imageMosaic.setCoilId(secondaryCoil.Id)
-                        imageMosaic.currentSecondaryCoil=secondaryCoil
+                        imageMosaic.currentSecondaryCoil = secondaryCoil
                         status[imageMosaic.key] = 0
                         if not setOk:
                             logger.error(f"setOK: {setOk}")
                             status[imageMosaic.key] = ErrorMap["DataFolderError"]
                             continue
-                    dataIntegrationList=DataIntegrationList()
-                    for imageMosaic in self.imageMosaicList:    # 获取图片
+                    dataIntegrationList = DataIntegrationList()
+                    for imageMosaic in self.imageMosaicList:  # 获取图片
                         if status[imageMosaic.key] < 0:
                             continue
-                        dataIntegration=imageMosaic.getData()
-                        dataIntegrationList.append(dataIntegration) # 检测
+                        dataIntegration = imageMosaic.getData()
+                        dataIntegrationList.append(dataIntegration)  # 检测
                         if dataIntegration.isNone():
                             logger.error(f"image is None {secondaryCoil.Id}")
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
                     defectionTime2 = time.time()
-                    print(f"图像检测时间 {defectionTime2-defectionTime1}")
+                    print(f"图像检测时间 {defectionTime2 - defectionTime1}")
                     AlarmDetection.detectionAll(dataIntegrationList)
                     cv_detection.detectionAll(dataIntegrationList)
                     defectionTime3 = time.time()
-                    print(f"算法检测时间 {defectionTime3-defectionTime2}")
+                    print(f"算法检测时间 {defectionTime3 - defectionTime2}")
                     print(f"完整检测时间 {defectionTime3 - defectionTime1}")
                     if self.saveDataBase:
                         Coil.addCoil({
@@ -109,7 +111,7 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        sleepTime=10
+                        sleepTime = 10
                         print(f"loc model sleep {sleepTime}")
                         "避免性能问题"
                         time.sleep(sleepTime)
@@ -125,21 +127,21 @@ class ImageMosaicThread(Thread):
                 return -1
             time.sleep(1)
 
-    def addMsg(self,msg,level=logging.DEBUG):
-        self.reDetectionSet.add( {
-            "Base":"ImageMosaicThread",
-            "time":datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
-            "msg":msg,
-            "level":logging.getLevelName(level),
+    def addMsg(self, msg, level=logging.DEBUG):
+        self.reDetectionSet.add({
+            "Base": "ImageMosaicThread",
+            "time": datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
+            "msg": msg,
+            "level": logging.getLevelName(level),
         })
 
-    def setReDetectionByCoilId(self,startId,endId):
-        coilList = Coil.searchByCoilId(startId,endId)
+    def setReDetectionByCoilId(self, startId, endId):
+        coilList = Coil.searchByCoilId(startId, endId)
         for coil in coilList:
             self.setReDetection(coil)
         self.addMsg("")
 
-    def setReDetection(self,coilId):
+    def setReDetection(self, coilId):
         # 设置 重新检测 列表
         self.reDetectionSet.add(coilId.Id)
 

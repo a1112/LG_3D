@@ -72,7 +72,7 @@ def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
     print("AlarmFlatRollAll")
     for dataIntegration in dataIntegrationList:
         flatRollData = _detectionAlarmFlatRoll_(dataIntegration)
-        commitData(dataIntegration,flatRollData)
+        # commitData(dataIntegration,flatRollData)
 if __name__ == "__main__":
     # 读取 png 文件
     image_path = 'test.png'

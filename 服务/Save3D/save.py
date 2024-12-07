@@ -248,11 +248,11 @@ class D3Saver:
     def __init__(self,managerQueue):
         self.managerQueue=managerQueue
         self.num_processes = Globs.control.D3SaverWorkNum
-        self.type_= Globs.control.D3SaverThreadType
-        if self.type_=="multiprocessing":
-            self.queue = MulQueue(maxsize=2)
+        self.type_ = Globs.control.D3SaverThreadType
+        if self.type_ == "multiprocessing":
+            self.queue = MulQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
         else:
-            self.queue = ThreadQueue(maxsize=2)
+            self.queue = ThreadQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
         self.processes = []
         self._initialize_processes()
 
@@ -271,14 +271,13 @@ class D3Saver:
 
     @staticmethod
     def _save_3d(queue, managerQueue):
-        if not Globs.control.save_3d_obj:
-            return
-
         while True:
             data= queue.get()
             if data is None:
                 break
             try:
+                if not Globs.control.save_3d_obj:
+                    return
                 _save_3d(data,managerQueue)
             except Exception as e:
                 error_message = traceback.format_exc()

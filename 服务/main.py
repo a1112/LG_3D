@@ -8,7 +8,8 @@ from CONFIG import serverApiPort, isLoc
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
-
+# from CoilDataBase.Coil import deleteCoil
+# deleteCoil(34500)
 # if isLoc:
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23006)
