@@ -121,13 +121,14 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         depth_map_scaled = ((depth_map_clipped - a) / (b - a)) * 255
         depth_map_uint8 = depth_map_scaled.astype(np.uint8)
         mask_zero = npy__ == 0
+
         for name, colormap in ColorMaps.items():
             if name not in RendererList:
                 continue
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
             depth_map_color[mask_zero] = [0, 0, 0]  # [0, 0, 0] 表示黑色
 
-            tool.showImage(depth_map_color) # 显示
+            # tool.showImage(depth_map_color) # 显示
 
             image = Image.fromarray(depth_map_color)
             self._save_image_(dataIntegration,image,name)
@@ -218,9 +219,11 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         joinMaskImage = np.hstack([data["MASK"] for data in datas])
         # tool.showImage(joinImage,"joinImage")
         # tool.showImage(joinMaskImage,"joinImage_mask")
-        # npyData = np.hstack([data["3D"] for data in datas])
 
-        npyData = tool.hstack3D([data["3D"] for data in datas],joinMaskImage=joinMaskImage)
+        if dataIntegration.__median_non_zero__ == 32767:
+            npyData = np.hstack([data["3D"] for data in datas])
+        else:
+            npyData = tool.hstack3D([data["3D"] for data in datas],joinMaskImage=joinMaskImage)
 
         if self.rotate == 90:
             joinImage = np.rot90(joinImage,1)
@@ -234,7 +237,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         joinImage = cv2.flip(joinImage, 1)
         joinMaskImage = cv2.flip(joinMaskImage, 1)
         npyData = cv2.flip(npyData, 1)
-
 
         box = tool.crop_black_border(joinMaskImage)
         x, y, w, h = box
@@ -255,8 +257,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         # if self.x_rotate:   # x、旋转
         #     npyData = tool.rotate_around_x_axis(npyData, self.x_rotate)
         #     dataIntegration.set("x_rotate", self.x_rotate)
-
-        dataIntegration.npyData = npyData
+        dataIntegration.set_npy_data(npyData)
         dataIntegration.joinImage = joinImage
 
         dataIntegration.npy_image=joinImage

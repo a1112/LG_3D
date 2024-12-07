@@ -6,7 +6,7 @@ from typing import List, Optional
 import numpy as np
 
 from CoilDataBase.Coil import addCoilState, addServerDetectionError
-from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmFlatRoll, AlarmTaperShape, SecondaryCoil
+from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
 from Globs import control
 from property.detection3D import FlatRollData
@@ -47,7 +47,8 @@ class BdData:
             self.bdDataX = BdItem(bdConfig["CoordinateA"])
             self.bdDataY = BdItem(bdConfig["CoordinateB"])
             self.bdDataZ = BdItem(bdConfig["CoordinateC"])
-        except BaseException as e:
+        except (BaseException,) as e:
+            print(e)
             self.bdDataX = BdItem({
                 "Scan3dAxisMax": 2559.0,
                 "Scan3dAxisMin": 0.0,
@@ -111,6 +112,7 @@ class DataIntegration:
     数据整合
     """
     def __init__(self, coilId,saveFolder, direction, key):
+        self._npyData_ = None
         self._hasDetectionError_ = None
         self.coilId = coilId
         self.direction = direction
@@ -133,7 +135,6 @@ class DataIntegration:
 
         self.lineDataDict = {}
 
-        import numpy as np
         self.npyData:np.array = None
         # self._image_ = None
         self.npy_image = None
@@ -154,7 +155,12 @@ class DataIntegration:
         self.circleConfig={}
 
         self.currentSecondaryCoil: Optional[SecondaryCoil] =None
-        self.__median_non_zero__=None
+
+
+        self.__median_non_zero__ = 32767
+
+    def set_npy_data(self,npyData):
+        self._npyData_ = npyData
 
     @property
     def secondaryCoilId(self):
@@ -213,14 +219,16 @@ class DataIntegration:
                 annular_mean = np.median(annular_mean_area)
                 return annular_mean
             cw = self.npyData.shape[0] // 2
-            self.__median_non_zero__ = annular_region_mean(self.npyData, self.circleConfig["inner_circle"]["circlex"][0],
+            self.__median_non_zero__ = annular_region_mean(self._npyData_, self.circleConfig["inner_circle"]["circlex"][0],
                                                   self.circleConfig["inner_circle"]["circlex"][1],
                                                   int(cw * 0.6),
                                                   int(cw * 0.8))  # 获取平均值
+            #
             # 将输入的矩阵转换为 numpy 数组  翻转
             # 创建一个新的矩阵，应用条件变换
             # transformed_matrix = np.where(matrix < n, matrix, 2 * a - matrix)
-            self.npyData = np.where(self.npyData < max(self.__median_non_zero__-300//self.scan3dCoordinateScaleZ,10), np.zeros(self.npyData.shape), 2 * self.__median_non_zero__ - self.npyData)
+        if self.npyData is None:
+            self.npyData = np.where(self._npyData_ < max(self.__median_non_zero__-300//self.scan3dCoordinateScaleZ,10), np.zeros(self._npyData_.shape), 2 * self.__median_non_zero__ - self._npyData_)
             self.set("median_3d", self.__median_non_zero__)
             self.set("median_3d_mm", self.median_3d_mm)
         return self.__median_non_zero__

@@ -109,7 +109,7 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        sleepTime=100
+                        sleepTime=10
                         print(f"loc model sleep {sleepTime}")
                         "避免性能问题"
                         time.sleep(sleepTime)

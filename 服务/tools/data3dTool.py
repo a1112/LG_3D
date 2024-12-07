@@ -118,16 +118,18 @@ def getLengthData(npy_data, mask_image, p1, p2, ray=False):
 
 
 
-def auto_data_leveling_3d(data, mask):
+def auto_data_leveling_3d(data, mask_src):
     """
     自动数据配平
     Returns:
 
     """
+
     dev_th = 100  # 去除z偏差超过这个范围的值
     sample_inv = 100  # 采样间隔
     h, w = data.shape[:2]
-    if mask is None:
+    ind = np.argwhere(abs(data) <= 0.00001)
+    if mask_src is None:
         mask = np.zeros(data.shape, np.uint8)
         # 求模板,第一步,去除为0的
         ind1 = np.argwhere(abs(data) >= 0.00001)
@@ -141,7 +143,12 @@ def auto_data_leveling_3d(data, mask):
         if min(ind2.shape) > 0:
             mask[ind2[:, 0], ind2[:, 1]] = 0
         # mask = get_max_contour(mask)
+    else:
+        mask_z = np.zeros(data.shape, np.uint8)
+        mask_o = np.ones(data.shape, np.uint8)
+        mask = np.where(abs(mask_src)>0.5, mask_o, mask_z)
     # 过滤干扰
+    # import  cv2
     # cv2.namedWindow("mask", 0)
     # cv2.imshow("mask", mask*128)
     # cv2.waitKey(0)
@@ -197,4 +204,11 @@ def auto_data_leveling_3d(data, mask):
 
     Temp = (M[0, 0] * X_New + M[1, 0] * Y_New + M[2, 0])
     res = data - Temp
+
+    #
+    ind_med = np.argwhere(abs(mask) > 0.5)
+    img_3d_med = np.median(res[ind_med[:, 0], ind_med[:, 1]])
+    res = np.asarray(res - (img_3d_med - 32767), np.uint16)
+    res[ind[:, 0], ind[:, 1]] = 0
+
     return res

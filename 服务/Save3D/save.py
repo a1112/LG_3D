@@ -271,6 +271,9 @@ class D3Saver:
 
     @staticmethod
     def _save_3d(queue, managerQueue):
+        if not Globs.control.save_3d_obj:
+            return
+
         while True:
             data= queue.get()
             if data is None:
