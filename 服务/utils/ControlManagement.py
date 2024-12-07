@@ -25,6 +25,9 @@ class ControlManagement(ThreadClass):
         self.logTimeFormat = self.baseTimeFormat
         self.upperLimit = 75
         self.lowerLimit = -75
+        self.leveling_3d=True
+        self.save_3d_obj=False
+
         self.start()
 
     def get(self):
