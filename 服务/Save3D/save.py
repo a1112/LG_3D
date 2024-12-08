@@ -276,7 +276,7 @@ class D3Saver:
 
     def add_(self, *args):
         self.queue.put(*args)
-        print(f"3DSaver add_ {args}  队列 size {self.queue.qsize()}")
+        print(f"3DSaver add_   队列 size {self.queue.qsize()}")
 
     @staticmethod
     def _save_3d(queue, managerQueue):

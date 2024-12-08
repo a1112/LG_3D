@@ -66,7 +66,7 @@ class ImageMosaicThread(Thread):
                 for secondaryCoilIndex in range(len(listData)):
                     defectionTime1 = time.time()
                     secondaryCoil = listData[secondaryCoilIndex]
-                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个")
+                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个"+"-"*100)
                     if maxSecondaryCoilId - secondaryCoil.Id > 2:
                         logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
