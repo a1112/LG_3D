@@ -175,6 +175,8 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
 
         img_3d_roll_roi = (img_3d_exp * mask)
         ind = np.argwhere(img_3d_roll_roi > 10)
+        ind_v = np.argwhere(img_3d_roll_roi <= 10)
+        mean_d = np.mean(img_3d_roll_roi[ind_v[:,0], ind_v[:,1]])
 
         data_deep = []
         for i in range(0, angle_num):
@@ -212,9 +214,9 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
                     index = t_ind[-1][0]
                     data_alarm.append(round(np.max(np.array(z_value[index])),2))
                 else:
-                    data_alarm.append(0)
+                    data_alarm.append(mean_d)
             else:
-                data_alarm.append(0)
+                data_alarm.append(mean_d)
 
         data_alarm_all.append(data_alarm)
         # print(len(data_alarm), data_alarm)
@@ -222,7 +224,8 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
     data_alarm_all = np.array(data_alarm_all)
     r, a = data_alarm_all.shape[:2]
     data_alarm_all_inner = data_alarm_all[:r//2, :]
-    data_alarm_all_outer = data_alarm_all[r // 2:, :]
+    outer_a_start = 9
+    data_alarm_all_outer = data_alarm_all[r // 2:, outer_a_start:outer_a_start+9]
     inner_ind_max = np.argmax(data_alarm_all_inner)
     inner_ind_max_row, inner_ind_max_col = np.unravel_index(inner_ind_max, data_alarm_all_inner.shape)
     outer_ind_max = np.argmax(data_alarm_all_outer)
@@ -232,7 +235,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe = 0.35):
     inner_ind_max_r = r_list[inner_ind_max_row]*fe
     inner_ind_max_a = angle_inv*inner_ind_max_col
     outer_ind_max_r = r_list[outer_ind_max_row] * fe
-    outer_ind_max_a = angle_inv * outer_ind_max_col
+    outer_ind_max_a = angle_inv * (outer_a_start+outer_ind_max_col)
 
     return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a
 
