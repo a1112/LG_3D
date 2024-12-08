@@ -3,10 +3,14 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../Labels"
+import "../../Model"
 Popup {
     width: col.width+20
     height: col.height+30
     visible: leftCore.isHoved
+
+    property CoilModel coilModel:leftCore.hovedCoilModel
+
     onClosed:{
         if (leftCore.isHoved)
             open()
@@ -25,7 +29,7 @@ Popup {
         spacing:10
 
         TitleLabel{
-            text:core.currentCoilModel.coilNo
+            text:coilModel.coilNo
             color:Material.color(Material.Blue)
             anchors.horizontalCenter:parent.horizontalCenter
             font.pointSize: 20
@@ -39,7 +43,6 @@ Popup {
             model: leftCore.preSourceModelS
             ImageItem{
                 hasImage: leftCore.hovelCoilData.Status_S>=0
-
             }
         }
         Repeater{

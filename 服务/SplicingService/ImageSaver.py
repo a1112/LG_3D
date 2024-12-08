@@ -64,28 +64,29 @@ class ImageSaver:
     使用多进程执行
     修改为 继承
     """
-    def __init__(self,managerQueue):
-        self.managerQueue=managerQueue
-        self.num_processes =  Globs.control.ImageSaverWorkNum
-        self.type_= Globs.control.ImageSaverThreadType
-        if self.type_=="multiprocessing":
-            self.queue = MulQueue(maxsize=10)
+
+    def __init__(self, managerQueue, loggerProcess):
+        self.managerQueue = managerQueue
+        self.num_processes = Globs.control.ImageSaverWorkNum
+        self.type_ = Globs.control.ImageSaverThreadType
+        if self.type_ == "multiprocessing":
+            self.queue = MulQueue(maxsize=Globs.control.ImageSaverQueueSize)
         else:
-            self.queue = ThreadQueue(maxsize=10)
+            self.queue = ThreadQueue(maxsize=Globs.control.ImageSaverQueueSize)
         self.processes = []
         self._initialize_processes()
 
     def _initialize_processes(self):
         for _ in range(self.num_processes):
-            if self.type_=="multiprocessing":
-                process = multiprocessing.Process(target=self._save_images,args=(self.queue,))
+            if self.type_ == "multiprocessing":
+                process = multiprocessing.Process(target=self._save_images, args=(self.queue,))
             else:
-                process = threading.Thread(target=self._save_images,args=(self.queue,))
+                process = threading.Thread(target=self._save_images, args=(self.queue,))
             process.daemon = True
             self.processes.append(process)
             process.start()
 
-    def add(self,obj,path):
+    def add(self, obj, path):
         if isinstance(obj, np.ndarray):
             return self.add_numpy(obj, path)
         elif isinstance(obj, Image.Image):

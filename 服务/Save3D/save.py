@@ -15,6 +15,7 @@ from queue import Queue as ThreadQueue
 from utils.Log import logger
 import Globs
 
+
 def gaussian_kernel(size, sigma=1):
     """生成高斯卷积核。"""
     kernel_1D = np.linspace(-(size // 2), size // 2, size)
@@ -58,7 +59,6 @@ def apply_jet_colormap(z_coords, minV=None, maxV=None):
     return cmap(norm(z_coords))
 
 
-
 import numpy as np
 
 
@@ -76,8 +76,6 @@ def generate_mesh_from_point_cloud_pcl(point_cloud):
     from scipy.spatial import Delaunay
     import trimesh
 
-
-
     # 使用 Delaunay 三角剖分
     delaunay = Delaunay(point_cloud[:, :2])  # 只使用 x, y 坐标进行三角剖分
     triangles = delaunay.simplices
@@ -87,7 +85,11 @@ def generate_mesh_from_point_cloud_pcl(point_cloud):
 
     # 可视化网格
     mesh.show()
+
+
 import open3d as o3d
+
+
 # from scipy.spatial import Delaunay
 
 
@@ -123,6 +125,7 @@ def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05):
 
     return mesh
 
+
 # def generate_mesh_from_point_cloud(point_cloud):
 #     """
 #     从点云生成三角网格。
@@ -152,7 +155,7 @@ def generate_mesh_from_point_cloud(point_cloud):
     """从点云生成三角网格。"""
     points = point_cloud[:, :2]  # 只使用x和y坐标进行Delaunay三角剖分
     print(f"point_cloud points shape: {points.shape}")
-    tri = Delaunay(points,incremental=True)
+    tri = Delaunay(points, incremental=True)
     triangles = tri.simplices
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(point_cloud)
@@ -167,26 +170,29 @@ def save_colored_obj(mesh, colors, filename):
     # o3d.io.write_triangle_mesh(filename, mesh)
     with open(filename, 'w') as f:
         for vertex, color in zip(np.asarray(mesh.vertices), colors):
-            colorStr=f"{color[0]} {color[1]} {color[2]}"
+            colorStr = f"{color[0]} {color[1]} {color[2]}"
             f.write(f"v {vertex[0]} {vertex[1]} {colorStr} {color[2]}\n")
         # for triangle in np.asarray(mesh.triangles):
         #     f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
-        for triangle in np.asarray(mesh.triangles)+1:
+        for triangle in np.asarray(mesh.triangles) + 1:
             f.write(f"f {triangle[0]} {triangle[1]} {triangle[2]}\n")
 
-def toMesh(obj,managerQueue):
+
+def toMesh(obj, managerQueue):
     cmdBalsam = serverConfigProperty.balsam
     cmd = f"{cmdBalsam} {obj}"
     print(cmd)
     workPath = os.path.dirname(obj)
     subprocess.check_call(cmd, shell=True, cwd=workPath)
-    print(cmd+ "end")
+    print(cmd + "end")
     # os.system(cmd)
     # managerQueue.put(["cmd",cmd,workPath])
 
+
 def _get_point_cloud_(data, managerQueue):
     from scipy.ndimage import median_filter
-    coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm,[pixel_x_precision,pixel_y_precision,pixel_z_precision] = data
+    coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm, [pixel_x_precision, pixel_y_precision,
+                                                                                pixel_z_precision] = data
     npyData[mask == 0] = 0
     matrix = median_filter(npyData, size=Globs.control.median_filter_size)
     # 对数据进行下采样
@@ -208,36 +214,37 @@ def _get_point_cloud_(data, managerQueue):
     # 删除z < 0 的点
     # point_cloud = point_cloud[point_cloud[:, 2] >= 10]
 
-    mean_values2[2]=median_non_mm
+    mean_values2[2] = median_non_mm
     point_cloud[:, :] -= mean_values2
     # print("point_cloud.mean")
     # print(point_cloud.mean(axis=0))
 
     point_cloud = point_cloud[point_cloud[:, 2] >= - 150]
     point_cloud = point_cloud[point_cloud[:, 2] <= 500]
-    return point_cloud,saveFile
+    return point_cloud, saveFile
+
 
 def _save_3d(data, managerQueue):
-    t0=time.time()
-    point_cloud,saveFile = _get_point_cloud_(data, managerQueue)
-    t1=time.time()
-    logger.debug(f"_get_point_cloud_  {t1-t0}")
-    colors = apply_jet_colormap(point_cloud[:, 2],minV=-200, maxV=200)
-    t2=time.time()
-    logger.debug(f"apply_jet_colormap {t2-t1}")
+    t0 = time.time()
+    point_cloud, saveFile = _get_point_cloud_(data, managerQueue)
+    t1 = time.time()
+    logger.debug(f"_get_point_cloud_  {t1 - t0}")
+    colors = apply_jet_colormap(point_cloud[:, 2], minV=-200, maxV=200)
+    t2 = time.time()
+    logger.debug(f"apply_jet_colormap {t2 - t1}")
     colors = colors[:, :3]  # 只保留 RGB 通道
     # 使用Delaunay三角剖分生成三角网格
     # mesh=generate_mesh_from_point_cloud_pcl(point_cloud)
     mesh = generate_mesh_from_point_cloud(point_cloud)
 
-    t3=time.time()
-    logger.debug(f"generate_mesh_from_point_cloud {t3-t2}")
+    t3 = time.time()
+    logger.debug(f"generate_mesh_from_point_cloud {t3 - t2}")
     # o3d.visualization.draw_geometries([mesh])
     # 保存彩色的.obj文件
     save_colored_obj(mesh, colors, str(saveFile))
-    t4=time.time()
-    logger.debug(f"save_colored_obj {t4-t3}")
-    toMesh(str(saveFile),managerQueue)
+    t4 = time.time()
+    logger.debug(f"save_colored_obj {t4 - t3}")
+    toMesh(str(saveFile), managerQueue)
     logger.debug("toMesh end")
 
 
@@ -245,8 +252,9 @@ class D3Saver:
     """
     使用多进程执行
     """
-    def __init__(self,managerQueue):
-        self.managerQueue=managerQueue
+
+    def __init__(self, managerQueue, loggerProcess):
+        self.managerQueue = managerQueue
         self.num_processes = Globs.control.D3SaverWorkNum
         self.type_ = Globs.control.D3SaverThreadType
         if self.type_ == "multiprocessing":
@@ -258,27 +266,28 @@ class D3Saver:
 
     def _initialize_processes(self):
         for _ in range(self.num_processes):
-            if self.type_=="multiprocessing":
-                process = multiprocessing.Process(target=self._save_3d,args=(self.queue,self.managerQueue))
+            if self.type_ == "multiprocessing":
+                process = multiprocessing.Process(target=self._save_3d, args=(self.queue, self.managerQueue))
             else:
-                process = threading.Thread(target=self._save_3d,args=(self.queue,self.managerQueue))
+                process = threading.Thread(target=self._save_3d, args=(self.queue, self.managerQueue))
             process.daemon = True
             self.processes.append(process)
             process.start()
 
     def add_(self, *args):
         self.queue.put(*args)
+        print(f"3DSaver add_ {args}  队列 size {self.queue.qsize()}")
 
     @staticmethod
     def _save_3d(queue, managerQueue):
         while True:
-            data= queue.get()
+            data = queue.get()
             if data is None:
                 break
             try:
                 if not Globs.control.save_3d_obj:
                     return
-                _save_3d(data,managerQueue)
+                _save_3d(data, managerQueue)
             except Exception as e:
                 error_message = traceback.format_exc()
                 print(f"Failed to save  {error_message}")

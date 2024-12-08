@@ -15,12 +15,12 @@ Item {
             anchors.fill: parent
             FlowRowItem{
                 title:"流水号"
-                value:core.currentCoilModel["coilId"]
+                value:coilModel.coilId
                 valueColor:Material.color(Material.Green)
             }
             FlowRowItem{
                 title:"去向"
-                value:core.currentCoilModel.nextInfo
+                value:coilModel.nextInfo
             }
             // FlowRowItem{
             //     title:"卷号 "
@@ -28,31 +28,31 @@ Item {
             // }
             FlowRowItem{
                 title:"钢种 "
-                value:core.currentCoilModel.coilType
+                value:coilModel.coilType
             }
             FlowRowItem{
                 title:"外径 "
-                value:core.currentCoilModel.coilDia
+                value:coilModel.coilDia
             }
             FlowRowItem{
                 title:"内径 "
-                value:core.currentCoilModel.coilInside
+                value:coilModel.coilInside
             }
             FlowRowItem{
                 title:"卷宽 "
-                value:core.currentCoilModel.coilWidth
+                value:coilModel.coilWidth
             }
             FlowRowItem{
                 title:"卷厚 "
-                value:core.currentCoilModel.coilThickness
+                value:coilModel.coilThickness
             }
             FlowRowItem{
                 title:"日期 "
-                value:core.currentCoilModel.coilDetectionTime.dataString
+                value:coilModel.coilDetectionTime.dataString
             }
             FlowRowItem{
                 title:"时间 "
-                value:core.currentCoilModel.coilDetectionTime.timeString
+                value:coilModel.coilDetectionTime.timeString
             }
         }
     }

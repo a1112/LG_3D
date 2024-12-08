@@ -17,17 +17,18 @@ from CoilDataBase import Coil
 from CoilDataBase import tool as CoilDataBaseTool
 from utils.Log import logger
 from alg import detection as cv_detection
-
+from utils.LoggerProcess import LoggerProcess
 import Globs
 
 
 class ImageMosaicThread(Thread):
     """
+    多线程的主循环
     """
-
-    def __init__(self, managerQueue):
+    def __init__(self, managerQueue,loggerProcess:LoggerProcess):
         super().__init__()
         self.managerQueue = managerQueue
+        self.loggerProcess = loggerProcess
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
@@ -37,7 +38,7 @@ class ImageMosaicThread(Thread):
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
-            self.imageMosaicList.append(ImageMosaic(json.dumps(surface), self.managerQueue))
+            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue,loggerProcess))
         try:
             self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
             self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据
@@ -53,7 +54,7 @@ class ImageMosaicThread(Thread):
 
     def run(self):
         while True:
-            logger.debug(f"开始处理 ")
+            logger.debug(f"执行 ")
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()

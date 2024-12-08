@@ -24,13 +24,15 @@ logger = Log.logger
 
 
 class DataFolder(Globs.control.BaseDataFolder):
-    def __init__(self, fd):
+    def __init__(self, fd, loggerProcess):
         super().__init__()
         self.coilAreaModel = None
+        self.loggerProcess = loggerProcess
+        print("self.loggerProcess",self.loggerProcess)
         self.saveMaskFolder = None
         self.saveMask = None
         self.imageMosaicList = None
-        fd = json.loads(fd)
+        # fd = json.loads(fd)
         folderConfig, saveFolder, direction = fd
         self.direction = direction  # "L"
         self.saveFolder = Path(saveFolder)
