@@ -55,6 +55,7 @@ class ImageMosaicThread(Thread):
     def run(self):
         while True:
             logger.debug(f"执行 ")
+            run_num=0
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()
@@ -66,13 +67,16 @@ class ImageMosaicThread(Thread):
                 for secondaryCoilIndex in range(len(listData)):
                     defectionTime1 = time.time()
                     secondaryCoil = listData[secondaryCoilIndex]
-                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个"+"-"*100)
+                    less_num = maxSecondaryCoilId - secondaryCoil.Id
                     if maxSecondaryCoilId - secondaryCoil.Id > 2:
                         logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
                     if secondaryCoilIndex >= len(listData) - 2:
                         if not self.checkDetectionEnd(secondaryCoil.Id):
+                            # 采集未完成
                             break
+                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {less_num} 个 已处理{run_num} 个"+"-"*100)
+                    run_num += 1
                     self.startCoilId = secondaryCoil.Id
                     status = {}
                     for imageMosaic in self.imageMosaicList:  # 设置 ID
