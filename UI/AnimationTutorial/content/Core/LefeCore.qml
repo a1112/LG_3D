@@ -1,5 +1,5 @@
-import QtQuick 2.15
-
+import QtQuick
+import "../Model"
 Item {
     property int hovedCoilId: 0
     property bool searchViewShow: true
@@ -24,6 +24,9 @@ Item {
     }
 
     property int hovedIndex:-1
+
+    property  CoilModel hovedCoilModel
+
     onHovedIndexChanged: {
         let p = coreModel.currentCoilListModel.get(hovedIndex)
         hovelCoilData=p

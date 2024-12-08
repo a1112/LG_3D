@@ -135,6 +135,7 @@ Item {
             if(hovered){
                 leftCore.hovedIndex = index
                 leftCore.leftMsg = msg
+                leftCore.hovedCoilModel=coilModel
             }
         }
     }

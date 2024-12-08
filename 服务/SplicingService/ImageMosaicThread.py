@@ -17,17 +17,18 @@ from CoilDataBase import Coil
 from CoilDataBase import tool as CoilDataBaseTool
 from utils.Log import logger
 from alg import detection as cv_detection
-
+from utils.LoggerProcess import LoggerProcess
 import Globs
 
 
 class ImageMosaicThread(Thread):
     """
+    多线程的主循环
     """
-
-    def __init__(self, managerQueue):
+    def __init__(self, managerQueue,loggerProcess:LoggerProcess):
         super().__init__()
         self.managerQueue = managerQueue
+        self.loggerProcess = loggerProcess
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
@@ -37,7 +38,7 @@ class ImageMosaicThread(Thread):
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
-            self.imageMosaicList.append(ImageMosaic(json.dumps(surface), self.managerQueue))
+            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue,loggerProcess))
         try:
             self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
             self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据
@@ -53,7 +54,8 @@ class ImageMosaicThread(Thread):
 
     def run(self):
         while True:
-            logger.debug(f"开始处理 ")
+            logger.debug(f"执行 ")
+            run_num=0
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()
@@ -65,13 +67,16 @@ class ImageMosaicThread(Thread):
                 for secondaryCoilIndex in range(len(listData)):
                     defectionTime1 = time.time()
                     secondaryCoil = listData[secondaryCoilIndex]
-                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {maxSecondaryCoilId - secondaryCoil.Id} 个")
+                    less_num = maxSecondaryCoilId - secondaryCoil.Id
                     if maxSecondaryCoilId - secondaryCoil.Id > 2:
                         logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
                     if secondaryCoilIndex >= len(listData) - 2:
                         if not self.checkDetectionEnd(secondaryCoil.Id):
+                            # 采集未完成
                             break
+                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {less_num} 个 已处理{run_num} 个"+"-"*100)
+                    run_num += 1
                     self.startCoilId = secondaryCoil.Id
                     status = {}
                     for imageMosaic in self.imageMosaicList:  # 设置 ID

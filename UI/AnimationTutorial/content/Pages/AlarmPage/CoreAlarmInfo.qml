@@ -24,7 +24,7 @@ Item {
                 data:coilAlarmData["LooseCoil"]
     }
 
-    property var coilAlarmData :{}
+    property var coilAlarmData :{return {}}
 
     property string
 
