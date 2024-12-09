@@ -159,7 +159,7 @@ class DataFolder(Globs.control.BaseDataFolder):
                 data["rec"] = steelRec
                 data["MASK"] = imageMask
 
-                data3D = cv2.bitwise_and(data3D, data3D, mask=imageMask)
+                # data3D = cv2.bitwise_and(data3D, data3D, mask=imageMask)
                 if Globs.control.leveling_3d:
                     data3D = auto_data_leveling_3d(data3D, imageMask)
                 data["3D"] = data3D
