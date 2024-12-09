@@ -94,7 +94,9 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     npyData[ind[:, 0], ind[:, 1]] = 0
     inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a = count_taper(npyData,
                                                                                                                img_2d)
-    logger.debug([dataIntegration.coilId, "内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a])
+
+    logger.debug(f"{dataIntegration.coilId}  {dataIntegration.surface}")
+    logger.debug(["内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a])
     logger.debug(["外圈塔形:", outer_taper, "半径:", outer_ind_max_r, "角度:", outer_ind_max_a])
 
     # p_center error :  中心点由 count_taper 返回
