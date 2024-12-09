@@ -116,7 +116,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         # 将图像裁剪到指定的范围 [a, b]
         depth_map_clipped = np.clip(npy__, a, b)
         # 将裁剪后的图像缩放到 [0, 255] 的范围
-        depth_map_scaled = ((depth_map_clipped - a) / (b - a)) * 255
+        depth_map_scaled = ((depth_map_clipped - a) / (b - a)) * -255 + 255
         depth_map_uint8 = depth_map_scaled.astype(np.uint8)
         mask_zero = npy__ == 0
 
@@ -187,27 +187,32 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         minHeight = min([data["2D"].shape[0] for data in datas])
         for index in range(len(datas)):
-            r_p = 0
-
             if index > 0:
                 l_p = cross_points[index - 1][0]
                 r_p = cross_points[index - 1][1]
-                # l_p=0
-                # r_p=0
                 w = datas[index - 1]['2D'].shape[1]
                 if l_p > serverConfigProperty.max_clip_mun:
-                    l_p = w
+                    l_p = 0
                 if self.direction == "L":
                     datas[index - 1]['2D'] = datas[index - 1]['2D'][:, :w - l_p]
                     datas[index - 1]['MASK'] = datas[index - 1]['MASK'][:, :w - l_p]
                     datas[index - 1]['3D'] = datas[index - 1]['3D'][:, :w - l_p]
-            if self.direction == "R":
-                datas[index]['2D'] = datas[index]['2D'][:, r_p:]
-                datas[index]['MASK'] = datas[index]['MASK'][:, r_p:]
-                datas[index]['3D'] = datas[index]['3D'][:, r_p:]
+                if self.direction == "R":
+                    datas[index]['2D'] = datas[index]['2D'][:, r_p:]
+                    datas[index]['MASK'] = datas[index]['MASK'][:, r_p:]
+                    datas[index]['3D'] = datas[index]['3D'][:, r_p:]
             datas[index]['2D'] = datas[index]['2D'][:minHeight, :]
             datas[index]['MASK'] = datas[index]['MASK'][:minHeight, :]
             datas[index]['3D'] = datas[index]['3D'][:minHeight, :]
+
+        if Globs.control.leveling_gray:
+            media_gray_list = []
+            for data in datas:
+                media_gray = np.median(data["2D"][data["2D"] != 0])
+                media_gray_list.append(media_gray)
+            print(f"media_gray_list {media_gray_list}")
+            datas[0]["2D"] = (datas[0]["2D"].astype(np.float32)*(media_gray_list[1]/media_gray_list[0])).astype(np.uint8)
+            datas[2]["2D"] = (datas[2]["2D"].astype(np.float32)*(media_gray_list[1]/media_gray_list[2])).astype(np.uint8)
         joinImage = np.hstack([data["2D"] for data in datas])
         joinMaskImage = np.hstack([data["MASK"] for data in datas])
         # tool.showImage(joinImage,"joinImage")

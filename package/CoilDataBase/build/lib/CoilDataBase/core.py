@@ -4,7 +4,7 @@ import datetime
 from .models import *
 from sqlalchemy import create_engine
 engine = create_engine('mysql+pymysql://root:nercar@localhost:3306/Coil',
-                       pool_size=20,
+                       pool_size=200,
                        max_overflow=20,
                        pool_timeout=30,
                        pool_recycle=3600,

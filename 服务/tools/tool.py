@@ -3,16 +3,18 @@ import numpy
 import numpy as np
 from PIL import Image
 
+import tools.tool
 from property import Point2D
 
 
-def showImage(image,name="image"):
+def showImage(image, name="image"):
     if isinstance(image, Image.Image):
         image = np.array(image)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(name, 800, 800)
     cv2.imshow(name, image)
     cv2.waitKey(0)
+
 
 def getMask(gray_image):
     if isinstance(gray_image, Image.Image):
@@ -25,7 +27,7 @@ def getMask(gray_image):
     return binary_image
 
 
-def getForeground(gray_image,direction="L", key=None):
+def getForeground(gray_image, direction="L", key=None):
     if isinstance(gray_image, Image.Image):
         gray_image = np.array(gray_image)
     blurred_image = cv2.GaussianBlur(gray_image, (9, 9), 0)
@@ -50,7 +52,7 @@ def getForeground(gray_image,direction="L", key=None):
                 newContours.append(c)
         elif direction == "R":
 
-            if cv2.boundingRect(c)[0]+cv2.boundingRect(c)[2] > cleaned_image.shape[1]-500:
+            if cv2.boundingRect(c)[0] + cv2.boundingRect(c)[2] > cleaned_image.shape[1] - 500:
                 newContours.append(c)
     if newContours:
         largest_contour = max(newContours, key=cv2.contourArea)
@@ -63,29 +65,29 @@ def getForeground(gray_image,direction="L", key=None):
     return gray_image, mask
 
 
-def autoCrop(key, image,starPos,direction):
-    gray_image, mask = getForeground(image,direction,key)
+def autoCrop(key, image, starPos, direction):
+    gray_image, mask = getForeground(image, direction, key)
 
-    rec = crop_max_image_black_edges(key, mask,starPos)
-    x,y,w,h = rec
-    return gray_image[y:y+h,x:x+w],mask[y:y+h,x:x+w],rec
+    rec = crop_max_image_black_edges(key, mask, starPos)
+    x, y, w, h = rec
+    return gray_image[y:y + h, x:x + w], mask[y:y + h, x:x + w], rec
 
 
-def crop_max_image_black_edges(key,image, starPos):
+def crop_max_image_black_edges(key, image, starPos):
     # 图像列求和，检测哪些列是主要黑色的
     # column_sum = np.sum(gray, axis=0)
-    h,w = image.shape
+    h, w = image.shape
     column_no_black_count = np.sum(image > 100, axis=0)
     left_index = starPos[0]
     right_index = w - starPos[1]
-    maxL = left_index+300   # 规定最大裁剪
-    minR = right_index-300  # 规定最大裁剪
+    maxL = left_index + 300  # 规定最大裁剪
+    minR = right_index - 800  # 规定最大裁剪
     # 从左侧找到第一个非黑色列
-    l_threshold = 0.05 if "D" in key else 0.25
-    r_threshold = 0.25
+    # l_threshold = 0.05 if "D" in key else 0.25
+    # r_threshold = 0.25
     # while left_index > maxL or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[maxL+100]) < l_threshold:
     #     left_index += 1
-    l_limit=200
+    l_limit = 10 if "S_D" in key else 500
     while True:
         if left_index > maxL:
             break
@@ -93,32 +95,32 @@ def crop_max_image_black_edges(key,image, starPos):
             break
         left_index += 1
 
-
     # 从右侧找到第一个非黑色列
     # while right_index < maxR and column_no_black_count[right_index]>5*255: #/(column_no_black_count[maxR-100]) < r_threshold:
     #     right_index -= 1
-    r_limit=10 if "D" in key else 200
+    r_limit = 10 if "L_D" in key else 500
     while True:
-        if right_index<minR:
+        if right_index < minR:
             break
         if column_no_black_count[right_index] > r_limit:
             break
         right_index -= 1
-
+    print(f"r_index  {key}   {right_index}  {w-right_index} { column_no_black_count[right_index]}")
     # print(f"{key} {maxL} {maxR} left_index {left_index}  right_index {w-right_index}")
     # showImage(image)
     # 保存裁剪后的图像
-    if "D" in key:
+    if "S_D" in key:
         x = left_index
     else:
-        x = left_index+50
+        x = left_index+20
 
-    if "D" in key:
-        width = right_index-x+20
+    if "L_D" in key:
+        width = right_index - x
     else:
-        width = right_index-x -50
-
-    return [x,0,width,h]
+        width = right_index - x-20
+    # print(f"裁剪 {key} {[x, 0, width, h]}")
+    # tools.tool.showImage(image[:, x:x + width],f"{key}_{[x, 0, w-(width+x), h]}")
+    return [x, 0, width, h]
 
 
 def cropImage(image, cropLeft, cropRight):
@@ -182,7 +184,7 @@ def find_cross_points(projections):
             f_r_index = f_r_list[0]
         else:
             f_r_index = 0
-        cross_points.append((int(l_len-f_l_index), int(f_r_index)))
+        cross_points.append((int(l_len - f_l_index), int(f_r_index)))
     return cross_points
 
 
@@ -199,12 +201,12 @@ def crop_black_border(gray):
     return x, y, w, h
 
 
-def hstack3D(npyList,n_=100,num=10, joinMaskImage=None):
-    def nZeeroIndexes(array,n, minValue=0):
+def hstack3D(npyList, n_=100, num=10, joinMaskImage=None):
+    def nZeeroIndexes(array, n, minValue=0):
         indices = []
-        for i in range(len(array)//n):
-            if np.all(array[i*n:(i+1) * n] > minValue):
-                indices.append(i*n)
+        for i in range(len(array) // n):
+            if np.all(array[i * n:(i + 1) * n] > minValue):
+                indices.append(i * n)
                 if len(indices) > 3:
                     break
         return indices
@@ -212,6 +214,7 @@ def hstack3D(npyList,n_=100,num=10, joinMaskImage=None):
     def getMean(data):
         data = data[data > 500]
         return numpy.mean(data)
+
     # 水平拼接3D图像
     for index in range(1, len(npyList)):
         r_npy = npyList[index]
@@ -221,9 +224,9 @@ def hstack3D(npyList,n_=100,num=10, joinMaskImage=None):
         r_l_line_nz_indexes = nZeeroIndexes(r_l_line, n_, num)
         if r_l_line_nz_indexes:
             samplingIndex = r_l_line_nz_indexes[-1]
-            meanL = getMean(l_npy[:, -5:-1][samplingIndex:samplingIndex+n_])
-            meanR = getMean(r_npy[:, 1:5][samplingIndex:samplingIndex+n_])
-            npyList[index] = npyList[index]-meanR+meanL
+            meanL = getMean(l_npy[:, -5:-1][samplingIndex:samplingIndex + n_])
+            meanR = getMean(r_npy[:, 1:5][samplingIndex:samplingIndex + n_])
+            npyList[index] = npyList[index] - meanR + meanL
         else:
             pass
 
@@ -288,7 +291,7 @@ def getCircleConfigByMask(mask):
         x, y, w, h = cv2.boundingRect(contour)
         # 计算矩形中心
         rect_center = (x + w // 2, y + h // 2)
-        if h*w<(mask.shape[1]/5)*(mask.shape[1]/5):
+        if h * w < (mask.shape[1] / 5) * (mask.shape[1] / 5):
             continue
         # 计算矩形中心与图像中心的距离
         distance = np.sqrt((rect_center[0] - image_center[0]) ** 2 + (rect_center[1] - image_center[1]) ** 2)
@@ -306,10 +309,10 @@ def getCircleConfigByMask(mask):
     ellipse = cv2.fitEllipse(closest_contour)
 
     return {
-        "inner_circle":{
-            "circlex":[int(circlexX), int(circlexY), int(circlexRadius)],
-            "ellipse":ellipse,
-            "inner_circle":[inner_circle_center, inner_circle_radius]
+        "inner_circle": {
+            "circlex": [int(circlexX), int(circlexY), int(circlexRadius)],
+            "ellipse": ellipse,
+            "inner_circle": [inner_circle_center, inner_circle_radius]
         }
     }
 
@@ -326,7 +329,7 @@ def get_intersection_points(p1, p2, width, height):
 
     def add_point_if_on_boundary(x, y):
         if 0 <= x <= width and 0 <= y <= height:
-            intersection_points.append(Point2D(int(x),int(y)))
+            intersection_points.append(Point2D(int(x), int(y)))
 
     if x1 != x2 and y1 != y2:
         # 计算斜率和截距
@@ -366,4 +369,3 @@ def get_intersection_points(p1, p2, width, height):
         if p[1] >= height:
             p[1] = height - 1
     return intersection_points[:2]
-
