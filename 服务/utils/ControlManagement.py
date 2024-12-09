@@ -16,7 +16,7 @@ class ControlManagement(ThreadClass):
         self.median_filter_size = 3
         self.downsampleSize = 3  # 如果下采样 1，数据将会非常庞大
         self.BaseImageMosaic = ThreadClass
-        self.ImageSaverThreadType = "thread"
+        self.ImageSaverThreadType = "multiprocessing"
         self.D3SaverWorkNum = 10
         self.D3SaverThreadType = "multiprocessing"
         self.D3SaverThreadMaxsize = 10

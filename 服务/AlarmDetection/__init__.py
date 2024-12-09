@@ -7,7 +7,7 @@ from .TaperShape import _detectionTaperShape_, addAlarmTaperShape, _detectionTap
 from .AlarmLooseCoil import _detectionAlarmLooseCoil_, _detectionAlarmLooseCoilAll_
 
 
-def detection(dataIntegration:DataIntegration):
+def detection(dataIntegration: DataIntegration):
     """
       检测的入口 old
     Args:
@@ -15,8 +15,8 @@ def detection(dataIntegration:DataIntegration):
     Returns:
     """
     #  提交松卷数据
-    _detectionAlarmFlatRoll_(dataIntegration)   # 扁卷检测
-    _detectionTaperShape_(dataIntegration)      # 塔形检测
+    _detectionAlarmFlatRoll_(dataIntegration)  # 扁卷检测
+    _detectionTaperShape_(dataIntegration)  # 塔形检测
     _detectionAlarmLooseCoil_(dataIntegration)  # 松卷检测
     grading(dataIntegration)
 
@@ -28,7 +28,7 @@ def detection(dataIntegration:DataIntegration):
 
 
 @DetectionSpeedRecord.timing_decorator("判级时间")
-def detectionAll(dataIntegrationList:DataIntegrationList):
+def detectionAll(dataIntegrationList: DataIntegrationList):
     _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
     _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测

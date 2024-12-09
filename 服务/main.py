@@ -9,8 +9,10 @@ from utils.LoggerProcess import LoggerProcess
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
-# from CoilDataBase.Coil import deleteCoil
-# deleteCoil(35074)
+from CoilDataBase.Coil import deleteCoil
+# deleteCoil(34500)
+
+
 # if isLoc:
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23006)
@@ -24,7 +26,7 @@ if __name__ == '__main__':
 
     loggerProcess = LoggerProcess(log_file="logs/app.log")
     loggerProcess.start()
-    imageMosaicThread = ImageMosaicThread(managerQueue,loggerProcess)  # 主进程
+    imageMosaicThread = ImageMosaicThread(managerQueue, loggerProcess)  # 主进程
     imageMosaicThread.start()
     GlobalSignalHandling(managerQueue).start()
     from api import app

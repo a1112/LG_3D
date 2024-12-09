@@ -23,6 +23,7 @@ def detectionTaperShapeByArea(dataIntegration: DataIntegration):
     pass
 
 
+@DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detectionTaperShape_(dataIntegration: DataIntegration):
     print("塔形检测")
 
@@ -95,8 +96,9 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     mask = dataIntegration.npy_mask
     ind = np.argwhere(mask == 0)
     npyData[ind[:, 0], ind[:, 1]] = 0
-    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a,p_c = count_taper(npyData,
-                                                                                                               img_2d)
+    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, p_c = count_taper(
+        npyData,
+        img_2d)
 
     logger.debug(f"{dataIntegration.coilId}  {dataIntegration.surface}")
     logger.debug(["内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a])
@@ -192,7 +194,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
         img_3d_roll_roi = (img_3d_exp * mask)
         ind = np.argwhere(img_3d_roll_roi > 10)
         ind_v = np.argwhere(img_3d_roll_roi <= 10)
-        mean = np.mean(img_3d_roll_roi[ind_v[:,0], ind_v[:,0]])
+        mean = np.mean(img_3d_roll_roi[ind_v[:, 0], ind_v[:, 0]])
 
         data_deep = []
         for i in range(0, angle_num):
@@ -205,7 +207,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
             angle = math.atan2(y, x) * 180 / np.pi
             ind_temp = min(int((angle - (-180)) / angle_inv), angle_num - 1)
             z = img_3d_exp[ind[i][0], ind[i][1]]
-            #print(ind_temp)
+            # print(ind_temp)
             data_deep[ind_temp].append(z)
 
         # 上面已经将圆环分成不同角度的等份数据，接下来就是计算每份数据中的最大值（去噪后的）
@@ -233,7 +235,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
                     data_alarm.append(mean)
             else:
                 data_alarm.append(mean)
-
+        # print(data_alarm)
         data_alarm_all.append(data_alarm)
         # print(len(data_alarm), data_alarm)
     # 根据所有的报警
@@ -262,14 +264,15 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     inner_taper1 = data_alarm_all_inner1[inner_ind_max_row1, inner_ind_max_col1]
     outer_taper1 = data_alarm_all_outer1[outer_ind_max_row1, outer_ind_max_col1]
     inner_ind_max_r1 = r_list[inner_ind_max_row1] * fe
-    inner_ind_max_a1 = angle_inv * (inner_ind_max_col1+9)
+    inner_ind_max_a1 = angle_inv * (inner_ind_max_col1 + 9)
     outer_ind_max_r1 = r_list[outer_ind_max_row1] * fe
-    outer_ind_max_a1 = angle_inv * (outer_ind_max_col1+9)
+    outer_ind_max_a1 = angle_inv * (outer_ind_max_col1 + 9)
     # print("内圈塔形1:", inner_taper1, "半径1:", inner_ind_max_r1, "角度1:", inner_ind_max_a1)
     # print("外圈塔形1:", outer_taper1, "半径1:", outer_ind_max_r1, "角度1:", outer_ind_max_a1)
 
     # return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
-    return inner_taper1, inner_ind_max_r1, inner_ind_max_a1, outer_taper1, outer_ind_max_r1, outer_ind_max_a1, Point2D(cx, cy)
+    return inner_taper1, inner_ind_max_r1, inner_ind_max_a1, outer_taper1, outer_ind_max_r1, outer_ind_max_a1, Point2D(
+        cx, cy)
 
 
 def commitLineData(dataIntegration: DataIntegration):
@@ -296,5 +299,6 @@ def _detectionTaperShapeAll_(dataIntegrationList: DataIntegrationList):
     print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
         dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
+        dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
         commitLineData(dataIntegration)
