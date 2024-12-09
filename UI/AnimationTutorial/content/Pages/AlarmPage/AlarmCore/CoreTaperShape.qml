@@ -6,7 +6,7 @@ Item {
     property real innerTaper:0.0
     property real outTaper:0.0
     property int alarmLevel: 0
-
+    property string str:l.str+"\n\n"+s.str
     property ListModel taperErrorList: ListModel{
     }
 

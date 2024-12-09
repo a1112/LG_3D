@@ -43,6 +43,8 @@ ColumnLayout{
         DataShowRootLayout{
             SplitView.fillWidth: true
             SplitView.fillHeight: true
+
+
         }
         ShowViewListView{
             visible: dataShowCore.viewRendererListView

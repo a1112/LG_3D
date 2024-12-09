@@ -7,7 +7,7 @@ from fastapi import WebSocket
 from CoilDataBase.models import SecondaryCoil, AlarmInfo
 from fastapi.responses import FileResponse
 import Init
-from CoilDataBase import Coil
+from CoilDataBase import Coil,tool
 import CONFIG
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import serverConfigProperty, isLoc
@@ -30,7 +30,7 @@ def read_version():
 
 
 def getCoilItemInfo(c):
-    c = Coil.to_dict(c)
+    c = tool.to_dict(c)
     if "Weight" in c:
         code = chr(int(c["Weight"]))
         if "Weight" in c:
@@ -117,7 +117,7 @@ def getCoilState(coilId: int):
     coilId = int(coilId)
     r = Coil.getCoilState(coilId)
     # print(r)
-    return Coil.to_dict(r)
+    return tool.to_dict(r)
 
 
 @app.get("/search/PlcData/{coilId:int}")
@@ -125,17 +125,17 @@ def getPlcData(coilId: int):
     coilId = int(coilId)
     r = Coil.getPlcData(coilId)
     # print(r)
-    return Coil.to_dict(r)
+    return tool.to_dict(r)
 
 
 @app.get("/search/defects/{coilId:int}/{direction}")
 def getDefects(coilId: int, direction: str):
-    return Coil.to_dict(Coil.getDefects(coilId, direction))
+    return tool.to_dict(Coil.getDefects(coilId, direction))
 
 
 @app.get("/search/defectDict")
 def getDefectDict():
-    return Coil.to_dict(Coil.getDefetClassDict())
+    return tool.to_dict(Coil.getDefetClassDict())
 
 
 @app.get("/coilInfo/{coil_id:str}/{surfaceKey:str}")

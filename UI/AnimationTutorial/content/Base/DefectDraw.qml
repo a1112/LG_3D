@@ -1,9 +1,9 @@
 import QtQuick 2.15
-import "../CrossView"
+import "../Comp/CrossView"
 Rectangle {
     id:drawView
     color: "#20000000"
-    property bool selectCanView: false
+    property bool selectCanView: true
     property alias containsMouse: mouse.containsMouse
     SelectItem{
         visible: selectCanView

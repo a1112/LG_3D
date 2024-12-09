@@ -1,13 +1,14 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import Qt5Compat.GraphicalEffects
 import "../Aerial"
 import "ViewChang"
 
 import "../../Comps"
 import "Draw"
+
 Item {
     id:root
+    anchors.fill: parent
     Rectangle{
     color: "black"
     anchors.fill: parent

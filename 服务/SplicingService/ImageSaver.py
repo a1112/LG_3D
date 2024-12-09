@@ -93,11 +93,9 @@ class ImageSaver:
             return self.add_image(obj, path)
 
     def add_image(self, image, path):
-        print(f"ImageSaver add_image   队列 size {self.queue.qsize()}")
         self.queue.put((image, path, "pil"))
 
     def add_numpy(self, npy, path):
-        print(f"ImageSaver add_numpy   队列 size {self.queue.qsize()}")
         self.queue.put((npy, path, "np"))
 
     @staticmethod

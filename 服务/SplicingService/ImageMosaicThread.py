@@ -25,7 +25,8 @@ class ImageMosaicThread(Thread):
     """
     多线程的主循环
     """
-    def __init__(self, managerQueue,loggerProcess:LoggerProcess):
+
+    def __init__(self, managerQueue, loggerProcess: LoggerProcess):
         super().__init__()
         self.managerQueue = managerQueue
         self.loggerProcess = loggerProcess
@@ -38,7 +39,7 @@ class ImageMosaicThread(Thread):
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
-            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue,loggerProcess))
+            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue, loggerProcess))
         try:
             self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
             self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据
@@ -55,10 +56,11 @@ class ImageMosaicThread(Thread):
     def run(self):
         while True:
             logger.debug(f"执行 ")
-            run_num=0
+            run_num = 0
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()
+                listData = listData[-3:]
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
@@ -75,7 +77,7 @@ class ImageMosaicThread(Thread):
                         if not self.checkDetectionEnd(secondaryCoil.Id):
                             # 采集未完成
                             break
-                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {less_num} 个 已处理{run_num} 个"+"-"*100)
+                    logger.debug(f"开始处理 {secondaryCoil.Id}剩余 {less_num} 个 已处理{run_num} 个" + "-" * 100)
                     run_num += 1
                     self.startCoilId = secondaryCoil.Id
                     status = {}

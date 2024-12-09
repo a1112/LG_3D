@@ -1,4 +1,4 @@
-from CoilDataBase import Coil, Alarm
+from CoilDataBase import Coil, Alarm, tool
 from CoilDataBase.models import AlarmFlatRoll
 
 
@@ -10,7 +10,7 @@ def getCoilAlarm(coil_id: str):
     AlarmFlatRollList = Alarm.getAlarmFlatRoll(coil_id)
     for alarmItem in AlarmFlatRollList[::-1]:
         alarmItem: AlarmFlatRoll
-        FlatRollInfo[alarmItem.surface] = Coil.to_dict(alarmItem)
+        FlatRollInfo[alarmItem.surface] = tool.to_dict(alarmItem)
 
     TaperShapeInfo = {
         "S": [],

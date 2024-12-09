@@ -223,18 +223,23 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         else:
             npyData = tool.hstack3D([data["3D"] for data in datas], joinMaskImage=joinMaskImage)
 
-        if self.rotate == 90:
+        if self.rotate == 90 or dataIntegration.surface == "S":
+            # tool.showImage(joinImage,"S")
             joinImage = np.rot90(joinImage, 1)
             joinMaskImage = np.rot90(joinMaskImage, 1)
             npyData = np.rot90(npyData, 1)
-        if self.rotate == -90:
+
+            joinImage = cv2.flip(joinImage, 1)
+            joinMaskImage = cv2.flip(joinMaskImage, 1)
+            npyData = cv2.flip(npyData, 1)
+
+        if self.rotate == -90 or dataIntegration.surface=="L":
+            # tool.showImage(joinImage, "L")
             joinImage = np.rot90(joinImage, -1)
             joinMaskImage = np.rot90(joinMaskImage, -1)
             npyData = np.rot90(npyData, -1)
 
-        joinImage = cv2.flip(joinImage, 1)
-        joinMaskImage = cv2.flip(joinMaskImage, 1)
-        npyData = cv2.flip(npyData, 1)
+
 
         box = tool.crop_black_border(joinMaskImage)
         x, y, w, h = box

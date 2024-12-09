@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from property.Base import DataIntegration, DataIntegrationList
 from property.detection3D.FlatRollData import FlatRollData, CircleDataItem
+from utils.DetectionSpeedRecord import DetectionSpeedRecord
 
 
 def contour_to_data(contour, key):

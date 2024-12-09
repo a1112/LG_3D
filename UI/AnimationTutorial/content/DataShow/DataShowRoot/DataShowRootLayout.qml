@@ -19,8 +19,8 @@ Item {
         currentIndex:root.surfaceData.rootViewIndex
         DataShowRootView{   // 2D  data
         }
-        Data3DLayout{
 
+        Data3DLayout{
         }
     }
 

@@ -21,6 +21,18 @@ Item {
 
     property real rotation_angle: 0.0
 
+    property string str:
+        " :"+global_key+
+        "\n外塔\n"+
+        " x:"+out_taper_max_x+
+        "  y:"+out_taper_max_y+
+        "  value:"+out_taper_max_value+
+        "\n内塔\n"+
+        " x:"+in_taper_max_x+
+        " y:"+in_taper_max_y+
+        " value:"+in_taper_max_value+
+        "\n"+
+        " rotation:"+rotation_angle
 
     // out_taper_max_x = Column(Integer)
     // out_taper_max_y = Column(Integer)

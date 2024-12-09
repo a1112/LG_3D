@@ -25,7 +25,7 @@ Item {
                 height: 30
                 title:"外圈塔形:"
                 value:coreAlarmInfo.coreTaperShape.outTaper.toFixed(0)
-                toolTipText:"塔形 > 75 mm 3级报警  当前值："+coreAlarmInfo.coreTaperShape.outTaper
+                toolTipText:coreAlarmInfo.coreTaperShape.str //"塔形 > 75 mm 3级报警  当前值："+coreAlarmInfo.coreTaperShape.outTaper
                 level: value>75? 3 : 1
             }
             SimpleValueAlarm{

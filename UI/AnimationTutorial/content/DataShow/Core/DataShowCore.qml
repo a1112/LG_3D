@@ -212,7 +212,7 @@ DataShowCore_ {
                                                   })
 
                     if (!(defectName in coreModel.defectDictAll))
-                        coreModel.defectDictAll[defectName]=false
+                        coreModel.defectDictAll[defectName]=true
                 }
             }
         }
