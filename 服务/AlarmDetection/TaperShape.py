@@ -1,6 +1,8 @@
 import math
 
 import cv2
+
+from property import Point2D
 from property.Base import DataIntegrationList
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
@@ -92,7 +94,7 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     mask = dataIntegration.npy_mask
     ind = np.argwhere(mask == 0)
     npyData[ind[:, 0], ind[:, 1]] = 0
-    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a = count_taper(npyData,
+    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a,p_c = count_taper(npyData,
                                                                                                                img_2d)
 
     logger.debug(f"{dataIntegration.coilId}  {dataIntegration.surface}")
@@ -100,8 +102,8 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     logger.debug(["外圈塔形:", outer_taper, "半径:", outer_ind_max_r, "角度:", outer_ind_max_a])
 
     # p_center error :  中心点由 count_taper 返回
-    p_inner = getP2ByRotate(p_center, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
-    p_outer = getP2ByRotate(p_center, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
+    p_inner = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
+    p_outer = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
 
     Alarm.addObj(  # AlarmTaperShape 为旧版本对象，为 x 角度的检测塔形数值， 借用显示，新对象移动到 LineData 中
         # 目前无最低值，临时结构
@@ -247,7 +249,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     outer_ind_max_r = r_list[outer_ind_max_row] * fe
     outer_ind_max_a = angle_inv * outer_ind_max_col
 
-    return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a
+    return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
 
 
 def commitLineData(dataIntegration: DataIntegration):
