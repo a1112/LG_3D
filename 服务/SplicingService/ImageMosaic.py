@@ -12,8 +12,9 @@ import AlarmDetection
 from Save3D.save import D3Saver
 
 from property.ErrorBase import ServerDetectionException
+from utils.ControlManagement import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from tools import tool
+from tools import tool, FlattenSurface
 
 from CONFIG import SaveImageType, RendererList, isLoc
 from Init import ColorMaps, PreviewSize
@@ -102,21 +103,21 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         start = dataIntegration.median_non_zero + serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
         self._save_(dataIntegration.npyData, self.saveFolder / coilId / "3D.npy")
 
-        step = serverConfigProperty.colorToValue_mm // dataIntegration.scan3dCoordinateScaleZ - serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
+        step = (serverConfigProperty.colorToValue_mm-serverConfigProperty.colorFromValue_mm) // dataIntegration.scan3dCoordinateScaleZ
         dataIntegration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
         dataIntegration.set("colorToValue_mm", serverConfigProperty.colorToValue_mm)
         dataIntegration.set("start", start)
         dataIntegration.set("step", step)
         self.colorImageDict = {}
         dataIntegration.setTelescopedAlarms()
-        npy__ = dataIntegration.npyData.copy()
+        npy__ = dataIntegration.npyData
         non_zero_elements = npy__[npy__ != 0]
         a, b = start, start + step
 
         # 将图像裁剪到指定的范围 [a, b]
         depth_map_clipped = np.clip(npy__, a, b)
         # 将裁剪后的图像缩放到 [0, 255] 的范围
-        depth_map_scaled = ((depth_map_clipped - a) / (b - a)) * -255 + 255
+        depth_map_scaled = ((depth_map_clipped - a) / (b - a)) *  -255 + 255
         depth_map_uint8 = depth_map_scaled.astype(np.uint8)
         mask_zero = npy__ == 0
 
@@ -126,7 +127,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
             depth_map_color[mask_zero] = [0, 0, 0]  # [0, 0, 0] 表示黑色
 
-            # tool.showImage(depth_map_color) # 显示
+            # tool.showImage(depth_map_color)  # 显示
 
             image = Image.fromarray(depth_map_color)
             self._save_image_(dataIntegration, image, name)
@@ -205,7 +206,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             datas[index]['MASK'] = datas[index]['MASK'][:minHeight, :]
             datas[index]['3D'] = datas[index]['3D'][:minHeight, :]
 
-        if Globs.control.leveling_gray:
+        if Globs.control.leveling_gray:  # 调整灰度
             media_gray_list = []
             for data in datas:
                 media_gray = np.median(data["2D"][data["2D"] != 0])
@@ -218,7 +219,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         # tool.showImage(joinImage,"joinImage")
         # tool.showImage(joinMaskImage,"joinImage_mask")
 
-        if dataIntegration.__median_non_zero__ == 32767:
+        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
             npyData = np.hstack([data["3D"] for data in datas])
         else:
             npyData = tool.hstack3D([data["3D"] for data in datas], joinMaskImage=joinMaskImage)
@@ -233,7 +234,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             joinMaskImage = cv2.flip(joinMaskImage, 1)
             npyData = cv2.flip(npyData, 1)
 
-        if self.rotate == -90 or dataIntegration.surface=="L":
+        if self.rotate == -90 or dataIntegration.surface == "L":
             # tool.showImage(joinImage, "L")
             joinImage = np.rot90(joinImage, -1)
             joinMaskImage = np.rot90(joinMaskImage, -1)
@@ -248,17 +249,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         npyData = npyData[y:y + h, x:x + w]
         if np.max(joinMaskImage.shape) < control.minMaskDetectErrorSize:
             self.raiseError(f"算法错误： mask shape: {joinMaskImage.shape} 小于 {control.minMaskDetectErrorSize}")
-        # tool.showImage(joinMaskImage)
-
-        circleConfig = tool.getCircleConfigByMask(joinMaskImage)
-        dataIntegration.circleConfig = circleConfig
-        dataIntegration.set("width", int(w))
-        dataIntegration.set("height", int(h))
-        dataIntegration.set("circleConfig", circleConfig)
-        # if self.x_rotate:   # x、旋转
-        #     npyData = tool.rotate_around_x_axis(npyData, self.x_rotate)
-        #     dataIntegration.set("x_rotate", self.x_rotate)
-        dataIntegration.set_npy_data(npyData)
         dataIntegration.joinImage = joinImage
 
         dataIntegration.npy_image = joinImage
@@ -266,6 +256,18 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         dataIntegration.npy_mask = joinMaskImage
         dataIntegration.pil_mask = Image.fromarray(joinMaskImage)
+        dataIntegration.set_npy_data(npyData)
+
+        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.LinearRegression:
+            npyData = dataIntegration.flatten_surface_by_rotation()
+            dataIntegration.set_npy_data(npyData)
+        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.Config:
+            if self.x_rotate:  # x、旋转
+                npyData = tool.rotate_around_x_axis(npyData, self.x_rotate)
+                dataIntegration.set("x_rotate", self.x_rotate)
+                dataIntegration.set_npy_data(npyData)
+
+        # tool.showImage(joinMaskImage)
 
         return joinImage, joinMaskImage, npyData
 
@@ -295,7 +297,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 dataIntegration.currentSecondaryCoil = self.currentSecondaryCoil
                 # AlarmDetection.detection(dataIntegration)
 
-                AlarmDetection.detectionAll(dataIntegration)
+                # AlarmDetection.detectionAll(dataIntegration)
 
                 dataIntegration.commit()
             except ServerDetectionException as e:

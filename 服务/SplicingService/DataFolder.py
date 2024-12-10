@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import time
 
-import cv2
 import numpy as np
 from PIL import Image
 # from multiprocessing import Process
@@ -20,6 +19,7 @@ from tools.data3dTool import auto_data_leveling_3d
 
 from utils import Log
 import Globs
+from utils.ControlManagement import LevelingType
 
 logger = Log.logger
 
@@ -150,7 +150,7 @@ class DataFolder(Globs.control.BaseDataFolder):
             coilId = self.producer.get()
             # logger.info(f"DataFolder {coilId} start")
             data = {}
-            dataFolderLog = DataFolderLog(self)
+            # dataFolderLog = DataFolderLog(self)
             try:
                 jsonDatas, stemList = self.loadJson(coilId)
                 image2D, imageMask, rec, steelRec = self.load2D(coilId, stemList)
@@ -161,10 +161,9 @@ class DataFolder(Globs.control.BaseDataFolder):
                 data["MASK"] = imageMask
 
                 # data3D = cv2.bitwise_and(data3D, data3D, mask=imageMask)
-                if Globs.control.leveling_3d:
+                if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
                     data3D = auto_data_leveling_3d(data3D, imageMask)
                 data["3D"] = data3D
-
 
                 self.mkLink(coilId)
                 if self.saveMask:

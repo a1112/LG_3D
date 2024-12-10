@@ -5,18 +5,18 @@ from scipy.spatial.transform import Rotation as R
 from scipy.stats import norm
 
 
-def fit_plane(x, y, z):
+def fit_plane(x_, y_, z):
     """
     使用线性回归拟合一个平面，返回平面方程的系数（a, b, c），
     以及平面法向量
     """
-    X = np.vstack((x, y)).T
+    X = np.vstack((x_, y_)).T
     model = LinearRegression()
     model.fit(X, z)
-    a, b = model.coef_
-    c = model.intercept_
+    a_, b_ = model.coef_
+    c_ = model.intercept_
     # 返回平面方程的系数
-    return a, b, c
+    return a_, b_, c_
 
 
 def rotate_data(data, normal_vector):
@@ -28,7 +28,6 @@ def rotate_data(data, normal_vector):
     axis_of_rotation = np.cross(normal_vector, target_normal)  # 计算旋转轴
     angle_of_rotation = np.arccos(np.dot(normal_vector, target_normal) / (
             np.linalg.norm(normal_vector) * np.linalg.norm(target_normal)))  # 计算旋转角度
-
     if np.linalg.norm(axis_of_rotation) == 0:
         return data  # 如果已经平行于Z轴，返回原数据
 
@@ -82,7 +81,6 @@ def flatten_surface_by_rotation(data):
     y = y[non_zero_indices]
     z = z[non_zero_indices]
     print(np.mean(z))
-
 
     # 拟合平面并计算平面方程的系数
     a, b, c = fit_plane(x, y, z)

@@ -23,6 +23,7 @@ async def set_config(data: Dict):
     """
     return control.setConfig(data)
 
+
 @app.get("/control/set_property")
 async def set_property(key,value):
     """

@@ -64,11 +64,11 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
                 "points": segment_points,
                 "pointL": [int(pl[0]), int(pl[1])],
                 "pointR": [int(pr[0]), int(pr[1])],
-                # "min":int(np.min(segment_values)),
-                # "max":int(np.max(segment_values)),
-                # "mean":int(np.mean(segment_values)),
-                # "std":int(np.std(segment_values)),
-                # "median":int(np.median(segment_values)),
+                "min":int(np.min(segment_values)),
+                "max":int(np.max(segment_values)),
+                "mean":int(np.mean(segment_values)),
+                "std":int(np.std(segment_values)),
+                "median":int(np.median(segment_values)),
             })
 
     return lines
@@ -115,7 +115,6 @@ def getLengthDataByRotate(npy_data, mask_image, p1, rotate, ray=False):
 
 def getLengthData(npy_data, mask_image, p1, p2, ray=False):
     return getLengthDataByPoints(npy_data, mask_image, p1, p2, ray)
-
 
 
 def auto_data_leveling_3d(data, mask_src):

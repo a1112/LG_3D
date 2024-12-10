@@ -11,7 +11,14 @@ ProcessClass = WorkerProcessBase
 class LevelingType(Enum):
     NONE = 0
     WK_TYPE = 1
-    DOWN = 2
+    LinearRegression = 2
+    Config = 3
+
+
+class DetectionTaperShapeType(Enum):
+    NONE = 0
+    WK_TYPE = 1
+    LINE_TYPE = 2
 
 
 class ControlManagement(ThreadClass):
@@ -42,6 +49,7 @@ class ControlManagement(ThreadClass):
         self.leveling_3d = True
         self.leveling_type = LevelingType.WK_TYPE
         self.save_3d_obj = True
+        self.debug_show = False
 
         self.start()
 

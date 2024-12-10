@@ -5,11 +5,14 @@ from typing import List, Optional
 
 import numpy as np
 
+import Globs
 from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
 from Globs import control
 from property.detection3D import FlatRollData
+from tools import tool, FlattenSurface
+from utils.ControlManagement import LevelingType
 
 
 def sublist_with_indices(input_list, x, offset=0):
@@ -112,6 +115,8 @@ class DataIntegration:
     """
 
     def __init__(self, coilId, saveFolder, direction, key):
+        self.annulus_mask = None
+        self._circleConfig_ = None
         self.index = 0
         self._npyData_ = None
         self._hasDetectionError_ = None
@@ -135,8 +140,8 @@ class DataIntegration:
         self.scan3dCoordinateScaleZ = None
 
         self.lineDataDict = {}
-
-        self.npyData: np.array = None
+        self._npyData_: np.array = None
+        self.__npyData__: np.array = None
         # self._image_ = None
         self.npy_image = None
         self.pil_image = None
@@ -153,14 +158,24 @@ class DataIntegration:
         self.detectionLineData = []
         self.alarmTaperShapeList: List[AlarmTaperShape] = []
         self.json_data: dict = {}
-        self.circleConfig = {}
 
         self.currentSecondaryCoil: Optional[SecondaryCoil] = None
-
-        self.__median_non_zero__ = 32767
+        self.__median_non_zero__ = None
+        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
+            self.__median_non_zero__ = 32767
 
     def set_npy_data(self, npyData):
-        self._npyData_ = npyData
+        print("set set_npy_data")
+        self.__npyData__ = npyData
+
+    @property
+    def circleConfig(self):
+        if self._circleConfig_ is None:
+            self._circleConfig_ = tool.getCircleConfigByMask(self.npy_mask)
+            self.set("width", int(self.width))
+            self.set("height", int(self.height))
+            self.set("circleConfig", self._circleConfig_)
+        return self._circleConfig_
 
     @property
     def secondaryCoilId(self):
@@ -172,11 +187,11 @@ class DataIntegration:
 
     @property
     def width(self):
-        return self.npyData.shape[1]
+        return self.__npyData__.shape[1]
 
     @property
     def height(self):
-        return self.npyData.shape[0]
+        return self.__npyData__.shape[0]
 
     def x_to_mm(self, x_value):
         return x_value * self.scan3dCoordinateScaleX
@@ -196,7 +211,7 @@ class DataIntegration:
         return Path(self.saveFolder, str(self.coilId), *args)
 
     def isNone(self):
-        return self.npyData is None
+        return self.__npyData__ is None
 
     @property
     def accuracy_x(self):
@@ -217,29 +232,36 @@ class DataIntegration:
                 annular_mean_area = image[annulus_mask]
                 annular_mean_area = annular_mean_area[annular_mean_area != 0]
                 annular_mean = np.median(annular_mean_area)
-                return annular_mean
+                return annular_mean, annulus_mask
 
-            cw = self.npyData.shape[0] // 2
-            self.__median_non_zero__ = annular_region_mean(self._npyData_,
-                                                           self.circleConfig["inner_circle"]["circlex"][0],
-                                                           self.circleConfig["inner_circle"]["circlex"][1],
-                                                           int(cw * 0.6),
-                                                           int(cw * 0.8))  # 获取平均值
+            cw = self.__npyData__.shape[0] // 2
+            self.__median_non_zero__, self.annulus_mask = annular_region_mean(self.__npyData__,
+                                                                              self.circleConfig["inner_circle"][
+                                                                                  "circlex"][0],
+                                                                              self.circleConfig["inner_circle"][
+                                                                                  "circlex"][1],
+                                                                              int(cw * 0.6),
+                                                                              int(cw * 0.8))  # 获取平均值
             #
             # 将输入的矩阵转换为 numpy 数组  翻转
             # 创建一个新的矩阵，应用条件变换
             # transformed_matrix = np.where(matrix < n, matrix, 2 * a - matrix)
-        if self.npyData is None:
-            self.npyData = np.where(
-                self._npyData_ < max(self.__median_non_zero__ - 300 // self.scan3dCoordinateScaleZ, 10),
-                np.zeros(self._npyData_.shape), 2 * self.__median_non_zero__ - self._npyData_)
-            self.set("median_3d", self.__median_non_zero__)
-            self.set("median_3d_mm", self.median_3d_mm)
+
         return self.__median_non_zero__
 
     @property
+    def npyData(self):
+        if self._npyData_ is None:
+            self._npyData_ = np.where(
+                self.__npyData__ < max(self.median_non_zero - 300 // self.scan3dCoordinateScaleZ, 10),
+                np.zeros(self.__npyData__.shape), 2 * self.median_non_zero - self.__npyData__)
+            self.set("median_3d", self.median_non_zero)
+            self.set("median_3d_mm", self.median_3d_mm)
+        return self._npyData_
+
+    @property
     def median_3d_mm(self):
-        return self.__median_non_zero__ * self.scan3dCoordinateScaleZ
+        return self.median_non_zero * self.scan3dCoordinateScaleZ
 
     def getBdXYZ(self):
         return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleZ]
@@ -285,6 +307,7 @@ class DataIntegration:
         }
 
     def set(self, key, value):
+        print(f" {self.surface} set -> {key} : {value}")
         self.dictData[key] = value
         self.__dict__[key] = value
 
@@ -373,6 +396,19 @@ class DataIntegration:
             raise StopIteration
         self.index += 1
         return self
+
+    def flatten_surface_by_rotation(self):
+        self.median_non_zero
+        a, b, c, rotated_data,angleData = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
+                                                                           self.annulus_mask,
+                                                                           self.median_non_zero)
+        r_z = 180 - angleData['angle_with_z']
+        # r_z=r_z*1
+        # r_z
+        print(f"{self.key} 旋转 {r_z} ")
+        return tool.rotate_around_x_axis(self.__npyData__,r_z)
+        # self.__npyData__ =
+        # self._npyData_ = self.__npyData__
 
 
 class DataIntegrationList:

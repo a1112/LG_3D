@@ -3,11 +3,14 @@ import numpy
 import numpy as np
 from PIL import Image
 
+import Globs
 import tools.tool
 from property import Point2D
 
 
 def showImage(image, name="image"):
+    if not Globs.control.debug_show:
+        return
     if isinstance(image, Image.Image):
         image = np.array(image)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)

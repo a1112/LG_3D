@@ -100,7 +100,6 @@ def commitDefects(defectDict,dataIntegration):
 
 @DetectionSpeedRecord.timing_decorator("检测数据计时 检出分类")
 def detection(dataIntegration):
-    npyData = dataIntegration.npyData
     joinImage = dataIntegration.joinImage
     mask = dataIntegration.npy_mask
     clip_num = serverConfigProperty.clip_num
