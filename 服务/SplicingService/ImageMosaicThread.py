@@ -8,7 +8,8 @@ from queue import Queue
 import logging
 
 import AlarmDetection
-from CONFIG import isLoc, serverConfigProperty
+from CONFIG import isLoc
+from Globs import serverConfigProperty
 from Init import ErrorMap
 from property.Base import DataIntegrationList
 from .ImageMosaic import ImageMosaic
@@ -55,13 +56,13 @@ class ImageMosaicThread(Thread):
 
     def run(self):
         while True:
-            logger.debug(f"执行 ")
+            # logger.debug(f"执行 ")
             run_num = 0
             try:
                 maxSecondaryCoilId = Coil.getSecondaryCoil(1)[0].Id
                 listData = Coil.getSecondaryCoilById(self.startCoilId).all()
                 # 忽略 list 以前的数据
-                listData = listData[-1:]
+                # listData = listData[-1:]
 
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
@@ -75,7 +76,7 @@ class ImageMosaicThread(Thread):
                     if maxSecondaryCoilId - secondaryCoil.Id > 2:
                         logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
-                    if secondaryCoilIndex >= listData[- 1].Id-1:
+                    if secondaryCoilIndex >= listData[- 1].Id-2:
                         if not self.checkDetectionEnd(secondaryCoil.Id):
                             # 采集未完成
                             break
@@ -103,8 +104,9 @@ class ImageMosaicThread(Thread):
                             continue
                     defectionTime2 = time.time()
                     print(f"图像检测时间 {defectionTime2 - defectionTime1}")
-                    AlarmDetection.detectionAll(dataIntegrationList)
+                    # AlarmDetection.detectionAll(dataIntegrationList)
                     cv_detection.detectionAll(dataIntegrationList)
+
                     defectionTime3 = time.time()
                     print(f"算法检测时间 {defectionTime3 - defectionTime2}")
                     print(f"完整检测时间 {defectionTime3 - defectionTime1}")

@@ -1,6 +1,6 @@
 from pathlib import Path
 import shutil
-from CONFIG import serverConfigProperty
+from Globs import serverConfigProperty
 from threading import Thread
 from .Zip import ZipAndDeletion
 async def backupImageTask(fromId:str, toId:str, saveFolder:str,msgFunc=None):

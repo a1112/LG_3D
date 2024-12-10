@@ -7,18 +7,8 @@ numpy
 pillow
 scikit-learn
 matplotlib
-jsonargparse
-anomalib
-lightning
-torch
-torchvision
-pandas
 tqdm
-tifffile
-imgaug
 scipy
-omegaconf
-groundingdino
 huggingface-hub
 typer
 addict
@@ -39,7 +29,6 @@ GPUtil
 pymssql
 PyMySQL
 harvesters
-CoilDataBase
 timm
 scikit-image
 open3d

@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 Item {
 
-    property bool hasAlarmData:hasAlarmInfo
+    property bool hasAlarmData:true// hasAlarmInfo
     property bool hasCoilData: hasCoil
 
     function level2Color(level){

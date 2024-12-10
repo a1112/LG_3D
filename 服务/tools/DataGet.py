@@ -1,7 +1,8 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
 from api.ApiCache import previewCache, imageCache,_3dDataCache
-from CONFIG import serverConfigProperty
+from Globs import serverConfigProperty
+
 serverConfigProperty:ServerConfigProperty
 
 from PIL import Image, ImageDraw, ImageFont

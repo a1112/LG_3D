@@ -2,7 +2,7 @@ from pathlib import Path
 
 from tools.DataGet import DataGet, noFindImageByte
 from .api_core import app
-from CONFIG import serverConfigProperty
+from Globs import serverConfigProperty
 from fastapi import Response
 from fastapi.responses import FileResponse
 

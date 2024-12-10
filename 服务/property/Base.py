@@ -12,20 +12,20 @@ from Globs import control
 from property.detection3D import FlatRollData
 
 
-def sublist_with_indices(input_list, x,offset=0):
+def sublist_with_indices(input_list, x, offset=0):
     result = []
     temp = []
     start_index = None
 
     for i, item in enumerate(input_list):
-        item=float(item)
+        item = float(item)
         if item < x:
             if start_index is None:  # 记录子列表的起始位置
-                start_index = i+offset
+                start_index = i + offset
             temp.append(item)
         else:
             if temp:
-                result.append([start_index,len(temp), temp])
+                result.append([start_index, len(temp), temp])
                 temp = []
                 start_index = None
     return result
@@ -71,29 +71,28 @@ class BdData:
 
 class CoilLineData:
     def __init__(self):
-        self.dataIntegration=None
-        self.centre=None
-        self.lineData=None
-        self.rotation_angle=None
-        self.linePoint=None
-        self.zeroValue=-300
-        self.subList=[]
+        self.dataIntegration = None
+        self.centre = None
+        self.lineData = None
+        self.rotation_angle = None
+        self.linePoint = None
+        self.zeroValue = -300
+        self.subList = []
         self.max_width = 0
         self.max_width_mm = 0
-        self.data={
+        self.data = {
         }
-
 
     def detection(self):
 
-        px =self.linePoint[0]
-        self.subList=sublist_with_indices(self.lineData[self.linePoint[0]:self.linePoint[1]],self.zeroValue,px)
-        self.data["subList"]=self.subList
-        self.max_width=0
+        px = self.linePoint[0]
+        self.subList = sublist_with_indices(self.lineData[self.linePoint[0]:self.linePoint[1]], self.zeroValue, px)
+        self.data["subList"] = self.subList
+        self.max_width = 0
         for subItem in self.subList:
-            if subItem[1]>self.max_width:
-                self.max_width=subItem[1]
-                self.max_width_mm = self.max_width*self.dataIntegration.scan3dCoordinateScaleY # x 未标定
+            if subItem[1] > self.max_width:
+                self.max_width = subItem[1]
+                self.max_width_mm = self.max_width * self.dataIntegration.scan3dCoordinateScaleY  # x 未标定
 
         return self.subList
 
@@ -111,7 +110,9 @@ class DataIntegration:
     """
     数据整合
     """
-    def __init__(self, coilId,saveFolder, direction, key):
+
+    def __init__(self, coilId, saveFolder, direction, key):
+        self.index = 0
         self._npyData_ = None
         self._hasDetectionError_ = None
         self.coilId = coilId
@@ -135,31 +136,30 @@ class DataIntegration:
 
         self.lineDataDict = {}
 
-        self.npyData:np.array = None
+        self.npyData: np.array = None
         # self._image_ = None
         self.npy_image = None
         self.pil_image = None
 
         # self._maskImage_ = None
-        self.npy_mask=None
-        self.pil_mask=None
-        self.saveFolder=saveFolder
+        self.npy_mask = None
+        self.pil_mask = None
+        self.saveFolder = saveFolder
 
-        self.datas=None
-        self.configDatas=None
+        self.datas = None
+        self.configDatas = None
 
-        self.flatRollData: Optional[FlatRollData] =None
-        self.detectionLineData= []
-        self.alarmTaperShapeList:List[AlarmTaperShape]=[]
-        self.json_data : dict={}
-        self.circleConfig={}
+        self.flatRollData: Optional[FlatRollData] = None
+        self.detectionLineData = []
+        self.alarmTaperShapeList: List[AlarmTaperShape] = []
+        self.json_data: dict = {}
+        self.circleConfig = {}
 
-        self.currentSecondaryCoil: Optional[SecondaryCoil] =None
-
+        self.currentSecondaryCoil: Optional[SecondaryCoil] = None
 
         self.__median_non_zero__ = 32767
 
-    def set_npy_data(self,npyData):
+    def set_npy_data(self, npyData):
         self._npyData_ = npyData
 
     @property
@@ -178,22 +178,22 @@ class DataIntegration:
     def height(self):
         return self.npyData.shape[0]
 
-    def x_to_mm(self,x_value):
-        return x_value*self.scan3dCoordinateScaleX
+    def x_to_mm(self, x_value):
+        return x_value * self.scan3dCoordinateScaleX
 
-    def z_to_mm(self,z_value):
-        return float((z_value-self.median_non_zero)*self.scan3dCoordinateScaleZ)
+    def z_to_mm(self, z_value):
+        return float((z_value - self.median_non_zero) * self.scan3dCoordinateScaleZ)
 
     def zero_mm(self):
         return self.z_to_mm(0)
 
-    def point_to_mm(self,arr):
-        arr=arr.copy()
+    def point_to_mm(self, arr):
+        arr = arr.copy()
         arr[:, 2] = (arr[:, 2] - self.median_non_zero) * self.scan3dCoordinateScaleZ
         return arr
 
-    def get_save_url(self,*args):
-        return Path(self.saveFolder, str(self.coilId),*args)
+    def get_save_url(self, *args):
+        return Path(self.saveFolder, str(self.coilId), *args)
 
     def isNone(self):
         return self.npyData is None
@@ -218,28 +218,31 @@ class DataIntegration:
                 annular_mean_area = annular_mean_area[annular_mean_area != 0]
                 annular_mean = np.median(annular_mean_area)
                 return annular_mean
+
             cw = self.npyData.shape[0] // 2
-            self.__median_non_zero__ = annular_region_mean(self._npyData_, self.circleConfig["inner_circle"]["circlex"][0],
-                                                  self.circleConfig["inner_circle"]["circlex"][1],
-                                                  int(cw * 0.6),
-                                                  int(cw * 0.8))  # 获取平均值
+            self.__median_non_zero__ = annular_region_mean(self._npyData_,
+                                                           self.circleConfig["inner_circle"]["circlex"][0],
+                                                           self.circleConfig["inner_circle"]["circlex"][1],
+                                                           int(cw * 0.6),
+                                                           int(cw * 0.8))  # 获取平均值
             #
             # 将输入的矩阵转换为 numpy 数组  翻转
             # 创建一个新的矩阵，应用条件变换
             # transformed_matrix = np.where(matrix < n, matrix, 2 * a - matrix)
         if self.npyData is None:
-            self.npyData = np.where(self._npyData_ < max(self.__median_non_zero__-300//self.scan3dCoordinateScaleZ,10), np.zeros(self._npyData_.shape), 2 * self.__median_non_zero__ - self._npyData_)
+            self.npyData = np.where(
+                self._npyData_ < max(self.__median_non_zero__ - 300 // self.scan3dCoordinateScaleZ, 10),
+                np.zeros(self._npyData_.shape), 2 * self.__median_non_zero__ - self._npyData_)
             self.set("median_3d", self.__median_non_zero__)
             self.set("median_3d_mm", self.median_3d_mm)
         return self.__median_non_zero__
 
     @property
     def median_3d_mm(self):
-        return self.__median_non_zero__*self.scan3dCoordinateScaleZ
-
+        return self.__median_non_zero__ * self.scan3dCoordinateScaleZ
 
     def getBdXYZ(self):
-        return  [self.scan3dCoordinateScaleX,self.scan3dCoordinateScaleX,self.scan3dCoordinateScaleZ]
+        return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleZ]
 
     def setStart(self):
         self.startTime = datetime.datetime.now()
@@ -315,7 +318,7 @@ class DataIntegration:
         # 数据提交
         print("commit")
         print(self.dictData.get("median_3d"))
-        dictData=self.dictData
+        dictData = self.dictData
         dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
@@ -344,7 +347,7 @@ class DataIntegration:
             jsonData=str(json.dumps(dictData))
         ))
 
-    def addServerDetectionError(self,errorMsg,errorType="ServerDetectionError"):
+    def addServerDetectionError(self, errorMsg, errorType="ServerDetectionError"):
         """
         添加服务器检测错误
         """
@@ -356,20 +359,32 @@ class DataIntegration:
                 msg=errorMsg
             )
         )
-        self._hasDetectionError_=True
+        self._hasDetectionError_ = True
 
     def hasDetectionError(self):
         return self._hasDetectionError_
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index > 0 or self.isNone():
+            self.index = 0
+            raise StopIteration
+        self.index += 1
+        return self
+
 
 class DataIntegrationList:
     """
     综合数据- List
     """
+
     def __init__(self):
         self.index = 0
-        self.dataIntegrationList:List[DataIntegration] = []
+        self.dataIntegrationList: List[DataIntegration] = []
 
-    def append(self,dataIntegration:DataIntegration):
+    def append(self, dataIntegration: DataIntegration):
         self.dataIntegrationList.append(dataIntegration)
 
     def __iter__(self):
@@ -383,5 +398,5 @@ class DataIntegrationList:
                 return self.__next__()
             return dataIntegration
         else:
-            self.index=0
+            self.index = 0
             raise StopIteration

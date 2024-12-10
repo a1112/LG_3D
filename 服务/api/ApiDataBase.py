@@ -4,13 +4,17 @@ import os
 
 from fastapi.responses import StreamingResponse
 from fastapi import WebSocket
+
+import Globs
+import utils.ControlManagement
 from CoilDataBase.models import SecondaryCoil, AlarmInfo
 from fastapi.responses import FileResponse
 import Init
 from CoilDataBase import Coil,tool
 import CONFIG
 from AlarmDetection import AlarmCoilManagement
-from CONFIG import serverConfigProperty, isLoc
+from CONFIG import isLoc
+from Globs import serverConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
 from .api_core import app
 
@@ -36,7 +40,7 @@ def getCoilItemInfo(c):
         if "Weight" in c:
             c["NextCode"] = code
             try:
-                c["NextInfo"] = CONFIG.infoConfigProperty.getNext(str(code))
+                c["NextInfo"] = Globs.infoConfigProperty.getNext(str(code))
             except:
                 c["NextInfo"] = "未知去向，" + str(code)
     return c
@@ -67,13 +71,13 @@ def formatCoilInfo(secondaryCoilList):
 
 
 @app.get("/coilList/{number}")
-def get_coil(number: int):
+async def get_coil(number: int):
     re = []
     return formatCoilInfo(Coil.getCoilList(number, byCoil=isLoc)[::-1])
 
 
 @app.get("/info")
-def info():
+async def info():
     info_ = {
         "ErrorMap": Init.ErrorMap,
         "RendererList": CONFIG.RendererList,
@@ -86,7 +90,7 @@ def info():
 
 
 @app.get("/flush/{coilId:int}")
-def flush(coilId: int):
+async def flush(coilId: int):
     re = {
         "coilList": formatCoilInfo(Coil.getCoilList(10, coilId, byCoil=isLoc)[::-1])
     }
@@ -94,18 +98,18 @@ def flush(coilId: int):
 
 
 @app.get("/search/coilNo/{coilNo}")
-def searchByCoilNo(coilNo):
+async def searchByCoilNo(coilNo):
     return formatCoilInfo(Coil.searchByCoilNo(coilNo))
 
 
 @app.get("/search/coilId/{coilId}")
-def searchByCoilId(coilId: int):
+async def searchByCoilId(coilId: int):
     coilId = int(coilId)
     return formatCoilInfo(Coil.searchByCoilId(coilId))
 
 
 @app.get("/search/DateTime/{start}/{end}")
-def searchByDateTime(start: str, end: str):
+async def searchByDateTime(start: str, end: str):
     re = []
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
@@ -113,7 +117,7 @@ def searchByDateTime(start: str, end: str):
 
 
 @app.get("/search/CoilState/{coilId:int}")
-def getCoilState(coilId: int):
+async def getCoilState(coilId: int):
     coilId = int(coilId)
     r = Coil.getCoilState(coilId)
     # print(r)
@@ -121,7 +125,7 @@ def getCoilState(coilId: int):
 
 
 @app.get("/search/PlcData/{coilId:int}")
-def getPlcData(coilId: int):
+async def getPlcData(coilId: int):
     coilId = int(coilId)
     r = Coil.getPlcData(coilId)
     # print(r)
@@ -129,12 +133,20 @@ def getPlcData(coilId: int):
 
 
 @app.get("/search/defects/{coilId:int}/{direction}")
-def getDefects(coilId: int, direction: str):
+async def getDefects(coilId: int, direction: str):
     return tool.to_dict(Coil.getDefects(coilId, direction))
 
 
 @app.get("/search/defectDict")
-def getDefectDict():
+async def getDefectDict():
+    return tool.to_dict(Coil.getDefetClassDict())
+
+
+@app.get("/defectDictAll")
+async def getDefectDictAll():
+    """
+    获取全部的表面缺陷数据字段
+    """
     return tool.to_dict(Coil.getDefetClassDict())
 
 
@@ -227,7 +239,7 @@ async def getCoilAlarm(coil_id: str):
 
 
 @app.get("/backupImageTask/{fromId:str}/{toId:str}/{saveFolder:path}")
-def backupImageTask(fromId: str, toId: str, saveFolder: str):
+async def backupImageTask(fromId: str, toId: str, saveFolder: str):
     print(fromId)
     print(toId)
     print(saveFolder)

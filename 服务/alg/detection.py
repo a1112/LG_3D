@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from PIL import Image
 
-from CONFIG import serverConfigProperty
+from Globs import serverConfigProperty
 from property.Base import DataIntegrationList
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .CoilMaskModel import CoilDetectionModel
@@ -135,7 +135,8 @@ def detection(dataIntegration):
             defectDict[name].append((x + xmin, y + ymin, x + xmax, y + ymax,labelIndex, source))
     commitDefects(defectDict,dataIntegration)
 
+
 @DetectionSpeedRecord.timing_decorator("深度学习检测全部时间")
-def detectionAll(dataIntegrationList:DataIntegrationList):
+def detectionAll(dataIntegrationList: DataIntegrationList):
     for dataIntegration in dataIntegrationList:
         detection(dataIntegration)

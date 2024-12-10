@@ -6,20 +6,20 @@ from typing import List, Optional
 
 import cv2
 import numpy as np
-import six
 from PIL import Image
 
+import AlarmDetection
 from Save3D.save import D3Saver
 
 from property.ErrorBase import ServerDetectionException
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from tools import tool
 
-from CONFIG import SaveImageType, RendererList, serverConfigProperty, isLoc
+from CONFIG import SaveImageType, RendererList, isLoc
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
-from Globs import control
+from Globs import control, serverConfigProperty
 from property.Base import DataIntegration
 
 from utils.Log import logger
@@ -239,8 +239,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             joinMaskImage = np.rot90(joinMaskImage, -1)
             npyData = np.rot90(npyData, -1)
 
-
-
         box = tool.crop_black_border(joinMaskImage)
         x, y, w, h = box
         dataIntegration.set("rotate", self.rotate)
@@ -296,6 +294,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 self.save_all_data(dataIntegration)
                 dataIntegration.currentSecondaryCoil = self.currentSecondaryCoil
                 # AlarmDetection.detection(dataIntegration)
+
+                AlarmDetection.detectionAll(dataIntegration)
+
                 dataIntegration.commit()
             except ServerDetectionException as e:
                 error_message = traceback.format_exc()
@@ -307,6 +308,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 # raise e
                 logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
                 if isLoc:
+                    import six
                     six.reraise(Exception, e)
 
             finally:

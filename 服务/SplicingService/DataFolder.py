@@ -10,7 +10,8 @@ from PIL import Image
 # from multiprocessing import JoinableQueue as MulQueue
 # from queue import Queue as ThreadQueue
 
-from CONFIG import serverConfigProperty, isLoc
+from CONFIG import isLoc
+from Globs import serverConfigProperty
 from SplicingService.DataFolderLog import DataFolderLog
 from tools.Glob import cmdThread
 

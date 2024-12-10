@@ -1,48 +1,57 @@
 from typing import List
 
-from sqlalchemy.orm import joinedload, subqueryload
+from sqlalchemy.orm import subqueryload
 
 from .core import Session
 from .models import *
 from .tool import to_dict
 
-def getAllJoinQuery(session: Session):
-    return  session.query(SecondaryCoil)\
-                .options(
-                    subqueryload(SecondaryCoil.childrenCoil),
-                    subqueryload(SecondaryCoil.childrenCoilState),
-                    subqueryload(SecondaryCoil.childrenCoilDefect),
-                    subqueryload(SecondaryCoil.childrenCoilAlarmStatus),
-                    subqueryload(SecondaryCoil.childrenAlarmFlatRoll),
-                    subqueryload(SecondaryCoil.childrenTaperShapePoint),
-                    subqueryload(SecondaryCoil.childrenAlarmInfo),
-                    subqueryload(SecondaryCoil.childrenPlcData),
-                    subqueryload(SecondaryCoil.childrenAlarmTaperShape),
-                    subqueryload(SecondaryCoil.childrenAlarmLooseCoil),
-                    subqueryload(SecondaryCoil.childrenDetectionSpeed),
-                )
 
-def  getAllJoinDataByNum(num,max=None):
+def getAllJoinQuery(session: Session):
+    return session.query(SecondaryCoil) \
+        .options(
+        subqueryload(SecondaryCoil.childrenCoil),
+        subqueryload(SecondaryCoil.childrenCoilState),
+        subqueryload(SecondaryCoil.childrenCoilDefect),
+        subqueryload(SecondaryCoil.childrenCoilAlarmStatus),
+        subqueryload(SecondaryCoil.childrenAlarmFlatRoll),
+        subqueryload(SecondaryCoil.childrenTaperShapePoint),
+        subqueryload(SecondaryCoil.childrenAlarmInfo),
+        subqueryload(SecondaryCoil.childrenPlcData),
+        subqueryload(SecondaryCoil.childrenAlarmTaperShape),
+        subqueryload(SecondaryCoil.childrenAlarmLooseCoil),
+        subqueryload(SecondaryCoil.childrenDetectionSpeed),
+        subqueryload(SecondaryCoil.childrenServerDetectionError),
+    )
+
+
+def getAllJoinDataByNum(num, maxsize=None):
     with Session() as session:
-        if max:
-            return getAllJoinQuery(session).filter(SecondaryCoil.Id<max).order_by(SecondaryCoil.Id.desc())[:num]
+        if maxsize:
+            return getAllJoinQuery(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[:num]
         return getAllJoinQuery(session).order_by(SecondaryCoil.Id.desc())[:num]
 
-def getAllJoinDataByTime(startTime,endTime):
-    with Session() as session:
-        return getAllJoinQuery(session).filter(SecondaryCoil.CreateTime>=startTime , SecondaryCoil.CreateTime<=endTime).order_by(SecondaryCoil.Id.desc()).all()
 
-def getJoinQuery(session: Session,byCoil=True):
+def getAllJoinDataByTime(startTime, endTime):
+    with Session() as session:
+        return getAllJoinQuery(session).filter(SecondaryCoil.CreateTime >= startTime,
+                                               SecondaryCoil.CreateTime <= endTime).order_by(
+            SecondaryCoil.Id.desc()).all()
+
+
+def getJoinQuery(session: Session, byCoil=True):
     """
     对于联合数据的查询
     Args:
         session:
+        byCoil :
+
 
     Returns:
 
     """
-    byCoil=True
-    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo)).options(subqueryload(SecondaryCoil.childrenCoil))
+    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo)).options(
+        subqueryload(SecondaryCoil.childrenCoil))
 
     if byCoil:
         lastCoil = session.query(Coil).order_by(Coil.Id.desc()).first()
@@ -53,7 +62,7 @@ def getJoinQuery(session: Session,byCoil=True):
     #                         .join(AlarmInfo).order_by(SecondaryCoil.Id.desc())
 
 
-def addSecondaryCoil(coil:SecondaryCoil):
+def addSecondaryCoil(coil: SecondaryCoil):
     """
         添加二级数据
     Args:
@@ -84,7 +93,8 @@ def addObj(obj):
         session.add(obj)
         session.commit()
 
-def getSecondaryCoil(num:int, desc=True)->List[SecondaryCoil]:
+
+def getSecondaryCoil(num: int, desc=True) -> List[SecondaryCoil]:
     """
         获取二级数据
     Args:
@@ -99,6 +109,7 @@ def getSecondaryCoil(num:int, desc=True)->List[SecondaryCoil]:
             return session.query(SecondaryCoil).order_by(SecondaryCoil.Id.desc())[:num]
         else:
             return session.query(SecondaryCoil).order_by(SecondaryCoil.Id.asc())[:num]
+
 
 def addCoil(coil):
     """
@@ -124,7 +135,7 @@ def addCoil(coil):
         session.commit()
 
 
-def deleteDefectsBySecondaryCoilId(secondaryCoilId,surface):
+def deleteDefectsBySecondaryCoilId(secondaryCoilId, surface):
     """
         移除检测数据
     Args:
@@ -136,11 +147,11 @@ def deleteDefectsBySecondaryCoilId(secondaryCoilId,surface):
     """
     with Session() as session:
         session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == secondaryCoilId and
-                                         surface  == CoilDefect.surface).delete()
+                                         surface == CoilDefect.surface).delete()
         session.commit()
 
 
-def addDefects(defects:List[dict]):
+def addDefects(defects: List[dict]):
     """
         增加缺陷数据
     Args:
@@ -183,10 +194,9 @@ def deleteCoil(id_):
         session.commit()
 
 
-def getCoilList(num,coilId=None,byCoil=False):
-    byCoil=True
+def getCoilList(num, coilId=None, byCoil=True):
     with (Session() as session):
-        query = getJoinQuery(session,byCoil=byCoil)
+        query = getJoinQuery(session, byCoil=byCoil)
 
         if coilId:
             query = query.filter(SecondaryCoil.Id > coilId)
@@ -199,22 +209,25 @@ def searchByCoilNo(coilNo):
         return query.filter(SecondaryCoil.CoilNo.like(f"%{coilNo}%")).all()
 
 
-def getIdlistByCoilNo(coilNo,endCoilNo):
+def getIdlistByCoilNo(coilNo, endCoilNo):
     with Session() as session:
-        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coilNo,SecondaryCoil.CoilNo<=endCoilNo).all()
+        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coilNo,
+                                                      SecondaryCoil.CoilNo <= endCoilNo).all()
 
-def searchByCoilId(coilId,endCoilId=None):
 
+def searchByCoilId(coilId, endCoilId=None):
     with Session() as session:
         query = getJoinQuery(session)
         if endCoilId:
-            return query.filter(SecondaryCoil.Id >= coilId,SecondaryCoil.Id<=endCoilId).all()
+            return query.filter(SecondaryCoil.Id >= coilId, SecondaryCoil.Id <= endCoilId).all()
         return query.filter(SecondaryCoil.Id == coilId).all()
 
-def searchByDateTime(startTime,endTimeq):
+
+def searchByDateTime(startTime, endTimeq):
     with Session() as session:
         query = getJoinQuery(session)
-        return query.filter(SecondaryCoil.CreateTime>=startTime , SecondaryCoil.CreateTime<=endTimeq).all()
+        return query.filter(SecondaryCoil.CreateTime >= startTime, SecondaryCoil.CreateTime <= endTimeq).all()
+
 
 def addCoilState(coilState):
     with Session() as session:
@@ -232,10 +245,10 @@ def getPlcData(coilId):
         return session.query(PlcData).filter(PlcData.secondaryCoilId == coilId).order_by(PlcData.Id.desc()).first()
 
 
-def getDefects(coilId,direction):
+def getDefects(coilId, direction):
     with Session() as session:
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coilId,
-                                                    CoilDefect.surface == direction).all()
+                                                CoilDefect.surface == direction).all()
 
 
 def getDefetClassDict():
@@ -265,13 +278,12 @@ def deleteCoilByCoilId(Id_):
         session.query(Coil).filter(Coil.SecondaryCoilId > Id_).delete()
         session.commit()
 
-def getCoilStateByCoilId(coilId,surface):
+
+def getCoilStateByCoilId(coilId, surface):
     with Session() as session:
         return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId,
-                                                    CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
+                                               CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 
-def addServerDetectionError(error:ServerDetectionError):
-    with Session() as session:
-        session.add(error)
-        session.commit()
+def addServerDetectionError(error: ServerDetectionError):
+    return addObj(error)

@@ -27,15 +27,15 @@ Path(log_dir).mkdir(parents=True, exist_ok=True)
 filename = os.path.join(log_dir, f"%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log")
 
 # 创建文件处理器，按日期进行滚动
-file_handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
-file_handler.suffix = f"%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log"
+# file_handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
+# file_handler.suffix = f"%Y-%m-%d_{multiprocessing.current_process().name.translate(translator)}.log"
+#
+# # 设置文件日志格式
+# file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#                                     datefmt='%Y-%m-%d %H:%M:%S')
+# file_handler.setFormatter(file_formatter)
 
-# 设置文件日志格式
-file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                                    datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(file_formatter)
-
-logger.addHandler(file_handler)
+# logger.addHandler(file_handler)
 
 # 创建控制台处理器
 console_handler = logging.StreamHandler()

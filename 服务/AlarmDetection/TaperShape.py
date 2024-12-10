@@ -1,4 +1,5 @@
 import math
+from typing import Union
 
 import cv2
 import numpy as np
@@ -11,6 +12,7 @@ from tools.data3dTool import getP2ByRotate
 from utils.Log2 import logger
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .TaperShapeLine import *
+from CONFIG import alarmConfigFile
 
 
 def addAlarmTaperShape(dataIntegration: DataIntegration, alarmTaperShape: AlarmTaperShape):
@@ -90,13 +92,13 @@ def _detectionTaperShape_(dataIntegration: DataIntegration):
 def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     print("塔形检测A")
     lineDataDict = {}
-    p_center = dataIntegration.flatRollData.get_center()
+    # p_center = dataIntegration.flatRollData.get_center()
     npyData = (dataIntegration.npyData - 32767) * dataIntegration.scan3dCoordinateScaleZ
     img_2d = dataIntegration.npy_image
     mask = dataIntegration.npy_mask
     ind = np.argwhere(mask == 0)
     npyData[ind[:, 0], ind[:, 1]] = 0
-    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, p_c = count_taper(
+    inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, p_c = count_taper2(
         npyData,
         img_2d)
 
@@ -107,6 +109,7 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     # p_center error :  中心点由 count_taper 返回
     p_inner = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
     p_outer = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
+
 
     Alarm.addObj(  # AlarmTaperShape 为旧版本对象，为 x 角度的检测塔形数值， 借用显示，新对象移动到 LineData 中
         # 目前无最低值，临时结构
@@ -126,7 +129,8 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
             in_taper_min_x=p_inner.x,
             in_taper_min_y=p_inner.y,
             in_taper_min_value=inner_taper,
-            rotation_angle=outer_ind_max_a
+            rotation_angle=outer_ind_max_a,
+            level=3 if outer_taper > 50 or inner_taper > 50 else 1
         )
     )
     # th_3d = 100
@@ -180,8 +184,8 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     for r in range(in_r, size_exp // 2, roll_num // 2):  # 步长小于厚度，用来保证有一定的重叠
         r_list.append(r)
         mask = np.zeros((size_exp, size_exp), np.uint8)
-        cv2.circle(mask, (cx, cy), r, 1, -1)
-        cv2.circle(mask, (cx, cy), r - roll_num, 0, -1)
+        # cv2.circle(mask, (cx, cy), r, 1, -1)
+        # cv2.circle(mask, (cx, cy), r - roll_num, 0, -1)
         bShow = False
         if bShow is True:
             img_2d_exp_color = cv2.cvtColor(img_2d_exp, cv2.COLOR_GRAY2BGR)
@@ -275,6 +279,114 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
         cx, cy)
 
 
+def count_taper2(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
+    """
+    data: 转化为相对深度的数据
+    img: 图像数据
+    angle_num: 分成的角度数量
+    roll_num: 每个圆环的厚度
+    in_r: 内半径
+    fe: 放大因子
+    """
+    # 计算实际内半径
+    in_r = int(((in_r - 200) * 0.5) / fe)
+    h, w = data.shape[:2]
+    size = min(w, h)
+
+    # 缩放图像到统一大小
+    img_3d = cv2.resize(data, (size, size))
+    img_2d = cv2.resize(img, (size, size))
+
+    # 扩充矩阵，确保最后的圆环可以框到边缘
+    offset = 200
+    size_exp = size + offset
+    img_3d_exp = np.zeros((size_exp, size_exp), np.float32)
+    img_2d_exp = np.zeros((size_exp, size_exp), np.uint8)
+
+    img_3d_exp[offset // 2:-offset // 2, offset // 2:-offset // 2] = img_3d
+    img_2d_exp[offset // 2:-offset // 2, offset // 2:-offset // 2] = img_2d
+
+    # 以图像的中心为圆心
+    cx, cy = size_exp // 2, size_exp // 2
+    angle_inv = 360 // angle_num
+
+    # 初始化输出数据结构
+    data_alarm_all = []
+    r_list = []
+
+    # 计算圆环的半径
+    for r in range(in_r, size_exp // 2, roll_num // 2):
+        r_list.append(r)
+        mask = np.zeros((size_exp, size_exp), np.uint8)
+
+        # 计算当前圆环范围内的数据
+        img_3d_roll_roi = (img_3d_exp * mask)
+        ind = np.argwhere(img_3d_roll_roi > 10)
+        ind_v = np.argwhere(img_3d_roll_roi <= 10)
+        mean = np.mean(img_3d_roll_roi[ind_v[:, 0], ind_v[:, 0]])
+
+        data_deep = [[] for _ in range(angle_num)]
+
+        # 对每个有效数据点进行处理
+        for i in range(ind.shape[0]):
+            x = ind[i][1] - size_exp / 2
+            y = ind[i][0] - size_exp / 2
+            angle = math.atan2(y, x) * 180 / np.pi
+            ind_temp = min(int((angle - (-180)) / angle_inv), angle_num - 1)
+            z = img_3d_exp[ind[i][0], ind[i][1]]
+            data_deep[ind_temp].append(z)
+
+        # 对每个角度分区的深度值进行统计
+        data_alarm = []
+        for i in range(angle_num):
+            if data_deep[i]:
+                deep_num = 60
+                deep_inv = 5
+                num = np.zeros(deep_num)
+                z_value = [[] for _ in range(deep_num)]
+
+                for z in data_deep[i]:
+                    t_ind = int(min(z // deep_inv, deep_num - 1))
+                    num[t_ind] += 1
+                    z_value[t_ind].append(z)
+
+                t_ind = np.argwhere(num > 100)
+                if t_ind.shape[0] > 0:
+                    index = t_ind[-1][0]
+                    data_alarm.append(round(np.max(np.array(z_value[index])), 2))
+                else:
+                    data_alarm.append(mean)
+            else:
+                data_alarm.append(mean)
+
+        data_alarm_all.append(data_alarm)
+
+    # 根据所有的报警数据进行分析
+    data_alarm_all = np.array(data_alarm_all)
+    r, a = data_alarm_all.shape[:2]
+    data_alarm_all_inner = data_alarm_all[:r // 2, :]
+    data_alarm_all_outer = data_alarm_all[r // 2:, :]
+
+    # 找到最大报警值对应的内外圈数据
+    inner_ind_max = np.argmax(data_alarm_all_inner)
+    inner_ind_max_row, inner_ind_max_col = np.unravel_index(inner_ind_max, data_alarm_all_inner.shape)
+    outer_ind_max = np.argmax(data_alarm_all_outer)
+    outer_ind_max_row, outer_ind_max_col = np.unravel_index(outer_ind_max, data_alarm_all_outer.shape)
+
+    # 内外圈塔形信息
+    inner_taper = data_alarm_all_inner[inner_ind_max_row, inner_ind_max_col]
+    outer_taper = data_alarm_all_outer[outer_ind_max_row, outer_ind_max_col]
+
+    # 计算半径和角度
+    inner_ind_max_r = r_list[inner_ind_max_row] * fe
+    inner_ind_max_a = angle_inv * inner_ind_max_col
+    outer_ind_max_r = r_list[outer_ind_max_row] * fe
+    outer_ind_max_a = angle_inv * outer_ind_max_col
+
+    # 返回计算结果
+    return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
+
+
 def commitLineData(dataIntegration: DataIntegration):
     """
     添加检测数据
@@ -292,13 +404,13 @@ def commitLineData(dataIntegration: DataIntegration):
     Alarm.addObj(modelList)
 
 
-def _detectionTaperShapeAll_(dataIntegrationList: DataIntegrationList):
+def _detectionTaperShapeAll_(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
     """
     no doc
     """
     print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
-        dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
+        # dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
         dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
         commitLineData(dataIntegration)

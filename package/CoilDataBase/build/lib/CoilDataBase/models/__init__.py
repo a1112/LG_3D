@@ -170,7 +170,7 @@ class CoilAlarmStatus(Base):
 
 class AlarmFlatRoll(Base):
     """
-    扁卷检测
+    扁卷检测，弃用，下版本中移除该数据结构
     """
     __tablename__ = 'AlarmFlatRoll'
     Id = Column(Integer, primary_key=True, autoincrement=True)

@@ -2,7 +2,7 @@ import CONFIG
 import pymysql
 import sqlalchemy
 
-from api import ApiDataBase,app,ApiServerControl
+from api import ApiDataBase, app, ApiServerControl
 import uvicorn
 
 

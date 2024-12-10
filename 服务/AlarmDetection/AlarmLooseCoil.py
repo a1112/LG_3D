@@ -1,6 +1,7 @@
+from typing import Union
+
 from CoilDataBase.models import AlarmLooseCoil
 from property.Base import DataIntegration, DataIntegrationList
-from CoilDataBase import Alarm
 from property.Data3D import LineData
 from CoilDataBase.Alarm import addAlarmLooseCoil
 import numpy as np
@@ -56,10 +57,6 @@ class AlarmLooseData:
             # input()
 
 
-def addAlarmLooseCoil(alarmloose):
-    Alarm.addAlarmLooseCoil(alarmloose)
-
-
 def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
     print("_detectionAlarmLooseCoil_")
     for d in dataIntegration.detectionLineData:
@@ -68,7 +65,7 @@ def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
         addAlarmLooseCoil(d.getAlarmLooseCoil())
 
 
-def _detectionAlarmLooseCoilAll_(dataIntegrationList: DataIntegrationList):
+def _detectionAlarmLooseCoilAll_(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
     print("_detectionAlarmLooseCoilAll_")
     """
     获取 LineData 数据假设同角度检测

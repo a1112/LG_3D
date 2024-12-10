@@ -1,3 +1,5 @@
+from typing import Union
+
 from CoilDataBase import Alarm
 from PIL import Image
 import cv2
@@ -68,7 +70,7 @@ def commitData(dataIntegration: DataIntegration, flatRollData):
     Alarm.addObj(flatRollData.getAlarmFlatRoll(dataIntegration))
 
 
-def _detectionAlarmFlatRollAll_(dataIntegrationList: DataIntegrationList):
+def _detectionAlarmFlatRollAll_(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
     """
     全局检测 扁卷
     """

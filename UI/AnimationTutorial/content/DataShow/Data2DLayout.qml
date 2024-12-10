@@ -10,9 +10,7 @@ ColumnLayout{
     SplitView{
         Layout.fillWidth: true
         Layout.fillHeight: true
-
         orientation: Qt.Vertical
-
         Loader{
             SplitView.fillWidth: true
             SplitView.preferredHeight: 333

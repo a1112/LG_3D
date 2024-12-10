@@ -1,3 +1,5 @@
+from typing import Union
+
 from property.Base import DataIntegration, DataIntegrationList
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 
@@ -28,7 +30,7 @@ def detection(dataIntegration: DataIntegration):
 
 
 @DetectionSpeedRecord.timing_decorator("判级时间")
-def detectionAll(dataIntegrationList: DataIntegrationList):
+def detectionAll(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
     _detectionAlarmFlatRollAll_(dataIntegrationList)  # 扁卷检测
     _detectionTaperShapeAll_(dataIntegrationList)  # 塔形检测
     _detectionAlarmLooseCoilAll_(dataIntegrationList)  # 松卷检测

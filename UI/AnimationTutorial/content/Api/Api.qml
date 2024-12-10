@@ -138,6 +138,9 @@ Item {
     function getDefects(coilId,key,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects",coilId,key),success,failure)
     }
+    function getAllDefectDict(success,failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDictAll"))
+    }
     function getDefectDict(success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defectDict"),success,failure)
     }

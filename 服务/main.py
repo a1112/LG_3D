@@ -3,14 +3,15 @@ import multiprocessing
 import uvicorn
 
 import Globs
+from SubServer.ZipServer import ZipServer
 from utils.GlobalSignalHandling import GlobalSignalHandling
 from CONFIG import serverApiPort, isLoc
 from utils.LoggerProcess import LoggerProcess
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
-from CoilDataBase.Coil import deleteCoil
-# deleteCoil(34500)
+# from CoilDataBase.Coil import deleteCoil
+# deleteCoil(35100)
 
 
 # if isLoc:
@@ -31,5 +32,6 @@ if __name__ == '__main__':
     GlobalSignalHandling(managerQueue).start()
     from api import app
 
-    Globs.imageMosaicThread=imageMosaicThread
+    Globs.imageMosaicThread = imageMosaicThread
+    ZipServer(managerQueue).start()
     uvicorn.run(app, host="0.0.0.0", port=serverApiPort)

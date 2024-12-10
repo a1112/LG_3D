@@ -7,6 +7,9 @@ ProcessClass = WorkerProcessBase
 
 
 class ControlManagement(ThreadClass):
+    ThreadClass = ThreadClass
+    ProcessClass = ThreadClass
+
     def __init__(self):
         super().__init__()
         self.config = controlConfig

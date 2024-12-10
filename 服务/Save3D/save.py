@@ -6,7 +6,7 @@ import traceback
 from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
-from CONFIG import serverConfigProperty
+from Globs import serverConfigProperty
 
 import threading
 import multiprocessing
@@ -167,15 +167,15 @@ def generate_mesh_from_point_cloud(point_cloud):
 
 def save_colored_obj(mesh, colors, filename):
     """将彩色网格保存为 .obj 文件。"""
-    # o3d.io.write_triangle_mesh(filename, mesh)
+    return o3d.io.write_triangle_mesh(filename, mesh)
     with open(filename, 'w') as f:
         for vertex, color in zip(np.asarray(mesh.vertices), colors):
             colorStr = f"{color[0]} {color[1]} {color[2]}"
             f.write(f"v {vertex[0]} {vertex[1]} {colorStr} {color[2]}\n")
-        # for triangle in np.asarray(mesh.triangles):
-        #     f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
-        for triangle in np.asarray(mesh.triangles) + 1:
-            f.write(f"f {triangle[0]} {triangle[1]} {triangle[2]}\n")
+        for triangle in np.asarray(mesh.triangles):
+            f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
+        # for triangle in np.asarray(mesh.triangles) + 1:
+        #     f.write(f"f {triangle[0]} {triangle[1]} {triangle[2]}\n")
 
 
 def toMesh(obj, managerQueue):
