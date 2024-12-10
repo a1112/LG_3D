@@ -410,7 +410,7 @@ def _detectionTaperShapeAll_(dataIntegrationList: Union[DataIntegrationList, Dat
     """
     print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
-        # dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
+        dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
         dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
         commitLineData(dataIntegration)
