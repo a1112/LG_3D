@@ -6,7 +6,7 @@ from CoilDataBase.models import Coil, SecondaryCoil
 with Session() as session:
     print(session.query(SecondaryCoil).first().Id)
     old_secondaryCoil = None
-    for secondaryCoil in session.query(SecondaryCoil):
+    for secondaryCoil in session.query(SecondaryCoil).where(SecondaryCoil.CreateTime<"2024-12-09 21:00:00"):
 
         if old_secondaryCoil:
             old_secondaryCoil.CoilNo=secondaryCoil.CoilNo
