@@ -1,9 +1,17 @@
+from enum import Enum
+
 from CONFIG import controlConfig, controlConfigFile
 from property.ControlProperty import ControlProperty
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
 ProcessClass = WorkerProcessBase
+
+
+class LevelingType(Enum):
+    NONE = 0
+    WK_TYPE = 1
+    DOWN = 2
 
 
 class ControlManagement(ThreadClass):
@@ -32,6 +40,7 @@ class ControlManagement(ThreadClass):
         self.lowerLimit = -75
         self.leveling_gray = True
         self.leveling_3d = True
+        self.leveling_type = LevelingType.WK_TYPE
         self.save_3d_obj = True
 
         self.start()
