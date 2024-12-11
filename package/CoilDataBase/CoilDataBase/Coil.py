@@ -7,6 +7,9 @@ from .models import *
 from .tool import to_dict
 import datetime
 
+from . import tool
+def addObj(obj):
+    return tool.addObj(obj)
 
 def getAllJoinQuery(session: Session):
     return session.query(SecondaryCoil) \
@@ -85,15 +88,6 @@ def addSecondaryCoil(coil: SecondaryCoil):
             CreateTime=datetime.datetime.now()
         ))
         session.commit()
-
-
-# Base.metadata.drop_all(engine, tables=[SecondaryCoil.__table__])
-
-def addObj(obj):
-    with Session() as session:
-        session.add(obj)
-        session.commit()
-
 
 def getSecondaryCoil(num: int, desc=True) -> List[SecondaryCoil]:
     """
@@ -288,3 +282,23 @@ def getCoilStateByCoilId(coilId, surface):
 
 def addServerDetectionError(error: ServerDetectionError):
     return addObj(error)
+
+def add_coil(coil):
+    with Session() as session:
+        session.add(SecondaryCoil(
+            CoilNo=coil["Coil_ID"],
+            CoilType=coil["Steel_Grade"],
+            CoilInside=coil["coil_in_dia"],
+            CoilDia=coil["coil_dia"],
+            Thickness=coil["FM_Tar_Thickness"],
+            Width=coil["FM_Tar_Width"],
+            Weight=coil["sp01"][0],
+            ActWidth=coil["act_w"],
+            CreateTime=datetime.datetime.now()
+        ))
+        session.commit()
+
+
+def get_last_coil():
+    with Session() as session:
+        return session.query(SecondaryCoil).order_by(SecondaryCoil.CreateTime.desc()).first()

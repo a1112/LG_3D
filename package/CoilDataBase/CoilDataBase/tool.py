@@ -71,3 +71,13 @@ def clearByCoilId(coilId):
         session.query(models.LineData).filter(models.LineData.secondaryCoilId == coilId).delete()
         session.query(models.PointData).filter(models.PointData.secondaryCoilId == coilId).delete()
         session.commit()
+
+def addObj(obj):
+    with Session() as session:
+        if isinstance(obj, list):
+            session.add_all(obj)
+            # [session.add(o) for o in obj]
+        else:
+            session.add(obj)
+        # session.flush()
+        session.commit()

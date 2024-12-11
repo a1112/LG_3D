@@ -2,7 +2,7 @@ from pathlib import Path
 import shutil
 from Globs import serverConfigProperty
 from threading import Thread
-from .Zip import ZipAndDeletion
+from .Zip import ZipAndDeletionCameraData
 async def backupImageTask(fromId:str, toId:str, saveFolder:str,msgFunc=None):
     fromId=int(fromId)
     toId=int(toId)
@@ -12,18 +12,18 @@ async def backupImageTask(fromId:str, toId:str, saveFolder:str,msgFunc=None):
     thList=[]
     for key,suf in serverConfigProperty.surfaceConfigPropertyDict.items():
         for folder in suf.folderList:
-            def task(folder_,msgFunc_):
+            def task(folder_, msg_func_):
                 for i in range(fromId,toId):
                     f_d=Path(folder_["source"])
-                    fromFolder=f_d/str(i)
-                    toFolder=saveFolder/f_d.name/str(i)
-                    if fromFolder.exists():
-                        shutil.copytree(fromFolder,toFolder)
-                zad = ZipAndDeletion(Path(saveFolder/Path(folder_["source"]).name))
+                    from_folder=f_d/str(i)
+                    to_folder=saveFolder/f_d.name/str(i)
+                    if from_folder.exists():
+                        shutil.copytree(from_folder,to_folder)
+                zad = ZipAndDeletionCameraData(Path(saveFolder / Path(folder_["source"]).name))
                 zad.start()
                 zad.join()
                 if msgFunc:
-                    msgFunc_(1)
+                    msg_func_(1)
             th=Thread(target=task,args=(folder,msgFunc))
             th.start()
             thList.append(th)

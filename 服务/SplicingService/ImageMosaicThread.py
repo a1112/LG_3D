@@ -76,7 +76,7 @@ class ImageMosaicThread(Thread):
                     if maxSecondaryCoilId - secondaryCoil.Id > 2:
                         logger.debug("清理数据" + str(secondaryCoil.Id))
                         CoilDataBaseTool.clearByCoilId(secondaryCoil.Id)
-                    if secondaryCoilIndex >= listData[- 1].Id-2:
+                    if less_num < 1:
                         if not self.checkDetectionEnd(secondaryCoil.Id):
                             # 采集未完成
                             break

@@ -1,8 +1,8 @@
 import time
 from threading import Thread
-import requests
 import CONFIG
-import DataSave
+from CoilDataBase import Coil
+from CoilDataBase.models import SecondaryCoil
 
 lastTimeDict = {
     "t":0
@@ -13,7 +13,7 @@ class Signal(Thread):
     def __init__(self, url):
         super().__init__()
         self.url = url
-        self.coil:DataSave.SecondaryCoil = {}
+        self.coil:SecondaryCoil|None = None
         self.regFunc = []
 
     def triggerInit(self):
@@ -34,15 +34,15 @@ class Signal(Thread):
     def run(self):
         while True:
             try:
-                coil = DataSave.get_last_coil()
+                coil = Coil.get_last_coil()
                 if not self.coil:
                     self.coil = coil
                     self.triggerInit()
                 if coil.CoilNo != self.coil.CoilNo:
                     self.coil = coil
                     while True:
-                        maxTime = max([lastTimeDict[t] for t in lastTimeDict])
-                        if time.time() - maxTime > 3:
+                        max_time = max([lastTimeDict[t] for t in lastTimeDict])
+                        if time.time() - max_time > 3:
                             self.triggerIn()
                             break
                         time.sleep(1)
@@ -51,4 +51,4 @@ class Signal(Thread):
             time.sleep(3)
 
 
-signal = Signal(CONFIG.SignalUrl)
+signal = Signal(CONFIG.capTureConfig.signalUrl)

@@ -9,7 +9,7 @@ from property.Base import DataIntegrationList
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate
-from utils.Log2 import logger
+from utils.Log import logger
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .TaperShapeLine import *
 from CONFIG import alarmConfigFile
@@ -410,7 +410,7 @@ def _detectionTaperShapeAll_(dataIntegrationList: Union[DataIntegrationList, Dat
     """
     print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
-        # dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
+        dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
         dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
         commitLineData(dataIntegration)

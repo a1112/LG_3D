@@ -3,39 +3,50 @@
   "camera": [
     {
       "sn": "24150211",
-        "name": "L_D",
+      "name": "L_D",
       "saveFolder": "F:\\",
-      "key": "Cap_L_D"
+      "key": "Cap_L_D",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6101
     },
         {
       "sn": "22110092",
-        "name": "L_M",
+      "name": "L_M",
       "saveFolder": "F:\\",
-      "key": "Cap_L_M"
+      "key": "Cap_L_M",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6102
     },
         {
       "sn": "24170060",
-        "name": "L_U",
+      "name": "L_U",
       "saveFolder": "F:\\",
-      "key": "Cap_L_U"
+      "key": "Cap_L_U",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6103
     },
     {
       "sn": "24170059",
-        "name": "S_D",
+      "name": "S_D",
       "saveFolder": "G:\\",
-      "key": "Cap_S_D"
+      "key": "Cap_S_D",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6104
     },
         {
       "sn": "24170061",
-        "name": "S_M",
+      "name": "S_M",
       "saveFolder": "G:\\",
-      "key": "Cap_S_M"
-    },
-        {
+      "key": "Cap_S_M",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6105
+    },{
       "sn": "24150207",
-        "name": "S_D",
+      "name": "S_U",
       "saveFolder": "G:\\",
-      "key": "Cap_S_U"
+      "key": "Cap_S_U",
+      "serverIp": "0.0.0.0",
+      "serverPort": 6106
     }
   ]
 }

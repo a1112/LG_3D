@@ -2,8 +2,7 @@ import datetime
 
 import numpy as np
 from harvesters.core import Buffer
-import DataSave
-
+from CoilDataBase.models import SecondaryCoil
 
 class SickBuffer:
     def __init__(self, buffer):
@@ -17,17 +16,17 @@ class SickBuffer:
         self.data2D: np.array = buffer.payload.components[1].data.reshape((self.height, self.width)).copy()
         self.save_index = 0
         self.coilId = None
-        self.coilData: DataSave.SecondaryCoil = None
+        self.coilData: SecondaryCoil|None = None
         self.data2D_mean = 0
         self.data3D_mean = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
 
-    def setCoil(self, coilData: DataSave.SecondaryCoil):
+    def setCoil(self, coilData: SecondaryCoil):
         self.coilData = coilData
         self.coilId = str(coilData.Id)
 
     def get_json(self):
-        jsData = {
+        js_data = {
             "timestamp": self.timestamp,
             "timestamp_frequency": self.timestamp_frequency,
             "width": self.width,
@@ -39,10 +38,10 @@ class SickBuffer:
             "capTime": self.timeStr
         }
         if self.coilData:
-            jsData["coilData"] = self.coilData.get_json()
+            js_data["coilData"] = self.coilData.get_json()
         if self.bdConfig:
-            jsData["bdConfig"] = self.bdConfig
-        return jsData
+            js_data["bdConfig"] = self.bdConfig
+        return js_data
 
     def setBDconfig(self, bdConfig):
         self.bdConfig = bdConfig

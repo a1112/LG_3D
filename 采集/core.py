@@ -4,7 +4,7 @@ from Log import logger
 h = Harvester()
 
 # 添加GenTL生产者（根据需要调整路径）
-h.add_file(CONFIG.SICKGigEVisionTL)
+h.add_file(CONFIG.capTureConfig.SICKGigEVisionTL)
 
 # 更新设备列表
 h.update()

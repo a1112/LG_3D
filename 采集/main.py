@@ -24,8 +24,8 @@ from Log import logger
 def main():
     logger.debug("启动... ...")
     capList = []
-    for cameraInfo in CONFIG.CapTureConfig["camera"]:
-        capList.append(CapTure(cameraInfo))
+    for camera_config in CONFIG.capTureConfig.camera_config_list:
+        capList.append(CapTure(camera_config))
     logger.debug("启动信号... ...")
     Signal.signal.start()
     while not Signal.signal.coil:

@@ -14,20 +14,21 @@ class SickCamera:
             raise Exception(f"相机 初始化失败: {sn}")
         self.setConfig()
         self.camera:ImageAcquirer
-        self.globCameraInfo = self.getCameraConfig()
+        self.globCameraInfo = self.get_camera_config()
 
-    def getCameraConfig(self):
+
+    def get_camera_config(self):
         # print(self.camera.remote_device.node_map.load_xml_from_file)
-        reDict = {}
+        re_dict = {}
         for itemName in dir(self.camera.remote_device.node_map):
             try:
                 item = getattr(self.camera.remote_device.node_map, itemName)
-                reDict[itemName] = item.value
+                re_dict[itemName] = item.value
             except BaseException as e:
                 pass
-        print(reDict)
+        print(re_dict)
 
-        return reDict
+        return re_dict
 
     def setConfig(self):
         # self.camera.remote_device.node_map

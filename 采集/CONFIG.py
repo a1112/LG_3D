@@ -23,9 +23,34 @@ elif args.config:
 elif "CapTure" in sys.executable:
     configFile = Path(fr"configs/{Path(sys.executable).stem}.json")
 
-captureConfigFile = str(configFile)
-SICKGigEVisionTL = str(Path(r"common/lib/cti/windows_x64/SICKGigEVisionTL.cti"))
+class CameraConfig(object):
+    def __init__(self, config):
+        self.config = config
+        self.sn = config["sn"]
+        self.name=config["name"]
+        self.saveFolder= Path(config["saveFolder"])
+        self.key=config["key"]
+        self.serverIp=config["serverIp"]
+        self.serverPort=config["serverPort"]
 
+    def __iter__(self):
+        return iter(self.config)
 
-CapTureConfig = json.load(open(captureConfigFile, 'r'))
-SignalUrl = CapTureConfig["signalUrl"]
+    def __getitem__(self, item):
+        return self.config[item]
+
+class CapTureConfig:
+    def __init__(self, config_file):
+        self.config_file = str(config_file)
+        self.config = json.load(open(config_file, 'r'))
+        self.signalUrl = self.config["signalUrl"]
+        self.SICKGigEVisionTL = str(Path(r"common/lib/cti/windows_x64/SICKGigEVisionTL.cti"))
+        self.camera_config_list=[CameraConfig(c) for c in self.config["camera"]]
+        self.name_list=[c.name for c in self.camera_config_list]
+    def index(self,name):
+        try:
+            return self.name_list.index(name)
+        except ValueError:
+            return -1
+
+capTureConfig = CapTureConfig(configFile)

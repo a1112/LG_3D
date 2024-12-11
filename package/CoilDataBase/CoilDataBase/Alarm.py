@@ -1,16 +1,9 @@
 from .models import *
 from .core import Session
 
-
+from . import tool
 def addObj(obj):
-    with Session() as session:
-        if isinstance(obj, list):
-            session.add_all(obj)
-            # [session.add(o) for o in obj]
-        else:
-            session.add(obj)
-        # session.flush()
-        session.commit()
+    return tool.addObj(obj)
 
 
 def addAlarmFlatRoll(alarmFlatRoll):
