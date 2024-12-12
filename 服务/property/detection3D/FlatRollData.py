@@ -4,7 +4,7 @@ from CoilDataBase.Alarm import addAlarmFlatRoll
 from CoilDataBase.models import AlarmFlatRoll
 
 from .Base import BaseData
-from .. import Point2D
+from ..Types import Point2D
 
 
 class CircleDataCircle:

@@ -1,5 +1,4 @@
 import datetime
-import json
 import time
 import traceback
 
@@ -27,10 +26,10 @@ class ImageMosaicThread(Thread):
     多线程的主循环
     """
 
-    def __init__(self, managerQueue, loggerProcess: LoggerProcess):
+    def __init__(self, manager_queue, logger_process: LoggerProcess):
         super().__init__()
-        self.managerQueue = managerQueue
-        self.loggerProcess = loggerProcess
+        self.managerQueue = manager_queue
+        self.loggerProcess = logger_process
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
@@ -40,7 +39,7 @@ class ImageMosaicThread(Thread):
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
-            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue, loggerProcess))
+            self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue, logger_process))
         try:
             self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
             self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据

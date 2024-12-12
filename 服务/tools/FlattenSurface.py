@@ -1,15 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from scipy.spatial.transform import Rotation as R
 from scipy.stats import norm
-
 
 def fit_plane(x_, y_, z):
     """
     使用线性回归拟合一个平面，返回平面方程的系数（a, b, c），
     以及平面法向量
     """
+    from sklearn.linear_model import LinearRegression
     X = np.vstack((x_, y_)).T
     model = LinearRegression()
     model.fit(X, z)
@@ -18,8 +16,7 @@ def fit_plane(x_, y_, z):
     # 返回平面方程的系数
     return a_, b_, c_
 
-import numpy as np
-from sklearn.linear_model import LinearRegression
+
 
 def fit_plane1(x_, y_, z):
     """
@@ -34,6 +31,7 @@ def fit_plane1(x_, y_, z):
     - a, b, c: 平面方程 z = ax + by + c 的系数。
     - normal_vector: 平面的法向量 [a, b, -1]。
     """
+    from sklearn.linear_model import LinearRegression
     if len(x_) != len(y_) or len(x_) != len(z):
         raise ValueError("x_, y_, z 必须具有相同的长度。")
 
@@ -84,7 +82,7 @@ def fit_plane_matrix(x_, y_, z):
 
 
 
-from scipy.spatial.transform import Rotation as R
+
 
 
 def vector_to_angles(normal_vector):
@@ -173,6 +171,7 @@ def rotate_data(data, normal_vector):
     return rotated_data
 
 def rotate_data2(data, normal_vector):
+    from scipy.spatial.transform import Rotation as R
     """
     使用旋转矩阵旋转数据，将法向量旋转到 Z 轴
     """

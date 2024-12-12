@@ -1,5 +1,6 @@
 import time
 from threading import Thread
+from multiprocessing import Process
 
 import CONFIG
 from CoilDataBase.models import SecondaryCoil
@@ -17,17 +18,7 @@ class CapTure(Thread):
     """
     def __init__(self, camera_info:CONFIG.CameraConfig):
         super().__init__()
-        self.cameraInfo = camera_info
-        signal.register(self.on_signal)
-        self.saveFolder = Path(camera_info.saveFolder) / camera_info.key
-        self.running = True
-        self.captureRunning = False
-        self.globCapInfo = {}
-        self.camera = None
-        self.dataSave = ImageDataSave(self.saveFolder)
-        self.cameraControl = CameraControl(self)
-        self.coil:SecondaryCoil|None = None
-        Server.start_server(camera_info, self)
+        self.camera_info=camera_info
 
 
     def set_camera(self):
@@ -54,11 +45,28 @@ class CapTure(Thread):
             self.captureRunning = False
 
     def run(self):
+        camera_info=CONFIG.CameraConfig(self.camera_info)
+        self.cameraInfo = camera_info
+        signal.register(self.on_signal)
+        self.saveFolder = Path(camera_info.saveFolder) / camera_info.key
+        self.running = True
+        self.captureRunning = False
+        self.globCapInfo = {}
+        self.camera = None
+        self.dataSave = ImageDataSave(self.saveFolder)
+        self.cameraControl = CameraControl(self)
+        self.coil:SecondaryCoil|None = None
+
+
+        Server.start_server(camera_info, self)
         logger.debug(f"启动采集 线程 {self.cameraInfo.key}... ...")
+
+
+
         while self.running:
             try:
                 if not self.captureRunning:
-                    time.sleep(0.001)
+                    time.sleep(0.1)
                     continue
                 camera = self.set_camera()
                 logger.debug(f"启动相机 ...  ")
@@ -66,7 +74,7 @@ class CapTure(Thread):
                     logger.debug(f"启动相机 {camera}... ...")
                     while self.captureRunning:
                         try:
-                            buffer = cap.getBuffer()
+                            buffer = cap.get_buffer()
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(self.coil)
@@ -77,7 +85,6 @@ class CapTure(Thread):
             except BaseException as e:
                 logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
                 time.sleep(5)
-                raise e
 
     def release(self):
         pass

@@ -56,6 +56,13 @@ class SecondaryCoil(Base):
             # "CreateTime": self.CreateTime
         }
 
+    def __repr__(self):
+        return self.get_json().__repr__()
+
+    def __str__(self):
+        return self.get_json().__str__()
+
+
 class Coil(Base):
     """
     检测数据

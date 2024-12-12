@@ -6,6 +6,13 @@ Item {
     readonly property bool is2DrootView:rootViewIndex==0
     readonly property bool is3DrootView:rootViewIndex==1
 
+    function rootViewto2D(){
+        rootViewIndex=0
+    }
+
+    function rootViewto3D(){
+        rootViewIndex=1
+    }
 
     readonly property real scan3dScaleZ: 0.016229506582021713
     readonly property real scan3dScaleX: 0.33693358302116394
@@ -150,6 +157,7 @@ Item {
         return getSource(coilId,_viewKey_,false)
     }
     function setViewSource(_viewKey_){
+
         default_key=_viewKey_
         currentViewKey = _viewKey_
         source = getSouceByKey(_viewKey_)

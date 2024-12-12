@@ -49,7 +49,7 @@ class SickCamera:
             }
         return bdData
 
-    def getBuffer(self) -> Buffer:
+    def get_buffer(self) -> Buffer:
         return self.camera.fetch()
 
     def open(self):

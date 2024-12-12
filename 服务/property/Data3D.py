@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from skimage.draw import line
 
 import tools.tool
-from property import Point3D
+from property.Types import Point3D
 from tools.alg import IQR_outliers
 from tools.tool import get_intersection_points
 

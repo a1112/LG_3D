@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import "_base_"
-// import "../GlobalView"
 import "Core"
 DataShowBackground {
     id: root
@@ -16,7 +15,6 @@ DataShowBackground {
 
     SplitView{
         anchors.fill: parent
-
         DataShowView{
             id: dataShowView_R
             dataShowCore : DataShowCore{

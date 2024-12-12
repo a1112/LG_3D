@@ -10,6 +10,7 @@ from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
 from Globs import control
+from property.Types import BdData
 from property.detection3D import FlatRollData
 from tools import tool, FlattenSurface
 from utils.ControlManagement import LevelingType
@@ -32,44 +33,6 @@ def sublist_with_indices(input_list, x, offset=0):
                 temp = []
                 start_index = None
     return result
-
-
-class BdItem:
-    def __init__(self, bdConfig):
-        self.bdConfig = bdConfig
-        self.scan3dAxisMax = bdConfig["Scan3dAxisMax"]
-        self.scan3dAxisMin = bdConfig["Scan3dAxisMin"]
-        self.scan3dCoordinateOffset = bdConfig["Scan3dCoordinateOffset"]
-        self.scan3dCoordinateScale = bdConfig["Scan3dCoordinateScale"]
-
-
-class BdData:
-    def __init__(self, bdConfig):
-        self.bdConfig = bdConfig
-        try:
-            self.bdDataX = BdItem(bdConfig["CoordinateA"])
-            self.bdDataY = BdItem(bdConfig["CoordinateB"])
-            self.bdDataZ = BdItem(bdConfig["CoordinateC"])
-        except (BaseException,) as e:
-            print(e)
-            self.bdDataX = BdItem({
-                "Scan3dAxisMax": 2559.0,
-                "Scan3dAxisMin": 0.0,
-                "Scan3dCoordinateOffset": -63.648475646972656,
-                "Scan3dCoordinateScale": 0.33943653106689453
-            })
-            self.bdDataY = BdItem({
-                "Scan3dAxisMax": 3.4028234663852886e+38,
-                "Scan3dAxisMin": -3.4028234663852886e+38,
-                "Scan3dCoordinateOffset": 0.0,
-                "Scan3dCoordinateScale": 1.0
-            })
-            self.bdDataZ = BdItem({
-                "Scan3dAxisMax": 65535.0,
-                "Scan3dAxisMin": 1.0,
-                "Scan3dCoordinateOffset": 3140.954345703125,
-                "Scan3dCoordinateScale": 0.016115527600049973
-            })
 
 
 class CoilLineData:
@@ -436,3 +399,5 @@ class DataIntegrationList:
         else:
             self.index = 0
             raise StopIteration
+
+

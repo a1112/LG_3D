@@ -14,11 +14,11 @@ Item {
             width:root.width
             SimpleValueAlarm{
                 width:col.width
-                title:"扁       卷:"
-                value:coreAlarmInfo.coreFlatRoll.innerDiameter.toFixed(0)
+                title:"内       径:"
+                value:(coreAlarmInfo.coreFlatRoll.innerDiameter* coreModel.surfaceS.scan3dScaleX).toFixed(0)
                 height: 30
                 level: coreAlarmInfo.coreFlatRoll.alarmLevel
-                toolTipText:"内径 > 680  mm 3级报警  当前值：" + coreAlarmInfo.coreFlatRoll.innerDiameter
+                toolTipText:"内径 < 680  mm 3级报警  当前值：" +coreAlarmInfo.coreFlatRoll.innerDiameter
             }
             SimpleValueAlarm{
                 width:col.width

@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../btns"
 import "../Foot"
-import "../../Labels"
+
 import "../Core"
 HeaderBase {
     id:root

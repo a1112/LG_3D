@@ -5,7 +5,7 @@ from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
 
-from property import Point2D
+from property.Types import Point2D
 from property.Data3D import LineData
 from tools.tool import get_intersection_points
 

@@ -30,24 +30,24 @@ noFindImageByte = img_byte_arr.getvalue()
 
 
 class DataGet:
-    def __init__(self, sourceType, surfaceKey, coil_id, type_,mask):
-        self.sourceType = sourceType
-        self.surfaceKey = surfaceKey
+    def __init__(self, source_type, surface_key, coil_id, type_, mask):
+        self.sourceType = source_type
+        self.surfaceKey = surface_key
         self.coil_id = coil_id
         self.type_ = type_
         self.mask = mask
 
-    def getSource(self):
+    def get_source(self):
         if self.sourceType == "preview":
             url = serverConfigProperty.get_preview_file(self.coil_id, self.surfaceKey, self.type_)
         else:
             url = serverConfigProperty.get_file(self.coil_id, self.surfaceKey, self.type_,self.mask)
         return url
 
-    def get3dSource(self):
+    def get3d_source(self):
         return serverConfigProperty.get_3d_file(self.coil_id, self.surfaceKey)
 
-    def getMaskSource(self):
+    def get_mask_source(self):
         if self.sourceType == "preview":
             url = serverConfigProperty.get_preview_file(self.coil_id, self.surfaceKey, "MASK")
         else:
@@ -55,19 +55,19 @@ class DataGet:
         return url
 
     def get_image(self):
-        url = self.getSource()
+        url = self.get_source()
         if self.sourceType == "preview":
             return previewCache.get_image(url)
         else:
             return imageCache.get_image(url)
 
     def get_3d_data(self):
-        url = self.get3dSource()
+        url = self.get3d_source()
         print(url)
         return _3dDataCache.get_data(url)
 
-    def getMeshSource(self):
+    def get_mesh_source(self):
         return serverConfigProperty.get_mesh_file(self.coil_id, self.surfaceKey)
 
     def get_mesh(self):
-        url = self.getMeshSource()
+        return self.get_mesh_source()

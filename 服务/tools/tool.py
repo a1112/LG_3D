@@ -5,7 +5,7 @@ from PIL import Image
 
 import Globs
 import tools.tool
-from property import Point2D
+from property.Types import Point2D
 
 
 def showImage(image, name="image"):

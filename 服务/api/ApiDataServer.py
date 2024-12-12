@@ -4,7 +4,7 @@ import time
 import cv2
 import numpy as np
 
-from property import Point2D
+from property.Types import Point2D
 from property.Data3D import LineData
 from tools.DataGet import DataGet
 from tools.data3dTool import getLengthData

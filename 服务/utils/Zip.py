@@ -34,18 +34,19 @@ class ZipAndDeletionCameraData(Globs.ProcessClass):
         super().__init__()
 
     def run(self):
-        print(self.reserve_num)
-        folders = list(self.path.iterdir())
-        for folder in folders[self.reserve_num:][::-1]:
-            try:
-                s_time = time.time()
-                zip_state = _zip_(folder)
-                e_time = time.time()
-                if zip_state:
-                    print(f"{zip_state} {folder} 数据压缩成功! 耗时: {e_time - s_time}")
-            except Exception as e:
-                print(f"数据压缩失败! {e}")
-        time.sleep(100)
+        while self._run_:
+            folders = list(self.path.iterdir())
+            for folder in folders[self.reserve_num:][::-1]:
+                try:
+                    s_time = time.time()
+                    zip_state = _zip_(folder)
+                    e_time = time.time()
+                    if zip_state:
+                        print(f"{zip_state} {folder} 数据压缩成功! 耗时: {e_time - s_time}")
+                except Exception as e:
+                    print(f"数据压缩失败! {e}")
+            print(f"{self.path} 压缩完成")
+            time.sleep(6000)
 
     def delete(self):
         pass

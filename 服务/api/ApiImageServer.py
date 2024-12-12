@@ -17,7 +17,7 @@ async def get_image(sourceType,surfaceKey,coil_id:str, type_: str,mask:bool = Fa
 
 @app.get("/mesh/{surfaceKey:str}/{coil_id:str}")
 async def get_mesh(surfaceKey,coil_id:str):
-    MESH_FILE_PATH = DataGet("image",surfaceKey,coil_id,"mesh",False).getMeshSource()
+    MESH_FILE_PATH = DataGet("image",surfaceKey,coil_id,"mesh",False).get_mesh_source()
     return FileResponse(MESH_FILE_PATH, media_type='application/octet-stream')
 
 

@@ -6,7 +6,6 @@ from fastapi.responses import StreamingResponse
 from fastapi import WebSocket
 
 import Globs
-import utils.ControlManagement
 from CoilDataBase.models import SecondaryCoil, AlarmInfo
 from fastapi.responses import FileResponse
 import Init

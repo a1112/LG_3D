@@ -5,8 +5,6 @@ import QtQuick.Controls.Material
 import "../../Pages/Card"
 import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItemSimple"
-
-import "../../Base"
 import "DataList"
 import "SearchView"
 Item {

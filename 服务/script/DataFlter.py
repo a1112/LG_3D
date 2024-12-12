@@ -16,8 +16,8 @@ if __name__ == '__main__':
         dataIntegrationList = DataIntegrationList()
         for mosaic in imageMosaicThrea.imageMosaicList[::-1]:
             # mosaic.setSave(True)
-            mosaic.setCoilId(i)
-            dataIntegration = mosaic.getData()
+            mosaic.set_coil_id(i)
+            dataIntegration = mosaic.get_data()
             dataIntegrationList.append(dataIntegration)  # 检测
         AlarmDetection.detectionAll(dataIntegrationList)
         input()

@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-    property real scaleZ: 1
+    property real scaleZ: 0.5
     readonly  property int controlCameraRotateModel: 0
     readonly property int  controlCameraMoveModel:1
     property int currentControlModel:controlCameraRotateModel

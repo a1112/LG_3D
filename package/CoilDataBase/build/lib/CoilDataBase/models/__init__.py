@@ -1,5 +1,3 @@
-import datetime
-
 from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -43,6 +41,26 @@ class SecondaryCoil(Base):
     childrenLineData = relationship("LineData", back_populates="parent")
     childrenPointData = relationship("PointData", back_populates="parent")
     childrenAlarmFlatRollData = relationship("AlarmFlatRollData", back_populates="parent")
+
+    def get_json(self):
+        return {
+            "Id": self.Id,
+            "CoilNo": self.CoilNo,
+            "CoilType": self.CoilType,
+            "CoilInside": self.CoilInside,
+            "CoilDia": self.CoilDia,
+            "Thickness": self.Thickness,
+            "Width": self.Width,
+            "Weight": self.Weight,
+            "ActWidth": self.ActWidth,
+            # "CreateTime": self.CreateTime
+        }
+
+    def __repr__(self):
+        return self.get_json().__repr__()
+
+    def __str__(self):
+        return self.get_json().__str__()
 
 
 class Coil(Base):
@@ -342,6 +360,19 @@ class AlarmInfo(Base):
     data = Column(Text())  # 综合  报警数据
 
     parent = relationship("SecondaryCoil", back_populates="childrenAlarmInfo")
+
+
+class CapTrueLogItem(Base):
+    """
+    记录采集日志
+    """
+    __tablename__ = 'CapTrueLogItem'
+    Id = Column(Integer, primary_key=True, autoincrement=True)
+    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
+    cameraId = Column(Integer)
+    cameraName = Column(String(10))
+    capTrueTime = Column(DateTime, server_default=func.now())
+    imageIndex = Column(Integer)
 
 
 class CapTrueLog(Base):

@@ -3,6 +3,7 @@ import QtQuick.Controls
 import "Core"
 import "../Core"
 import "../GlobalView"
+import "View3D"
 Item{
     id:root
     property SurfaceData surfaceData
@@ -11,7 +12,9 @@ Item{
     SplitView.fillHeight: true
     SplitView.fillWidth: true
 
-    Data2DLayout{}
+    property Core3D core3D: Core3D{}
+
+    DataLayout{}
 
     GlobItemErrorView{
 

@@ -14,28 +14,6 @@ CardBase {
         id:coll
         Layout.fillWidth: true
         width:parent.width
-        // Row{
-        //                 x:root.width/2-width/2
-        //                 spacing:5
-        // Label{
-        //     id:showLab
-        //     text:"报警综合"
-        //     font.pointSize: 18
-        //     font.bold: true
-        //     color:coreAlarmInfo.alarmColor
-        //     font.family: "Microsoft YaHei"
-        // }
-
-
-        // Image{
-        //     visible:coreAlarmInfo.hasAlarm
-        //     source:"../../../icons/alarm2.png"
-        //     width:height
-        //     height:showLab.height
-        //     fillMode:Image.PreserveAspectFit
-        // }
-        // }
-
         AlarmItemSimpleView{
         }
 

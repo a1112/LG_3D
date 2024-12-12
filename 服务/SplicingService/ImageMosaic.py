@@ -153,12 +153,12 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         """
         for dataFolder in self.dataFolderList:
-            dataFolder.setCoilId(dataIntegration.coilId)
+            dataFolder.set_coil_id(dataIntegration.coilId)
         #  获取数据
         datas = []
         configDatas = []
         for dataFolder in self.dataFolderList:  # 获取所有的图片
-            data = dataFolder.getData()
+            data = dataFolder.get_data()
             datas.append(data)
             configDatas.append(data["json"])
         #   待修改，使用工具类型进行封装
@@ -329,13 +329,13 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         """
         for folderConfig in self.config["folderList"]:
-            if not DataFolder.staticHasData(Path(folderConfig["source"]), coilId):
+            if not DataFolder.static_has_data(Path(folderConfig["source"]), coilId):
                 return False
         return True
 
     def checkDetectionEnd(self, coilId):
         for folderConfig in self.config["folderList"]:
-            if not DataFolder.staticCheckDetectionEnd(Path(folderConfig["source"]), coilId):
+            if not DataFolder.static_check_detection_end(Path(folderConfig["source"]), coilId):
                 return False
         return True
 

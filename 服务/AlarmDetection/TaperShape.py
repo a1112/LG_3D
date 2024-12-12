@@ -4,8 +4,8 @@ from typing import Union
 import cv2
 import numpy as np
 
-from property import Point2D
 from property.Base import DataIntegrationList
+from property.Types import Point2D
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate

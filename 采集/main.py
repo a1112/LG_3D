@@ -23,16 +23,16 @@ from Log import logger
 
 def main():
     logger.debug("启动... ...")
-    capList = []
+    cap_list = []
     for camera_config in CONFIG.capTureConfig.camera_config_list:
-        capList.append(CapTure(camera_config))
+        cap_list.append(CapTure(camera_config.config))
     logger.debug("启动信号... ...")
     Signal.signal.start()
     while not Signal.signal.coil:
         time.sleep(0.01)
         pass
-    logger.debug("启动采集... ...")
-    for cap in capList:
+    logger.debug(f"启动采集... ...{cap_list}")
+    for cap in cap_list:
         cap.start()
     input()
 
