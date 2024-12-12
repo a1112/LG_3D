@@ -5,6 +5,7 @@ from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
 
+import Globs
 from property.Types import Point2D
 from property.Data3D import LineData
 from tools.tool import get_intersection_points
@@ -207,7 +208,7 @@ def auto_data_leveling_3d(data, mask_src):
     #
     ind_med = np.argwhere(abs(mask) > 0.5)
     img_3d_med = np.median(res[ind_med[:, 0], ind_med[:, 1]])
-    res = np.asarray(res - (img_3d_med - 32767), np.uint16)
+    res = np.asarray(res - (img_3d_med - Globs.control.leveling_3d_wk_default_value), np.uint16)
     res[ind[:, 0], ind[:, 1]] = 0
 
     return res

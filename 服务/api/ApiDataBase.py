@@ -8,28 +8,14 @@ from fastapi import WebSocket
 import Globs
 from CoilDataBase.models import SecondaryCoil, AlarmInfo
 from fastapi.responses import FileResponse
-import Init
-from CoilDataBase import Coil,tool
-import CONFIG
+from CoilDataBase import Coil, tool
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc
-from Globs import serverConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
-from .api_core import app
 
 from utils import Hardware, Backup, export
-
+from ApiBase import *
 serverConfigProperty: ServerConfigProperty
-
-
-@app.get("/")
-def read_root():
-    return {"docs": "请访问 /docs 查看文档"}
-
-
-@app.get("/version")
-def read_version():
-    return CONFIG.VERSION
 
 
 def getCoilItemInfo(c):
@@ -40,7 +26,8 @@ def getCoilItemInfo(c):
             c["NextCode"] = code
             try:
                 c["NextInfo"] = Globs.infoConfigProperty.getNext(str(code))
-            except:
+            except (Exception,) as e:
+                print(e)
                 c["NextInfo"] = "未知去向，" + str(code)
     return c
 
@@ -71,21 +58,7 @@ def formatCoilInfo(secondaryCoilList):
 
 @app.get("/coilList/{number}")
 async def get_coil(number: int):
-    re = []
     return formatCoilInfo(Coil.getCoilList(number, byCoil=isLoc)[::-1])
-
-
-@app.get("/info")
-async def info():
-    info_ = {
-        "ErrorMap": Init.ErrorMap,
-        "RendererList": CONFIG.RendererList,
-        "ColorMaps": Init.ColorMaps,
-        "SaveImageType": CONFIG.SaveImageType,
-        "PreviewSize": Init.PreviewSize,
-    }
-    info_.update(serverConfigProperty.to_dict())
-    return info_
 
 
 @app.get("/flush/{coilId:int}")
@@ -109,7 +82,6 @@ async def searchByCoilId(coilId: int):
 
 @app.get("/search/DateTime/{start}/{end}")
 async def searchByDateTime(start: str, end: str):
-    re = []
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     return formatCoilInfo(Coil.searchByDateTime(start, end))
@@ -119,7 +91,6 @@ async def searchByDateTime(start: str, end: str):
 async def getCoilState(coilId: int):
     coilId = int(coilId)
     r = Coil.getCoilState(coilId)
-    # print(r)
     return tool.to_dict(r)
 
 
@@ -127,7 +98,6 @@ async def getCoilState(coilId: int):
 async def getPlcData(coilId: int):
     coilId = int(coilId)
     r = Coil.getPlcData(coilId)
-    # print(r)
     return tool.to_dict(r)
 
 
@@ -152,11 +122,6 @@ async def getDefectDictAll():
 @app.get("/coilInfo/{coil_id:str}/{surfaceKey:str}")
 async def getInfo(coil_id: str, surfaceKey: str):
     return serverConfigProperty.get_Info(coil_id, surfaceKey)
-
-
-@app.get("/delay")
-async def getDelay():
-    return 0
 
 
 async def getCameraConfig(coil_id: str, surfaceKey: str, c):
@@ -271,7 +236,7 @@ async def wsBackupImageTask(websocket: WebSocket):
 
 
 @app.get("/exportxlsxByDateTime/{start:str}/{end:str}")
-async def exportxlsxByDateTime(start, end):
+async def export_xlsx_by_datetime(start, end):
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     output, file_size = export.exportDataByTime(
@@ -297,3 +262,18 @@ async def download_file():
         return FileResponse(path=file_path, filename="downloaded_file.zip", media_type='application/octet-stream')
     else:
         return {"error": "File not found"}
+
+
+@app.get("/get_point_data/{coil_id:str}/{surfaceKey:str}")
+async def get_point_data(coil_id: str, surfaceKey: str):
+    """
+    获取点数据
+    """
+    surfaceKey = getSurfaceKey(surfaceKey)
+    return tool.to_dict(Coil.get_point_data(coil_id, surfaceKey))
+
+
+@app.get("/get_line_data/{coil_id:str}/{surfaceKey:str}")
+async def get_line_data(coil_id: str, surfaceKey: str):
+    surfaceKey = getSurfaceKey(surfaceKey)
+    return tool.to_dict(Coil.get_line_data(coil_id, surfaceKey))

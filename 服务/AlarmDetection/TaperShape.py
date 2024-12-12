@@ -4,8 +4,9 @@ from typing import Union
 import cv2
 import numpy as np
 
+import Globs
 from property.Base import DataIntegrationList
-from property.Types import Point2D
+from property.Types import Point2D, DetectionTaperShapeType
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate
@@ -93,7 +94,7 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     print("塔形检测A")
     lineDataDict = {}
     # p_center = dataIntegration.flatRollData.get_center()
-    npyData = (dataIntegration.npyData - 32767) * dataIntegration.scan3dCoordinateScaleZ
+    npyData = (dataIntegration.npyData - dataIntegration.__median_non_zero__) * dataIntegration.scan3dCoordinateScaleZ
     img_2d = dataIntegration.npy_image
     mask = dataIntegration.npy_mask
     ind = np.argwhere(mask == 0)
@@ -410,7 +411,11 @@ def _detectionTaperShapeAll_(dataIntegrationList: Union[DataIntegrationList, Dat
     """
     print("塔形检测 all")
     for dataIntegration in dataIntegrationList:
-        dataIntegration.lineDataDict = _detectionTaperShapeA_(dataIntegration)
-        dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
+
+        if DetectionTaperShapeType.WK_TYPE in Globs.control.taper_shape_type:
+            _detectionTaperShapeA_(dataIntegration)
+            dataIntegration.lineDataDict={}
+        if DetectionTaperShapeType.LINE_TYPE in Globs.control.taper_shape_type:
+            dataIntegration.lineDataDict = _detectionTaperShape_(dataIntegration)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
         commitLineData(dataIntegration)

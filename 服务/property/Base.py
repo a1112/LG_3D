@@ -10,10 +10,9 @@ from CoilDataBase.Coil import addCoilState, addServerDetectionError
 from CoilDataBase.models import CoilState as CoilStateDB, AlarmLooseCoil, AlarmTaperShape, SecondaryCoil
 from CoilDataBase.models import ServerDetectionError
 from Globs import control
-from property.Types import BdData
+from property.Types import BdData, LevelingType
 from property.detection3D import FlatRollData
 from tools import tool, FlattenSurface
-from utils.ControlManagement import LevelingType
 
 
 def sublist_with_indices(input_list, x, offset=0):
@@ -125,7 +124,7 @@ class DataIntegration:
         self.currentSecondaryCoil: Optional[SecondaryCoil] = None
         self.__median_non_zero__ = None
         if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
-            self.__median_non_zero__ = 32767
+            self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
     def set_npy_data(self, npyData):
         print("set set_npy_data")

@@ -20,7 +20,12 @@ class DetectionSpeedRecord:
                 result = func(*args, **kwargs)
                 end_time = time.time()
                 elapsed_time = end_time - start_time
-                logger.info(
+                log_func = logger.info
+                if elapsed_time > 3:
+                    log_func = logger.warning
+                if elapsed_time > 5:
+                    log_func = logger.error
+                log_func(
                     f"timing_decorator {log_message}: Function '{func.__name__}' executed in {elapsed_time:.4f} seconds.")
                 return result
 

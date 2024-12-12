@@ -12,7 +12,7 @@ import AlarmDetection
 from Save3D.save import D3Saver
 
 from property.ErrorBase import ServerDetectionException
-from utils.ControlManagement import LevelingType
+from property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from tools import tool, FlattenSurface
 
@@ -34,7 +34,7 @@ def getAllKey():
 
 
 class ImageMosaic(Globs.control.BaseImageMosaic):
-    def __init__(self, config, managerQueue, loggerProcess: LoggerProcess):
+    def __init__(self, config, managerQueue, logger_process: LoggerProcess):
         super().__init__()
         self.dataFolderList: List[DataFolder] = []
         self.d3Saver: Optional[D3Saver] = None
@@ -42,7 +42,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.managerQueue = managerQueue
         self.currentSecondaryCoil = None
         self.colorImageDict = {}
-        self.loggerProcess = loggerProcess
+        self.loggerProcess = logger_process
         self.config = config
         self.key = config["key"]
         self.saveFolder = Path(config["saveFolder"])

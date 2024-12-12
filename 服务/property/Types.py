@@ -1,4 +1,5 @@
 from abc import ABC
+from enum import Flag, auto
 from typing import Union, List
 
 
@@ -93,3 +94,17 @@ class Point3D(Point2D):
     @z.setter
     def z(self, value: Union[int, float]):
         self.args[2] = value
+
+
+class DetectionTaperShapeType(Flag):
+    NONE = auto()
+    WK_TYPE = auto()
+    POINT_TYPE = auto()
+    LINE_TYPE = auto()
+
+
+class LevelingType(Flag):
+    NONE = auto()
+    WK_TYPE = auto()
+    LinearRegression = auto()
+    Config = auto()

@@ -103,8 +103,8 @@ class Data3dCache:
         self._cache.cache_clear()
 
 
-previewCache = ImageCache(128)
-imageCache = ImageCache(128)
-_3dDataCache = Data3dCache(16)
+previewCache = ImageCache(256)
+imageCache = ImageCache(256)
+_3dDataCache = Data3dCache(32)
 
 

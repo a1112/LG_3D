@@ -8,8 +8,11 @@ from .tool import to_dict
 import datetime
 
 from . import tool
+
+
 def addObj(obj):
     return tool.addObj(obj)
+
 
 def getAllJoinQuery(session: Session):
     return session.query(SecondaryCoil) \
@@ -88,6 +91,7 @@ def addSecondaryCoil(coil: SecondaryCoil):
             CreateTime=datetime.datetime.now()
         ))
         session.commit()
+
 
 def getSecondaryCoil(num: int, desc=True) -> List[SecondaryCoil]:
     """
@@ -283,6 +287,7 @@ def getCoilStateByCoilId(coilId, surface):
 def addServerDetectionError(error: ServerDetectionError):
     return addObj(error)
 
+
 def add_coil(coil):
     with Session() as session:
         session.add(SecondaryCoil(
@@ -302,3 +307,19 @@ def add_coil(coil):
 def get_last_coil():
     with Session() as session:
         return session.query(SecondaryCoil).order_by(SecondaryCoil.CreateTime.desc()).first()
+
+
+def get_point_data(coil_id, surfaceKey=None):
+    with Session() as session:
+        que = session.query(PointData).filter(PointData.secondaryCoilId == coil_id)
+        if surfaceKey:
+            que = que.filter(PointData.surface == surfaceKey)
+        return que.all()
+
+
+def get_line_data(coil_id, surfaceKey=None):
+    with Session() as session:
+        que = session.query(LineData).filter(LineData.secondaryCoilId == coil_id)
+        if surfaceKey:
+            que = que.filter(LineData.surface == surfaceKey)
+        return que.all()

@@ -2,13 +2,15 @@ import multiprocessing
 
 import Init
 from SplicingService.ImageMosaicThread import ImageMosaicThread
+from utils.LoggerProcess import LoggerProcess
 
-Init.logDir =logDir= 'logs/服务日志_restart'
+Init.logDir = logDir = 'logs/服务日志_restart'
 
 if __name__ == '__main__':
     manager = multiprocessing.Manager()
     managerQueue = manager.Queue()
-    imageMosaicThread = ImageMosaicThread(managerQueue)
+    loggerProcess = LoggerProcess(log_file=logDir + "/app_restart.log")
+    imageMosaicThread = ImageMosaicThread(managerQueue, loggerProcess)
     imageMosaicThread.saveDataBase = False
     imageMosaicThread.debugType = True
     imageMosaicThread.startCoilId = int(input("请输入开始处理的卷ID："))

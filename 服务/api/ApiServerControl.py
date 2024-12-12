@@ -4,8 +4,8 @@
 """
 from typing import Dict
 
-from .api_core import app
 from Globs import control
+from ApiBase import *
 
 
 @app.get("/control/config")

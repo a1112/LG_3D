@@ -16,7 +16,7 @@ from tools.data3dTool import auto_data_leveling_3d
 
 from utils import Log
 import Globs
-from utils.ControlManagement import LevelingType
+from property.Types import LevelingType
 
 logger = Log.logger
 
