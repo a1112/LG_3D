@@ -6,7 +6,7 @@ from threading import Thread
 from fastapi import WebSocket
 
 import Globs
-from ApiBase import *
+from .ApiBase import *
 
 
 class ReceiveTextThread(Thread):

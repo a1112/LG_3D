@@ -16,7 +16,7 @@ from CoilDataBase.Coil import deleteCoil
 
 # if isLoc:
 #     from CoilDataBase.Coil import deleteCoil
-#     deleteCoil(23006)
+#     deleteCoil(14000)
 
 
 if __name__ == '__main__':

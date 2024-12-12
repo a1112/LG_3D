@@ -14,7 +14,7 @@ from CONFIG import isLoc
 from property.ServerConfigProperty import ServerConfigProperty
 
 from utils import Hardware, Backup, export
-from ApiBase import *
+from .ApiBase import *
 serverConfigProperty: ServerConfigProperty
 
 

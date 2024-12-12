@@ -9,7 +9,7 @@ from property.Data3D import LineData
 from tools.DataGet import DataGet
 from fastapi.responses import StreamingResponse
 from PIL import Image
-from ApiBase import *
+from .ApiBase import *
 
 
 def getBool(value, defaultValue=True):
