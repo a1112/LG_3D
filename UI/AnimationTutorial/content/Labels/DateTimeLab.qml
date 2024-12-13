@@ -20,7 +20,7 @@ Row {
         text: date.month
     }
     LabelFootInfoKey{
-         color: labelColor
+        color: labelColor
         text: qsTr("月")
         font.pointSize: 10
         anchors.verticalCenter: parent.verticalCenter
@@ -29,7 +29,7 @@ Row {
         text: date.day
     }
     LabelFootInfoKey{
- color: labelColor
+        color: labelColor
         text: qsTr("日")
         font.pointSize: 10
         anchors.verticalCenter: parent.verticalCenter
@@ -48,8 +48,8 @@ Row {
         LabelFootInfoKey{
             anchors.centerIn: parent
             id:seq_
-             color: labelColor
-             text: ":"
+            color: labelColor
+            text: ":"
             Timer{
                 running: false
                 interval: 1000

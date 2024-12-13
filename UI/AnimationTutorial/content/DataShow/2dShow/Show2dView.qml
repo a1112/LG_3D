@@ -43,10 +43,6 @@ Item {
             }
         }
     }
-    ShowInfos{
-        width: root.width
-        height: root.height
-    }
     CrossView{
         visible: dataShowCore.chartHovered | dataShowCore.imageShowHovered
         crossX:dataShowCore.hoverPoint.x

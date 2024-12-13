@@ -2,6 +2,9 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 Item {
     Column{
+
+        Row{
+                spacing:10
         Row{
             Label{
                 text: "X: "
@@ -28,11 +31,8 @@ Item {
             }
 
         }
-    }
+        }
 
-    Column{
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
         Row{
             Label{
                 text: "宽: "
@@ -91,9 +91,5 @@ Item {
                 color: "#747474"
             }
         }
-
-    }
-
-
-
+}
 }

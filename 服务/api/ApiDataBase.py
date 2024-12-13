@@ -18,7 +18,7 @@ from .ApiBase import *
 serverConfigProperty: ServerConfigProperty
 
 
-def getCoilItemInfo(c):
+def get_coil_item_info(c):
     c = tool.to_dict(c)
     if "Weight" in c:
         code = chr(int(c["Weight"]))
@@ -32,9 +32,9 @@ def getCoilItemInfo(c):
     return c
 
 
-def formatCoilInfo(secondaryCoilList):
+def format_coil_info(secondary_coil_list):
     re = []
-    for secondaryCoil in secondaryCoilList:
+    for secondaryCoil in secondary_coil_list:
         secondaryCoil: SecondaryCoil
         c_data = {"hasCoil": False,
                   "hasAlarmInfo": False
@@ -43,98 +43,97 @@ def formatCoilInfo(secondaryCoilList):
         if len(secondaryCoil.childrenCoil) > 0:
             c_data["hasCoil"] = True
         for childrenCoil in secondaryCoil.childrenCoil:
-            c_data.update(getCoilItemInfo(childrenCoil))
+            c_data.update(get_coil_item_info(childrenCoil))
         c_data["AlarmInfo"] = {}
 
         if len(secondaryCoil.childrenAlarmInfo) > 0:
             c_data["hasAlarmInfo"] = True
         for childrenAlarmInfo in secondaryCoil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
-            c_data["AlarmInfo"][childrenAlarmInfo.surface] = getCoilItemInfo(childrenAlarmInfo)
-        c_data.update(getCoilItemInfo(secondaryCoil))
+            c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
+        c_data.update(get_coil_item_info(secondaryCoil))
         re.append(c_data)
     return re
 
 
 @app.get("/coilList/{number}")
 async def get_coil(number: int):
-    return formatCoilInfo(Coil.getCoilList(number, byCoil=isLoc)[::-1])
+    return format_coil_info(Coil.getCoilList(number, byCoil=isLoc)[::-1])
 
 
-@app.get("/flush/{coilId:int}")
-async def flush(coilId: int):
-    re = {
-        "coilList": formatCoilInfo(Coil.getCoilList(10, coilId, byCoil=isLoc)[::-1])
+@app.get("/flush/{coil_id:int}")
+def get_flush(coil_id: int):
+    return {
+        "coilList": format_coil_info(Coil.getCoilList(10, coil_id, byCoil=isLoc)[::-1])
     }
-    return re
 
 
-@app.get("/search/coilNo/{coilNo}")
-async def searchByCoilNo(coilNo):
-    return formatCoilInfo(Coil.searchByCoilNo(coilNo))
+@app.get("/search/coilNo/{coil_no:str}")
+async def search_by_coil_no(coil_no:str):
+    return format_coil_info(Coil.searchByCoilNo(coil_no))
 
 
-@app.get("/search/coilId/{coilId}")
-async def searchByCoilId(coilId: int):
-    coilId = int(coilId)
-    return formatCoilInfo(Coil.searchByCoilId(coilId))
+@app.get("/search/coilId/{coil_id}")
+async def search_by_coil_id(coil_id: int):
+    coil_id = int(coil_id)
+    return format_coil_info(Coil.searchByCoilId(coil_id))
 
 
-@app.get("/search/DateTime/{start}/{end}")
-async def searchByDateTime(start: str, end: str):
+@app.get("/search/DateTime/{start:str}/{end:str}")
+async def search_by_date_time(start: str, end: str):
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
-    return formatCoilInfo(Coil.searchByDateTime(start, end))
+    return format_coil_info(Coil.searchByDateTime(start, end))
 
 
-@app.get("/search/CoilState/{coilId:int}")
-async def getCoilState(coilId: int):
-    coilId = int(coilId)
-    r = Coil.getCoilState(coilId)
+@app.get("/search/CoilState/{coil_id:int}")
+async def get_coil_state(coil_id: int):
+    coil_id = int(coil_id)
+    r = Coil.getCoilState(coil_id)
     return tool.to_dict(r)
 
 
-@app.get("/search/PlcData/{coilId:int}")
-async def getPlcData(coilId: int):
-    coilId = int(coilId)
-    r = Coil.getPlcData(coilId)
+@app.get("/search/PlcData/{coil_id:int}")
+async def get_plc_data(coil_id: int):
+    coil_id = int(coil_id)
+    r = Coil.getPlcData(coil_id)
     return tool.to_dict(r)
 
 
-@app.get("/search/defects/{coilId:int}/{direction}")
-async def getDefects(coilId: int, direction: str):
-    return tool.to_dict(Coil.getDefects(coilId, direction))
+@app.get("/search/defects/{coil_id:int}/{direction}")
+async def get_defects(coil_id: int, direction: str):
+    return tool.to_dict(Coil.getDefects(coil_id, direction))
 
 
 @app.get("/search/defectDict")
-async def getDefectDict():
+async def get_defect_dict():
     return tool.to_dict(Coil.getDefetClassDict())
 
 
 @app.get("/defectDictAll")
-async def getDefectDictAll():
+async def get_defect_dict_all():
     """
     获取全部的表面缺陷数据字段
     """
     return tool.to_dict(Coil.getDefetClassDict())
 
 
-@app.get("/coilInfo/{coil_id:str}/{surfaceKey:str}")
-async def getInfo(coil_id: str, surfaceKey: str):
-    return serverConfigProperty.get_Info(coil_id, surfaceKey)
+@app.get("/coilInfo/{coil_id:int}/{surface_key:str}")
+async def get_info(coil_id: int, surface_key: str):
+    return serverConfigProperty.get_Info(coil_id, surface_key)
 
 
-async def getCameraConfig(coil_id: str, surfaceKey: str, c):
-    return serverConfigProperty.getCameraConfig(coil_id, surfaceKey)
+async def get_camera_config(coil_id: int, surface_key: str, c):
+    return serverConfigProperty.getCameraConfig(coil_id, surface_key)
 
 
 @app.get("/hardware")
-async def getHardware():
+async def get_hardware():
     return Hardware.getHardwareInfo()
 
 
 @app.get("/cameraAlarm")
-async def getCameraAlarm():
+async def get_camera_alarm():
     """
       获取相机报警信息
     Returns:
@@ -179,18 +178,18 @@ async def getCameraAlarm():
             camera.getAlarmInfo()
 
 
-@app.get("/cameraData/{coil_id:str}/{cameraKey:str}")
-async def getCameraData(coil_id: str, cameraKey: str):
+@app.get("/cameraData/{coil_id:int}/{camera_key:str}")
+async def get_camera_data(coil_id: int, camera_key: str):
     if CONFIG.isLoc:
         with open("demo/camera_config.json", "r", encoding="utf-8") as f:
             camera_config = json.load(f)
             return camera_config
 
-    return serverConfigProperty.getCameraData(coil_id, cameraKey)
+    return serverConfigProperty.getCameraData(coil_id, camera_key)
 
 
-@app.get("/coilAlarm/{coil_id:str}")
-async def getCoilAlarm(coil_id: str):
+@app.get("/coilAlarm/{coil_id:int}")
+async def get_coil_alarm(coil_id: int):
     """
     返回全部的警告数据
     Args:
@@ -199,26 +198,25 @@ async def getCoilAlarm(coil_id: str):
     Returns:
 
     """
-    return AlarmCoilManagement.getCoilAlarm(coil_id)
+    return AlarmCoilManagement.get_coil_alarm(coil_id)
 
 
-@app.get("/backupImageTask/{fromId:str}/{toId:str}/{saveFolder:path}")
-async def backupImageTask(fromId: str, toId: str, saveFolder: str):
-    print(fromId)
-    print(toId)
-    print(saveFolder)
-    return Backup.backupImageTask(fromId, toId, saveFolder)
+@app.get("/backupImageTask/{from_id:int}/{to_id:int}/{save_folder:path}")
+async def backup_image_task(from_id: int, to_id: int, save_folder: str):
+    print(from_id)
+    print(to_id)
+    print(save_folder)
+    return Backup.backup_image_task(from_id, to_id, save_folder)
 
 
 @app.websocket("/ws/backupImageTask")
-async def wsBackupImageTask(websocket: WebSocket):
+async def ws_backup_image_task(websocket: WebSocket):
     await websocket.accept()
     while True:
         try:
             # 接收客户端发送的消息
             data = await websocket.receive_text()
             data = json.loads(data)
-
             fromId = data['from_id']
             toId = data['to_id']
             saveFolder = data['folder']
@@ -226,7 +224,7 @@ async def wsBackupImageTask(websocket: WebSocket):
             async def msgFunc_(value):
                 await websocket.send_text(str(value))
 
-            await Backup.backupImageTask(fromId, toId, saveFolder)
+            await Backup.backup_image_task(fromId, toId, saveFolder)
             # 处理并响应数据
             await websocket.send_text(str(100))
 
@@ -264,16 +262,16 @@ async def download_file():
         return {"error": "File not found"}
 
 
-@app.get("/get_point_data/{coil_id:str}/{surfaceKey:str}")
-async def get_point_data(coil_id: str, surfaceKey: str):
+@app.get("/get_point_data/{coil_id:int}/{surface_key:str}")
+async def get_point_data(coil_id: int, surface_key: str):
     """
     获取点数据
     """
-    surfaceKey = getSurfaceKey(surfaceKey)
-    return tool.to_dict(Coil.get_point_data(coil_id, surfaceKey))
+    surface_key = get_surface_key(surface_key)
+    return tool.to_dict(Coil.get_point_data(coil_id, surface_key))
 
 
-@app.get("/get_line_data/{coil_id:str}/{surfaceKey:str}")
-async def get_line_data(coil_id: str, surfaceKey: str):
-    surfaceKey = getSurfaceKey(surfaceKey)
-    return tool.to_dict(Coil.get_line_data(coil_id, surfaceKey))
+@app.get("/get_line_data/{coil_id:int}/{surface_key:str}")
+async def get_line_data(coil_id: int, surface_key: str):
+    surface_key = get_surface_key(surface_key)
+    return tool.to_dict(Coil.get_line_data(coil_id, surface_key))

@@ -24,7 +24,7 @@ Item {
                 csmSplit1: 10
             }
             PerspectiveCamera {
-                z: 650
+                z: 660
                 id: sceneCamera
 
             }
@@ -36,7 +36,7 @@ Item {
             x: core3D.objectOffsetX
             y: core3D.objectOffsetY
             scale: core3D.objectScale
-            eulerRotation.y:-65
+            eulerRotation.y:-75
         }
 
     }

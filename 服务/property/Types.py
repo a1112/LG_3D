@@ -101,6 +101,7 @@ class DetectionTaperShapeType(Flag):
     WK_TYPE = auto()
     POINT_TYPE = auto()
     LINE_TYPE = auto()
+    AREA_TYPE = auto()
 
 
 class LevelingType(Flag):

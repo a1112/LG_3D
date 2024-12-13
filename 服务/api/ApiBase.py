@@ -28,11 +28,11 @@ async def info():
 
 
 @app.get("/delay")
-async def getDelay():
+async def get_delay():
     return 0
 
 
-def getSurfaceKey(surface):
+def get_surface_key(surface):
     if "all" == surface:
         return None
     return surface

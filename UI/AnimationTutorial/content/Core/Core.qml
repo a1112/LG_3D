@@ -29,8 +29,7 @@ Item {
         }
         coreModel.surfaceL.setCoilId(currentCoilModel.coilId)
         coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
-        coreModel.surfaceL.pointData.clear()
-        coreModel.surfaceS.pointData.clear()
+
     }
 
     property CoilModel currentCoilModel: CoilModel {

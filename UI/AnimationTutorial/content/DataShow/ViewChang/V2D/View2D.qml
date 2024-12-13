@@ -6,6 +6,11 @@ Item {
     property int netxKetIndex:0
     property string next_key: keyList[(netxKetIndex+1)%keyList.length]
     property real zoom: width/dataShowCore.aspectRatio
+    Item{
+        width: parent.width
+        height: parent.height
+        visible:dataShowCore.controls.thumbnail_view_2d_enable
+
     Image{
         id: image
         width: parent.width
@@ -14,6 +19,7 @@ Item {
         sourceSize.width: parent.width
         sourceSize.height: parent.height
         source:surfaceData.getSouceByKey(next_key)
+        asynchronous:true
     }
     MouseArea{
         anchors.fill:parent
@@ -25,6 +31,8 @@ Item {
             netxKetIndex+=1
         }
     }
+    }
+
     ColorValueBar{
         height:root.height
     }

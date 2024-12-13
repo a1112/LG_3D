@@ -1,9 +1,5 @@
-import QtQuick 2.15
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick
 import QtQuick.Shapes
-// import "../../../../DataShow/ShowCharts"
-import "../"
 Item {
     id:root
     anchors.fill: parent
@@ -80,7 +76,6 @@ Item {
             strokeWidth: 1
             strokeColor: "green"
             fillColor: "#12222222"
-
             // 计算旋转后的路径
             PathSvg {
                 path: "M " +  ellipse.center.x + "," + ellipse.center.y + " " +
@@ -92,10 +87,6 @@ Item {
         }
 
     }
-
-
-
-
     Rectangle{
         width: 4
         height: 4

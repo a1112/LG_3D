@@ -1,10 +1,12 @@
-import QtQuick 2.15
-import "../Model"
+import QtQuick
+import "../../Model"
 Item {
     id:root
     property int rootViewIndex: 0
     readonly property bool is2DrootView:rootViewIndex==0
     readonly property bool is3DrootView:rootViewIndex==1
+
+    property  PointTool pointTool : PointTool{}
 
     function rootViewto2D(){
         rootViewIndex=0
@@ -175,15 +177,29 @@ Item {
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
             imageCache.pushCache(getSource(coilId,viewKey,false))
         })
-
+        pointData.clear()
         api.getCoilInfo(coilId_,key,
                         (result)=>{
                             setCoilInfo(JSON.parse(result))
+
+
                         },
                         (error)=>{
                             console.log("error")
                         }
                         )
+
+
+        api.getPointDatas(
+                    coilId_,key,(result)=>{
+                        pointTool.setDatas(JSON.parse(result))
+                    },
+                    (error)=>{
+                        console.log("getPointDatas error")
+                        console.log("error")
+                    }
+                    )
+
     }
 
 
@@ -345,10 +361,11 @@ Item {
     property ListModel txModel: ListModel{}
 
 
-    property ListModel pointData: ListModel{
-    }
+    readonly property ListModel pointData: pointTool.pointData
 
     function addSignPoint(p){
+        return pointTool.addUserPoint(p.x,p.y)
+
         pointData.append({"p_x":p.x,"p_y":p.y})
     }
 

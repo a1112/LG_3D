@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+
+import "../ViewChang"
+
 Item {
     id:root
     height: 25
@@ -40,47 +43,9 @@ Item {
             Layout.fillWidth: true
             implicitHeight: 1
         }
+        // CoilInfoRow{}
+        ToolBoxViewRow{
 
-        Item{
-            Layout.fillWidth: true
-            implicitHeight: 1
-        }
-        Label{
-            text: "No:"
-            color: "#747474"
-        }
-        Label{
-            text: dataShowCore.currentCoilModel.coilNo
-        }
-        Label{
-            text: "钢种:"
-            color: "#747474"
-        }
-        Label{
-            text: dataShowCore.currentCoilModel.coilType
-        }
-
-        Label{
-            text: "外径:"
-            color: "#747474"
-        }
-        Label{
-            text: dataShowCore.currentCoilModel.coilDia
-        }
-
-        Label{
-            text: "厚:"
-            color: "#747474"
-        }
-        Label{
-            text: dataShowCore.currentCoilModel.coilThickness
-        }
-        Label{
-            text: "宽:"
-            color: "#747474"
-        }
-        Label{
-            text: core.currentCoilModel.coilWidth
         }
         Item{
             width: 30

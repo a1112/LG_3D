@@ -1,6 +1,6 @@
 import QtQuick
 import "../../Model"
-import "../../Core"
+import "../../Core/Surface"
 import "_base_"
 DataShowCore_ {
     // OBJ

@@ -20,7 +20,7 @@ Item {
     property int dataPort: 6013
     property int plcPort: 6014
 
-    property int updataTime: 300
+    property int updataTime: 3000
 
     // 保持最新图像 -> 时间
     property int autoKeepTimeMax: 180
@@ -31,7 +31,7 @@ Item {
         property alias useImageCache: root.useImageCache
         property alias maxImageCache: root.maxImageCache
         property alias useSharedFolder: root.useSharedFolder
-        property alias updataTime: root.updataTime
+        // property alias updataTime: root.updataTime
         property alias autoKeepTimeMax: root.autoKeepTimeMax
         property alias useLoc: root.useLoc
         property alias sharedFolderBaseName: root.sharedFolderBaseName

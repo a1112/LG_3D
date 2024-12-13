@@ -48,4 +48,10 @@ QtObject {
 
     }
 
+
+    property bool taper_shape_annotation_enable:true
+    property bool thumbnail_view_3d_enable:true
+    property bool thumbnail_view_2d_enable:true
+
+
 }

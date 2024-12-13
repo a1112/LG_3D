@@ -8,6 +8,7 @@ Node {
         id: node3D_obj
         objectName: "3D.obj"
         Model {
+
             id: defaultobject
             pickable:false
             objectName: "defaultobject"
@@ -15,6 +16,7 @@ Node {
             materials: [
                 defaultMaterial_material,
             ]
+
         }
     }
 

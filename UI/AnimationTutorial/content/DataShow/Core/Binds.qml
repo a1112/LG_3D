@@ -1,5 +1,5 @@
 import QtQuick
-import "../../Core"
+import "../../Core/Surface"
 /*
 
 

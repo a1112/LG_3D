@@ -34,7 +34,7 @@ class ControlManagement(ThreadClass):
         self.leveling_gray = True
         self.leveling_3d = True
         self.leveling_type = LevelingType.WK_TYPE
-        self.taper_shape_type = DetectionTaperShapeType.WK_TYPE
+        self.taper_shape_type = DetectionTaperShapeType.WK_TYPE|DetectionTaperShapeType.LINE_TYPE
         self.leveling_3d_wk_default_value = 32767
         self.save_3d_obj = True
         self.debug_show = False
