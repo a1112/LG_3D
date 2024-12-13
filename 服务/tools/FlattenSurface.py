@@ -1,88 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from scipy.spatial.transform import Rotation as R
+
 
 def fit_plane(x_, y_, z):
     """
-    使用线性回归拟合一个平面，返回平面方程的系数（a, b, c），
-    以及平面法向量
-    """
-    from sklearn.linear_model import LinearRegression
-    X = np.vstack((x_, y_)).T
-    model = LinearRegression()
-    model.fit(X, z)
-    a_, b_ = model.coef_
-    c_ = model.intercept_
-    # 返回平面方程的系数
-    return a_, b_, c_
-
-
-
-def fit_plane1(x_, y_, z):
-    """
-    使用线性回归拟合一个平面，返回平面方程的系数 (a, b, c) 和平面法向量。
-
-    参数:
-    - x_: 一维数组，x 坐标。
-    - y_: 一维数组，y 坐标。
-    - z: 一维数组，z 坐标。
-
-    返回:
-    - a, b, c: 平面方程 z = ax + by + c 的系数。
-    - normal_vector: 平面的法向量 [a, b, -1]。
+    使用线性回归拟合一个平面，返回平面方程的系数 (a, b, c) 和法向量。
     """
     from sklearn.linear_model import LinearRegression
     if len(x_) != len(y_) or len(x_) != len(z):
         raise ValueError("x_, y_, z 必须具有相同的长度。")
 
-    # 构建输入特征矩阵
     X = np.vstack((x_, y_)).T
-
-    # 使用线性回归拟合
     model = LinearRegression()
     model.fit(X, z)
-
-    # 提取系数
     a_, b_ = model.coef_
     c_ = model.intercept_
 
-    # 计算法向量
     normal_vector = np.array([a_, b_, -1])
-
     return a_, b_, c_, normal_vector
-
-
-def fit_plane_matrix(x_, y_, z):
-    """
-    使用矩阵运算拟合平面，返回平面方程的系数 (a, b, c) 和法向量。
-
-    参数:
-    - x_: 一维数组，x 坐标。
-    - y_: 一维数组，y 坐标。
-    - z: 一维数组，z 坐标。
-
-    返回:
-    - a, b, c: 平面方程 z = ax + by + c 的系数。
-    - normal_vector: 平面的法向量 [a, b, -1]。
-    """
-    if len(x_) != len(y_) or len(x_) != len(z):
-        raise ValueError("x_, y_, z 必须具有相同的长度。")
-
-    # 构建矩阵
-    A = np.vstack((x_, y_, np.ones_like(x_))).T
-    b = z
-
-    # 最小二乘法求解
-    coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
-
-    a_, b_, c_ = coeffs
-    normal_vector = np.array([a_, b_, -1])
-
-    return a_, b_, c_, normal_vector
-
-
-
-
 
 
 def vector_to_angles(normal_vector):
@@ -170,6 +107,7 @@ def rotate_data(data, normal_vector):
 
     return rotated_data
 
+
 def rotate_data2(data, normal_vector):
     from scipy.spatial.transform import Rotation as R
     """
@@ -239,16 +177,12 @@ def flatten_surface_by_rotation(data, mask, media_z):
     z = z[non_zero_indices]
 
     # 拟合平面并计算平面方程的系数
-    a, b, c,normal_vector = fit_plane1(x, y, z)
+    a, b, c, normal_vector = fit_plane(x, y, z)
     angleData = vector_to_angles(normal_vector)
-    print()
     print(f"拟合平面方程: z = {a}*x + {b}*y + {c} {normal_vector}")
-
     # 旋转数据使其法向量对齐到Z轴
     # rotated_data = rotate_data(data, np.array([a, b, 1]))
-
-    # return a, b, c, rotated_data
-    return a,b,c,data,angleData
+    return a, b, c, data, angleData
 
 
 def get_reference_z_values(x, y, a, b, c):
@@ -283,28 +217,3 @@ def extract_normal_distribution_z_values(data):
     plt.show()
 
     return mu, std
-
-
-if __name__ == "__main__":
-    # 加载 npz 数据
-    Z_noisy = np.load("2.npz")['array']
-    print("原始数据形状:", Z_noisy.shape)
-
-    # 可视化原始数据
-    plot_surface(Z_noisy, title="Noisy Surface")
-
-    # 旋转数据使其平行
-    a, b, c, rotated_data = flatten_surface_by_rotation(Z_noisy)
-    print("旋转后的数据形状:", rotated_data.shape)
-
-    # 可视化旋转后的数据
-    plot_surface(rotated_data, title="Rotated Surface")
-
-    # 获取参考平面上每个 (x, y) 的 Z 值
-    rows, cols = Z_noisy.shape
-    x, y = np.meshgrid(np.arange(cols), np.arange(rows))
-    reference_z_values = get_reference_z_values(x, y, a, b, c)
-
-    # 获取旋转后平面中心区域的 Z 值并进行正态分布拟合
-    mu, std = extract_normal_distribution_z_values(rotated_data)
-    print(f"正态分布的均值: {mu}, 标准差: {std}")

@@ -110,14 +110,11 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     # p_center error :  中心点由 count_taper 返回
     p_inner = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
     p_outer = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)
-
-
     Alarm.addObj(  # AlarmTaperShape 为旧版本对象，为 x 角度的检测塔形数值， 借用显示，新对象移动到 LineData 中
         # 目前无最低值，临时结构
         AlarmTaperShape(
             secondaryCoilId=dataIntegration.coilId,
             surface=dataIntegration.surface,
-
             out_taper_max_x=p_outer.x,
             out_taper_max_y=p_outer.y,
             out_taper_max_value=outer_taper,

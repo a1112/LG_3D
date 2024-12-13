@@ -77,6 +77,7 @@ class DataIntegration:
     """
 
     def __init__(self, coilId, saveFolder, direction, key):
+        self.angleData = None
         self.annulus_mask = None
         self._circleConfig_ = None
         self.index = 0
@@ -127,7 +128,7 @@ class DataIntegration:
             self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
     def set_npy_data(self, npyData):
-        print("set set_npy_data")
+        print("set set_npy_data", npyData.shape)
         self.__npyData__ = npyData
 
     @property
@@ -183,37 +184,32 @@ class DataIntegration:
     def accuracy_y(self):
         return self.scan3dCoordinateScaleY
 
+    def annular_region_mean(self, image, r1, r2):
+        # 创建坐标网格
+        cw = image.shape[0] // 2
+        r1 = cw*r1
+        r2 = cw*r2
+        center_x, center_y,circlexRadius = self.circleConfig["inner_circle"]["circlex"]
+        y, x = np.indices(image.shape)
+        distance = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+        annulus_mask = (distance >= r1) & (distance <= r2)
+        annular_mean_area = image[annulus_mask]
+        annular_mean_area = annular_mean_area[annular_mean_area != 0]
+        annular_mean = np.median(annular_mean_area)
+        return annular_mean, annulus_mask
+
     @property
     def median_non_zero(self):
         if self.__median_non_zero__ is None:
-            def annular_region_mean(image, center_x, center_y, r1, r2):
-                # 创建坐标网格
-                y, x = np.indices(image.shape)
-                distance = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
-                annulus_mask = (distance >= r1) & (distance <= r2)
-                annular_mean_area = image[annulus_mask]
-                annular_mean_area = annular_mean_area[annular_mean_area != 0]
-                annular_mean = np.median(annular_mean_area)
-                return annular_mean, annulus_mask
-
-            cw = self.__npyData__.shape[0] // 2
-            self.__median_non_zero__, self.annulus_mask = annular_region_mean(self.__npyData__,
-                                                                              self.circleConfig["inner_circle"][
-                                                                                  "circlex"][0],
-                                                                              self.circleConfig["inner_circle"][
-                                                                                  "circlex"][1],
-                                                                              int(cw * 0.6),
-                                                                              int(cw * 0.8))  # 获取平均值
-            #
-            # 将输入的矩阵转换为 numpy 数组  翻转
-            # 创建一个新的矩阵，应用条件变换
-            # transformed_matrix = np.where(matrix < n, matrix, 2 * a - matrix)
-
+            self.__median_non_zero__, self.annulus_mask = self.annular_region_mean(self.__npyData__,0.6,0.8)  # 获取平均值
         return self.__median_non_zero__
 
     @property
     def npyData(self):
         if self._npyData_ is None:
+            print("self.__npyData__")
+            print(self.__npyData__)
+            print("self.median_non_zero ", self.median_non_zero)
             self._npyData_ = np.where(
                 self.__npyData__ < max(self.median_non_zero - 300 // self.scan3dCoordinateScaleZ, 10),
                 np.zeros(self.__npyData__.shape), 2 * self.median_non_zero - self.__npyData__)
@@ -360,17 +356,15 @@ class DataIntegration:
         return self
 
     def flatten_surface_by_rotation(self):
-        self.median_non_zero
-        a, b, c, rotated_data,angleData = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
-                                                                           self.annulus_mask,
-                                                                           self.median_non_zero)
-        r_z = 180 - angleData['angle_with_z']
-        # r_z=r_z*1
-        # r_z
-        print(f"{self.key} 旋转 {r_z} ")
-        return tool.rotate_around_x_axis(self.__npyData__,r_z)
-        # self.__npyData__ =
-        # self._npyData_ = self.__npyData__
+        median_non_zero,annulus_mask=self.annular_region_mean(self.__npyData__,0.6,0.65)  # 获取平均值
+        a, b, c, rotated_data, angleData = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
+                                                                                      annulus_mask,
+                                                                                      median_non_zero)
+        r_z = int(180 - angleData['angle_with_z'])
+        print(f"{self.key} 旋转 {r_z} {angleData}")
+        self.angleData = angleData
+        # return tool.rotate_around_x_axis(self.__npyData__,r_z)
+        return r_z
 
 
 class DataIntegrationList:
@@ -398,5 +392,3 @@ class DataIntegrationList:
         else:
             self.index = 0
             raise StopIteration
-
-

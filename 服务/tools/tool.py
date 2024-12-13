@@ -6,11 +6,11 @@ from PIL import Image
 import Globs
 import tools.tool
 from property.Types import Point2D
+from utils.Log import logger
 
 
 def showImage(image, name="image"):
-    if not Globs.control.debug_show:
-        return
+
     if isinstance(image, Image.Image):
         image = np.array(image)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -204,7 +204,8 @@ def crop_black_border(gray):
     return x, y, w, h
 
 
-def hstack3D(npyList, n_=100, num=10, joinMaskImage=None):
+def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
+
     def nZeeroIndexes(array, n, minValue=0):
         indices = []
         for i in range(len(array) // n):
@@ -215,7 +216,7 @@ def hstack3D(npyList, n_=100, num=10, joinMaskImage=None):
         return indices
 
     def getMean(data):
-        data = data[data > 500]
+        data = data[data > 1500]
         return numpy.mean(data)
 
     # 水平拼接3D图像
@@ -227,8 +228,12 @@ def hstack3D(npyList, n_=100, num=10, joinMaskImage=None):
         r_l_line_nz_indexes = nZeeroIndexes(r_l_line, n_, num)
         if r_l_line_nz_indexes:
             samplingIndex = r_l_line_nz_indexes[-1]
-            meanL = getMean(l_npy[:, -5:-1][samplingIndex:samplingIndex + n_])
-            meanR = getMean(r_npy[:, 1:5][samplingIndex:samplingIndex + n_])
+            meanL = getMean(l_npy[:, -15:-5][samplingIndex:samplingIndex + n_])
+            meanR = getMean(r_npy[:, 5:15][samplingIndex:samplingIndex + n_])
+            if np.isnan(meanL) or np.isnan(meanR) or abs(meanL-meanR) > 5000:
+                logger.error(f"getMean Error nan meanL {meanL} meanR {meanR}  {meanL-meanR} ")
+                continue
+            print(f"meanL {meanL} meanR {meanR}  {meanL-meanR}")
             npyList[index] = npyList[index] - meanR + meanL
         else:
             pass
