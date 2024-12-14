@@ -44,6 +44,10 @@ def find_line_max_min(line_, noneDataValue, useIQR=True, type_=None):
     max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
     # 获取前n个最小值的索引
     min_indices = np.argsort(values)[:n]  # 排序并获取最小值的前n个索引
+    print(f"max_indices {max_indices}")
+    if not len(max_indices) or not len(min_indices):
+        return None, None
+
     max_index = max_indices[0]
     min_index = min_indices[0]
     if useIQR:
@@ -274,6 +278,7 @@ class LineData:
         inner_points = arr[start_index:center_index]
         outer_points = arr[center_index:end_index]
         # 最值检测
+        print(outer_points)
         self.inner_max_point, self.inner_min_point = find_line_max_min(inner_points, 10, self.useIQR, type_="inner")
         self.outer_max_point, self.outer_min_point = find_line_max_min(outer_points, 10, self.useIQR, type_="outer")
 

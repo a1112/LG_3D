@@ -19,8 +19,7 @@ if __name__ == '__main__':
             mosaic.set_coil_id(i)
             dataIntegration = mosaic.get_data()
             dataIntegrationList.append(dataIntegration)  # 检测
-        AlarmDetection.detectionAll(dataIntegrationList)
-        input()
+        AlarmDetection.detection_all(dataIntegrationList)
         # cv_detection.detectionAll(dataIntegrationList)
     # mosaic.maskImage.show()
     # mosaic.maskImage.show()

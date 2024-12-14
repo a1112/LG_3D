@@ -56,18 +56,18 @@ def split_line(detLine, maskLine, noneDataValue, ceter_x, ceter_y):
     return l_mm_v, r_mm_v, [c1, c2]
 
 
-def detectionTaperShapeByRotationAngle(dataIntegration: DataIntegration, rotation_angle):
+def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, rotation_angle):
     """
     获取中心点 x,y ,根据角都计算.
     只适计算射线
     """
-    p_center = dataIntegration.flatRollData.get_center()
-    npyData = dataIntegration.npyData
-    mask = dataIntegration.npy_mask
+    p_center = data_integration.flatRollData.get_center()
+    npy_data = data_integration.npyData
+    mask = data_integration.npy_mask
 
-    lineData = getLengthDataByRotate(npyData, mask, p_center, rotation_angle, ray=True)
-    lineData: LineData
-    lineData.setDataIntegration(dataIntegration)
-    lineData.detTaperShape()
-    lineData.setRotationAngle(rotation_angle)
-    return lineData
+    line_data = getLengthDataByRotate(npy_data, mask, p_center, rotation_angle, ray=True)
+    line_data: LineData
+    line_data.setDataIntegration(data_integration)
+    line_data.detTaperShape()
+    line_data.setRotationAngle(rotation_angle)
+    return line_data

@@ -34,7 +34,7 @@ class ControlManagement(ThreadClass):
         self.leveling_gray = True
         self.leveling_3d = True
         self.leveling_type = LevelingType.LinearRegression
-        self.taper_shape_type = DetectionTaperShapeType.WK_TYPE | DetectionTaperShapeType.LINE_TYPE
+        self.taper_shape_type = DetectionTaperShapeType.LINE_TYPE
         self.leveling_3d_wk_default_value = 32767
         self.save_3d_obj = True
         self.debug_show = False
@@ -50,7 +50,7 @@ class ControlManagement(ThreadClass):
     def setConfig(self, data):
         self.config.update(data)
 
-    def setProperty(self, key, value):
+    def set_property(self, key, value):
         self.config[key] = value
 
     def run(self):

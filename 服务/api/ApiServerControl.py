@@ -29,4 +29,4 @@ async def set_property(key,value):
     """
     控制配置设置
     """
-    return control.setProperty(key,value)
+    return control.set_property(key, value)

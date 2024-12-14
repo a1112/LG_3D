@@ -227,14 +227,14 @@ def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
         l_r_line = l_npy[:, -1]
         r_l_line_nz_indexes = nZeeroIndexes(r_l_line, n_, num)
         if r_l_line_nz_indexes:
-            samplingIndex = r_l_line_nz_indexes[-1]
-            meanL = getMean(l_npy[:, -15:-5][samplingIndex:samplingIndex + n_])
-            meanR = getMean(r_npy[:, 5:15][samplingIndex:samplingIndex + n_])
-            if np.isnan(meanL) or np.isnan(meanR) or abs(meanL-meanR) > 5000:
-                logger.error(f"getMean Error nan meanL {meanL} meanR {meanR}  {meanL-meanR} ")
+            sampling_index = r_l_line_nz_indexes[-1]
+            mean_l = getMean(l_npy[:, -5:-2][sampling_index:sampling_index + n_])
+            mean_r = getMean(r_npy[:, 2:5][sampling_index:sampling_index + n_])
+            if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l-mean_r) > 1000000:
+                logger.error(f"getMean Error nan mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r} ")
                 continue
-            print(f"meanL {meanL} meanR {meanR}  {meanL-meanR}")
-            npyList[index] = npyList[index] - meanR + meanL
+            print(f"sampling_index {sampling_index}  mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r}")
+            npyList[index] = npyList[index] - mean_r + mean_l
         else:
             pass
 
