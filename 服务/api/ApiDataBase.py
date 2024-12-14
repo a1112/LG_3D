@@ -120,7 +120,7 @@ async def get_defect_dict_all():
 
 @app.get("/coilInfo/{coil_id:int}/{surface_key:str}")
 async def get_info(coil_id: int, surface_key: str):
-    return serverConfigProperty.get_Info(coil_id, surface_key)
+    return serverConfigProperty.get_info(coil_id, surface_key)
 
 
 async def get_camera_config(coil_id: int, surface_key: str, c):

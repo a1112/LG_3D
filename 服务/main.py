@@ -5,7 +5,7 @@ import uvicorn
 import Globs
 from SubServer.ZipServer import ZipServer
 from utils.GlobalSignalHandling import GlobalSignalHandling
-from CONFIG import serverApiPort, isLoc
+from CONFIG import server_api_port, isLoc
 from utils.LoggerProcess import LoggerProcess
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
@@ -34,4 +34,4 @@ if __name__ == '__main__':
 
     Globs.imageMosaicThread = imageMosaicThread
     ZipServer(managerQueue).start()
-    uvicorn.run(app, host="0.0.0.0", port=serverApiPort)
+    uvicorn.run(app, host="0.0.0.0", port=server_api_port)

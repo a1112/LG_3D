@@ -9,7 +9,7 @@ import cv2
 class CoilAreaModel:
     def __init__(self):
         from ultralytics import YOLO
-        self.model = YOLO(str(CONFIG.BaseConfigFolder/"model/CoilArea.pt"))   # load a custom model
+        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilArea.pt"))   # load a custom model
 
     def predict(self, image):
         results = self.model(image)
@@ -34,7 +34,7 @@ class CoilAreaModel:
 class CoilMaskModel:
     def __init__(self):
         from ultralytics import YOLO
-        self.model = YOLO(str(CONFIG.BaseConfigFolder/"model/CoilSeg.pt"))   # load a custom model
+        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilSeg.pt"))   # load a custom model
 
     def predict(self, image):
         results = self.model(image)
@@ -51,7 +51,7 @@ class CoilMaskModel:
 class CoilDetectionModel:
     def __init__(self):
 
-        self.model = YOLO(str(CONFIG.BaseConfigFolder/"model/CoilDetection.pt"))  # load a custom model
+        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilDetection.pt"))  # load a custom model
 
     def predict(self, images):
         results = self.model(images)

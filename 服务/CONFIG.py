@@ -2,7 +2,7 @@ import socket
 from pathlib import Path
 import json
 import os
-
+print(__file__)
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
 # args = parser.parse_args()
@@ -15,15 +15,24 @@ isLoc = False
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
 if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G']:
     isLoc = True
-BaseConfigFolder = Path("D://CONFIG_3D")
+base_config_folder = Path("D://CONFIG_3D")
 
-configFile = BaseConfigFolder / "configs/Server3D.json"
-alarmConfigFile = BaseConfigFolder / r"configs/Alarm.json"
-infoConfigFile = BaseConfigFolder / r"configs/Info.json"
-controlConfigFile = BaseConfigFolder / r"configs/Control.json"
+try:
+    file_url=Path(__file__)
+    drive_config = Path(file_url.drive) / base_config_folder.relative_to(base_config_folder.drive)
+    print(drive_config)
+    if drive_config.exists():
+        base_config_folder = drive_config
+except NameError:
+    pass
+print(f"使用配置文件 {base_config_folder}")
+configFile = base_config_folder / "configs/Server3D.json"
+alarmConfigFile = base_config_folder / r"configs/Alarm.json"
+infoConfigFile = base_config_folder / r"configs/Info.json"
+controlConfigFile = base_config_folder / r"configs/Control.json"
 
 if isLoc:
-    configFile = BaseConfigFolder / r"configs/Server3DLoc2.json"
+    configFile = base_config_folder / r"configs/Server3DLoc2.json"
 # elif args.config:
 #     configFile = Path(args.config)
 
@@ -38,15 +47,15 @@ if socket.gethostname() == "DESKTOP-94ADH1G":
     ServerConfig["balsam"] = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
 
 
-def setConsoleMode():
+def set_console_mode():
     import ctypes
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-10), (0x4 | 0x80 | 0x20 | 0x2 | 0x10 | 0x1 | 0x00 | 0x100))
 
 
 if not isLoc:
-    setConsoleMode()
+    set_console_mode()
 
-dataBaseApiPort = 6011
-serverApiPort = 6010
-imageApiport = 6012
+data_base_api_port = 6011
+server_api_port = 6010
+image_api_port = 6012

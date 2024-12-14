@@ -6,13 +6,13 @@ from CoilDataBase import Coil
 
 
 class SurfaceConfigProperty:
-    def __init__(self, surfaceConfig=None):
-        self.key = surfaceConfig["key"]
-        self.saveFolder = Path(surfaceConfig["saveFolder"])
-        self.rotate = surfaceConfig["rotate"]
-        self.x_rotate = surfaceConfig["x_rotate"]
-        self.direction = surfaceConfig["direction"]
-        self.folderList = surfaceConfig["folderList"]
+    def __init__(self, surface_config=None):
+        self.key = surface_config["key"]
+        self.saveFolder = Path(surface_config["saveFolder"])
+        self.rotate = surface_config["rotate"]
+        self.x_rotate = surface_config["x_rotate"]
+        self.direction = surface_config["direction"]
+        self.folderList = surface_config["folderList"]
         self.saveImageType = ".png"
 
     def get_file(self, coil_id, type_):
@@ -39,46 +39,57 @@ class SurfaceConfigProperty:
         # with open(jsonFile, "r",encoding="utf-8") as f:
         #     return json.load(f)
 
+def change_path_drive(path,new_drive):
+    return  str(Path(new_drive) / Path(path.relative_to(path.drive)))
 
 class ServerConfigProperty:
-    def __init__(self, serverConfig=None):
-        self.serverConfig = serverConfig
+    def __init__(self, server_config = None):
+        self.serverConfig = server_config
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}
+        self.useCurrentDerv = getattr(server_config, "useCurrentDerv", False)
+        if self.useCurrentDerv:
+            drive=Path(__file__).drive
+            server_config["saveFolder"]=change_path_drive(self.serverConfig["saveFolder"],drive)
+            for surface in self.serverConfig["surface"]:
+                for folder in surface["folderList"]:
+                    folder["source"]=change_path_drive(folder["source"],folder["source"])
         self.surface = self.serverConfig["surface"]
         for surface in self.surface:
             self.surfaceConfigPropertyDict[surface["key"]] = SurfaceConfigProperty(surface)
-        self.balsam = serverConfig["balsam"]  # balsam.exe 位置
-        self.colorFromValue = serverConfig["colorFromValue"]
-        self.colorToValue = serverConfig["colorToValue"]
-        self.colorFromValue_mm = serverConfig["colorFromValue_mm"]
-        self.colorToValue_mm = serverConfig["colorToValue_mm"]
-        self.saveJoinMask = serverConfig["saveJoinMask"]
-        self.max3dSaveThread = serverConfig["max3dSaveThread"]
-        self.downsampleSize = serverConfig["downsampleSize"]
-        self.clip_num = serverConfig["clip_num"]
+        self.balsam = server_config["balsam"]  # balsam.exe 位置
+        self.colorFromValue = server_config["colorFromValue"]
+        self.colorToValue = server_config["colorToValue"]
+        self.colorFromValue_mm = server_config["colorFromValue_mm"]
+        self.colorToValue_mm = server_config["colorToValue_mm"]
+        self.saveJoinMask = server_config["saveJoinMask"]
+        self.max3dSaveThread = server_config["max3dSaveThread"]
+        self.downsampleSize = server_config["downsampleSize"]
+        self.clip_num = server_config["clip_num"]
         self.max_clip_mun = 500  # serverConfig["max_clip_mun"]
 
-    def get_file(self, coil_id, surfaceKey, type_, mask=False):
-        surfaceConfig = self.surfaceConfigPropertyDict[surfaceKey]
+
+
+    def get_file(self, coil_id, surface_key, type_, mask=False):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
         if mask:
-            return surfaceConfig.get_mask_file(coil_id, type_)
-        return surfaceConfig.get_file(coil_id, type_)
+            return surface_config.get_mask_file(coil_id, type_)
+        return surface_config.get_file(coil_id, type_)
 
-    def get_3d_file(self, coil_id, surfaceKey):
-        surfaceConfig = self.surfaceConfigPropertyDict[surfaceKey]
-        return surfaceConfig.get_3d_file(coil_id)
+    def get_3d_file(self, coil_id, surface_key):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.get_3d_file(coil_id)
 
-    def get_mesh_file(self, coil_id, surfaceKey):
-        surfaceConfig = self.surfaceConfigPropertyDict[surfaceKey]
-        return surfaceConfig.get_mesh_file(coil_id)
+    def get_mesh_file(self, coil_id, surface_key):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.get_mesh_file(coil_id)
 
-    def get_preview_file(self, coil_id, surfaceKey, type_):
-        surfaceConfig = self.surfaceConfigPropertyDict[surfaceKey]
-        return surfaceConfig.get_preview_file(coil_id, type_)
+    def get_preview_file(self, coil_id, surface_key, type_):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.get_preview_file(coil_id, type_)
 
-    def get_Info(self, coil_id, surfaceKey):
-        surfaceConfig = self.surfaceConfigPropertyDict[surfaceKey]
-        return surfaceConfig.get_Info(coil_id)
+    def get_info(self, coil_id, surface_key):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.get_Info(coil_id)
 
     def to_dict(self):
         res = {}

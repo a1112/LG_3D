@@ -22,7 +22,7 @@ async def get_mesh(surfaceKey,coil_id:str):
 
 @app.get("/coilInfo/{coil_id:str}/{surfaceKey:str}")
 async def getInfo(coil_id:str, surfaceKey:str):
-    return serverConfigProperty.get_Info(coil_id,surfaceKey)
+    return serverConfigProperty.get_info(coil_id, surfaceKey)
 
 
 @app.get("/preview/{surfaceKey:str}/{coil_id:str}/{type_:str}")
