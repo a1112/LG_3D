@@ -7,7 +7,7 @@ Item {
 
 
     function save_sql(func){
-        saveFileDuialog.nameFilters=["sql file (.sql )"]
+        saveFileDuialog.nameFilters=["sql file (*.sql)","sqlite3 file (*.db)","csv file(*.csv)"]
         saveFileDuialog.acceptFunc=func
 
         saveFileDuialog.open()

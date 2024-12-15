@@ -33,9 +33,9 @@ Menu {
     Menu{
         title: "功能"
         Menu{
-            title: "数据库"
+            title: "数据库备份"
             MenuItem{
-                text:"备份到 sql"
+                text:"备份到 ..."
                 onClicked: {
                     dialogs.save_sql(
                                 (save_file)=>{
@@ -50,11 +50,7 @@ Menu {
                 }
             }
             MenuItem{
-                text:"从 .sql 恢复"
-
-            }
-            MenuItem{
-                text: "备份到sqlite"
+                text:"从 备份 恢复"
             }
         }
     }
