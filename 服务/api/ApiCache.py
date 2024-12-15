@@ -11,7 +11,17 @@ class ImageCache:
         self.cache_size = cache_size
         self._cache_image_byte = self._cache_image_byte()
         self.mask_cache_image_byte = self._mask_cache_image_byte()
+        self._cache_image_pil = self._cache_image_pil()
         self._cache = self._create_cache()
+
+    def _cache_image_pil(self):
+        @lru_cache(maxsize=self.cache_size)
+        def _load_image_npy(path):
+            image_byte = self.get_image(path)
+            if image_byte is None:
+                return None
+            return Image.open(io.BytesIO(image_byte))
+        return _load_image_npy
 
     def _cache_image_byte(self):
         @lru_cache(maxsize=self.cache_size)
@@ -60,9 +70,11 @@ class ImageCache:
             return img_byte_arr.getvalue()
         return _load_image
 
-    def get_image(self, path):
+    def get_image(self, path,pil=False):
         try:
             print(path)
+            if pil:
+                return self._cache_image_pil(path)
             return self._cache_image_byte(path)
         except Exception as e:
             print(f"Error loading image: {e}")
@@ -103,8 +115,10 @@ class Data3dCache:
         self._cache.cache_clear()
 
 
-previewCache = ImageCache(256)
+previewCache = ImageCache(512)
 imageCache = ImageCache(256)
 _3dDataCache = Data3dCache(32)
+
+
 
 

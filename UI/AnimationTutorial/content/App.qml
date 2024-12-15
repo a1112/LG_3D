@@ -18,6 +18,7 @@ import "SettingPage"
 import "Style"
 import "Pages/AlarmPage"
 import "GlobalView"
+import "Dialogs"
 ApplicationWindow {
     id:app
     visible: true
@@ -38,6 +39,7 @@ ApplicationWindow {
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}
 
     property Api api: Api{}
+    property Dialogs dialogs: Dialogs{}
     property Core core: Core{}
     property Tool tool: Tool{}
     property CoreModel coreModel:CoreModel{}

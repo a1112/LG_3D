@@ -70,6 +70,7 @@ def clearByCoilId(coilId):
         session.query(models.DataEllipse).filter(models.DataEllipse.secondaryCoilId == coilId).delete()
         session.query(models.LineData).filter(models.LineData.secondaryCoilId == coilId).delete()
         session.query(models.PointData).filter(models.PointData.secondaryCoilId == coilId).delete()
+        session.query(models.CoilDefect).filter(models.CoilDefect.secondaryCoilId == coilId).delete()
         session.commit()
 
 def addObj(obj):

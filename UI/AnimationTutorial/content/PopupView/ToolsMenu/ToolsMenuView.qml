@@ -28,6 +28,35 @@ Menu {
             onClicked:{
             }
         }
+
+    }
+    Menu{
+        title: "功能"
+        Menu{
+            title: "数据库"
+            MenuItem{
+                text:"备份到 sql"
+                onClicked: {
+                    dialogs.save_sql(
+                                (save_file)=>{
+                                    api.save_to_sql(save_file,()=>{
+                                            Qt.openUrlExternally(save_file)
+                                                    },()=>{
+
+                                                    })
+                                }
+                                )
+
+                }
+            }
+            MenuItem{
+                text:"从 .sql 恢复"
+
+            }
+            MenuItem{
+                text: "备份到sqlite"
+            }
+        }
     }
         MenuItem{
             text:qsTr("退出系统")

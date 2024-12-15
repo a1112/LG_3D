@@ -26,7 +26,7 @@ DataShowCore_ {
       // 图标的显示方式
     property int chartShowType: 0
 
-    property var defectDict: {}
+    property var defectDict: {return {}}
 
     property ListModel currentDefectDictModel:ListModel{
     }
@@ -48,6 +48,8 @@ DataShowCore_ {
     }
 
     readonly property int coilId: surfaceData.coilId
+    readonly property string key:surfaceData.key
+    readonly property string currentViewKey:surfaceData.currentViewKey
     onCoilIdChanged: {
         flush()
     }

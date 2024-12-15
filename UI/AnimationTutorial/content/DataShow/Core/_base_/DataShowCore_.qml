@@ -11,5 +11,5 @@ Item {
             errorScaleSignal = true
         }
 
-
+    property Image imageItem
 }

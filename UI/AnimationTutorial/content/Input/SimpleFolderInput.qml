@@ -15,7 +15,7 @@ RowLayout {
     FolderDialog{
         id:folderDialog
         onAccepted:{
-            value_id.text=selectedFolder.toString().substring(8)
+            value_id.text=tool.url_to_str(selectedFile)
         }
     }
 

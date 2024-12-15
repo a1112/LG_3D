@@ -118,4 +118,12 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"get_line_data",coilId,key),success,failure)
     }
 
+    function save_to_sql(sql_file,success,failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"save_to_sql",sql_file),success,failure)
+    }
+
+    function defect_url(coilId,key,viewKey,x,y,w,h){
+
+        return apiConfig.url(apiConfig.serverUrlDaaBase,"defect_image",key,coilId,viewKey,x,y,w,h)
+    }
 }

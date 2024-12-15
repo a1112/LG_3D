@@ -54,12 +54,19 @@ class DataGet:
             url = serverConfigProperty.get_file(self.coil_id, self.surfaceKey, "MASK")
         return url
 
-    def get_image(self):
+    def get_image_array(self):
         url = self.get_source()
         if self.sourceType == "preview":
             return previewCache.get_image(url)
         else:
             return imageCache.get_image(url)
+
+    def get_image(self,pil=False):
+        url = self.get_source()
+        if self.sourceType == "preview":
+            return previewCache.get_image(url,pil=pil)
+        else:
+            return imageCache.get_image(url,pil=pil)
 
     def get_3d_data(self):
         url = self.get3d_source()

@@ -179,7 +179,7 @@ def save_colored_obj(mesh, colors, filename):
 
 
 def toMesh(obj, managerQueue):
-    cmdBalsam = serverConfigProperty.balsam
+    cmdBalsam = serverConfigProperty.balsam_exe
     cmd = f"{cmdBalsam} {obj}"
     print(cmd)
     workPath = os.path.dirname(obj)

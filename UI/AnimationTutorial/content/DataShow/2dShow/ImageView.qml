@@ -20,6 +20,10 @@ Item {
                 dataShowCore.sourceHeight = image.sourceSize.height
             }
         }
+        Component.onCompleted: {
+            dataShowCore.imageItem=this
+
+        }
     }
     Image {
         cache: true

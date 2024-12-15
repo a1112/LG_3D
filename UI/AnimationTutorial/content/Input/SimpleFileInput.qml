@@ -18,9 +18,8 @@ RowLayout {
         id:dialog
         fileMode : FileDialog.SaveFile
         onAccepted:{
-
             if (fileMode == FileDialog.SaveFile) {
-                let s_text =selectedFile.toString().substring(8)
+                let s_text =tool.url_to_str(selectedFile)
                 if (!s_text.toLowerCase().endsWith(selectedNameFilter.name.toLowerCase())) {
                         value_id.text= s_text + selectedNameFilter.name
                     }
@@ -30,7 +29,7 @@ RowLayout {
                 }
             }
             else{
-            value_id.text=selectedFile.toString().substring(8)
+            value_id.text=tool.url_to_str(selectedFile)
             }
         }
     }

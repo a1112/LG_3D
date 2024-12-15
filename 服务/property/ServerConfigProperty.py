@@ -39,26 +39,36 @@ class SurfaceConfigProperty:
         # with open(jsonFile, "r",encoding="utf-8") as f:
         #     return json.load(f)
 
-def change_path_drive(path,new_drive):
-    return  str(Path(new_drive) / Path(path.relative_to(path.drive)))
+
+def change_path_drive(path, new_drive):
+    return str(Path(new_drive) / Path(path.relative_to(path.drive)))
+
 
 class ServerConfigProperty:
-    def __init__(self, server_config = None):
+    def __init__(self, server_config=None):
         self.serverConfig = server_config
+
+        def _get_config_(property_, default):
+            try:
+                return server_config[property_]
+            except KeyError:
+                return default
+
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}
-        self.useCurrentDerv = getattr(server_config, "useCurrentDerv", False)
+        self.useCurrentDerv = _get_config_("useCurrentDerv", False)
         if self.useCurrentDerv:
-            drive=Path(__file__).drive
-            server_config["saveFolder"]=change_path_drive(self.serverConfig["saveFolder"],drive)
+            drive = Path(__file__).drive
+            server_config["saveFolder"] = change_path_drive(self.serverConfig["saveFolder"], drive)
             for surface in self.serverConfig["surface"]:
                 for folder in surface["folderList"]:
-                    folder["source"]=change_path_drive(folder["source"],folder["source"])
+                    folder["source"] = change_path_drive(folder["source"], folder["source"])
         self.surface = self.serverConfig["surface"]
         for surface in self.surface:
             self.surfaceConfigPropertyDict[surface["key"]] = SurfaceConfigProperty(surface)
-        self.balsam = server_config["balsam"]  # balsam.exe 位置
-        self.colorFromValue = server_config["colorFromValue"]
-        self.colorToValue = server_config["colorToValue"]
+        self.balsam_exe = _get_config_("balsam", "balsam.exe")  # balsam.exe 位置
+        self.mysqldump_exe = _get_config_("mysqldump", "mysqldump.exe")
+        self.colorFromValue = _get_config_("colorFromValue",-700)
+        self.colorToValue = _get_config_("colorToValue",700)
         self.colorFromValue_mm = server_config["colorFromValue_mm"]
         self.colorToValue_mm = server_config["colorToValue_mm"]
         self.saveJoinMask = server_config["saveJoinMask"]
@@ -66,8 +76,6 @@ class ServerConfigProperty:
         self.downsampleSize = server_config["downsampleSize"]
         self.clip_num = server_config["clip_num"]
         self.max_clip_mun = 500  # serverConfig["max_clip_mun"]
-
-
 
     def get_file(self, coil_id, surface_key, type_, mask=False):
         surface_config = self.surfaceConfigPropertyDict[surface_key]

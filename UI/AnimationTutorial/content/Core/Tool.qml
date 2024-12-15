@@ -2,6 +2,9 @@ import QtQuick
 
 Item {
 
+    function url_to_str(url){
+        return url.toString().substring(8)
+    }
 
     function fileFolderPath(path) {
         var lastSlashIndex = path.lastIndexOf("/")
