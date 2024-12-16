@@ -36,3 +36,5 @@ argparse
 six
 wsproto
 cryptography
+fastapi-cache[redis]
+redis

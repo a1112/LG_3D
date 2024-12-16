@@ -61,7 +61,7 @@ def set_console_mode():
 
 if not isLoc:
     set_console_mode()
-
+server_port=6010
 data_base_api_port = 6011
 server_api_port = 6010
 image_api_port = 6012
