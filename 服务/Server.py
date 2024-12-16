@@ -2,6 +2,7 @@
 LG_3D
 完整的服务
 """
+from multiprocessing import Process
 import uvicorn
 
 import CONFIG
@@ -23,5 +24,15 @@ from api import ApiImageServer
 from api import ApiBackupServer
 
 
+class ServerProcess(Process):
+    def __init__(self,port):
+        super().__init__()
+        self.port = port
+
+    def run(self):
+        uvicorn.run(app, host="0.0.0.0", port=self.port)
+
+
 if __name__ == '__main__':
-    uvicorn.run(app, host="0.0.0.0", port=CONFIG.data_base_api_port)
+    for port_ in range(CONFIG.server_count):
+        ServerProcess(CONFIG.server_port + port_).start()
