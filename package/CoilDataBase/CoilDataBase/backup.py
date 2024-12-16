@@ -9,6 +9,7 @@ from .models import *
 from . import models
 import datetime
 
+
 def get_mysqldump_cmd(save_file, mysqldump_exe="mysqldump"):
     return f'"{mysqldump_exe}"' + f" -u {Config.user} -p{Config.password} {Config.database} > " + f'"{save_file}"'
 

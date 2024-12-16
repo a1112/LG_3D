@@ -1,11 +1,20 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 Item {
     width:200
     height:200
-    ColumnLayout{
+
+    Item{
+        width: parent.width-6
+        height: parent.height-6
+        anchors.centerIn: parent
+        Pane{
+            anchors.fill: parent
+            Material.elevation: 5
+        }
+        ColumnLayout{
     anchors.fill: parent
             Item{
                 Layout.fillHeight: true
@@ -20,25 +29,14 @@ Item {
                                        dataShowCore.currentViewKey,
                                        defectX,defectY,defectW,defectH
                                        )
-                // sourceClipRect:
-
-                    //Qt.rect(defectX,defectY,defectW,defectH)
             }
             }
-
-            // x: defectX*dataShowCore.canvasScale
-            // y: defectY*dataShowCore.canvasScale
-            // width: defectW*dataShowCore.canvasScale
-            // height: defectH*dataShowCore.canvasScale
-            // visible: coreModel.defectDictAll[defectName]??false
-
-    Label{
-        Layout.alignment: Qt.AlignHCenter
-        text: defectName
-        font.pixelSize: 18
+    DefectInfos{
 
     }
 
+
+    }
     }
     }
 

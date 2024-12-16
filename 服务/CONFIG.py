@@ -2,17 +2,17 @@ import socket
 from pathlib import Path
 import json
 import os
+
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
 # args = parser.parse_args()
-
 RendererList = ["JET"]
 
 SaveImageType = ".png"
 
 isLoc = False
 
-offline_mode = True
+offline_mode = False
 if offline_mode:
     from CoilDataBase.config import Config,DeriverList
     Config.deriver = DeriverList.sqlite

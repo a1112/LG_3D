@@ -5,7 +5,6 @@ RowLayout {
     ShowDefectList{
         Layout.fillWidth:true
         Layout.fillHeight:true
-
     }
     Rectangle{
         implicitWidth:1

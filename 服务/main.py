@@ -2,8 +2,6 @@ import multiprocessing
 
 import uvicorn
 
-
-
 import Globs
 from SubServer.ZipServer import ZipServer
 from utils.GlobalSignalHandling import GlobalSignalHandling
@@ -12,9 +10,9 @@ from utils.LoggerProcess import LoggerProcess
 
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
-if isLoc:
-    from CoilDataBase.Coil import deleteCoil
-    deleteCoil(23000)
+# if isLoc:
+#     from CoilDataBase.Coil import deleteCoil
+#     deleteCoil(23000)
 
 
 # if isLoc:

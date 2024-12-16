@@ -1,3 +1,5 @@
+from utils.StdoutLog import Logger
+Logger("DatabaseApi")
 import CONFIG
 import pymysql
 import sqlalchemy

@@ -130,7 +130,18 @@ DataShowCore_ {
     function pxto_top(px){
         return parseInt(px/canvasScale)
     }
-
+    function px_to_width_mm(px){
+        return px*surfaceData.scan3dScaleX
+    }
+    function px_to_height_mm(px){
+        return px*surfaceData.scan3dScaleX
+    }
+    function px_to_pos_x_mm_from_centre(px){
+        return (px-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
+    }
+    function px_to_pos_y_mm_from_centre(px){
+        return (px-surfaceData.inner_circle_centre[1])*surfaceData.scan3dScaleX
+    }
     function pxtoPos(px){
         return (px-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
     }
