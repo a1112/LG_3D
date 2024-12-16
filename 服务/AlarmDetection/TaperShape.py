@@ -94,7 +94,7 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
     print("塔形检测A")
     lineDataDict = {}
     # p_center = dataIntegration.flatRollData.get_center()
-    npyData = (dataIntegration.npyData - dataIntegration.__median_non_zero__) * dataIntegration.scan3dCoordinateScaleZ
+    npyData = (dataIntegration.npy_data - dataIntegration.__median_non_zero__) * dataIntegration.scan3dCoordinateScaleZ
     img_2d = dataIntegration.npy_image
     mask = dataIntegration.npy_mask
     ind = np.argwhere(mask == 0)

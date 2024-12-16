@@ -12,7 +12,7 @@ SaveImageType = ".png"
 
 isLoc = False
 
-offline_mode = False
+offline_mode = True
 if offline_mode:
     from CoilDataBase.config import Config,DeriverList
     Config.deriver = DeriverList.sqlite

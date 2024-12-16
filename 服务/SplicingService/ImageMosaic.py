@@ -112,12 +112,12 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     @DetectionSpeedRecord.timing_decorator("保存3D数据计时")
     def save3D(self, dataIntegration: DataIntegration):
         configDatas = dataIntegration.configDatas
-        circleConfig = dataIntegration.circleConfig
+        circleConfig = dataIntegration.circle_config
         maskImage = dataIntegration.npy_mask
         coilId = dataIntegration.coilId
 
         start = dataIntegration.median_non_zero + serverConfigProperty.colorFromValue_mm // dataIntegration.scan3dCoordinateScaleZ
-        self._save_(dataIntegration.npyData, self.saveFolder / coilId / "3D.npy")
+        self._save_(dataIntegration.npy_data, self.saveFolder / coilId / "3D.npy")
 
         step = (serverConfigProperty.colorToValue_mm - serverConfigProperty.colorFromValue_mm) // dataIntegration.scan3dCoordinateScaleZ
         dataIntegration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
@@ -125,8 +125,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         dataIntegration.set("start", start)
         dataIntegration.set("step", step)
         self.colorImageDict = {}
-        dataIntegration.setTelescopedAlarms()
-        npy__ = dataIntegration.npyData
+        dataIntegration.set_telescoped_alarms()
+        npy__ = dataIntegration.npy_data
         non_zero_elements = npy__[npy__ != 0]
         a, b = start, start + step
 
@@ -150,7 +150,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             self.colorImageDict[name] = image
         objFile = self.saveFolder / coilId / "3D.obj"
         self.d3Saver.add_([coilId, npy__, maskImage, configDatas, circleConfig, objFile, dataIntegration.median_3d_mm,
-                           dataIntegration.getBdXYZ()])
+                           dataIntegration.get_bd_xyz()])
 
         return non_zero_elements
 
@@ -200,7 +200,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         horizontalProjectionList = tool.getHorizontalProjectionList([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontalProjectionList)
         print(f"cross_points {dataIntegration.coilId} {dataIntegration.key}: {cross_points}")
-        dataIntegration.setCrossPoints(cross_points)
+        dataIntegration.set_cross_points(cross_points)
 
         minHeight = min([data["2D"].shape[0] for data in datas])
         for index in range(len(datas)):
@@ -300,7 +300,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             try:
                 logger.info(f"ImageMosaic {dataIntegration.coilId}")
                 self.__getAllData__(dataIntegration)  # 获取全部的拼接数据
-                dataIntegration.setOriginalData(dataIntegration.datas)
+                dataIntegration.set_original_data(dataIntegration.datas)
                 # 裁剪 2D 3D MASK
                 self.__stitching__(dataIntegration)
                 self.save_all_data(dataIntegration)

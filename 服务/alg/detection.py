@@ -136,6 +136,6 @@ def detection(dataIntegration):
 
 
 @DetectionSpeedRecord.timing_decorator("深度学习检测全部时间")
-def detectionAll(dataIntegrationList: DataIntegrationList):
+def detection_all(dataIntegrationList: DataIntegrationList):
     for dataIntegration in dataIntegrationList:
         detection(dataIntegration)

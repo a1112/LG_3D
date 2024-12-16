@@ -104,7 +104,7 @@ class ImageMosaicThread(Thread):
                     defection_time2 = time.time()
                     print(f"图像检测时间 {defection_time2 - defection_time1}")
                     AlarmDetection.detection_all(data_integration_list)
-                    cv_detection.detectionAll(data_integration_list)
+                    cv_detection.detection_all(data_integration_list)
                     defection_time3 = time.time()
                     print(f"算法检测时间 {defection_time3 - defection_time2}")
                     print(f"完整检测时间 {defection_time3 - defection_time1}==============================================")

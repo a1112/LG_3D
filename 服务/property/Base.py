@@ -61,7 +61,7 @@ class CoilLineData:
 
         return self.subList
 
-    def getAlarmLooseCoil(self):
+    def get_alarm_loose_coil(self):
         return AlarmLooseCoil(
             secondaryCoilId=self.dataIntegration.coilId,
             surface=self.dataIntegration.key,
@@ -76,14 +76,14 @@ class DataIntegration:
     数据整合
     """
 
-    def __init__(self, coilId, saveFolder, direction, key):
+    def __init__(self, coil_id, save_folder, direction, key):
         self.angleData = None
         self.annulus_mask = None
         self._circleConfig_ = None
         self.index = 0
         self._npyData_ = None
         self._hasDetectionError_ = None
-        self.coilId = coilId
+        self.coilId = coil_id
         self.direction = direction
         self.key = key
         self.startTime = datetime.datetime.now()
@@ -112,7 +112,7 @@ class DataIntegration:
         # self._maskImage_ = None
         self.npy_mask = None
         self.pil_mask = None
-        self.saveFolder = saveFolder
+        self.saveFolder = save_folder
 
         self.datas = None
         self.configDatas = None
@@ -127,12 +127,12 @@ class DataIntegration:
         if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
             self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
-    def set_npy_data(self, npyData):
-        print("set set_npy_data", npyData.shape)
-        self.__npyData__ = npyData
+    def set_npy_data(self, npy_data):
+        print("set set_npy_data", npy_data.shape)
+        self.__npyData__ = npy_data
 
     @property
-    def circleConfig(self):
+    def circle_config(self):
         if self._circleConfig_ is None:
             self._circleConfig_ = tool.getCircleConfigByMask(self.npy_mask)
             self.set("width", int(self.width))
@@ -189,7 +189,7 @@ class DataIntegration:
         cw = image.shape[0] // 2
         r1 = cw*r1
         r2 = cw*r2
-        center_x, center_y,circlexRadius = self.circleConfig["inner_circle"]["circlex"]
+        center_x, center_y,circlexRadius = self.circle_config["inner_circle"]["circlex"]
         y, x = np.indices(image.shape)
         distance = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
         annulus_mask = (distance >= r1) & (distance <= r2)
@@ -205,11 +205,8 @@ class DataIntegration:
         return self.__median_non_zero__
 
     @property
-    def npyData(self):
+    def npy_data(self):
         if self._npyData_ is None:
-            print("self.__npyData__")
-            print(self.__npyData__)
-            print("self.median_non_zero ", self.median_non_zero)
             self._npyData_ = np.where(
                 self.__npyData__ < max(self.median_non_zero - 300 // self.scan3dCoordinateScaleZ, 10),
                 np.zeros(self.__npyData__.shape), 2 * self.median_non_zero - self.__npyData__)
@@ -221,37 +218,37 @@ class DataIntegration:
     def median_3d_mm(self):
         return self.median_non_zero * self.scan3dCoordinateScaleZ
 
-    def getBdXYZ(self):
+    def get_bd_xyz(self):
         return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleZ]
 
-    def setStart(self):
+    def set_start(self):
         self.startTime = datetime.datetime.now()
         self.dictData["startTime"] = self.startTime
 
-    def setOriginalData(self, datas):
+    def set_original_data(self, datas):
         self.originalData = datas
         self.bdList = []
         for camera in datas:
-            bdItem = BdData(camera['json'][0]["bdConfig"])
-            self.bdList.append(bdItem)
+            bd_item = BdData(camera['json'][0]["bdConfig"])
+            self.bdList.append(bd_item)
             self.coilData = camera['json'][0]["coilData"]
             self.use = self.coilData["Weight"]
-            self.scan3dCoordinateScaleX = bdItem.bdDataX.scan3dCoordinateScale
-            self.scan3dCoordinateScaleY = bdItem.bdDataY.scan3dCoordinateScale
-            self.scan3dCoordinateScaleZ = bdItem.bdDataZ.scan3dCoordinateScale
+            self.scan3dCoordinateScaleX = bd_item.bdDataX.scan3dCoordinateScale
+            self.scan3dCoordinateScaleY = bd_item.bdDataY.scan3dCoordinateScale
+            self.scan3dCoordinateScaleZ = bd_item.bdDataZ.scan3dCoordinateScale
             self.dictData["scan3dCoordinateScaleX"] = self.scan3dCoordinateScaleX
             self.dictData["scan3dCoordinateScaleY"] = self.scan3dCoordinateScaleY
             self.dictData["scan3dCoordinateScaleZ"] = self.scan3dCoordinateScaleZ
 
-    def setDatas(self, datas):
+    def set_datas(self, datas):
         self.datas = datas
 
-    def setCrossPoints(self, crossPoints):
-        self.crossPoints = crossPoints
-        self.dictData["crossPoints"] = crossPoints
+    def set_cross_points(self, cross_points):
+        self.crossPoints = cross_points
+        self.dictData["crossPoints"] = cross_points
 
-    def getDatasInfo(self, datas):
-        def getShapeList(datas_):
+    def get_datas_info(self, datas):
+        def get_shape_list(datas_):
             shapeList = []
             for data in datas_:
                 shapeList.append(data['2D'].shape)
@@ -259,7 +256,7 @@ class DataIntegration:
 
         return {
             "cameraLen": len(datas),  # 摄像头数量
-            "shapeList": getShapeList(datas),
+            "shapeList": get_shape_list(datas),
             "startTime": self.startTime,
             "crossPoints": self.crossPoints,  # 裁剪数据
         }
@@ -270,21 +267,21 @@ class DataIntegration:
         self.__dict__[key] = value
 
     @property
-    def upperLimit(self):
-        self.dictData["upperLimit"] = control.upperLimit / self.scan3dCoordinateScaleZ
+    def upper_limit(self):
+        self.dictData["upperLimit"] = control.upper_limit / self.scan3dCoordinateScaleZ
         return self.dictData["upperLimit"]
 
     @property
-    def lowerLimit(self):
-        self.dictData["lowerLimit"] = control.lowerLimit / self.scan3dCoordinateScaleZ
+    def lower_limit(self):
+        self.dictData["lowerLimit"] = control.lower_limit / self.scan3dCoordinateScaleZ
         return self.dictData["lowerLimit"]
 
-    def setTelescopedAlarms(self):
+    def set_telescoped_alarms(self):
         mask = self.npy_mask
         mask_area = np.count_nonzero(mask)
-        npyArea = self.npyData[mask > 0]
-        lower = npyArea[npyArea < (self.__median_non_zero__ + self.lowerLimit)]
-        upper = npyArea[npyArea > (self.__median_non_zero__ + self.upperLimit)]
+        npyArea = self.npy_data[mask > 0]
+        lower = npyArea[npyArea < (self.__median_non_zero__ + self.lower_limit)]
+        upper = npyArea[npyArea > (self.__median_non_zero__ + self.upper_limit)]
         lowerArea = np.count_nonzero(lower)
         upperArea = np.count_nonzero(upper)
         self.set("lowerArea", lowerArea)
@@ -299,8 +296,8 @@ class DataIntegration:
         # 数据提交
         print("commit")
         print(self.dictData.get("median_3d"))
-        dictData = self.dictData
-        dictData["startTime"] = dictData["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
+        dict_data = self.dictData
+        dict_data["startTime"] = dict_data["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
             surface=self.key,
@@ -325,7 +322,7 @@ class DataIntegration:
             mask_area=self.dictData.get("mask_area"),
             width=self.dictData.get("width"),
             height=self.dictData.get("height"),
-            jsonData=str(json.dumps(dictData))
+            jsonData=str(json.dumps(dict_data))
         ))
 
     def addServerDetectionError(self, errorMsg, errorType="ServerDetectionError"):

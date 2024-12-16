@@ -62,7 +62,7 @@ def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, r
     只适计算射线
     """
     p_center = data_integration.flatRollData.get_center()
-    npy_data = data_integration.npyData
+    npy_data = data_integration.npy_data
     mask = data_integration.npy_mask
 
     line_data = getLengthDataByRotate(npy_data, mask, p_center, rotation_angle, ray=True)
