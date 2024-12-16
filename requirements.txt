@@ -34,3 +34,4 @@ scikit-image
 open3d
 argparse
 six
+wsproto
