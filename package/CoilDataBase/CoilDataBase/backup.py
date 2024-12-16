@@ -1,10 +1,13 @@
 import subprocess
 
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from .core import Session
 from .config import Config
-from .models import Base
-
+from .models import *
+from . import models
+import datetime
 
 def get_mysqldump_cmd(save_file, mysqldump_exe="mysqldump"):
     return f'"{mysqldump_exe}"' + f" -u {Config.user} -p{Config.password} {Config.database} > " + f'"{save_file}"'
@@ -32,10 +35,23 @@ def backup_mysql_db(host, user, password, db_name, backup_file):
 
 
 def backup_to_sqlite(save_file):
-    engine = create_engine('sqlite:///example.db', echo=False)
-    # 声明一个基类
-    # 创建数据库表
-    Base.metadata.create_all(engine)
+    sqlite_engine = create_engine('sqlite:///'+save_file, echo=False)
+    Base.metadata.create_all(sqlite_engine)
+    session_sqlite = sessionmaker(bind=sqlite_engine)
+    sqlite_session = session_sqlite()
+    for tabel_name in Base.metadata.tables:
+        with Session() as session:
+            cls=getattr(models,tabel_name)
+            for item in session.query(cls):
+                # sqlite_item = cls(**{
+                #     k:v for k,v in item.__dict__.items()
+                #     if not k.startswith("_")
+                # })
+                # sqlite_session.add(sqlite_item)
+                sqlite_session.merge(item)
 
+    # 提交事务
+    sqlite_session.commit()
+    # 关闭session
+    sqlite_session.close()
 
-backup_to_sqlite(None)

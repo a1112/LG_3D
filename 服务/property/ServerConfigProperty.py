@@ -41,7 +41,8 @@ class SurfaceConfigProperty:
 
 
 def change_path_drive(path, new_drive):
-    return str(Path(new_drive) / Path(path.relative_to(path.drive)))
+    path=Path(path)
+    return str(Path(new_drive) / path.relative_to(path.drive))
 
 
 class ServerConfigProperty:
@@ -58,8 +59,9 @@ class ServerConfigProperty:
         self.useCurrentDerv = _get_config_("useCurrentDerv", False)
         if self.useCurrentDerv:
             drive = Path(__file__).drive
-            server_config["saveFolder"] = change_path_drive(self.serverConfig["saveFolder"], drive)
             for surface in self.serverConfig["surface"]:
+                surface["saveFolder"] = change_path_drive(surface["saveFolder"], drive)
+
                 for folder in surface["folderList"]:
                     folder["source"] = change_path_drive(folder["source"], folder["source"])
         self.surface = self.serverConfig["surface"]

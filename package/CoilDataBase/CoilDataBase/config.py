@@ -4,7 +4,7 @@ from enum import Enum
 class DeriverList(Enum):
     mysql = "mysql+pymysql"
     sqlserver = "mssql+pymssql"
-    sqlite = "sqlite:///"
+    sqlite = "sqlite"
 
 
 PortDict = {
@@ -21,9 +21,17 @@ class Config:
     port = PortDict[DeriverList.mysql]
     database = "Coil"
     charset = "utf8"
+    file_url=""
 
 
 def get_url(config=Config):
-    return "{}://{}:{}@{}:{}/{}?charset={}".format(
-        config.deriver, config.user, config.password, config.host, config.port, config.database, config.charset
+    if Config.deriver in [DeriverList.sqlite]:
+        url="{}:///{}".format(
+        config.deriver.value,config.file_url
     )
+    else:
+        url= "{}://{}:{}@{}:{}/{}?charset={}".format(
+            config.deriver.value, config.user, config.password, config.host, config.port, config.database, config.charset
+        )
+    print(url)
+    return url

@@ -14,7 +14,7 @@ from property.Base import DataIntegrationList
 from .ImageMosaic import ImageMosaic
 from threading import Thread
 from CoilDataBase import Coil
-from CoilDataBase import tool as CoilDataBaseTool
+from CoilDataBase import tool as coil_data_base_tool
 from utils.Log import logger
 from alg import detection as cv_detection
 from utils.LoggerProcess import LoggerProcess
@@ -74,7 +74,7 @@ class ImageMosaicThread(Thread):
                     less_num = max_secondary_coil_id - secondary_coil.Id
                     if max_secondary_coil_id - secondary_coil.Id > 2:
                         logger.debug("清理数据" + str(secondary_coil.Id))
-                        CoilDataBaseTool.clearByCoilId(secondary_coil.Id)
+                        coil_data_base_tool.clear_by_coil_id(secondary_coil.Id)
                     if less_num < 1:
                         if not self.check_detection_end(secondary_coil.Id):
                             # 采集未完成

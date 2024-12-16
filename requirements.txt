@@ -35,3 +35,4 @@ open3d
 argparse
 six
 wsproto
+cryptography

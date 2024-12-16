@@ -4,6 +4,7 @@ CoilDataBase/Alarm.py
 CoilDataBase/Coil.py
 CoilDataBase/__init__.py
 CoilDataBase/backup.py
+CoilDataBase/config.py
 CoilDataBase/core.py
 CoilDataBase/tool.py
 CoilDataBase.egg-info/PKG-INFO

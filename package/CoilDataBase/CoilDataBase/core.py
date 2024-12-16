@@ -4,11 +4,11 @@ import datetime
 from .models import *
 from .config import get_url
 from sqlalchemy import create_engine
-
+from .config import get_url
 
 def get_engine(url=None):
     if url is None:
-        url = 'mysql+pymysql://root:nercar@localhost:3306/Coil'
+        url = get_url()
     engine_ = create_engine(url,
                             pool_size=20,
                             max_overflow=20,

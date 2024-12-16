@@ -2,7 +2,6 @@ import socket
 from pathlib import Path
 import json
 import os
-print(__file__)
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
 # args = parser.parse_args()
@@ -12,6 +11,14 @@ RendererList = ["JET"]
 SaveImageType = ".png"
 
 isLoc = False
+
+offline_mode = False
+if offline_mode:
+    from CoilDataBase.config import Config,DeriverList
+    Config.deriver = DeriverList.sqlite
+    Config.file_url=fr"D:\lcx_user\test.db"
+    isLoc = True
+
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
 if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G']:
     isLoc = True
@@ -25,7 +32,6 @@ try:
         base_config_folder = drive_config
 except NameError:
     pass
-print(f"使用配置文件 {base_config_folder}")
 configFile = base_config_folder / "configs/Server3D.json"
 alarmConfigFile = base_config_folder / r"configs/Alarm.json"
 infoConfigFile = base_config_folder / r"configs/Info.json"

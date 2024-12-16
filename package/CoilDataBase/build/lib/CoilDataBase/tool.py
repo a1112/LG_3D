@@ -1,6 +1,8 @@
 import datetime
 from .core import Session
 from . import models
+
+
 def getDateInfo(dateTime):
     """
     将时间戳，datetime，转换成 字典
@@ -26,22 +28,22 @@ def getDateInfo(dateTime):
                 }
 
 
-def to_dict(obj, up_Data: dict = None):
+def to_dict(obj, up_data: dict = None):
     """
     转换成可序列化的字典
     """
     if isinstance(obj, list):
         return [to_dict(i) for i in obj]
     if hasattr(obj, "__dict__") and "_sa_instance_state" in obj.__dict__:
-        if not up_Data:
-            up_Data = {}
+        if not up_data:
+            up_data = {}
         if len(obj.__dict__) <= 1:
             rd = {key: to_dict(getattr(obj, key)) for key in obj.__dir__() if not key.startswith('_')
-                  and key not in ["metadata"] and key not in up_Data}
+                  and key not in ["metadata"] and key not in up_data}
         else:
             rd = {key: to_dict(getattr(obj, key)) for key in obj.__dict__ if
-                  key not in ["_sa_instance_state"] and key not in up_Data}
-        rd.update(up_Data)
+                  key not in ["_sa_instance_state"] and key not in up_data}
+        rd.update(up_data)
         return rd
     elif isinstance(obj, datetime.datetime):
         return getDateInfo(obj)
@@ -49,7 +51,7 @@ def to_dict(obj, up_Data: dict = None):
         return obj
 
 
-def clearByCoilId(coilId):
+def clear_by_coil_id(coilId):
     """
         数据清理
     Args:
@@ -70,6 +72,7 @@ def clearByCoilId(coilId):
         session.query(models.DataEllipse).filter(models.DataEllipse.secondaryCoilId == coilId).delete()
         session.query(models.LineData).filter(models.LineData.secondaryCoilId == coilId).delete()
         session.query(models.PointData).filter(models.PointData.secondaryCoilId == coilId).delete()
+        session.query(models.CoilDefect).filter(models.CoilDefect.secondaryCoilId == coilId).delete()
         session.commit()
 
 def addObj(obj):

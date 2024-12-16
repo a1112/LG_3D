@@ -52,6 +52,11 @@ class ZipAndDeletionCameraData(Globs.ProcessClass):
         pass
 
 
+# 归档类
+class A:
+    pass
+
+
 if __name__ == '__main__':
     ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_D")).start()
     ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_U")).start()
