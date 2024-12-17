@@ -46,9 +46,9 @@ class Signal(Thread):
                             self.triggerIn()
                             break
                         time.sleep(1)
-            except:
-                raise
-            time.sleep(3)
+            except BaseException as e:
+                print(e)
+            time.sleep(1)
 
 
 signal = Signal(CONFIG.capTureConfig.signalUrl)

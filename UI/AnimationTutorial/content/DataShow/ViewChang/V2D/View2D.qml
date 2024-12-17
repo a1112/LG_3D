@@ -18,12 +18,11 @@ Item {
         fillMode: Image.PreserveAspectFit
         sourceSize.width: parent.width
         sourceSize.height: parent.height
-        source:surfaceData.getSouceByKey(next_key)
+        source:surfaceData.getSouceByKey(next_key,true)
         asynchronous:true
     }
     MouseArea{
         anchors.fill:parent
-
         cursorShape:Qt.PointingHandCursor
         onClicked:{
             surfaceData.rootViewto2D()

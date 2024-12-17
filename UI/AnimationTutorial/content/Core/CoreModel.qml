@@ -6,7 +6,7 @@ CoreModel_ {
 
     property CoreGlobalError coreGlobalError:CoreGlobalError{}
 
-    property int maxCoilListModelLen: 500
+    property int maxCoilListModelLen: 300
 
     property int currentCoilListIndex: 0
 

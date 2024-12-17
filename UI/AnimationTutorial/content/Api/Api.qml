@@ -6,9 +6,9 @@ Api_DataBase {
 
     function getFileSource(_key_,_coilId_,_viewKey_,preView=false,mask=true){
         if(preView){
-                return apiConfig.url(apiConfig.serverUrlImage,"image","preview",_key_,_coilId_,_viewKey_)
+                return apiConfig.url(apiConfig.serverUrlImage,"image/preview/"+_key_,_coilId_,_viewKey_)
         }
-        return apiConfig.url(apiConfig.serverUrlImage,"image","source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
+        return apiConfig.url(apiConfig.serverUrlImage,"image/source/"+_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
 
 

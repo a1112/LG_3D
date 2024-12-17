@@ -6,7 +6,11 @@ from threading import Thread
 from fastapi import WebSocket
 
 import Globs
-from .ApiBase import *
+
+from fastapi import APIRouter
+from .api_core import app
+
+router = APIRouter(tags=["算法服务-与算法同步运行"])
 
 
 class ReceiveTextThread(Thread):
@@ -26,8 +30,8 @@ class ReceiveTextThread(Thread):
         return self.queue.get()
 
 
-@app.websocket("/ws/reDetection")
-async def wsReDetectionTask(websocket: WebSocket):
+@router.websocket("/ws/reDetection")
+async def ws_re_detection_task(websocket: WebSocket):
     await websocket.accept()
 
     async def receive_messages():
@@ -50,13 +54,13 @@ async def wsReDetectionTask(websocket: WebSocket):
     await asyncio.gather(receive_messages(), send_messages())
 
 
-@app.get("/getServerState")
-async def getServerState():
+@router.get("/getServerState")
+async def get_server_state():
     return Globs.serverMsg.msgList
 
 
-@app.websocket("/ws/DetectionState")
-async def wsDetectionState(websocket: WebSocket):
+@router.websocket("/ws/DetectionState")
+async def ws_detection_state(websocket: WebSocket):
     """
     获取检测状态
     Args:
@@ -81,3 +85,5 @@ async def wsDetectionState(websocket: WebSocket):
             await websocket.send_text(f"Message " + str(""))  # 非阻塞的发送消息
 
     await asyncio.gather(receive_messages(), send_messages())
+
+app.include_router(router)

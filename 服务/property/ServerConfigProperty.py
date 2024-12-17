@@ -1,4 +1,6 @@
 import json
+import logging
+from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
 
@@ -53,6 +55,8 @@ class ServerConfigProperty:
             try:
                 return server_config[property_]
             except KeyError:
+                if current_process().name == "MainProcess":
+                    logging.warn(f"{property_} 参数获取失败，使用默认参数 {default}")
                 return default
 
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}
@@ -71,13 +75,18 @@ class ServerConfigProperty:
         self.mysqldump_exe = _get_config_("mysqldump", "mysqldump.exe")
         self.colorFromValue = _get_config_("colorFromValue",-700)
         self.colorToValue = _get_config_("colorToValue",700)
-        self.colorFromValue_mm = server_config["colorFromValue_mm"]
-        self.colorToValue_mm = server_config["colorToValue_mm"]
-        self.saveJoinMask = server_config["saveJoinMask"]
-        self.max3dSaveThread = server_config["max3dSaveThread"]
-        self.downsampleSize = server_config["downsampleSize"]
-        self.clip_num = server_config["clip_num"]
-        self.max_clip_mun = 500  # serverConfig["max_clip_mun"]
+        self.colorFromValue_mm = _get_config_("colorFromValue_mm",-30)
+        self.colorToValue_mm = _get_config_("colorToValue_mm",30)
+        self.saveJoinMask = _get_config_("saveJoinMask",False)
+        self.max3dSaveThread = _get_config_("max3dSaveThread",5)
+        self.downsampleSize = _get_config_('downsampleSize',3)
+        self.clip_num = _get_config_("clip_num",7)
+        self.max_clip_mun = _get_config_("max_clip_mun",500)   # serverConfig["max_clip_mun"]
+        self.server_count = _get_config_("server_count",10)
+        self.server_port = _get_config_("server_port",5010)
+        self.version = _get_config_("VERSION",".".join([str(i) for i in [0, 1, 11]]))
+        self.renderer_list = _get_config_("RendererList",["JET"])
+        self.save_image_type=_get_config_("SaveImageType",".png")
 
     def get_file(self, coil_id, surface_key, type_, mask=False):
         surface_config = self.surfaceConfigPropertyDict[surface_key]

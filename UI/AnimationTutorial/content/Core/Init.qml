@@ -1,7 +1,7 @@
 import QtQuick 2.15
 
 Item {
-    property int init_num: 300
+    property int init_num: 200
 
 
 

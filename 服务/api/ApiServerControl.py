@@ -5,18 +5,21 @@
 from typing import Dict
 
 from Globs import control
-from .ApiBase import *
 
+from fastapi import APIRouter
+from .api_core import app
 
-@app.get("/control/config")
+router = APIRouter(tags=["参数控制服务"])
+
+@router.get("/control/config")
 async def get_config():
     """
     控制配置获取
     """
-    return control.getConfig()
+    return control.get_config()
 
 
-@app.post("/control/set_config")
+@router.post("/control/set_config")
 async def set_config(data: Dict):
     """
     控制配置设置
@@ -24,9 +27,11 @@ async def set_config(data: Dict):
     return control.setConfig(data)
 
 
-@app.get("/control/set_property")
+@router.get("/control/set_property")
 async def set_property(key,value):
     """
     控制配置设置
     """
     return control.set_property(key, value)
+
+app.include_router(router)

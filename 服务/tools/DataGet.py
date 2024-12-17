@@ -1,6 +1,6 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
-from api.ApiCache import previewCache, imageCache,_3dDataCache
+from api._cache_ import previewCache, imageCache,_3dDataCache
 from Globs import serverConfigProperty
 
 serverConfigProperty:ServerConfigProperty
