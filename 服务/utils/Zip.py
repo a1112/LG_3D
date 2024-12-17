@@ -28,7 +28,7 @@ def _zip_(folder):
 
 class ZipAndDeletionCameraData(Globs.ProcessClass):
     def __init__(self, path: Path, reserve_num=0):
-        print(path)
+        self._run_ = True
         self.path = Path(path)
         self.reserve_num = reserve_num
         super().__init__()

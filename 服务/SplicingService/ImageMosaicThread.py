@@ -135,7 +135,6 @@ class ImageMosaicThread(Thread):
                 logger.error(error_message)
                 if isLoc:
                     raise e
-                return -1
             time.sleep(1)
 
     def addMsg(self, msg, level=logging.DEBUG):

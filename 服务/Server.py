@@ -5,7 +5,7 @@ LG_3D
 from multiprocessing import Process
 import uvicorn
 
-import CONFIG
+from Globs import serverConfigProperty
 from api import app
 
 # 数据库服务

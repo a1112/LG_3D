@@ -273,12 +273,12 @@ def rotate_around_x_axis(height_data, angle):
     return rotated_height_data
 
 
-def getHorizontalProjectionList(imageList):
-    horizontalProjectionList = []
-    for index, image in enumerate(imageList):  # 进行投影
+def getHorizontalProjectionList(image_list):
+    horizontal_projection_list = []
+    for index, image in enumerate(image_list):  # 进行投影
         horizontalProjection = horizontal_projection_first_nonzero(image)
-        horizontalProjectionList.append(horizontalProjection)
-    return horizontalProjectionList
+        horizontal_projection_list.append(horizontalProjection)
+    return horizontal_projection_list
 
 
 def getCircleConfigByMask(mask):

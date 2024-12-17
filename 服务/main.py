@@ -11,8 +11,8 @@ from utils.LoggerProcess import LoggerProcess
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
 # if isLoc:
-#     from CoilDataBase.Coil import deleteCoil
-#     deleteCoil(23000)
+# from CoilDataBase.Coil import deleteCoil
+# deleteCoil(23000)
 
 
 # if isLoc:

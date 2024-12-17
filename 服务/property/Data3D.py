@@ -44,7 +44,6 @@ def find_line_max_min(line_, noneDataValue, useIQR=True, type_=None):
     max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
     # 获取前n个最小值的索引
     min_indices = np.argsort(values)[:n]  # 排序并获取最小值的前n个索引
-    print(f"max_indices {max_indices}")
     if not len(max_indices) or not len(min_indices):
         return None, None
 
