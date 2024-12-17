@@ -67,7 +67,7 @@ def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, r
 
     line_data = getLengthDataByRotate(npy_data, mask, p_center, rotation_angle, ray=True)
     line_data: LineData
-    line_data.setDataIntegration(data_integration)
-    line_data.detTaperShape()
-    line_data.setRotationAngle(rotation_angle)
+    line_data.set_data_integration(data_integration)
+    line_data.det_taper_shape()
+    line_data.set_rotation_angle(rotation_angle)
     return line_data

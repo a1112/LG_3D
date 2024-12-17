@@ -69,7 +69,7 @@ async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, minVal
     # 返回图像作为响应
     eT = time.time()
     print(eT - sT)
-    return StreamingResponse(img_bytes, media_type="image/png")
+    # return StreamingResponse(img_bytes, media_type="image/png")
 
 
 @router.get("/coilData/Area/{surface_key:str}/{coil_id:str}")
@@ -97,7 +97,7 @@ async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueF
     img_bytes = io.BytesIO(img_encoded.tobytes())
     eT = time.time()
     print(f"Processing Time: {eT - sT:.2f} seconds")
-    return StreamingResponse(img_bytes, media_type="image/png")
+    # return StreamingResponse(img_bytes, media_type="image/png")
 
 
 @router.get("/coilData/Error/{surface_key:str}/{coil_id:str}")
@@ -116,13 +116,13 @@ async def get_error(
     # 数据获取
     data_get = DataGet("image", surface_key, coil_id, "MASK", mask)
     npy_data = data_get.get_3d_data()
-    mask_image = Image.open(io.BytesIO(data_get.get_mask_source()))
+    # mask_image = Image.open(io.BytesIO(data_get.get_mask_source()))
     # 数据处理
-    mask_image = np.array(mask_image)
+    # mask_image = np.array(mask_image)
     rSize = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
     if scale < 0.99:
         npy_data = cv2.resize(npy_data, rSize, interpolation=cv2.INTER_AREA)
-        mask_image = cv2.resize(mask_image, rSize, interpolation=cv2.INTER_AREA)
+        # mask_image = cv2.resize(mask_image, rSize, interpolation=cv2.INTER_AREA)
 
     height, width = npy_data.shape
     output_image = np.zeros((height, width, 4), dtype=np.uint8)  # BGRA 格式 透明
@@ -138,6 +138,6 @@ async def get_error(
     img_bytes = io.BytesIO(img_encoded.tobytes())
     e_t = time.time()
     print(f"Processing Time: {e_t - sT:.2f} seconds")
-    return StreamingResponse(img_bytes, media_type="image/png")
+    # return StreamingResponse(img_bytes, media_type="image/png")
 
 app.include_router(router)

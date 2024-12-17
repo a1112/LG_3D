@@ -26,7 +26,12 @@ Item {
         x_mm:dataShowCore.pxtoPos(p_x).toFixed(0)
         y_mm:dataShowCore.pxtoPos(p_y).toFixed(0)
         onX_mmChanged:{
+        if (type == "user"){
            get_zValue()
+            }
+        else{
+            xyz.z_mm=z_mm
+        }
         }
         onCloseClicked:{
             surfaceData.removeSignPoint(index)

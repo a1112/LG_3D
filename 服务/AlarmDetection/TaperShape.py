@@ -398,8 +398,8 @@ def commit_line_data(data_integration: DataIntegration):
     model_list = []
     for lineData in line_data_dict.values():
         try:
-            model_list.append(lineData.lineDataModel(data_integration))
-            model_list.extend(lineData.allPointDataModel(data_integration))
+            model_list.append(lineData.line_data_model(data_integration))
+            model_list.extend(lineData.all_point_data_model(data_integration))
         except AttributeError as e:
             print(e)
     Alarm.addObj(model_list)

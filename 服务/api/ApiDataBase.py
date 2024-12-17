@@ -15,7 +15,7 @@ from property.ServerConfigProperty import ServerConfigProperty
 from .api_core import app
 from utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
-
+from Globs import serverConfigProperty
 serverConfigProperty: ServerConfigProperty
 
 """
@@ -78,9 +78,11 @@ async def get_flush(coil_id: int):
     """
     向上刷新
     """
-    return {
-        "coilList": get_coil(10,coil_id=coil_id)
-    }
+    if coil_id>0:
+        return {
+            "coilList": await get_coil(5,coil_id=coil_id)
+        }
+    return {}
 
 
 @router.get("/search/coilNo/{coil_no:str}")

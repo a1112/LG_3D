@@ -16,7 +16,7 @@ from property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from tools import tool, FlattenSurface
 
-from CONFIG import SaveImageType, RendererList, isLoc
+from CONFIG import isLoc
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
@@ -87,7 +87,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         return True
 
     def _save_image_(self, dataIntegration, image, name):
-        self._save_(image, dataIntegration.get_save_url("png", name + SaveImageType))
+        self._save_(image, dataIntegration.get_save_url("png", name + serverConfigProperty.save_image_type))
         self._save_(image, dataIntegration.get_save_url("jpg", name + ".jpg"))
         image_rgba = image.convert("RGBA")
         image_rgba.putalpha(dataIntegration.pil_mask)
@@ -138,7 +138,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         mask_zero = npy__ == 0
 
         for name, colormap in ColorMaps.items():
-            if name not in RendererList:
+            if name not in serverConfigProperty.renderer_list:
                 continue
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
             depth_map_color[mask_zero] = [0, 0, 0]  # [0, 0, 0] 表示黑色

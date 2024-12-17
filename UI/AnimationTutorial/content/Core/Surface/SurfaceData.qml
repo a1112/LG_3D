@@ -155,8 +155,8 @@ Item {
     property int tower_warning_show_opacity: 50
 
 
-    function getSouceByKey(_viewKey_){
-        return getSource(coilId,_viewKey_,false)
+    function getSouceByKey(_viewKey_,preView=false){
+        return getSource(coilId,_viewKey_,preView)
     }
     function setViewSource(_viewKey_){
 

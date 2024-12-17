@@ -35,5 +35,13 @@ anchors.horizontalCenterOffset:15
 anchors.verticalCenterOffset:15
 text:surfaceData.i_to_info(z_value)
 }
-Component.onCompleted:get_zValue()
+Component.onCompleted:
+{
+    if (type == "user"){
+       get_zValue()
+        }
+    else{
+        xyz.z_mm=z_mm
+    }
+}
 }

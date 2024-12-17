@@ -2,7 +2,7 @@
 LG_3D
 完整的服务
 """
-from multiprocessing import Process
+from multiprocessing import Process, freeze_support
 import uvicorn
 from utils.StdoutLog import Logger
 Logger("服务")
@@ -40,5 +40,6 @@ class ServerProcess(Process):
 
 
 if __name__ == '__main__':
+    freeze_support()
     for port_ in range(serverConfigProperty.server_count):
         ServerProcess(serverConfigProperty.server_port + port_).start()

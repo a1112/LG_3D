@@ -66,7 +66,7 @@ Item {
     }
 
     Timer{
-        interval: 1000
+        interval: 5000
         running: true
         id: delayTimer
         onTriggered: {

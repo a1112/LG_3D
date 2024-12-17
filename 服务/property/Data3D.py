@@ -14,7 +14,7 @@ from CoilDataBase.models import LineData as LineDataModel
 from CoilDataBase.models import PointData as PointDataModel
 
 
-def find_line_max_min(line_, noneDataValue, useIQR=True, type_=None):
+def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
     """
     找到线段的最大最小值
     """
@@ -22,24 +22,8 @@ def find_line_max_min(line_, noneDataValue, useIQR=True, type_=None):
         type_ = "_" + type_
     else:
         type_ = ""
-    line_ = line_[line_[:, 2] > noneDataValue]
+    line_ = line_[line_[:, 2] > none_data_value]
     values = line_[:, 2]
-    # # 提取第三列数据作为y轴的值
-    # y = line[:, 2]
-    # # 提取第一列数据作为x轴的值
-    # x = line[:, 0]
-    # # 创建折线图
-    # plt.plot(x, y, marker='o', linestyle='-', color='b', label='Data')
-    # # 添加标题和标签
-    # plt.title('折线图示例')
-    # plt.xlabel('X轴 (第一列数据)')
-    # plt.ylabel('Y轴 (第三列数据)')
-    # # 显示图例
-    # plt.legend()
-    # # 显示图形
-    # plt.grid(True)
-    # plt.show()
-    # 获取前n个最大值的索引
     n = 100  # 你可以选择n的值
     max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
     # 获取前n个最小值的索引
@@ -49,7 +33,7 @@ def find_line_max_min(line_, noneDataValue, useIQR=True, type_=None):
 
     max_index = max_indices[0]
     min_index = min_indices[0]
-    if useIQR:
+    if use_iqr:
         iqr_max_outliers = IQR_outliers(values[max_indices])  # 异常值
         iqr_min_outliers = IQR_outliers(values[min_indices])  # 异常值
         for i in max_indices:
@@ -197,7 +181,7 @@ class LineData:
 
         return segments
 
-    def point_hasData(self, point):
+    def point_has_data(self, point):
         return point > self.image_threshold
 
     def all_image_line_points(self, mask=True, ray=True):
@@ -233,36 +217,36 @@ class LineData:
         过滤mask外的点,然后进行分段
         Returns:
         """
-        oldHasSteel = False  # 记录上一个点的状态
+        old_has_steel = False  # 记录上一个点的状态
         lines = []
-        lineItem = []
+        line_item = []
         for point in self.mask_image_line_points():
             """
             扫描一次实现全部的分段
             """
-            hasSteel = self.point_hasData(point[2])
-            if hasSteel and not oldHasSteel:
+            has_steel = self.point_has_data(point[2])
+            if has_steel and not old_has_steel:
                 # 新的线段
-                lineItem.append(point)
+                line_item.append(point)
 
-            elif hasSteel and oldHasSteel:
-                lineItem.append(point)
-            elif not hasSteel and oldHasSteel:
-                if len(lineItem) > 100:
-                    lines.append(lineItem)
-                    lineItem = []
-            oldHasSteel = hasSteel
-        if lineItem:
-            lines.append(lineItem)
+            elif has_steel and old_has_steel:
+                line_item.append(point)
+            elif not has_steel and old_has_steel:
+                if len(line_item) > 100:
+                    lines.append(line_item)
+                    line_item = []
+            old_has_steel = has_steel
+        if line_item:
+            lines.append(line_item)
         return lines
 
-    def setDataIntegration(self, dataIntegration):
-        self.dataIntegration = dataIntegration
+    def set_data_integration(self, data_integration):
+        self.dataIntegration = data_integration
 
-    def setRotationAngle(self, angle):
+    def set_rotation_angle(self, angle):
         self.rotation_angle = angle
 
-    def detTaperShape(self):
+    def det_taper_shape(self):
         """
         返回到 内外塔形的最大最小值
         Returns:
@@ -277,26 +261,25 @@ class LineData:
         inner_points = arr[start_index:center_index]
         outer_points = arr[center_index:end_index]
         # 最值检测
-        print(outer_points)
         self.inner_max_point, self.inner_min_point = find_line_max_min(inner_points, 10, self.useIQR, type_="inner")
         self.outer_max_point, self.outer_min_point = find_line_max_min(outer_points, 10, self.useIQR, type_="outer")
 
-    def allPointDataModel(self, dataIntegration):
-        return [self.inner_min_point.pointDataModel(dataIntegration),
-                self.inner_max_point.pointDataModel(dataIntegration),
-                self.outer_min_point.pointDataModel(dataIntegration),
-                self.outer_max_point.pointDataModel(dataIntegration)
+    def all_point_data_model(self, data_integration):
+        return [self.inner_min_point.pointDataModel(data_integration),
+                self.inner_max_point.pointDataModel(data_integration),
+                self.outer_min_point.pointDataModel(data_integration),
+                self.outer_max_point.pointDataModel(data_integration)
                 ]
 
-    def lineDataModel(self, dataIntegration):
+    def line_data_model(self, data_integration):
         return LineDataModel(
-            secondaryCoilId=dataIntegration.secondaryCoilId,
-            surface=dataIntegration.key,
+            secondaryCoilId=data_integration.secondaryCoilId,
+            surface=data_integration.key,
             type="TaperShape",
-            center_x=dataIntegration.flatRollData.get_center().x,
-            center_y=dataIntegration.flatRollData.get_center().y,
-            width=dataIntegration.width,
-            height=dataIntegration.height,
+            center_x=data_integration.flatRollData.get_center().x,
+            center_y=data_integration.flatRollData.get_center().y,
+            width=data_integration.width,
+            height=data_integration.height,
             rotation_angle=self.rotation_angle,
             x1=self.p1.x,
             y1=self.p1.y,
@@ -304,13 +287,13 @@ class LineData:
             y2=self.p2.y,
             data=json.dumps(self.ray_line.tolist()),
             inner_min_value=self.inner_min_point.z,
-            inner_min_value_mm=dataIntegration.z_to_mm(self.inner_min_point.z),
+            inner_min_value_mm=data_integration.z_to_mm(self.inner_min_point.z),
             inner_max_value=self.inner_max_point.z,
-            inner_max_value_mm=dataIntegration.z_to_mm(self.inner_max_point.z),
+            inner_max_value_mm=data_integration.z_to_mm(self.inner_max_point.z),
             outer_min_value=self.outer_min_point.z,
-            outer_min_value_mm=dataIntegration.z_to_mm(self.outer_min_point.z),
+            outer_min_value_mm=data_integration.z_to_mm(self.outer_min_point.z),
             outer_max_value=self.outer_max_point.z,
-            outer_max_value_mm=dataIntegration.z_to_mm(self.outer_max_point.z)
+            outer_max_value_mm=data_integration.z_to_mm(self.outer_max_point.z)
         )
 
 
