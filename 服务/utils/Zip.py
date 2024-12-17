@@ -26,6 +26,21 @@ def _zip_(folder):
     return True
 
 
+def _archive_(folder):
+    image_folder = folder / "2D"
+    image_list = list(image_folder.glob("*.*"))
+    if not len(image_list):
+        time.sleep(0.001)
+        return False
+    image_array_list = [np.array(Image.open(imageUrl)) for imageUrl in image_list]
+    d3_folder = folder / "3D"
+    d3_array_list = [np.load(d3Url) for d3Url in list(d3_folder.glob("*.npy"))] + \
+    [np.load(d3Url)["array"] for d3Url in list(d3_folder.glob("*.npz"))]
+    np.savez_compressed(str(folder/"archive.npz"), image_array_list=image_array_list)
+    print(image_array_list)
+    print(d3_array_list)
+
+
 class ZipAndDeletionCameraData(Globs.ProcessClass):
     def __init__(self, path: Path, reserve_num=0):
         self._run_ = True
@@ -52,15 +67,11 @@ class ZipAndDeletionCameraData(Globs.ProcessClass):
         pass
 
 
-# 归档类
-class A:
-    pass
-
-
 if __name__ == '__main__':
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_D")).start()
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_U")).start()
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_M")).start()
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_U")).start()
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_M")).start()
-    ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_D")).start()
+    _archive_(Path(fr"F:\datasets\LG_3D_DataBase\COPY\Cap_S_M\1792"))
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_D")).start()
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_U")).start()
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_L_M")).start()
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_U")).start()
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_M")).start()
+    # ZipAndDeletionCameraData(Path(r"G:\BF_DATA\Cap_S_D")).start()

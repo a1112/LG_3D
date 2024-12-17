@@ -1,9 +1,9 @@
-from Globs import serverConfigProperty
-import Init
-from .api_core import app
 
 from fastapi import APIRouter
+
 from .api_core import app
+from Globs import serverConfigProperty
+import Init
 
 router = APIRouter(tags=["参数服务"])
 
@@ -19,5 +19,6 @@ async def info():
     }
     info_.update(serverConfigProperty.to_dict())
     return info_
+
 
 app.include_router(router)
