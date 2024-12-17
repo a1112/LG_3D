@@ -29,8 +29,8 @@ class ControlManagement(ThreadClass):
         self.baseTimeFormat = "%Y-%m-%d %H:%M:%S"
         self.exportTimeFormat = self.baseTimeFormat
         self.logTimeFormat = self.baseTimeFormat
-        self.upperLimit = 75
-        self.lowerLimit = -75
+        self.upper_limit = 75
+        self.lower_limit = -75
         self.leveling_gray = True
         self.leveling_3d = True
         self.leveling_type = LevelingType.LinearRegression
