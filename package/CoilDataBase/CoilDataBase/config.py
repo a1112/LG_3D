@@ -1,4 +1,5 @@
 from enum import Enum
+from multiprocessing import current_process
 
 
 class DeriverList(Enum):
@@ -33,5 +34,6 @@ def get_url(config=Config):
         url= "{}://{}:{}@{}:{}/{}?charset={}".format(
             config.deriver.value, config.user, config.password, config.host, config.port, config.database, config.charset
         )
-    print(url)
+    if current_process().name == "MainProcess":
+        print(url)
     return url

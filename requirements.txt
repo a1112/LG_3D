@@ -38,3 +38,4 @@ wsproto
 cryptography
 fastapi-cache[redis]
 redis
+python-multipart

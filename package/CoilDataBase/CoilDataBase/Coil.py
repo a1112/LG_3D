@@ -193,12 +193,12 @@ def deleteCoil(id_):
         session.commit()
 
 
-def getCoilList(num, coilId=None, byCoil=True):
+def getCoilList(num, coil_id=None, by_coil=True):
     with (Session() as session):
-        query = getJoinQuery(session, byCoil=byCoil)
+        query = getJoinQuery(session, byCoil=by_coil)
 
-        if coilId:
-            query = query.filter(SecondaryCoil.Id > coilId)
+        if coil_id:
+            query = query.filter(SecondaryCoil.Id > coil_id)
         return query.order_by(SecondaryCoil.Id.desc())[:num]
 
 

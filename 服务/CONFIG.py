@@ -6,9 +6,7 @@ import os
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
 # args = parser.parse_args()
-RendererList = ["JET"]
 
-SaveImageType = ".png"
 
 isLoc = False
 
@@ -47,8 +45,6 @@ alarmConfig = json.load(open(alarmConfigFile, 'r', encoding="utf-8"))
 infoConfig = json.load(open(infoConfigFile, 'r', encoding="utf-8"))
 controlConfig = json.load(open(controlConfigFile, 'r', encoding="utf-8"))
 
-VERSION = [0, 1, 11]
-VERSION_String = ".".join([str(i) for i in VERSION])
 if socket.gethostname() == "DESKTOP-94ADH1G":
     ServerConfig["balsam"] = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
 

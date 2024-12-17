@@ -14,3 +14,4 @@ GPUtil
 GPUtil
 timm
 colorlog
+python-multipart

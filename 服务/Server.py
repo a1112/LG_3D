@@ -4,14 +4,18 @@ LG_3D
 """
 from multiprocessing import Process
 import uvicorn
-
+from utils.StdoutLog import Logger
+Logger("服务")
 from Globs import serverConfigProperty
 from api import app
+
+# 参数服务
+from api import ApiInfo
 
 # 数据库服务
 from api import ApiDataBase
 
-# 参数服务
+# 控制服务
 from api import ApiServerControl
 
 # 3D 数据 服务
@@ -23,6 +27,8 @@ from api import ApiImageServer
 # 备份服务
 from api import ApiBackupServer
 
+# 测试服务
+from api import ApiTest
 
 class ServerProcess(Process):
     def __init__(self,port):
@@ -34,5 +40,5 @@ class ServerProcess(Process):
 
 
 if __name__ == '__main__':
-    for port_ in range(CONFIG.server_count):
-        ServerProcess(CONFIG.server_port + port_).start()
+    for port_ in range(serverConfigProperty.server_count):
+        ServerProcess(serverConfigProperty.server_port + port_).start()

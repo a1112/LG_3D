@@ -44,7 +44,7 @@ class ControlManagement(ThreadClass):
     def get(self):
         return ControlProperty(self.config)
 
-    def getConfig(self):
+    def get_config(self):
         return self.config
 
     def setConfig(self, data):
