@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Controls
+
 import QtQuick.Layouts
-import "DataShowLabels"
-import "DataShowLabels/DefectClassFlow"
-import "DataShowLabels/Defect"
-import "../Pages/AlarmPage"
-import "../Pages/AlarmPage/AlarmItemSimple"
-import "Core"
+import "../DataShowLabels"
+import "../DataShowLabels/DefectClassFlow"
+import "../../Pages/AlarmPage"
+import "../../Pages/AlarmPage/AlarmItemSimple"
+import "../Core"
 Item {
     visible: auth.isAdmin
     property var surfaceData

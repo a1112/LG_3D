@@ -110,7 +110,7 @@ Menu{
             }
             }
             ErrorLabel{
-                anchors.centerIn: paren
+                anchors.centerIn: parent
                 text:root.backupStatu.errorStr
                 visible:root.backupStatu.isError
             }

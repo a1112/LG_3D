@@ -14,19 +14,19 @@ Item{
     Column{
         spacing: 10
         CheckRecItem{
-            text: "缺陷信息".split("").join('\n')
-            height:100
+            text: "缺陷".split("").join('\n')
+            height:50
             currentShowModel:dataShowCore.topDataManage.defectShowModel
         }
 
         CheckRecItem{
-            text: "数据信息".split("").join('\n')
-            height:100
+            text: "数据".split("").join('\n')
+            height:50
             currentShowModel:dataShowCore.topDataManage.dataInfoShowModel
         }
         CheckRecItem{
-            text: "曲线信息".split("").join('\n')
-            height:100
+            text: "曲线".split("").join('\n')
+            height:50
             currentShowModel:dataShowCore.topDataManage.lineShowModel
 
         }

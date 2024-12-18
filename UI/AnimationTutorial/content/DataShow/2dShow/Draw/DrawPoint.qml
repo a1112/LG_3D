@@ -1,10 +1,11 @@
 import QtQuick
 import QtQuick.Controls
+import "PointShow"
 Item {
     anchors.fill:parent
-    Repeater{
-        model:dataShowCore.pointData
-        delegate:PointViewItem{
-        }
+
+    DbPointShow{
+
     }
+    UserPointShow{}
 }

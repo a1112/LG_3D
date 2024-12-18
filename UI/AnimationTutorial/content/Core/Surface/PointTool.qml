@@ -1,50 +1,38 @@
 import QtQuick
+import "../../Model/server"
 Item {
     property var pointDatas:[]
-    property ListModel pointData: ListModel{
+    property ListModel pointDbData: ListModel{
+    }
+
+    property ListModel pointUserData:ListModel{
     }
 
     function clear(){
-        return pointData.clear()
+        pointUserData.clear()
+        return pointDbData.clear()
     }
+
     function addUserPoint(px,py){
-        var def= defaultPoint
+        var def= pointDataItem.defaultPoint
         def["p_x"] = px
         def["p_y"] = py
+        def["p_z"] = 0
         def["type"]="user"
-        pointData.append(def)
-
+        pointUserData.append(def)
     }
 
     function addDbPoint(dataItem){
         dataItem["p_x"]=dataItem["x"]
         dataItem["p_y"]=dataItem["y"]
-
-        if (dataItem["z_mm"]>-15 && dataItem["z_mm"]<15) return
-        pointData.append(dataItem)
+        dataItem["p_z"]=dataItem["z"]
+        if (dataItem["z_mm"]<15) return
+        // if (dataItem["z_mm"]>-15 && dataItem["z_mm"]<15) return
+        pointDbData.append(dataItem)
     }
 
+    property PointData pointDataItem:PointData{}
 
-    property var defaultPoint: {
-        "type": "user",
-        "secondaryCoilId": 35858,
-        "Id": 337249,
-        "x": 4012,
-        "y": 2891,
-        "z_mm": -39.1953,
-        "crateTime": {
-            "year": 2024,
-            "month": 12,
-            "weekday": 4,
-            "day": 13,
-            "hour": 14,
-            "minute": 39,
-            "second": 15
-        },
-        "surface": "L",
-        "z": 30435,
-        "data": null
-    }
 
     function setDatas(data){
         pointDatas=data

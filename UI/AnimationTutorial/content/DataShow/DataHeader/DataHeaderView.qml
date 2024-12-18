@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import "DataShowItem"
 Loader{
-
     asynchronous: true
     sourceComponent:RowLayout{
         Layout.fillWidth: true

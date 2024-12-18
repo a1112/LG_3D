@@ -177,7 +177,7 @@ Item {
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
             imageCache.pushCache(getSource(coilId,viewKey,false))
         })
-        pointData.clear()
+
         api.getCoilInfo(coilId_,key,
                         (result)=>{
                             setCoilInfo(JSON.parse(result))
@@ -189,7 +189,7 @@ Item {
                         }
                         )
 
-
+        pointTool.clear()
         api.getPointDatas(
                     coilId_,key,(result)=>{
                         pointTool.setDatas(JSON.parse(result))
@@ -361,16 +361,16 @@ Item {
     property ListModel txModel: ListModel{}
 
 
-    readonly property ListModel pointData: pointTool.pointData
+    readonly property ListModel pointUserData: pointTool.pointUserData
+
+    readonly property ListModel pointDbData: pointTool.pointDbData
 
     function addSignPoint(p){
         return pointTool.addUserPoint(p.x,p.y)
-
-        pointData.append({"p_x":p.x,"p_y":p.y})
     }
 
     function removeSignPoint(index){
-        pointData.remove(index)
+        pointUserData.remove(index)
     }
 
     //  报警相关设置

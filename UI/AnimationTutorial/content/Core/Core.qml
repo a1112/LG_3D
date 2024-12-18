@@ -27,6 +27,7 @@ Item {
         else {
             coreModel.surfaceS.hasData = false
         }
+        coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
         coreModel.surfaceL.setCoilId(currentCoilModel.coilId)
         coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
 

@@ -172,8 +172,8 @@ DataShowCore_ {
 
     property bool telescopedJointView: true // 是否显示塔形
 
-    property ListModel pointData: surfaceData.pointData
-
+    readonly property ListModel pointDbData: surfaceData.pointDbData
+    readonly property ListModel pointUserData: surfaceData.pointUserData
     property bool imageShowHovered: false
 
     property bool chartHovered: false
