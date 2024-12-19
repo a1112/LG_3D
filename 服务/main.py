@@ -7,7 +7,9 @@ from SubServer.ZipServer import ZipServer
 from utils.GlobalSignalHandling import GlobalSignalHandling
 from CONFIG import server_api_port, isLoc
 from utils.LoggerProcess import LoggerProcess
+from utils.StdoutLog import Logger
 
+Logger("算法")
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
 # if isLoc:

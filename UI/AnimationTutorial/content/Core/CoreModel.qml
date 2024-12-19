@@ -47,7 +47,7 @@ CoreModel_ {
     }
 
     function getLastCoilId(){
-        return realCoilListModel.get(0).SecondaryCoilId
+        return coilListModel.get(0).SecondaryCoilId
     }
     readonly property int lastCoilId: realCoilListModel.get(Math.min(0,realCoilListModel.count)).SecondaryCoilId
 
