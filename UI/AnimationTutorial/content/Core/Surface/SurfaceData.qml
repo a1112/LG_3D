@@ -60,10 +60,11 @@ Item {
     property var coilInfo: {return {}}
     onCoilInfoChanged: {
         if (coilInfo && coilInfo.circleConfig){
-        let inner_circle=coilInfo.circleConfig.inner_circle
-            circleTool.init("")
         console.log("coilInfo.circleConfig")
-            console.log(JSON.stringify(coilInfo.circleConfig))yyc
+        console.log(JSON.stringify(coilInfo.circleConfig))
+        let inner_circle = coilInfo.circleConfig.inner_circle
+        // circleTool.init(coilInfo.circleConfig)
+
         lineData = []
         inner_circle_centre =inner_circle.circlex
         inner_ellipse = inner_circle.ellipse

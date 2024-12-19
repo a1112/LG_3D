@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, func
 from sqlalchemy.orm import relationship
 
-from CoilDataBase.models._base_ import Base
+from ._base_ import Base
 
 
 class SecondaryCoil(Base):

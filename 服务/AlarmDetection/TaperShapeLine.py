@@ -17,9 +17,9 @@ def find_max_min_value(line, noneDataValue, offset=0):
 
 def findTaperShapeValue(line, noneDataValue, offset=0):
     l_line_index = int(len(line) / 2)
-    max_minValue_l = find_max_min_value(line[:l_line_index], noneDataValue, offset)
-    max_minValue_r = find_max_min_value(line[l_line_index:], noneDataValue, offset + l_line_index)
-    return max_minValue_l, max_minValue_r
+    max_min_value_l = find_max_min_value(line[:l_line_index], noneDataValue, offset)
+    max_min_value_r = find_max_min_value(line[l_line_index:], noneDataValue, offset + l_line_index)
+    return max_min_value_l, max_min_value_r
 
 
 def findLRValue(line, offset=0):
@@ -36,18 +36,18 @@ def findLRValue(line, offset=0):
     return l_value + offset, r_value + offset
 
 
-def split_line(detLine, maskLine, noneDataValue, ceter_x, ceter_y):
+def split_line(det_line, mask_line, none_data_value, center_x, center_y):
     c1 = CoilLineData()
     c2 = CoilLineData()
-    l_line_p = findLRValue(maskLine[:ceter_x])
-    r_line_p = findLRValue(maskLine[ceter_x:], ceter_x)
-    l_mm_v = findTaperShapeValue(detLine[l_line_p[0]:l_line_p[1]], noneDataValue)
-    r_mm_v = findTaperShapeValue(detLine[r_line_p[0]:r_line_p[1]], noneDataValue, r_line_p[0])
+    l_line_p = findLRValue(mask_line[:center_x])
+    r_line_p = findLRValue(mask_line[center_x:], center_x)
+    l_mm_v = findTaperShapeValue(det_line[l_line_p[0]:l_line_p[1]], none_data_value)
+    r_mm_v = findTaperShapeValue(det_line[r_line_p[0]:r_line_p[1]], none_data_value, r_line_p[0])
 
-    c1.lineData = detLine
-    c2.lineData = detLine
-    c1.centre = [ceter_x, ceter_y]
-    c1.centre = [ceter_x, ceter_y]
+    c1.lineData = det_line
+    c2.lineData = det_line
+    c1.centre = [center_x, center_y]
+    c1.centre = [center_x, center_y]
     c1.linePoint = [l_line_p[0], l_line_p[1]]
     c2.linePoint = [r_line_p[0], r_line_p[1]]
     c1.rotation_angle = 180

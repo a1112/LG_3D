@@ -6,6 +6,8 @@ from queue import Queue
 
 import logging
 
+from numpy.distutils.log import debug
+
 import AlarmDetection
 from CONFIG import isLoc
 from Globs import serverConfigProperty
@@ -102,12 +104,14 @@ class ImageMosaicThread(Thread):
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
                     defection_time2 = time.time()
-                    print(f"图像检测时间 {defection_time2 - defection_time1}")
                     AlarmDetection.detection_all(data_integration_list)
-                    cv_detection.detection_all(data_integration_list)
                     defection_time3 = time.time()
-                    print(f"算法检测时间 {defection_time3 - defection_time2}")
-                    print(f"完整检测时间 {defection_time3 - defection_time1}==============================================")
+                    cv_detection.detection_all(data_integration_list)
+                    defection_time4 = time.time()
+                    logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
+                    logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
+                    logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")
+                    logger.debug(f"完整检测时间 {defection_time4 - defection_time1}==============================================")
                     if self.saveDataBase:
                         Coil.addCoil({
                             "SecondaryCoilId": secondary_coil.Id,

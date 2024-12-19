@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text
 
-from CoilDataBase.models._base_ import Base
+from ._base_ import Base
 
 
 class DefectClassDict(Base):

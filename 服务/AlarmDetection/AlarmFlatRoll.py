@@ -6,19 +6,18 @@ import cv2
 import numpy as np
 from property.Base import DataIntegration, DataIntegrationList
 from property.detection3D.FlatRollData import FlatRollData, CircleDataItem
-from utils.DetectionSpeedRecord import DetectionSpeedRecord
 
 
 def contour_to_data(contour, key):
     # 计算外接圆
-    (circlexX, circlexY), circlexRadius = cv2.minEnclosingCircle(contour)
+    (circlex_x, circlex_y), circlex_radius = cv2.minEnclosingCircle(contour)
     rect = cv2.minAreaRect(contour)
     (box_x, box_y), (box_w, box_h), box_angle = rect
     # 计算内接圆（在最小包围矩形中）
     inner_circle_radius = min(box_w, box_h) / 2
     ellipse = cv2.fitEllipse(contour)
     return CircleDataItem({
-        "circle": [int(circlexX), int(circlexY), int(circlexRadius)],
+        "circle": [int(circlex_x), int(circlex_y), int(circlex_radius)],
         "ellipse": ellipse,
         "inner_circle": [box_x, box_y, inner_circle_radius]
     }, key)
@@ -58,27 +57,26 @@ def get_data(mask):
     return get_circle_contour(mask), get_inner_circle_contour(mask)
 
 
-def _detectionAlarmFlatRoll_(dataIntegration: DataIntegration):
-    mask = dataIntegration.npy_mask
+def _detectionAlarmFlatRoll_(data_integration: DataIntegration):
+    mask = data_integration.npy_mask
     circle_data_out, circle_data_in = get_data(mask)
-    flatRollData = FlatRollData(dataIntegration, circle_data_in, circle_data_out)
-    dataIntegration.flatRollData = flatRollData
-    return flatRollData
+    flat_roll_data = FlatRollData(data_integration, circle_data_in, circle_data_out)
+    data_integration.flatRollData = flat_roll_data
+    return flat_roll_data
 
 
-def commitData(dataIntegration: DataIntegration, flatRollData):
-    Alarm.addObj(flatRollData.getAlarmFlatRoll(dataIntegration))
+def commitData(data_integration: DataIntegration, flat_roll_data):
+    Alarm.addObj(flat_roll_data.getAlarmFlatRoll(data_integration))
 
 
-def _detectionAlarmFlatRollAll_(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
+def _detectionAlarmFlatRollAll_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
     """
     全局检测 扁卷
     """
     print("AlarmFlatRollAll")
-    for dataIntegration in dataIntegrationList:
-        flatRollData = _detectionAlarmFlatRoll_(dataIntegration)
-        flatRollData.commit()
-        # commitData(dataIntegration,flatRollData)
+    for dataIntegration in data_integration_list:
+        flat_roll_data = _detectionAlarmFlatRoll_(dataIntegration)
+        flat_roll_data.commit()
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import numpy as np
 import Globs
 from property.Base import DataIntegrationList
 from property.Types import Point2D, DetectionTaperShapeType
-from CoilDataBase.models.AlarmTaperShape import AlarmTaperShape
+from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate
 from utils.Log import logger
@@ -34,6 +34,8 @@ def _detection_taper_shape_(data_integration: DataIntegration):
     line_data_dict = {}
     for rotate in [i * 20 for i in range(18)]:
         line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
+
+
 
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
     # print((inner_max_point_values-dataIntegration.median_non_zero)*dataIntegration.scan3dCoordinateScaleZ)
@@ -411,7 +413,6 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     """
     print("塔形检测 all")
     for dataIntegration in data_integration_list:
-
         if DetectionTaperShapeType.WK_TYPE in Globs.control.taper_shape_type:
             _detectionTaperShapeA_(dataIntegration)
             dataIntegration.lineDataDict={}

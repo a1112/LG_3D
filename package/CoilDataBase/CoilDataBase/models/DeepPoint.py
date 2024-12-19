@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, String, Float, Text, DateTime, func
 
-from CoilDataBase.models._base_ import Base
+from ._base_ import Base
 
 
 class DeepPoint(Base):

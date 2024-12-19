@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, func, Text
 from sqlalchemy.orm import relationship
 
-from CoilDataBase.models._base_ import Base
+from ._base_ import Base
 
 
 class CoilAlarmStatus(Base):

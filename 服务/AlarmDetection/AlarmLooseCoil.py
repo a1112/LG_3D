@@ -1,6 +1,6 @@
 from typing import Union
 
-from CoilDataBase.models.AlarmLooseCoil import AlarmLooseCoil
+from CoilDataBase.models import AlarmLooseCoil
 from property.Base import DataIntegration, DataIntegrationList
 from property.Data3D import LineData
 from CoilDataBase.Alarm import addAlarmLooseCoil
@@ -57,22 +57,22 @@ class AlarmLooseData:
             # input()
 
 
-def _detectionAlarmLooseCoil_(dataIntegration: DataIntegration):
+def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
     print("_detectionAlarmLooseCoil_")
-    for d in dataIntegration.detectionLineData:
-        d.dataIntegration = dataIntegration
+    for d in data_integration.detectionLineData:
+        d.dataIntegration = data_integration
         d.detection()
         addAlarmLooseCoil(d.get_alarm_loose_coil())
 
 
-def _detectionAlarmLooseCoilAll_(dataIntegrationList: Union[DataIntegrationList, DataIntegration]):
+def _detectionAlarmLooseCoilAll_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
     print("_detectionAlarmLooseCoilAll_")
     """
     获取 LineData 数据假设同角度检测
     """
-    lineDatas = []
-    for dataIntegration in dataIntegrationList:
-        lineDatas.append([dataIntegration, dataIntegration.lineDataDict])
+    line_datas = []
+    for dataIntegration in data_integration_list:
+        line_datas.append([dataIntegration, dataIntegration.lineDataDict])
         addAlarmLooseCoil(AlarmLooseCoil(
             secondaryCoilId = dataIntegration.coilId,
             surface=dataIntegration.surface,
@@ -81,9 +81,9 @@ def _detectionAlarmLooseCoilAll_(dataIntegrationList: Union[DataIntegrationList,
 
         ))
 
-    if len(lineDatas) == 2:
-        alarmLooseData = AlarmLooseData(lineDatas)
-        alarmLooseData.detection()
+    if len(line_datas) == 2:
+        alarm_loose_data = AlarmLooseData(line_datas)
+        alarm_loose_data.detection()
     else:
         print("暂不支持")
         return
