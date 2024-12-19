@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Window
-import "Settings"
+import "../Base"
 Item {
     id:root
     property var visibility: auth.isAdmin?Window.Windowed:Window.FullScreen
@@ -10,7 +10,7 @@ Item {
     property bool lockControl: true // 锁定控制器, 使用单独控制器
 
 
-    BaseSettings{
+    SettingsBase{
         fileName: "Control.ini"
         property alias lockControl:root.lockControl
     }

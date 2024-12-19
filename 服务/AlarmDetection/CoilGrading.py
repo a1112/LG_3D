@@ -7,9 +7,11 @@ from CoilDataBase.Coil import addObj
 from Globs import alarmConfigProperty, infoConfigProperty
 from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig
 from property.Base import CoilLineData, DataIntegration, DataIntegrationList
+from property.Data3D import LineData
+from property.detection3D import FlatRollData
 
 
-def gradingAlarmFlatRoll(alarm_flat_roll:AlarmFlatRoll, alarm_flat_roll_config:AlarmFlatRollConfig):
+def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config: AlarmFlatRollConfig):
     """
     判断松卷的直接逻辑
     Args:
@@ -17,54 +19,150 @@ def gradingAlarmFlatRoll(alarm_flat_roll:AlarmFlatRoll, alarm_flat_roll_config:A
         alarm_flat_roll_config:
     Returns:
     """
-    name,configMax, configMin, configMsg=alarm_flat_roll_config.getConfig()
-    errorMsg="正常"
-    grad=1
-    if alarm_flat_roll.inner_circle_width<=configMin:
-        errorMsg=f"{name} 内径 {alarm_flat_roll.inner_circle_width} <= {configMin}"
-        grad=3
-    elif alarm_flat_roll.inner_circle_width>=configMax:
-        errorMsg=f"{name} 内径 {alarm_flat_roll.inner_circle_width} >= {configMax}"
-        grad=3
-    return AlarmGradResult(grad, errorMsg,configMsg)
+    name, configMax, configMin, configMsg = alarm_flat_roll_config.getConfig()
+    errorMsg = "正常"
+    grad = 1
+    if alarm_flat_roll.inner_circle_width <= configMin:
+        errorMsg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} <= {configMin}"
+        grad = 3
+    elif alarm_flat_roll.inner_circle_width >= configMax:
+        errorMsg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} >= {configMax}"
+        grad = 3
+    return AlarmGradResult(grad, errorMsg, configMsg)
 
-def gradingAlarmTaperShape(alarm_taper_shape_list:List[AlarmTaperShape], taper_shape_config:TaperShapeConfig):
-    name,height_limit_list,inner,out,info = taper_shape_config.getConfig()
-    error_msg="正常"
-    grad=1
+
+def gradingAlarmTaperShape(alarm_taper_shape_list: List[AlarmTaperShape], taper_shape_config: TaperShapeConfig):
+    name, height_limit_list, inner, out, info = taper_shape_config.getConfig()
+    error_msg = "正常"
+    grad = 1
     for alarmTaperShape in alarm_taper_shape_list:
         rotation_angle = alarmTaperShape.rotation_angle
-        for height_limit_index,height_limit in enumerate(height_limit_list[::-1]):
-            grading_level=3-height_limit_index
-            if grad>=grading_level:
+        for height_limit_index, height_limit in enumerate(height_limit_list[::-1]):
+            grading_level = 3 - height_limit_index
+            if grad >= grading_level:
                 continue
-            if alarmTaperShape.out_taper_max_value>=height_limit:
-                error_msg+=f"外径最高值 {alarmTaperShape.out_taper_max_value} >= {height_limit} 检测角度{rotation_angle} \n"
-                grad=grading_level
-            if abs(alarmTaperShape.out_taper_min_value)>=height_limit:
-                error_msg+=f"外径最低值 abs({alarmTaperShape.out_taper_max_value}) >= {height_limit} 检测角度{rotation_angle} \n"
-                grad=grading_level
-            if alarmTaperShape.in_taper_max_value>=height_limit:
-                error_msg+=f"内径最高值 {alarmTaperShape.in_taper_max_value} >= {height_limit} 检测角度{rotation_angle} \n"
-                grad=grading_level
-            if alarmTaperShape.in_taper_min_value>=height_limit:
-                error_msg+=f"内径最低值 abs({alarmTaperShape.in_taper_min_value}) >= {height_limit} 检测角度{rotation_angle} \n"
-                grad=grading_level
+            if alarmTaperShape.out_taper_max_value >= height_limit:
+                error_msg += f"外径最高值 {alarmTaperShape.out_taper_max_value} >= {height_limit} 检测角度{rotation_angle} \n"
+                grad = grading_level
+            if abs(alarmTaperShape.out_taper_min_value) >= height_limit:
+                error_msg += f"外径最低值 abs({alarmTaperShape.out_taper_max_value}) >= {height_limit} 检测角度{rotation_angle} \n"
+                grad = grading_level
+            if alarmTaperShape.in_taper_max_value >= height_limit:
+                error_msg += f"内径最高值 {alarmTaperShape.in_taper_max_value} >= {height_limit} 检测角度{rotation_angle} \n"
+                grad = grading_level
+            if alarmTaperShape.in_taper_min_value >= height_limit:
+                error_msg += f"内径最低值 abs({alarmTaperShape.in_taper_min_value}) >= {height_limit} 检测角度{rotation_angle} \n"
+                grad = grading_level
     return AlarmGradResult(grad, error_msg, taper_shape_config)
 
-def gradingAlarmLooseCoil(detection_line_data:List[CoilLineData], loose_coil_config:LooseCoilConfig):
-    name,width,info = loose_coil_config.getConfig()
-    grad_msg=""
-    grad=1
+
+def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_config: LooseCoilConfig):
+    name, width, info = loose_coil_config.getConfig()
+    grad_msg = ""
+    grad = 1
 
     for lineData in detection_line_data:
-        if lineData.max_width_mm>width:
-            grad_msg+=f"松卷检测最宽 {lineData.max_width_mm} 超过限制值 {width}"
-            grad=3
+        if lineData.max_width_mm > width:
+            grad_msg += f"松卷检测最宽 {lineData.max_width_mm} 超过限制值 {width}"
+            grad = 3
     return AlarmGradResult(grad, grad_msg, loose_coil_config)
 
-def grading(data_integration:DataIntegration):
 
+def grading_alarm_flat_roll(data_integration: DataIntegration):
+    next_code = data_integration.next_code
+    alarm_flat_roll_config = alarmConfigProperty.getAlarmFlatRollConfig(next_code)  # 判及 参数
+    flatRollData = data_integration.flatRollData
+    inner_circle_width = data_integration.x_to_mm(flatRollData.inner_circle_width)
+    flatRollData: FlatRollData
+    alarmFlatRollConfig: AlarmFlatRollConfig
+    name, configMax, configMin, configMsg = alarm_flat_roll_config.getConfig()
+    errorMsg = "正常"
+    grad = 1
+    if inner_circle_width <= configMin:
+        errorMsg = f"{name} 内径 {inner_circle_width} <= {configMin}"
+        grad = 3
+    elif inner_circle_width >= configMax:
+        errorMsg = f"{name} 内径 {inner_circle_width} >= {configMax}"
+        grad = 3
+    return AlarmGradResult(grad, errorMsg, configMsg)
+
+
+def grading_alarm_taper_shape(data_integration: DataIntegration):
+    next_code = data_integration.next_code
+    taper_shape_config = alarmConfigProperty.getTaperShapeConfig(next_code)  # 判及 参数
+    name, height_limit_list, inner, out, info = taper_shape_config.getConfig()
+    error_msg = "正常"
+    grad = 1
+
+    max_outer_line_data = None
+    max_inner_line_data = None
+    for line_data in data_integration.lineDataDict.values():
+        if max_outer_line_data is None or line_data.outer_max_point.z > max_outer_line_data.outer_max_point.z:
+            max_outer_line_data = line_data
+        if max_inner_line_data is None or line_data.inner_max_point.z > max_inner_line_data.inner_max_point.z:
+            max_inner_line_data = line_data
+
+    line_data: LineData
+    for height_limit_index, height_limit in enumerate(height_limit_list[::-1]):
+        grading_level = 3 - height_limit_index
+        if grad >= grading_level:
+            continue
+        out_taper_max_value = data_integration.z_to_mm(max_outer_line_data.outer_max_point.z)
+        out_taper_min_value = data_integration.z_to_mm(max_outer_line_data.outer_min_point.z)
+        in_taper_max_value = data_integration.z_to_mm(max_inner_line_data.inner_max_point.z)
+        in_taper_min_value = data_integration.z_to_mm(max_inner_line_data.inner_min_point.z)
+
+        if out_taper_max_value >= height_limit:
+            error_msg += f"外塔最高值 {out_taper_max_value} >= {height_limit} 检测角度{max_outer_line_data.rotation_angle} \n"
+            grad = grading_level
+        # if abs(out_taper_min_value) >= height_limit:
+        #     error_msg += f"外径最低值 abs({out_taper_max_value}) >= {height_limit} 检测角度{rotation_angle} \n"
+        #     grad = grading_level
+        if in_taper_max_value >= height_limit:
+            error_msg += f"内塔最高值 {in_taper_max_value} >= {height_limit} 检测角度{max_inner_line_data.rotation_angle} \n"
+            grad = grading_level
+        # if in_taper_min_value >= height_limit:
+        #     error_msg += f"内径最低值 abs({in_taper_min_value}) >= {height_limit} 检测角度{rotation_angle} \n"
+        #     grad = grading_level
+
+    addObj(AlarmTaperShape(
+        secondaryCoilId=data_integration.coilId,
+        surface=data_integration.surface,
+        out_taper_max_x=max_outer_line_data.outer_max_point.x,
+        out_taper_max_y=max_outer_line_data.outer_max_point.y,
+        out_taper_max_value=data_integration.z_to_mm(max_outer_line_data.outer_max_point.z),
+        out_taper_min_x=max_outer_line_data.outer_max_point.x,
+        out_taper_min_y=max_outer_line_data.outer_max_point.y,
+        out_taper_min_value=data_integration.z_to_mm(max_outer_line_data.outer_max_point.z),
+        in_taper_max_x=max_inner_line_data.inner_max_point.x,
+        in_taper_max_y=max_inner_line_data.inner_max_point.y,
+        in_taper_max_value=data_integration.z_to_mm(max_inner_line_data.inner_max_point.z),
+        in_taper_min_x=max_inner_line_data.inner_max_point.x,
+        in_taper_min_y=max_inner_line_data.inner_max_point.y,
+        in_taper_min_value=data_integration.z_to_mm(max_inner_line_data.inner_max_point.z),
+        rotation_angle=max_outer_line_data.rotation_angle,
+        level=grad,
+        err_msg=error_msg
+    ))
+    return AlarmGradResult(grad, error_msg, taper_shape_config)
+
+
+def grading_alarm_loose_coil(data_integration: DataIntegration):
+    next_code = data_integration.next_code
+    loose_coil_config = alarmConfigProperty.getLooseCoilConfig(next_code)  # 判及 参数
+    name, width, info = loose_coil_config.getConfig()
+    grad_msg = ""
+    grad = 1
+    for lineData in data_integration.lineDataDict.values():
+        max_zero_width_mm = lineData.max_zero_width_mm
+        if max_zero_width_mm > width:
+            grad_msg += f"松卷检测最宽 {max_zero_width_mm} 超过限制值 {width}"
+            print(grad_msg)
+            grad = 3
+    return AlarmGradResult(grad, grad_msg, loose_coil_config)
+
+
+def grading(data_integration: DataIntegration):
     """
         数据库提交判断级别
     Args:
@@ -74,17 +172,24 @@ def grading(data_integration:DataIntegration):
 
     """
     # 获取去向
-    next_code =str(chr(int(data_integration.currentSecondaryCoil.Weight)))
+    next_code = str(chr(int(data_integration.currentSecondaryCoil.Weight)))
     next_name = infoConfigProperty.getNext(next_code)
-    flat_roll_grad_info = gradingAlarmFlatRoll(data_integration.alarmFlat_Roll,alarmConfigProperty.getAlarmFlatRollConfig(next_code))
-    taper_shape_grad_info = gradingAlarmTaperShape(data_integration.alarmTaperShapeList, alarmConfigProperty.getTaperShapeConfig(next_code))
-    alarm_loose_coil_info = gradingAlarmLooseCoil(data_integration.detectionLineData, alarmConfigProperty.getLooseCoilConfig(next_code))
+
+    flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
+    taper_shape_grad_info = grading_alarm_taper_shape(data_integration)
+    alarm_loose_coil_info = grading_alarm_loose_coil(data_integration)
+    # flat_roll_grad_info = gradingAlarmFlatRoll(data_integration.alarmFlat_Roll,
+    #                                            alarmConfigProperty.getAlarmFlatRollConfig(next_code))
+    # taper_shape_grad_info = gradingAlarmTaperShape(data_integration.alarmTaperShapeList,
+    #                                                alarmConfigProperty.getTaperShapeConfig(next_code))
+    # alarm_loose_coil_info = gradingAlarmLooseCoil(data_integration.detectionLineData,
+    #                                               alarmConfigProperty.getLooseCoilConfig(next_code))
 
     alarm_info = AlarmInfo(
         secondaryCoilId=data_integration.coilId,
         surface=data_integration.key,
         nextCode=next_code,
-        nextName = next_name,
+        nextName=next_name,
         taperShapeGrad=taper_shape_grad_info.grad,
         taperShapeMsg=taper_shape_grad_info.errorMsg,
         looseCoilGrad=alarm_loose_coil_info.grad,
@@ -93,11 +198,11 @@ def grading(data_integration:DataIntegration):
         flatRollMsg=flat_roll_grad_info.errorMsg,
         defectGrad=1,
         defectMsg="",
-        grad=max(taper_shape_grad_info.grad,alarm_loose_coil_info.grad,flat_roll_grad_info.grad)
+        grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad, flat_roll_grad_info.grad)
     )
     addObj(alarm_info)
 
 
-def gradingAll(data_integration_list:DataIntegrationList):
+def gradingAll(data_integration_list: DataIntegrationList):
     for dataIntegration in data_integration_list:
         grading(dataIntegration)

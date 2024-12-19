@@ -181,6 +181,15 @@ class LineData:
 
         return segments
 
+    @property
+    def max_zero_width_mm(self):
+        max_width = 0
+
+        for item in self.none_data_sub:
+            if item[-1] > max_width:
+                max_width = item[-1]
+        return max_width
+
     def point_has_data(self, point):
         return point > self.image_threshold
 

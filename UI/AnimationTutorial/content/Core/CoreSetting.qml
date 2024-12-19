@@ -1,6 +1,6 @@
 import QtQuick
+import "../Base"
 
-import "Settings"
 Item {
 
     id:root
@@ -27,7 +27,10 @@ Item {
 
     property bool useLoc: false
 
-    BaseSettings{
+
+    property int headDateShowModel: 0
+    property int dataHeaderHeight:320
+    SettingsBase{
         property alias useImageCache: root.useImageCache
         property alias maxImageCache: root.maxImageCache
         property alias useSharedFolder: root.useSharedFolder
@@ -42,6 +45,9 @@ Item {
         property alias imageServerPort: root.imageServerPort
         property alias dataPort: root.dataPort
         property alias plcPort: root.plcPort
+
+        property alias headDateShowModel:root.headDateShowModel
+        property alias dataHeaderHeight:root.dataHeaderHeight
         category: "AppSettings"
         fileName: "settings.ini"
     }

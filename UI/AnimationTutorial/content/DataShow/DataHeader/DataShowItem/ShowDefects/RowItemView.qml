@@ -18,13 +18,13 @@ ItemDelegate{
             horizontalAlignment: Text.AlignHCenter
              Layout.fillWidth: true
              text:value
-             font.pixelSize: 16
+             font.pixelSize: 18
              font.family: "Arial"
              font.bold:true
 
          }
          Label{
-             text:key+"mm"
+             text:"mm"
              opacity: 0.7
          }
          Item{

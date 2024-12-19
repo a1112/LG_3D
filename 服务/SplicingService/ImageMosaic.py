@@ -317,7 +317,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 error_message = traceback.format_exc()
                 # raise e
                 logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
-                if isLoc:
+                if isLoc and Globs.control.debug_raise:
                     import six
                     six.reraise(Exception, e)
 

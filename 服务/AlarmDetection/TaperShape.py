@@ -36,7 +36,6 @@ def _detection_taper_shape_(data_integration: DataIntegration):
         line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
 
 
-
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
     # print((inner_max_point_values-dataIntegration.median_non_zero)*dataIntegration.scan3dCoordinateScaleZ)
     #

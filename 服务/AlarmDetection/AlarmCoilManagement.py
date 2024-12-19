@@ -20,7 +20,7 @@ def get_coil_alarm(coil_id: str):
 
     alarm_taper_shape_list = Alarm.getAlarmTaperShape(coil_id)
     for alarmItem in alarm_taper_shape_list:
-        taper_shape_info[alarmItem.surface].append(Coil.to_dict(alarmItem))
+        taper_shape_info[alarmItem.surface].append(tool.to_dict(alarmItem))
 
     LooseCoil = {
         "L": [],
@@ -28,7 +28,7 @@ def get_coil_alarm(coil_id: str):
     }
     alarm_loose = Alarm.getAlarmLooseCoil(coil_id)
     for alarmItem in alarm_loose:
-        LooseCoil[alarmItem.surface].append(Coil.to_dict(alarmItem))
+        LooseCoil[alarmItem.surface].append(tool.to_dict(alarmItem))
     return {
         "FlatRoll": flat_roll_info,
         "TaperShape": taper_shape_info,

@@ -1,5 +1,7 @@
-import QtQuick 2.15
-import Qt.labs.settings 1.1
+import QtQuick
+import Qt.labs.settings
+// import QtCore
 Settings {
-            fileName: "config.ini"
+    // property string fileName
+     fileName: "config.ini"
 }

@@ -170,7 +170,7 @@ class DataFolder(Globs.control.BaseDataFolder):
                 # 显示图像
             except Exception as e:
                 logger.error(f"Error in DataFolder {coilId}: {e}")
-                if isLoc:
+                if isLoc and Globs.control.debug_raise:
                     raise e
             finally:
                 logger.info(f"DataFolder {coilId} end")

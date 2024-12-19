@@ -134,11 +134,12 @@ class ImageMosaicThread(Thread):
                     # if self.debugType:
                     #     if self.endCoilId <= secondary_coil.Id:
                     #         return -1
-            except BaseException as e:
+            except (BaseException,) as e:
                 error_message = traceback.format_exc()
+                logger.error("打印错位信息 ", e)
                 logger.error(error_message)
-                if isLoc:
-                    raise e
+                # if isLoc:
+                #     raise e
             time.sleep(1)
 
     def addMsg(self, msg, level=logging.DEBUG):

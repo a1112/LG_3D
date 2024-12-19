@@ -1,5 +1,6 @@
 import math
 
+
 def calculate_angle(ax, ay, bx, by):
     # 计算 AB 向量的角度
     delta_x = bx - ax

@@ -14,7 +14,7 @@ ColumnLayout{
 
         DataHeaderView{
             SplitView.fillWidth: true
-            SplitView.preferredHeight: 260
+            SplitView.preferredHeight: coreSetting.dataHeaderHeight//260
         }
 
         DataShowRootLayout{     // <----------

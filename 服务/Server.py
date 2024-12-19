@@ -5,6 +5,7 @@ LG_3D
 from multiprocessing import Process, freeze_support
 import uvicorn
 from utils.StdoutLog import Logger
+
 Logger("服务")
 from Globs import serverConfigProperty
 from api import app
@@ -32,7 +33,7 @@ from api import ApiTest
 
 
 class ServerProcess(Process):
-    def __init__(self,port):
+    def __init__(self, port):
         super().__init__()
         self.port = port
 

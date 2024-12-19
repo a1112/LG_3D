@@ -81,6 +81,10 @@ class FlatRollData(BaseData):
             accuracy_y=dataIntegration.accuracy_y,
         )
 
+    @property
+    def inner_circle_width(self):
+        return self.inner_circle.ellipse.width
+
     def commit(self):
         """
         救数据结构

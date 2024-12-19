@@ -38,6 +38,7 @@ class ControlManagement(ThreadClass):
         self.leveling_3d_wk_default_value = 32767
         self.save_3d_obj = True
         self.debug_show = False
+        self.debug_raise = False
 
         self.start()
 

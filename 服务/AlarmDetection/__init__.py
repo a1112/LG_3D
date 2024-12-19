@@ -8,6 +8,7 @@ from .CoilGrading import grading, gradingAll
 from .TaperShape import _detection_taper_shape_, addAlarmTaperShape, _detection_taper_shape_all_
 from .AlarmLooseCoil import _detectionAlarmLooseCoil_, _detectionAlarmLooseCoilAll_
 
+
 def detection(dataIntegration: DataIntegration):
     """
       检测的入口 old

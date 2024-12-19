@@ -130,6 +130,10 @@ class DataIntegration:
         if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
             self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
+    @property
+    def next_code(self):
+        return str(chr(int(self.currentSecondaryCoil.Weight)))
+
     def set_npy_data(self, npy_data):
         print("set set_npy_data", npy_data.shape)
         self.__npyData__ = npy_data
