@@ -3,7 +3,7 @@ from threading import Thread
 from multiprocessing import Process
 
 import CONFIG
-from CoilDataBase.models import SecondaryCoil
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 from ImageDataSave import ImageDataSave
 from ImageBuffer import SickBuffer
 from Signal import signal, lastTimeDict

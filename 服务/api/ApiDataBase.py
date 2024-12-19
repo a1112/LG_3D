@@ -6,7 +6,8 @@ from fastapi import APIRouter
 
 import CONFIG
 import Globs
-from CoilDataBase.models import SecondaryCoil, AlarmInfo
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from CoilDataBase.models.AlarmInfo import AlarmInfo
 from CoilDataBase import Coil, tool
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc

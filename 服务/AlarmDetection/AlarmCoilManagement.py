@@ -1,5 +1,5 @@
 from CoilDataBase import Coil, Alarm, tool
-from CoilDataBase.models import AlarmFlatRoll
+from CoilDataBase.models.AlarmFlatRoll import AlarmFlatRoll
 
 
 def get_coil_alarm(coil_id: str):

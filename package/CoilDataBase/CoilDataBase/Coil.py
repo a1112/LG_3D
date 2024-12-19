@@ -1,13 +1,19 @@
+import datetime
 from typing import List
 
 from sqlalchemy.orm import subqueryload
 
-from .core import Session
-from .models import *
-from .tool import to_dict
-import datetime
-
 from . import tool
+from .core import Session
+from .models.Coil import Coil
+from .models.CoilDefect import CoilDefect
+from .models.CoilState import CoilState
+from .models.DefectClassDict import DefectClassDict
+from .models.LineData import LineData
+from .models.PlcData import PlcData
+from .models.PointData import PointData
+from .models.SecondaryCoil import SecondaryCoil
+from .models.ServerDetectionError import ServerDetectionError
 
 
 def addObj(obj):

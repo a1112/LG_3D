@@ -1,7 +1,7 @@
 
 
 from CoilDataBase.Alarm import Session
-from CoilDataBase.models import SecondaryCoil
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 
 with Session() as session:
     old_secondaryCoil = None

@@ -1,6 +1,9 @@
 from typing import List
 
-from CoilDataBase.models import SecondaryCoil, AlarmFlatRoll, AlarmTaperShape, AlarmInfo
+from CoilDataBase.models.AlarmFlatRoll import AlarmFlatRoll
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from CoilDataBase.models.AlarmTaperShape import AlarmTaperShape
+from CoilDataBase.models.AlarmInfo import AlarmInfo
 from CoilDataBase.Coil import addObj
 from Globs import alarmConfigProperty, infoConfigProperty
 from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig

@@ -1,6 +1,6 @@
 from typing import Union
 
-from CoilDataBase.models import AlarmLooseCoil
+from CoilDataBase.models.AlarmLooseCoil import AlarmLooseCoil
 from property.Base import DataIntegration, DataIntegrationList
 from property.Data3D import LineData
 from CoilDataBase.Alarm import addAlarmLooseCoil

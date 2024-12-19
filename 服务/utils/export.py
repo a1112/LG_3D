@@ -4,8 +4,13 @@ import datetime
 import xlsxwriter
 
 from CoilDataBase import Coil
-from CoilDataBase.models import SecondaryCoil, AlarmFlatRoll, PlcData, CoilState, AlarmInfo, AlarmTaperShape, \
-    AlarmLooseCoil
+from CoilDataBase.models.AlarmFlatRoll import AlarmFlatRoll
+from CoilDataBase.models.PlcData import PlcData
+from CoilDataBase.models.CoilState import CoilState
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from CoilDataBase.models.AlarmTaperShape import AlarmTaperShape
+from CoilDataBase.models.AlarmLooseCoil import AlarmLooseCoil
+from CoilDataBase.models.AlarmInfo import AlarmInfo
 import Globs
 
 def formatTime(time):

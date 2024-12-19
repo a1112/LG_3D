@@ -2,7 +2,8 @@ import datetime
 
 import numpy as np
 from harvesters.core import Buffer
-from CoilDataBase.models import SecondaryCoil
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+
 
 class SickBuffer:
     def __init__(self, buffer):

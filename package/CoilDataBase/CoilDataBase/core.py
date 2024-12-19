@@ -1,10 +1,10 @@
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
-import datetime
-from .models import *
+
 from .config import get_url
-from sqlalchemy import create_engine
-from .config import get_url
+from .models._base_ import Base
+
 
 def get_engine(url=None):
     if url is None:

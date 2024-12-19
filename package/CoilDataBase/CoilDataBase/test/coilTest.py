@@ -1,5 +1,5 @@
 from CoilDataBase.core import get_engine
-from CoilDataBase.models import Base
+from CoilDataBase.models._base_ import Base
 
 get_engine("sqlite:///CoilDataBase.db")
 

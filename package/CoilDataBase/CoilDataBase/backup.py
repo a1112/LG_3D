@@ -3,11 +3,10 @@ import subprocess
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .core import Session
-from .config import Config
-from .models import *
 from . import models
-import datetime
+from .config import Config
+from .core import Session
+from .models._base_ import Base
 
 
 def get_mysqldump_cmd(save_file, mysqldump_exe="mysqldump"):

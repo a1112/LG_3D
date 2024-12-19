@@ -2,7 +2,7 @@ import time
 from threading import Thread
 import CONFIG
 from CoilDataBase import Coil
-from CoilDataBase.models import SecondaryCoil
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 
 lastTimeDict = {
     "t":0

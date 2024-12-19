@@ -8,7 +8,8 @@ from PIL import Image
 
 from CONFIG import capTureConfig
 from CoilDataBase.Coil import addObj
-from CoilDataBase.models import SecondaryCoil, CapTrueLogItem
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from CoilDataBase.models.CapTrueLogItem import CapTrueLogItem
 from ImageBuffer import SickBuffer
 from Camera import SickCamera
 from Log import logger

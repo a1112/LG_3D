@@ -10,8 +10,8 @@ from property.Types import Point3D
 from tools.alg import IQR_outliers
 from tools.tool import get_intersection_points
 
-from CoilDataBase.models import LineData as LineDataModel
-from CoilDataBase.models import PointData as PointDataModel
+from CoilDataBase.models.LineData import LineData as LineDataModel
+from CoilDataBase.models.PointData import PointData as PointDataModel
 
 
 def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):

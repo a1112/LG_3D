@@ -7,7 +7,7 @@ import numpy as np
 import Globs
 from property.Base import DataIntegrationList
 from property.Types import Point2D, DetectionTaperShapeType
-from CoilDataBase.models import AlarmTaperShape
+from CoilDataBase.models.AlarmTaperShape import AlarmTaperShape
 from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate
 from utils.Log import logger

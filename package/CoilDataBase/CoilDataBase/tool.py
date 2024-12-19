@@ -1,6 +1,19 @@
 import datetime
+
+import CoilDataBase.models.AlarmFlatRoll
+import CoilDataBase.models.AlarmInfo
+import CoilDataBase.models.AlarmLooseCoil
+import CoilDataBase.models.AlarmTaperShape
+import CoilDataBase.models.Coil
+import CoilDataBase.models.CoilAlarmStatus
+import CoilDataBase.models.CoilDefect
+import CoilDataBase.models.CoilState
+import CoilDataBase.models.DataEllipse
+import CoilDataBase.models.LineData
+import CoilDataBase.models.PointData
+import CoilDataBase.models.ServerDetectionError
+import CoilDataBase.models.TaperShapePoint
 from .core import Session
-from . import models
 
 
 def getDateInfo(dateTime):
@@ -60,19 +73,32 @@ def clear_by_coil_id(coilId):
     Returns:
     """
     with Session() as session:
-        session.query(models.Coil).filter(models.Coil.SecondaryCoilId == coilId).delete()
-        session.query(models.CoilState).filter(models.CoilState.secondaryCoilId == coilId).delete()
-        session.query(models.CoilAlarmStatus).filter(models.CoilAlarmStatus.secondaryCoilId == coilId).delete()
-        session.query(models.AlarmFlatRoll).filter(models.AlarmFlatRoll.secondaryCoilId == coilId).delete()
-        session.query(models.TaperShapePoint).filter(models.TaperShapePoint.secondaryCoilId == coilId).delete()
-        session.query(models.AlarmTaperShape).filter(models.AlarmTaperShape.secondaryCoilId == coilId).delete()
-        session.query(models.AlarmLooseCoil).filter(models.AlarmLooseCoil.secondaryCoilId == coilId).delete()
-        session.query(models.AlarmInfo).filter(models.AlarmInfo.secondaryCoilId == coilId).delete()
-        session.query(models.ServerDetectionError).filter(models.ServerDetectionError.secondaryCoilId == coilId).delete()
-        session.query(models.DataEllipse).filter(models.DataEllipse.secondaryCoilId == coilId).delete()
-        session.query(models.LineData).filter(models.LineData.secondaryCoilId == coilId).delete()
-        session.query(models.PointData).filter(models.PointData.secondaryCoilId == coilId).delete()
-        session.query(models.CoilDefect).filter(models.CoilDefect.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.Coil.Coil).filter(
+            CoilDataBase.models.Coil.Coil.SecondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.CoilState.CoilState).filter(
+            CoilDataBase.models.CoilState.CoilState.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.CoilAlarmStatus.CoilAlarmStatus).filter(
+            CoilDataBase.models.CoilAlarmStatus.CoilAlarmStatus.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.AlarmFlatRoll.AlarmFlatRoll).filter(
+            CoilDataBase.models.AlarmFlatRoll.AlarmFlatRoll.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.TaperShapePoint.TaperShapePoint).filter(
+            CoilDataBase.models.TaperShapePoint.TaperShapePoint.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.AlarmTaperShape.AlarmTaperShape).filter(
+            CoilDataBase.models.AlarmTaperShape.AlarmTaperShape.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.AlarmLooseCoil.AlarmLooseCoil).filter(
+            CoilDataBase.models.AlarmLooseCoil.AlarmLooseCoil.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.AlarmInfo.AlarmInfo).filter(
+            CoilDataBase.models.AlarmInfo.AlarmInfo.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.ServerDetectionError.ServerDetectionError).filter(
+            CoilDataBase.models.ServerDetectionError.ServerDetectionError.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.DataEllipse.DataEllipse).filter(
+            CoilDataBase.models.DataEllipse.DataEllipse.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.LineData.LineData).filter(
+            CoilDataBase.models.LineData.LineData.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.PointData.PointData).filter(
+            CoilDataBase.models.PointData.PointData.secondaryCoilId == coilId).delete()
+        session.query(CoilDataBase.models.CoilDefect.CoilDefect).filter(
+            CoilDataBase.models.CoilDefect.CoilDefect.secondaryCoilId == coilId).delete()
         session.commit()
 
 def addObj(obj):
