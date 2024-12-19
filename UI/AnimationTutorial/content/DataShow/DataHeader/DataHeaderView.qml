@@ -14,7 +14,7 @@ Loader{
             currentIndex: dataShowCore.topDataManage.currentShowModel
             DataShowItemDefects{  // 缺陷显示
             }
-            DataShowItemInfos{
+            DataShowItemInfos{      // 数据信息
             }
             DataShowItemCharts{  //  charts
             }

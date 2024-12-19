@@ -13,7 +13,6 @@ Item {
         const dx = px - cx
         const dy = py - cy
         var r=ellipseWidth/2-100
-        console.log("point_type,",point_type)
         if (point_type === "max_inner"){
              r = ellipseWidth/2-100}
         else if (point_type === "min_inner"){

@@ -33,8 +33,8 @@ class SurfaceConfigProperty:
         return f"{self.saveFolder}/{coil_id}/mask/{type_}" + self.saveImageType
 
     def get_Info(self, coil_id):
-        coilState = Coil.getCoilStateByCoilId(coil_id, self.key)
-        if coilState:
+        coil_state = Coil.getCoilStateByCoilId(coil_id, self.key)
+        if coil_state:
             return json.loads(Coil.getCoilStateByCoilId(coil_id, self.key).jsonData)
 
         # jsonFile = self.saveFolder/str(coil_id)/"data.json"

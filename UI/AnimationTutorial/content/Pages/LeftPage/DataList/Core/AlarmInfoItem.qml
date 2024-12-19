@@ -3,20 +3,28 @@ import QtQuick
 Item {
 
 property var data
-
-property int grad:data.grad
-property int defectGrad: data.defectGrad??1
-
-property int taperShapeGrad:data.taperShapeGrad
-property int looseCoilGrad:data.looseCoilGrad
-property int flatRollGrad:data.flatRollGrad
-
-property string defectMsg:data.defectMsg
-property string taperShapeMsg:data.taperShapeMsg
-property string looseCoilMsg:data.looseCoilMsg
-property string flatRollMsg:data.flatRollMsg
-
+onDataChanged:{
+    grad = data.grad
+    defectGrad = data.defectGrad
+    taperShapeGrad=data.taperShapeGrad
+    looseCoilGrad = data.looseCoilGrad
+    flatRollGrad = data.flatRollGrad
+    defectMsg = data.defectMsg
+    taperShapeMsg = data.taperShapeMsg
+    looseCoilMsg = data.looseCoilMsg
+    flatRollMsg = data.flatRollMsg
+}
 
 
+property int grad:0
+property int defectGrad:1
 
+property int taperShapeGrad:1
+property int looseCoilGrad:1
+property int flatRollGrad:1
+
+property string defectMsg:""
+property string taperShapeMsg:""
+property string looseCoilMsg:""
+property string flatRollMsg:""
 }

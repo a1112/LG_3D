@@ -1,9 +1,9 @@
 import io
+import os
+from functools import lru_cache
 
 import numpy as np
 from PIL import Image
-from functools import lru_cache
-import os
 
 
 class ImageCache:

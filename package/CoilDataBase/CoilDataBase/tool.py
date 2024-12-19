@@ -1,43 +1,31 @@
 import datetime
 
-import CoilDataBase.models.AlarmFlatRoll
-import CoilDataBase.models.AlarmInfo
-import CoilDataBase.models.AlarmLooseCoil
-import CoilDataBase.models.AlarmTaperShape
-import CoilDataBase.models.Coil
-import CoilDataBase.models.CoilAlarmStatus
-import CoilDataBase.models.CoilDefect
-import CoilDataBase.models.CoilState
-import CoilDataBase.models.DataEllipse
-import CoilDataBase.models.LineData
-import CoilDataBase.models.PointData
-import CoilDataBase.models.ServerDetectionError
-import CoilDataBase.models.TaperShapePoint
+from .models import *
 from .core import Session
 
 
-def getDateInfo(dateTime):
+def get_date_info(date_time):
     """
     将时间戳，datetime，转换成 字典
-    :param dateTime:
+    :param date_time:
     :return:
     """
-    if isinstance(dateTime, datetime.datetime):
-        return {"year": dateTime.year,
-                "month": dateTime.month,
-                "weekday": dateTime.weekday(),
-                "day": dateTime.day,
-                "hour": dateTime.hour,
-                "minute": dateTime.minute,
-                "second": dateTime.second,
+    if isinstance(date_time, datetime.datetime):
+        return {"year": date_time.year,
+                "month": date_time.month,
+                "weekday": date_time.weekday(),
+                "day": date_time.day,
+                "hour": date_time.hour,
+                "minute": date_time.minute,
+                "second": date_time.second,
                 }
-    if isinstance(dateTime, (float, int)):
-        return getDateInfo(datetime.datetime.fromtimestamp(dateTime))
-    if isinstance(dateTime, datetime.timedelta):
-        return {"day": dateTime.days,
-                "hour": int(dateTime.seconds / 3600),
-                "minute": int(dateTime.seconds / 60) % 60,
-                "second": dateTime.seconds % 60
+    if isinstance(date_time, (float, int)):
+        return get_date_info(datetime.datetime.fromtimestamp(date_time))
+    if isinstance(date_time, datetime.timedelta):
+        return {"day": date_time.days,
+                "hour": int(date_time.seconds / 3600),
+                "minute": int(date_time.seconds / 60) % 60,
+                "second": date_time.seconds % 60
                 }
 
 
@@ -59,49 +47,36 @@ def to_dict(obj, up_data: dict = None):
         rd.update(up_data)
         return rd
     elif isinstance(obj, datetime.datetime):
-        return getDateInfo(obj)
+        return get_date_info(obj)
     else:
         return obj
 
 
-def clear_by_coil_id(coilId):
+def clear_by_coil_id(coil_id):
     """
         数据清理
     Args:
-        coilId:
+        coil_id:
 
     Returns:
     """
     with Session() as session:
-        session.query(CoilDataBase.models.Coil.Coil).filter(
-            CoilDataBase.models.Coil.Coil.SecondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.CoilState.CoilState).filter(
-            CoilDataBase.models.CoilState.CoilState.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.CoilAlarmStatus.CoilAlarmStatus).filter(
-            CoilDataBase.models.CoilAlarmStatus.CoilAlarmStatus.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.AlarmFlatRoll.AlarmFlatRoll).filter(
-            CoilDataBase.models.AlarmFlatRoll.AlarmFlatRoll.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.TaperShapePoint.TaperShapePoint).filter(
-            CoilDataBase.models.TaperShapePoint.TaperShapePoint.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.AlarmTaperShape.AlarmTaperShape).filter(
-            CoilDataBase.models.AlarmTaperShape.AlarmTaperShape.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.AlarmLooseCoil.AlarmLooseCoil).filter(
-            CoilDataBase.models.AlarmLooseCoil.AlarmLooseCoil.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.AlarmInfo.AlarmInfo).filter(
-            CoilDataBase.models.AlarmInfo.AlarmInfo.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.ServerDetectionError.ServerDetectionError).filter(
-            CoilDataBase.models.ServerDetectionError.ServerDetectionError.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.DataEllipse.DataEllipse).filter(
-            CoilDataBase.models.DataEllipse.DataEllipse.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.LineData.LineData).filter(
-            CoilDataBase.models.LineData.LineData.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.PointData.PointData).filter(
-            CoilDataBase.models.PointData.PointData.secondaryCoilId == coilId).delete()
-        session.query(CoilDataBase.models.CoilDefect.CoilDefect).filter(
-            CoilDataBase.models.CoilDefect.CoilDefect.secondaryCoilId == coilId).delete()
+        session.query(Coil).filter(Coil.SecondaryCoilId == coil_id).delete()
+        session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).delete()
+        session.query(CoilAlarmStatus).filter(CoilAlarmStatus.secondaryCoilId == coil_id).delete()
+        session.query(AlarmFlatRoll).filter(AlarmFlatRoll.secondaryCoilId == coil_id).delete()
+        session.query(TaperShapePoint).filter(TaperShapePoint.secondaryCoilId == coil_id).delete()
+        session.query(AlarmTaperShape).filter(AlarmTaperShape.secondaryCoilId == coil_id).delete()
+        session.query(AlarmLooseCoil).filter(AlarmLooseCoil.secondaryCoilId == coil_id).delete()
+        session.query(AlarmInfo).filter(AlarmInfo.secondaryCoilId == coil_id).delete()
+        session.query(ServerDetectionError).filter(ServerDetectionError.secondaryCoilId == coil_id).delete()
+        session.query(DataEllipse).filter(DataEllipse.secondaryCoilId == coil_id).delete()
+        session.query(LineData).filter(LineData.secondaryCoilId == coil_id).delete()
+        session.query(PointData).filter(PointData.secondaryCoilId == coil_id).delete()
+        session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id).delete()
         session.commit()
 
-def addObj(obj):
+def add_obj(obj):
     with Session() as session:
         if isinstance(obj, list):
             session.add_all(obj)

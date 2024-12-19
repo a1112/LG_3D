@@ -30,13 +30,13 @@ CoreModel_ {
         }
 
     readonly property color currentCoilListTextColor: currentCoilListIndex === 0 ? Material.color(Material.Green) : Material.color(Material.Yellow)
-    property ListModel historyCoilListModel: ListModel{
+    readonly property ListModel historyCoilListModel: ListModel{
     }
 
-    property ListModel coilListModel: ListModel{  // list
+    readonly property ListModel coilListModel: ListModel{  // list
     }
 
-    property ListModel realCoilListModel: coilListModel
+    readonly property ListModel realCoilListModel: coilListModel
 
     readonly property ListModel currentCoilListModel: currentCoilListIndex === 0 ? realCoilListModel : historyCoilListModel
     function getCurrentCoilListModelMinMaxId(){
@@ -46,8 +46,10 @@ CoreModel_ {
         return [currentCoilListModel.get(currentCoilListModel.count-1).DateTime,currentCoilListModel.get(0).DateTime]
     }
 
-
-    property int lastCoilId: 0
+    function getLastCoilId(){
+        return realCoilListModel.get(0).SecondaryCoilId
+    }
+    readonly property int lastCoilId: realCoilListModel.get(Math.min(0,realCoilListModel.count)).SecondaryCoilId
 
     property ListModel surfaceModel: ListModel{
     }
@@ -85,8 +87,15 @@ CoreModel_ {
         }
         upData["coilList"].forEach(function(coil){
             if(coil.SecondaryCoilId > lastCoilId){
-                coilListModel.insert(0,coil)
-                lastCoilId = coil.SecondaryCoilId
+                realCoilListModel.insert(0,coil)
+                // lastCoilId = coil.SecondaryCoilId
+            }
+            else{
+                for (let i = 0;i<20;i++){
+                    if (realCoilListModel.get(i).SecondaryCoilId == coil.SecondaryCoilId){
+                        realCoilListModel.set(i,coil)
+                    }
+                }
             }
         })
         if (keepLatest){

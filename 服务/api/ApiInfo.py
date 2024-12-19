@@ -1,9 +1,9 @@
 
 from fastapi import APIRouter
 
-from .api_core import app
-from Globs import serverConfigProperty
 import Init
+from Globs import serverConfigProperty
+from .api_core import app
 
 router = APIRouter(tags=["参数服务"])
 

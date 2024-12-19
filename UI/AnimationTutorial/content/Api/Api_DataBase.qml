@@ -35,7 +35,12 @@ Api_Base {
         return ajax.get(url_,success,failure)
     }
 
+    function getInfo(success,failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"info"),success,failure)
+    }
+
     function getDataFlush(coilId,success,failure){
+        console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId))
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId),success,failure)
     }
 

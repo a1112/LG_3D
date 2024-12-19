@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from . import models
 from .config import Config
 from .core import Session
-from .models._base_ import Base
+from .models import *
 
 
 def get_mysqldump_cmd(save_file, mysqldump_exe="mysqldump"):

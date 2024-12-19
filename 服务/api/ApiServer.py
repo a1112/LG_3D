@@ -3,11 +3,10 @@ import json
 from queue import Queue
 from threading import Thread
 
+from fastapi import APIRouter
 from fastapi import WebSocket
 
 import Globs
-
-from fastapi import APIRouter
 from .api_core import app
 
 router = APIRouter(tags=["算法服务-与算法同步运行"])

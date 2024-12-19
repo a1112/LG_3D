@@ -15,18 +15,18 @@ Item{
         spacing: 10
         CheckRecItem{
             text: "缺陷".split("").join('\n')
-            height:50
+            height:60
             currentShowModel:dataShowCore.topDataManage.defectShowModel
         }
 
         CheckRecItem{
             text: "数据".split("").join('\n')
-            height:50
+            height:60
             currentShowModel:dataShowCore.topDataManage.dataInfoShowModel
         }
         CheckRecItem{
             text: "曲线".split("").join('\n')
-            height:50
+            height:60
             currentShowModel:dataShowCore.topDataManage.lineShowModel
 
         }

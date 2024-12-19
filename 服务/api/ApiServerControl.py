@@ -4,9 +4,9 @@
 """
 from typing import Dict
 
-from Globs import control
-
 from fastapi import APIRouter
+
+from Globs import control
 from .api_core import app
 
 router = APIRouter(tags=["参数控制服务"])

@@ -1,9 +1,8 @@
+import cv2
 import numpy as np
 from ultralytics import YOLO
-from PIL import Image
-from pathlib import Path
+
 import CONFIG
-import cv2
 
 
 class CoilAreaModel:

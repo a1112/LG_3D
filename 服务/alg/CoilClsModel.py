@@ -1,15 +1,12 @@
 import time
+from pathlib import WindowsPath
 
+import numpy as np
 import torch
+from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
-from PIL import Image
-from pathlib import Path, WindowsPath
-from tqdm import tqdm
-import shutil
-import numpy as np
 from timm.models import create_model
-from collections import defaultdict
 
 
 class CoilClsModel:

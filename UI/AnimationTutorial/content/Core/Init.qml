@@ -39,12 +39,13 @@ Item {
 
 
     function flushList(){
-        coreModel.coilListModel.clear()
-        api.getDataFlush(0,(result)=>{
+
+        api.getInfo((result)=>{
             initApp(JSON.parse(result))
         },(error)=>{
             console.log("error")
         })
+        coreModel.coilListModel.clear()
         api.getCoilList(init_num,(result)=>{
                         initCoilByData(JSON.parse(result))
                         },(error)=>{

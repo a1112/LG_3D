@@ -3,8 +3,8 @@ import time
 from pathlib import Path
 
 from PIL import Image
-from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse, FileResponse, Response
 
 from Globs import serverConfigProperty
 from tools.DataGet import DataGet, noFindImageByte

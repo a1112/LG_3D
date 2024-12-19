@@ -6,8 +6,8 @@ Item {
     readonly property bool is2DrootView:rootViewIndex==0
     readonly property bool is3DrootView:rootViewIndex==1
 
-    property  PointTool pointTool : PointTool{}
-
+    property  PointTool pointTool  : PointTool{}     //  处理数据点
+    property CircleTool circleTool : CircleTool{}   //  处理 圆相关数据
     function rootViewto2D(){
         rootViewIndex=0
     }
@@ -61,6 +61,9 @@ Item {
     onCoilInfoChanged: {
         if (coilInfo && coilInfo.circleConfig){
         let inner_circle=coilInfo.circleConfig.inner_circle
+            circleTool.init("")
+        console.log("coilInfo.circleConfig")
+            console.log(JSON.stringify(coilInfo.circleConfig))yyc
         lineData = []
         inner_circle_centre =inner_circle.circlex
         inner_ellipse = inner_circle.ellipse
@@ -181,8 +184,6 @@ Item {
         api.getCoilInfo(coilId_,key,
                         (result)=>{
                             setCoilInfo(JSON.parse(result))
-
-
                         },
                         (error)=>{
                             console.log("error")

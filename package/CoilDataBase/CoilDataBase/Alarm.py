@@ -1,12 +1,10 @@
 from . import tool
 from .core import Session
-from .models.AlarmFlatRoll import AlarmFlatRoll
-from .models.AlarmLooseCoil import AlarmLooseCoil
-from .models.AlarmTaperShape import AlarmTaperShape
+from .models import *
 
 
 def addObj(obj):
-    return tool.addObj(obj)
+    return tool.add_obj(obj)
 
 
 def addAlarmFlatRoll(alarmFlatRoll):

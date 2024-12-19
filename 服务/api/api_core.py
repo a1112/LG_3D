@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from Globs import serverConfigProperty
 
 app = FastAPI()

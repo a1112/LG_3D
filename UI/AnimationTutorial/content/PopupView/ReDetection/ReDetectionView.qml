@@ -111,7 +111,9 @@ Menu{
 
     WebSocket{
         id:ws_id
-        url:api.getWsReDetectionUrl()
+        url:{
+            return api.getWsReDetectionUrl()
+        }
         onTextMessageReceived:(message)=>{
                                   root.reDetectionStatus.setRunning()
                               }

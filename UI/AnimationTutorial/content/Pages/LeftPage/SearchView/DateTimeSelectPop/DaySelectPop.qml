@@ -31,35 +31,35 @@ BaseSelectPop{
         RowLayout{
             height: titleLab.height
             width: col.width
-            Pane{
-                anchors.fill: parent
-            }
+            // Pane{
+            //     anchors.fill: parent
+            // }
         Label {
             id:titleLab
-            text:dateTime.formatDate
+            text:root.dateTime.formatDate
             font.pixelSize: 24
             color:Material.color(Material.Blue)
             horizontalAlignment: Text.AlignHCenter
 
         }
             ComboBox{
-                model: dateTime.yearModel
-                currentIndex:dateTime.fullYear-dateTime.nowFullYear+7
+                model: root.dateTime.yearModel
+                currentIndex:root.dateTime.fullYear-dateTime.nowFullYear+7
                 onCurrentTextChanged:
                 {
                 console.log(currentText)
-                dateTime.fullYear=parseInt(currentText)
+                root.dateTime.fullYear=parseInt(currentText)
                 }
 
                 implicitHeight: titleLab.height
             }
             ComboBox{
-                 model:  dateTime.monthModel
-                 currentIndex:dateTime.month-1
+                 model:  root.dateTime.monthModel
+                 currentIndex:root.dateTime.month-1
                  implicitHeight: titleLab.height
                  onCurrentTextChanged:
                  {
-                 dateTime.month=parseInt(currentText)
+                 root.dateTime.month=parseInt(currentText)
                  }
             }
         }

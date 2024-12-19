@@ -3,15 +3,13 @@ import time
 
 import cv2
 import numpy as np
-
-from property.Types import Point2D
-from property.Data3D import LineData
-from tools.DataGet import DataGet
-from fastapi.responses import StreamingResponse
 from PIL import Image
-from ._tool_ import get_bool
-
 from fastapi import APIRouter
+
+from property.Data3D import LineData
+from property.Types import Point2D
+from tools.DataGet import DataGet
+from ._tool_ import get_bool
 from .api_core import app
 
 router = APIRouter(tags=["深度数据访问服务"])

@@ -1,10 +1,11 @@
 import os
 import time
 
-from fastapi.responses import FileResponse, StreamingResponse
 from fastapi import UploadFile, File, APIRouter
+from fastapi.responses import FileResponse, StreamingResponse
 
 from .api_core import app
+
 router = APIRouter(tags=["测试服务"])
 
 @router.get("/download_test")

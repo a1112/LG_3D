@@ -1,14 +1,13 @@
-import time
 from collections import defaultdict
+
 import numpy as np
 from PIL import Image
 
+from CoilDataBase.Coil import addDefects
 from Globs import serverConfigProperty
 from property.Base import DataIntegrationList
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .CoilMaskModel import CoilDetectionModel
-
-from CoilDataBase.Coil import addDefects
 
 cdm = CoilDetectionModel()
 

@@ -5,19 +5,11 @@ from sqlalchemy.orm import subqueryload
 
 from . import tool
 from .core import Session
-from .models.Coil import Coil
-from .models.CoilDefect import CoilDefect
-from .models.CoilState import CoilState
-from .models.DefectClassDict import DefectClassDict
-from .models.LineData import LineData
-from .models.PlcData import PlcData
-from .models.PointData import PointData
-from .models.SecondaryCoil import SecondaryCoil
-from .models.ServerDetectionError import ServerDetectionError
+from .models import *
 
 
 def addObj(obj):
-    return tool.addObj(obj)
+    return tool.add_obj(obj)
 
 
 def getAllJoinQuery(session: Session):
@@ -273,9 +265,9 @@ def deleteCoilByCoilId(Id_):
         session.commit()
 
 
-def getCoilStateByCoilId(coilId, surface):
+def getCoilStateByCoilId(coil_id, surface):
     with Session() as session:
-        return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId,
+        return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id,
                                                CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 

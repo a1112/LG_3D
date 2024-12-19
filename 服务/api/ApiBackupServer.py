@@ -1,10 +1,11 @@
 import json
+
 from fastapi import WebSocket, APIRouter
+
 from CoilDataBase import backup
+from Globs import serverConfigProperty
 from utils import Backup
 from .api_core import app
-from Globs import serverConfigProperty
-
 
 router = APIRouter(tags=["备份服务"])
 

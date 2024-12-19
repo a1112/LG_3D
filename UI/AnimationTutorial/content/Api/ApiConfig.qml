@@ -18,17 +18,19 @@ Item {
         //  端口自动分配字典
         return {}
     }
+    readonly property string protocol: "http://"
+    readonly property string ws_protocol:"ws://"
 
     readonly property string serverUrl: protocol+hostname+":"+port
-    readonly property string wsServerUrl: "ws://"+hostname+":"+port
+    readonly property string wsServerUrl: ws_protocol+hostname+":"+port
 
     readonly property string serverUrlDaaBase: protocol+hostname+":"+databasPort
-    readonly property string wsServerUrlDaaBase: "ws://"+hostname+":"+databasPort
+    readonly property string wsServerUrlDaaBase: ws_protocol+hostname+":"+databasPort
 
     readonly property string serverUrlImage: protocol+hostname+":"+imageServerPort
     readonly property string serverUrlData: protocol+hostname+":"+dataPort
 
-    readonly property string protocol: "http://"
+
     readonly property string hostname:coreSetting.server_ip
     readonly property int port: coreSetting.server_port
 
@@ -56,6 +58,9 @@ Item {
     function getAutoUrl(key){
         return protocol+hostname+":"+get_key_port(key)
     }
+    function getAutoWsUrl(key){
+        return ws_protocolChanged+":"+server_port_base
+    }
 
     function url(reUrl,...args){
         let key =""
@@ -63,9 +68,9 @@ Item {
         if (auto_server_port){
             // 自动端口映射
             reUrl = getAutoUrl(args[0])
-            // if (reUrl.indexOf("ws")>=0){
-            //     reUrl = getBaseUrl()
-            // }
+            if (reUrl.indexOf("ws")>=0){
+                reUrl = getAutoWsUrl(args[0])
+            }
             // else{
             // reUrl = getAutoUrl(args[0])
             // }

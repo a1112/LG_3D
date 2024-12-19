@@ -1,22 +1,22 @@
 import datetime
 import json
 
-from fastapi.responses import StreamingResponse
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
 import CONFIG
 import Globs
-from CoilDataBase.models.SecondaryCoil import SecondaryCoil
-from CoilDataBase.models.AlarmInfo import AlarmInfo
-from CoilDataBase import Coil, tool
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc
+from CoilDataBase import Coil, tool
+from CoilDataBase.models.AlarmInfo import AlarmInfo
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from Globs import serverConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
-
-from .api_core import app
 from utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
-from Globs import serverConfigProperty
+from .api_core import app
+
 serverConfigProperty: ServerConfigProperty
 
 """
