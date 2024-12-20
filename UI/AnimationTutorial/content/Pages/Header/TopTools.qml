@@ -8,6 +8,9 @@ RowBase{
         font.bold: true
         height: root.height
         font.pixelSize: 15
+        onClicked:{
+
+        }
     }
     ItemDelegate{
         anchors.verticalCenter: parent.verticalCenter
@@ -29,4 +32,6 @@ RowBase{
            exportView.popup()
         }
     }
+
+
 }
