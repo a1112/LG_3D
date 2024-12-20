@@ -2,10 +2,8 @@
 import QtQuick.Layouts
 ColumnLayout {
     anchors.fill:parent
-    ShowDefectNamesRow{
-        implicitHeight:30
-        Layout.fillWidth: true
-    }
+    DefectShowHead{}
+
 
     ShowDefectList{
         Layout.fillWidth:true

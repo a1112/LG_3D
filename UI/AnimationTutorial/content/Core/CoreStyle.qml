@@ -29,10 +29,6 @@ Item {
     property int leftWidth: 400
     property int topHeight: 45
 
-    function openStyleDialog(){
-        menuStyle.popup()
-    }
-
     SettingsBase{
         property alias isDark: root.isDark
          fileName: "style.ini"

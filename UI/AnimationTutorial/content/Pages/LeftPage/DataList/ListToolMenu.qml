@@ -23,13 +23,13 @@ Menu {
     MenuItem{
         text: "图像备份"
         onClicked: {
-            backupDataView.popup()
+           popManage.popupBackupDataView()
         }
     }
     MenuItem{
         text: "重新识别"
         onClicked: {
-            reDetectonView.popup()
+            popManage.popupReDetectionView()
         }
     }
 

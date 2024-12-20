@@ -13,6 +13,12 @@ Menu {
             }
         }
         MenuItem{
+            text:"Ping 服务器"
+            onClicked:{
+                ScriptLauncher.launchScript("/c start /wait ping "+api.apiConfig.hostname+" -t")
+            }
+        }
+        MenuItem{
             text:"一键恢复"
             onClicked:{}
         }
@@ -40,24 +46,29 @@ Menu {
                     dialogs.save_sql(
                                 (save_file)=>{
                                     api.save_to_sql(save_file,()=>{
-                                            Qt.openUrlExternally(save_file)
+                                                        Qt.openUrlExternally(save_file)
                                                     },()=>{
-
                                                     })
                                 }
                                 )
-
                 }
             }
             MenuItem{
                 text:"从 备份 恢复"
             }
         }
-    }
-        MenuItem{
-            text:qsTr("退出系统")
-            onClicked:Qt.quit()
+
+        Menu{
+            title:"测试"
+            MenuItem{
+                text:"网络测速"
+            }
         }
+    }
+    MenuItem{
+        text:qsTr("退出系统")
+        onClicked:Qt.quit()
+    }
 
 
 }

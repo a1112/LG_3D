@@ -9,8 +9,7 @@ import Globs
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc
 from CoilDataBase import Coil, tool
-from CoilDataBase.models.AlarmInfo import AlarmInfo
-from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from CoilDataBase.models import AlarmInfo,SecondaryCoil
 from Globs import serverConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
 from utils import Hardware, Backup, export

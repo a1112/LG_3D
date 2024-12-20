@@ -37,7 +37,7 @@ Item {
             border.width: 1
             opacity:0.7
             color: "transparent"
-            visible: coreModel.defectDictAll[defectName]??false
+            visible: global.defectClassProperty.defectDictAll[defectName]??false
         Label{
             text: defectName
             font.pixelSize: 15

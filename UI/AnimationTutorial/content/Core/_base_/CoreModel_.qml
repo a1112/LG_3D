@@ -17,12 +17,7 @@ CoreModel_Data {
         autoKeepTime = 0
         keepLatest = value
     }
-    // 记录缺陷显示
-    property var defectDictAll: {return {}}
-    function flushDefectDictAll(){
-    let temp = defectDictAll
-        defectDictAll = {}
-        defectDictAll = temp
-    }
 
+    readonly property var defectDictAll:global.defectClassProperty.defectDictAll
+    readonly property var flushDefectDictAll:global.defectClassProperty.flushDefectDictAll
 }

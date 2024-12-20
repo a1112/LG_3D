@@ -19,7 +19,7 @@ RowBase{
         height: root.height
         font.pixelSize: 15
         onClicked:{
-            globalAlarmView.popup()
+            popManage.popupGlobalAlarmView()
         }
     }
     ItemDelegate{

@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Dialogs
 import QtQuick.Controls
 import ConsoleController 1.0
@@ -102,7 +102,7 @@ Menu{
         MenuItem{
             text:"API 访问记录"
             onClicked:{
-                apiListPop.popup()
+                popManage.popupApiList()
             }
         }
     }

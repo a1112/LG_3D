@@ -16,9 +16,7 @@ Item{
         MouseArea{
             anchors.fill: parent
             acceptedButtons: Qt.RightButton
-            onClicked: {
-                coreStyle.openStyleDialog()
-            }
+            onClicked: {popManage.popupStyleMenu()}
         }
     }
 }

@@ -85,12 +85,9 @@ CardBase {
     }
     Menu{
         id:menu
-
         MenuItem{
             text:"更多信息..."
-            onClicked:{
-               app.showDefectInfo()
-            }
+            onClicked:{popManage.popupMsgPopView()}
         }
     }
 }

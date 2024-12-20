@@ -6,20 +6,8 @@ import QtQuick.Controls.Windows
 import QtQuick.Controls.Material
 import "./Api"
 import "./Core"
-
-import "PopupView/MsgPop"
-
-import "PopupView/Backup"
-import "PopupView/ReDetection"
-import "PopupView/ApiListPop"
-import "PopupView/GlobalAlarm"
-import "PopupView/ToolsMenu"
 import "PopupView"
-import "Tool/Graphs"
-import "SettingPage"
-import "Style"
 import "Pages/AlarmPage"
-import "GlobalView"
 import "Dialogs"
 ApplicationWindow {
     id:app
@@ -39,13 +27,8 @@ ApplicationWindow {
         anchors.fill: parent
     }
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}
-
     property Api api: Api{}
-
-    property Global global:Global{
-
-    }
-
+    property Global global:Global{}
     property Dialogs dialogs: Dialogs{}
     property Core core: Core{}
     property Tool tool: Tool{}
@@ -58,44 +41,6 @@ ApplicationWindow {
     property LefeCore leftCore: LefeCore{}
     property Control control: Control{}
     property Auth auth: Auth{}
-    function showDefectInfo(){
-        msg_popup.popup()
-    }
-    function openSettingView(){
-        coreSetting_view.open()
-    }
-    MsgPopView{id:msg_popup}
-    SettingPageView{id:coreSetting_view}
-
-    StyleMenu{
-        id:menuStyle
-    }
-
-    BackupDataView{
-        id:backupDataView
-    }
-    ReDetectionView{
-        id:reDetectonView
-    }
-    GlobalAlarmView{
-        id:globalAlarmView
-    }
-    ApiListPopView{
-        id:apiListPop
-    }
-    ToolsMenuView{
-        id:toolsMenu
-    }
-
-    // ToolGraphs{ // 图表格弹窗
-    //     id:toolGraths
-    // }
-
-
-    GlobGlobErrorView{
-
-    }
-
 
     PopManagement{
             id:popManage

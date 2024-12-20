@@ -97,6 +97,8 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     max_outer_line_data = None
     max_inner_line_data = None
     for line_data in data_integration.lineDataDict.values():
+        if 225>line_data.rotation_angle>45: # 只检测一半角度
+            continue
         if max_outer_line_data is None or line_data.outer_max_point.z > max_outer_line_data.outer_max_point.z:
             max_outer_line_data = line_data
         if max_inner_line_data is None or line_data.inner_max_point.z > max_inner_line_data.inner_max_point.z:
