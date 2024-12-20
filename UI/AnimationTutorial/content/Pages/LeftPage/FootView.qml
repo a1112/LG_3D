@@ -14,7 +14,7 @@ Item {
         ItemDelegate{
             anchors.fill:parent
             onClicked: {
-                connectDialog.open()
+                popManage.popupConnectDialog()
             }
         }
         }

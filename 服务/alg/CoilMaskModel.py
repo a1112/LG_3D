@@ -25,8 +25,8 @@ class CoilAreaModel:
                 xmin, ymin, xmax, ymax = xyxy
                 bounding_boxes.append((int(xmin), int(ymin), int(xmax-xmin), int(ymax-ymin),label))
         if bounding_boxes:
-            maxRect = max(bounding_boxes, key=lambda x: x[2]*x[3])
-            return maxRect
+            max_rect = max(bounding_boxes, key=lambda x: x[2]*x[3])
+            return max_rect
         return []
 
 

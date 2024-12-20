@@ -141,7 +141,7 @@ class DataIntegration:
     @property
     def circle_config(self):
         if self._circleConfig_ is None:
-            self._circleConfig_ = tool.getCircleConfigByMask(self.npy_mask)
+            self._circleConfig_ = tool.get_circle_config_by_mask(self.npy_mask)
             self.set("width", int(self.width))
             self.set("height", int(self.height))
             self.set("circleConfig", self._circleConfig_)

@@ -86,7 +86,7 @@ class ImageMosaicThread(Thread):
                     self.startCoilId = secondary_coil.Id
                     status = {}
                     for imageMosaic in self.imageMosaicList:  # 设置 ID
-                        setOk = imageMosaic.setCoilId(secondary_coil.Id)
+                        setOk = imageMosaic.set_coil_id(secondary_coil.Id)
                         imageMosaic.currentSecondaryCoil = secondary_coil
                         status[imageMosaic.key] = 0
                         if not setOk:

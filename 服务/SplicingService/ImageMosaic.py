@@ -1,7 +1,9 @@
+import asyncio
 import json
 import traceback
 from pathlib import Path
 import logging
+from threading import Thread
 from typing import List, Optional
 
 import cv2
@@ -78,7 +80,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         if self.save:
             return self.imageSaver.add(image, path)
 
-    def setCoilId(self, coil_id):
+    def set_coil_id(self, coil_id):
         coil_id = str(coil_id)
         if not self.hasData(coil_id):
             return False
@@ -97,20 +99,17 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self._save_(image, data_integration.get_save_url("preview", name + ".png"))
 
     # 保存图像
-    @DetectionSpeedRecord.timing_decorator("保存图像")
-    def saveImage(self, data_integration: DataIntegration):
+    async def save_image(self, data_integration: DataIntegration):
         self._save_image_(data_integration, data_integration.pil_image, "GRAY")
         self._save_image_(data_integration, data_integration.pil_mask, "MASK")
 
-    @DetectionSpeedRecord.timing_decorator("保存json数据计时")
-    def saveJson(self, data_integration: DataIntegration):
+    async def save_json(self, data_integration: DataIntegration):
         coil_id = data_integration.coilId
         data = data_integration.json_data
         with open(self.saveFolder / coil_id / "data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-    @DetectionSpeedRecord.timing_decorator("保存3D数据计时")
-    def save3D(self, data_integration: DataIntegration):
+    async def save3_d(self, data_integration: DataIntegration):
         config_datas = data_integration.configDatas
         circle_config = data_integration.circle_config
         mask_image = data_integration.npy_mask
@@ -129,21 +128,15 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         npy__ = data_integration.npy_data
         non_zero_elements = npy__[npy__ != 0]
         a, b = start, start + step
-
-        # 将图像裁剪到指定的范围 [a, b]
         depth_map_clipped = np.clip(npy__, a, b)
-        # 将裁剪后的图像缩放到 [0, 255] 的范围
         depth_map_scaled = ((depth_map_clipped - a) / (b - a)) * -255 + 255
         depth_map_uint8 = depth_map_scaled.astype(np.uint8)
         mask_zero = npy__ == 0
-
         for name, colormap in ColorMaps.items():
             if name not in serverConfigProperty.renderer_list:
                 continue
             depth_map_color = cv2.applyColorMap(depth_map_uint8, colormap)
             depth_map_color[mask_zero] = [0, 0, 0]  # [0, 0, 0] 表示黑色
-
-            # tool.showImage(depth_map_color)  # 显示
 
             image = Image.fromarray(depth_map_color)
             self._save_image_(data_integration, image, name)
@@ -151,10 +144,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         obj_file = self.saveFolder / coil_id / "3D.obj"
         self.d3Saver.add_([coil_id, npy__, mask_image, config_datas, circle_config, obj_file, data_integration.median_3d_mm,
                            data_integration.get_bd_xyz()])
-
         return non_zero_elements
 
-    def joinSaver(self):
+    def join_saver(self):
         self.imageSaver.join()
 
     @DetectionSpeedRecord.timing_decorator("数据获取 __getAllData__")
@@ -180,7 +172,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas
 
-    def raiseError(self, message):
+    def raise_error(self, message):
         raise ServerDetectionException(message)
 
     @DetectionSpeedRecord.timing_decorator("拼接图像计时")
@@ -197,13 +189,16 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         for data in datas:  # 裁剪，减低计算
             for key in ["2D", "MASK", "3D"]:
                 data[key] = data[key][min_h:max_h, :]
-        horizontal_projection_list = tool.getHorizontalProjectionList([data["MASK"] for data in datas])
+        horizontal_projection_list = tool.get_horizontal_projection_list([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontal_projection_list)
         print(f"cross_points {data_integration.coilId} {data_integration.key}: {cross_points}")
         data_integration.set_cross_points(cross_points)
 
         min_height = min([data["2D"].shape[0] for data in datas])
         for index in range(len(datas)):
+            datas[index]['2D'] = datas[index]['2D'][:min_height, :]
+            datas[index]['MASK'] = datas[index]['MASK'][:min_height, :]
+            datas[index]['3D'] = datas[index]['3D'][:min_height, :]
             if index > 0:
                 l_p = cross_points[index - 1][0]
                 r_p = cross_points[index - 1][1]
@@ -214,13 +209,12 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                     datas[index - 1]['2D'] = datas[index - 1]['2D'][:, :w - l_p]
                     datas[index - 1]['MASK'] = datas[index - 1]['MASK'][:, :w - l_p]
                     datas[index - 1]['3D'] = datas[index - 1]['3D'][:, :w - l_p]
+
                 if self.direction == "R":
                     datas[index]['2D'] = datas[index]['2D'][:, r_p:]
                     datas[index]['MASK'] = datas[index]['MASK'][:, r_p:]
                     datas[index]['3D'] = datas[index]['3D'][:, r_p:]
-            datas[index]['2D'] = datas[index]['2D'][:min_height, :]
-            datas[index]['MASK'] = datas[index]['MASK'][:min_height, :]
-            datas[index]['3D'] = datas[index]['3D'][:min_height, :]
+
         leveling_2d(datas)
         join_image = np.hstack([data["2D"] for data in datas])
         join_mask_image = np.hstack([data["MASK"] for data in datas])
@@ -231,17 +225,14 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             npy_data = tool.hstack_3d([data["3D"] for data in datas], joinMaskImage=join_mask_image)
 
         if self.rotate == 90 or data_integration.surface == "S":
-
             join_image = np.rot90(join_image, 1)
             join_mask_image = np.rot90(join_mask_image, 1)
             npy_data = np.rot90(npy_data, 1)
-
             join_image = cv2.flip(join_image, 1)
             join_mask_image = cv2.flip(join_mask_image, 1)
             npy_data = cv2.flip(npy_data, 1)
 
         if self.rotate == -90 or data_integration.surface == "L":
-
             join_image = np.rot90(join_image, -1)
             join_mask_image = np.rot90(join_mask_image, -1)
             npy_data = np.rot90(npy_data, -1)
@@ -254,7 +245,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         join_image = join_image[y:y + h, x:x + w]
         npy_data = npy_data[y:y + h, x:x + w]
         if np.max(join_mask_image.shape) < control.minMaskDetectErrorSize:
-            self.raiseError(f"算法错误： mask shape: {join_mask_image.shape} 小于 {control.minMaskDetectErrorSize}")
+            self.raise_error(f"算法错误： mask shape: {join_mask_image.shape} 小于 {control.minMaskDetectErrorSize}")
         data_integration.joinImage = join_image
 
         data_integration.npy_image = join_image
@@ -275,15 +266,16 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 data_integration.set("x_rotate", self.x_rotate)
                 data_integration.set_npy_data(npy_data)
 
-        # tool.showImage(joinMaskImage)
-
         return join_image, join_mask_image, npy_data
 
-    @DetectionSpeedRecord.timing_decorator("save_all_data  全部的保存")
-    def save_all_data(self, data_integration: DataIntegration):
-        self.saveImage(data_integration)
-        self.save3D(data_integration)
-        self.saveJson(data_integration)
+    @DetectionSpeedRecord.timing_decorator("图像保持")
+    def sync_save(self,data_integration):
+        return asyncio.run(self.save_all_data(data_integration))
+    async def save_all_data(self, data_integration: DataIntegration):
+        await self.save_image(data_integration)
+        await self.save3_d(data_integration)
+        await self.save_json(data_integration)
+
 
     def run(self):
         # 拼接后的主函数
@@ -301,7 +293,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 dataIntegration.set_original_data(dataIntegration.datas)
                 # 裁剪 2D 3D MASK
                 self.__stitching__(dataIntegration)
-                self.save_all_data(dataIntegration)
+                self.sync_save(dataIntegration)
+                # Thread(target=self.sync_save, args=(dataIntegration,)).start()
+                # self.sync_save(dataIntegration)
                 dataIntegration.currentSecondaryCoil = self.currentSecondaryCoil
                 # AlarmDetection.detection(dataIntegration)
 

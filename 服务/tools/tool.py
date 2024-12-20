@@ -6,6 +6,7 @@ from PIL import Image
 import Globs
 import tools.tool
 from property.Types import Point2D
+from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from utils.Log import logger
 
 
@@ -68,31 +69,31 @@ def getForeground(gray_image, direction="L", key=None):
     return gray_image, mask
 
 
-def autoCrop(key, image, starPos, direction):
+def auto_crop(key, image, star_pos, direction):
     gray_image, mask = getForeground(image, direction, key)
 
-    rec = crop_max_image_black_edges(key, mask, starPos)
+    rec = crop_max_image_black_edges(key, mask, star_pos)
     x, y, w, h = rec
     return gray_image[y:y + h, x:x + w], mask[y:y + h, x:x + w], rec
 
 
-def crop_max_image_black_edges(key, image, starPos):
+def crop_max_image_black_edges(key, image, star_pos):
     # 图像列求和，检测哪些列是主要黑色的
     # column_sum = np.sum(gray, axis=0)
     h, w = image.shape
     column_no_black_count = np.sum(image > 100, axis=0)
-    left_index = starPos[0]
-    right_index = w - starPos[1]
-    maxL = left_index + 300  # 规定最大裁剪
-    minR = right_index - 800  # 规定最大裁剪
+    left_index = star_pos[0]
+    right_index = w - star_pos[1]
+    max_l = left_index + 300  # 规定最大裁剪
+    min_r = right_index - 800  # 规定最大裁剪
     # 从左侧找到第一个非黑色列
     # l_threshold = 0.05 if "D" in key else 0.25
     # r_threshold = 0.25
-    # while left_index > maxL or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[maxL+100]) < l_threshold:
+    # while left_index > max_l or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[max_l+100]) < l_threshold:
     #     left_index += 1
     l_limit = 10 if "S_D" in key else 500
     while True:
-        if left_index > maxL:
+        if left_index > max_l:
             break
         if column_no_black_count[left_index] > l_limit:
             break
@@ -103,13 +104,13 @@ def crop_max_image_black_edges(key, image, starPos):
     #     right_index -= 1
     r_limit = 10 if "L_D" in key else 500
     while True:
-        if right_index < minR:
+        if right_index < min_r:
             break
         if column_no_black_count[right_index] > r_limit:
             break
         right_index -= 1
     print(f"r_index  {key}   {right_index}  {w-right_index} { column_no_black_count[right_index]}")
-    # print(f"{key} {maxL} {maxR} left_index {left_index}  right_index {w-right_index}")
+    # print(f"{key} {max_l} {maxR} left_index {left_index}  right_index {w-right_index}")
     # showImage(image)
     # 保存裁剪后的图像
     if "S_D" in key:
@@ -206,10 +207,10 @@ def crop_black_border(gray):
 
 def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
 
-    def nZeeroIndexes(array, n, minValue=0):
+    def n_zeero_indexes(array, n, min_value=0):
         indices = []
         for i in range(len(array) // n):
-            if np.all(array[i * n:(i + 1) * n] > minValue):
+            if np.all(array[i * n:(i + 1) * n] > min_value):
                 indices.append(i * n)
                 if len(indices) > 3:
                     break
@@ -225,7 +226,7 @@ def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
         l_npy = npyList[index - 1]
         r_l_line = r_npy[:, 0]
         l_r_line = l_npy[:, -1]
-        r_l_line_nz_indexes = nZeeroIndexes(r_l_line, n_, num)
+        r_l_line_nz_indexes = n_zeero_indexes(r_l_line, n_, num)
         if r_l_line_nz_indexes:
             sampling_index = r_l_line_nz_indexes[-1]
             mean_l = getMean(l_npy[:, -5:-2][sampling_index:sampling_index + n_])
@@ -272,16 +273,16 @@ def rotate_around_x_axis(height_data, angle):
 
     return rotated_height_data
 
-
-def getHorizontalProjectionList(image_list):
+@DetectionSpeedRecord.timing_decorator("get_horizontal_projection_list")
+def get_horizontal_projection_list(image_list):
     horizontal_projection_list = []
     for index, image in enumerate(image_list):  # 进行投影
-        horizontalProjection = horizontal_projection_first_nonzero(image)
-        horizontal_projection_list.append(horizontalProjection)
+        horizontal_projection = horizontal_projection_first_nonzero(image)
+        horizontal_projection_list.append(horizontal_projection)
     return horizontal_projection_list
 
 
-def getCircleConfigByMask(mask):
+def get_circle_config_by_mask(mask):
     # 获取圆参数
     # showImage(mask)
     if isinstance(mask, Image.Image):

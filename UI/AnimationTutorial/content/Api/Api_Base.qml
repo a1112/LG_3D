@@ -9,10 +9,6 @@ Item {
 
     // WebSocket {}
 
-
-    function showConnectDialog(){
-    }
-
     property Ajax ajax: Ajax{}
     function url(serverUrl, ...args){
         let reUrl=serverUrl

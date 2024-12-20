@@ -9,7 +9,7 @@ RowBase{
         height: root.height
         font.pixelSize: 15
         onClicked:{
-
+            popManage.popupDefectClassPop()
         }
     }
     ItemDelegate{
@@ -29,7 +29,7 @@ RowBase{
         height: root.height
         font.pixelSize: 15
         onClicked: {
-           exportView.popup()
+           popManage.popupExportView()
         }
     }
 

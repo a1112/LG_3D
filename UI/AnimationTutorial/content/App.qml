@@ -6,14 +6,15 @@ import QtQuick.Controls.Windows
 import QtQuick.Controls.Material
 import "./Api"
 import "./Core"
-import "PopupView"
+
 import "PopupView/MsgPop"
-import "PopupView/Export"
+
 import "PopupView/Backup"
 import "PopupView/ReDetection"
 import "PopupView/ApiListPop"
 import "PopupView/GlobalAlarm"
 import "PopupView/ToolsMenu"
+import "PopupView"
 import "Tool/Graphs"
 import "SettingPage"
 import "Style"
@@ -65,15 +66,11 @@ ApplicationWindow {
     }
     MsgPopView{id:msg_popup}
     SettingPageView{id:coreSetting_view}
-    ConnectDialog{//连接设置
-        id:connectDialog
-    }
+
     StyleMenu{
         id:menuStyle
     }
-    ExportView{
-        id:exportView
-    }
+
     BackupDataView{
         id:backupDataView
     }
@@ -90,14 +87,19 @@ ApplicationWindow {
         id:toolsMenu
     }
 
-    ToolGraphs{ // 图表格弹窗
-        id:toolGraths
-    }
-    property PopMange popMarge PopMange{
-    }
+    // ToolGraphs{ // 图表格弹窗
+    //     id:toolGraths
+    // }
+
+
     GlobGlobErrorView{
 
     }
+
+
+    PopManagement{
+            id:popManage
+        }
 }
 
 

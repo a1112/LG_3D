@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from pathlib import Path
@@ -50,10 +51,10 @@ class DataFolder(Globs.control.BaseDataFolder):
         source = source / str(coilId) / "2D"
         if not source.exists():
             return False
-        bmpList = list(source.glob("*.bmp"))
-        if len(list(bmpList)) < 5:
+        bmp_list = list(source.glob("*.bmp"))
+        if len(list(bmp_list)) < 5:
             return False
-        for bmp in bmpList:
+        for bmp in bmp_list:
             file_time = bmp.stat().st_mtime
             if time.time() - file_time < 5:
                 return False
@@ -85,40 +86,62 @@ class DataFolder(Globs.control.BaseDataFolder):
         timestamp_list_differ = []
         for i in range(len(timestamp_list) - 1):
             timestamp_list_differ.append(timestamp_list[i + 1] - timestamp_list[i])
-        maxVal = max(timestamp_list_differ)
-        if maxVal > 200:
-            maxIndex = timestamp_list_differ.index(maxVal)
-            if maxIndex < len(timestamp_list_differ) - 5:
-                stem_list = stem_list[maxIndex + 1:]
-                json_datas = json_datas[maxIndex + 1:]
+        max_val = max(timestamp_list_differ)
+        if max_val > 200:
+            max_index = timestamp_list_differ.index(max_val)
+            if max_index < len(timestamp_list_differ) - 5:
+                stem_list = stem_list[max_index + 1:]
+                json_datas = json_datas[max_index + 1:]
         return json_datas, stem_list
 
-    def load2_d(self, coil_id, stem_list):
+    async def load2_d(self, coil_id, stem_list):
         source2_d = self.source / coil_id / "2D"
-        images = []
-        for stem in stem_list:
-            image_f = source2_d / (stem + ".bmp")
-            if not image_f.exists():
-                image_f = source2_d / (stem + ".jpg")
-            with Image.open(image_f) as image:
-                images.append(np.array(image))
+        async def read_2d(stem):
+            """异步读取 BMP 文件并返回图像数据"""
+            # 异步模拟读取
+            image_f_ = source2_d / (stem + ".bmp")
+            if not image_f_.exists():
+                image_f_ = source2_d / (stem + ".jpg")
+            with Image.open(image_f_) as image_:
+                return np.array(image_)
+        images = await asyncio.gather(*[read_2d(stem) for stem in stem_list])
         join_image = np.vstack(images)
-        cv_image, mask, rec = tool.autoCrop(self.folderName, join_image, [self.cropLeft, self.cropRight], self.direction)
+        # images = []
+        # for stem in stem_list:
+        #     image_f = source2_d / (stem + ".bmp")
+        #     if not image_f.exists():
+        #         image_f = source2_d / (stem + ".jpg")
+        #     with Image.open(image_f) as image:
+        #         images.append(np.array(image))
+        cv_image, mask, rec = tool.auto_crop(self.folderName, join_image, [self.cropLeft, self.cropRight], self.direction)
         steel_rec = self.coilAreaModel.getSteelRect(Image.fromarray(cv_image))
         return cv_image, mask, rec, steel_rec
 
-    def load3_d(self, coilId, rec, stem_list, json_data_list):
-        source3_d = self.source / coilId / "3D"
-        npyList = []
-        for stem, jsData in zip(stem_list, json_data_list):
-            npyF = source3_d / (stem + ".npy")
-            if not npyF.exists():
-                npzF = source3_d / (stem + ".npz")
-                npy = np.load(npzF)["array"]
+    async def load3_d(self, coil_id, rec, stem_list, json_data_list):
+        source3_d = self.source / coil_id / "3D"
+
+        async def read_3d(stem):
+            """异步读取 BMP 文件并返回图像数据"""
+            # 异步模拟读取
+            npy_f_ = source3_d / (stem + ".npy")
+            if not npy_f_.exists():
+                npy_f_ = source3_d / (stem + ".npz")
+                return np.load(npy_f_)["array"]
             else:
-                npy = np.load(npyF)
-            npyList.append(npy)
-        npy = np.vstack(npyList)
+                return np.load(npy_f_)
+
+
+        # npy_list = []
+        # for stem, jsData in zip(stem_list, json_data_list):
+        #     npy_f = source3_d / (stem + ".npy")
+        #     if not npy_f.exists():
+        #         npz_f = source3_d / (stem + ".npz")
+        #         npy = np.load(npz_f)["array"]
+        #     else:
+        #         npy = np.load(npy_f)
+        #     npy_list.append(npy)
+        # npy = np.vstack(npy_list)
+        npy = np.vstack( await asyncio.gather(*[read_3d(stem) for stem in stem_list]))
         if rec:
             npy = npy[:, rec[0]:rec[0] + rec[2]]
         return npy
@@ -144,34 +167,34 @@ class DataFolder(Globs.control.BaseDataFolder):
         from alg.CoilMaskModel import CoilAreaModel
         self.coilAreaModel = CoilAreaModel()
         while True:
-            coilId = self.producer.get()
-            # logger.info(f"DataFolder {coilId} start")
+            coil_id = self.producer.get()
+            # logger.info(f"DataFolder {coil_id} start")
             data = {}
             # dataFolderLog = DataFolderLog(self)
             try:
-                jsonDatas, stemList = self.load_json(coilId)
-                image2D, imageMask, rec, steelRec = self.load2_d(coilId, stemList)
-                data3D = self.load3_d(coilId, rec, stemList, jsonDatas)
-                data["json"] = jsonDatas
-                data["2D"] = image2D
-                data["rec"] = steelRec
-                data["MASK"] = imageMask
+                json_datas, stem_list = self.load_json(coil_id)
+                image2_d, image_mask, rec, steel_rec = asyncio.run(self.load2_d(coil_id, stem_list))
+                data3_d =  asyncio.run(self.load3_d(coil_id, rec, stem_list, json_datas))
+                data["json"] = json_datas
+                data["2D"] = image2_d
+                data["rec"] = steel_rec
+                data["MASK"] = image_mask
 
-                data3D = cv2.bitwise_and(data3D, data3D, mask=imageMask)
+                data3_d = cv2.bitwise_and(data3_d, data3_d, mask=image_mask)
                 if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
-                    data3D = auto_data_leveling_3d(data3D, imageMask)
-                data["3D"] = data3D
+                    data3_d = auto_data_leveling_3d(data3_d, image_mask)
+                data["3D"] = data3_d
 
-                self.mk_link(coilId)
+                self.mk_link(coil_id)
                 if self.saveMask:
-                    Image.fromarray(image2D).save(self.saveMaskFolder / f"{coilId}_{self.folderName}_GRAY.png")
-                    Image.fromarray(imageMask).save(self.saveMaskFolder / f"{coilId}_{self.folderName}_MASK.png")
+                    Image.fromarray(image2_d).save(self.saveMaskFolder / f"{coil_id}_{self.folderName}_GRAY.png")
+                    Image.fromarray(image_mask).save(self.saveMaskFolder / f"{coil_id}_{self.folderName}_MASK.png")
 
                 # 显示图像
             except Exception as e:
-                logger.error(f"Error in DataFolder {coilId}: {e}")
+                logger.error(f"Error in DataFolder {coil_id}: {e}")
                 if isLoc and Globs.control.debug_raise:
                     raise e
             finally:
-                logger.info(f"DataFolder {coilId} end")
+                logger.info(f"DataFolder {coil_id} end")
                 self.consumer.put(data)

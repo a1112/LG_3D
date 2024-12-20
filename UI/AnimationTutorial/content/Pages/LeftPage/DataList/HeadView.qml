@@ -84,7 +84,7 @@ Item {
             visible:auth.isAdmin
             anchors.fill: parent
             onClicked: {
-               exportView.popup()
+               popManage.popupExportView()
             }
         }
         }
