@@ -6,6 +6,7 @@ import QtQuick.Controls.Windows
 import QtQuick.Controls.Material
 import "./Api"
 import "./Core"
+import "PopupView"
 import "PopupView/MsgPop"
 import "PopupView/Export"
 import "PopupView/Backup"
@@ -92,7 +93,8 @@ ApplicationWindow {
     ToolGraphs{ // 图表格弹窗
         id:toolGraths
     }
-
+    property PopMange popMarge PopMange{
+    }
     GlobGlobErrorView{
 
     }

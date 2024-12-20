@@ -19,16 +19,16 @@ def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config:
         alarm_flat_roll_config:
     Returns:
     """
-    name, configMax, configMin, configMsg = alarm_flat_roll_config.getConfig()
-    errorMsg = "正常"
+    name, config_max, config_min, config_msg = alarm_flat_roll_config.getConfig()
+    error_msg = "正常"
     grad = 1
-    if alarm_flat_roll.inner_circle_width <= configMin:
-        errorMsg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} <= {configMin}"
+    if alarm_flat_roll.inner_circle_width <= config_min:
+        error_msg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} <= {config_min}"
         grad = 3
-    elif alarm_flat_roll.inner_circle_width >= configMax:
-        errorMsg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} >= {configMax}"
+    elif alarm_flat_roll.inner_circle_width >= config_max:
+        error_msg = f"{name} 内径 {alarm_flat_roll.inner_circle_width} >= {config_max}"
         grad = 3
-    return AlarmGradResult(grad, errorMsg, configMsg)
+    return AlarmGradResult(grad, error_msg, config_msg)
 
 
 def gradingAlarmTaperShape(alarm_taper_shape_list: List[AlarmTaperShape], taper_shape_config: TaperShapeConfig):
@@ -71,20 +71,20 @@ def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_co
 def grading_alarm_flat_roll(data_integration: DataIntegration):
     next_code = data_integration.next_code
     alarm_flat_roll_config = alarmConfigProperty.getAlarmFlatRollConfig(next_code)  # 判及 参数
-    flatRollData = data_integration.flatRollData
-    inner_circle_width = data_integration.x_to_mm(flatRollData.inner_circle_width)
-    flatRollData: FlatRollData
+    flat_roll_data = data_integration.flatRollData
+    inner_circle_width = data_integration.x_to_mm(flat_roll_data.inner_circle_width)
+    flat_roll_data: FlatRollData
     alarmFlatRollConfig: AlarmFlatRollConfig
-    name, configMax, configMin, configMsg = alarm_flat_roll_config.getConfig()
-    errorMsg = "正常"
+    name, config_max, config_min, config_msg = alarm_flat_roll_config.getConfig()
+    error_msg = "正常"
     grad = 1
-    if inner_circle_width <= configMin:
-        errorMsg = f"{name} 内径 {inner_circle_width} <= {configMin}"
+    if inner_circle_width <= config_min:
+        error_msg = f"{name} 内径 {inner_circle_width} <= {config_min}"
         grad = 3
-    elif inner_circle_width >= configMax:
-        errorMsg = f"{name} 内径 {inner_circle_width} >= {configMax}"
+    elif inner_circle_width >= config_max:
+        error_msg = f"{name} 内径 {inner_circle_width} >= {config_max}"
         grad = 3
-    return AlarmGradResult(grad, errorMsg, configMsg)
+    return AlarmGradResult(grad, error_msg, config_msg)
 
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
@@ -203,6 +203,6 @@ def grading(data_integration: DataIntegration):
     addObj(alarm_info)
 
 
-def gradingAll(data_integration_list: DataIntegrationList):
+def grading_all(data_integration_list: DataIntegrationList):
     for dataIntegration in data_integration_list:
         grading(dataIntegration)
