@@ -54,15 +54,16 @@ class CoilDetectionModel:
 
     def predict(self, images):
         results = self.model(images)
-        resList = []
+        res_list = []
         for result in results:
-            resItemList = []
+            res_item_list = []
             for box in result.boxes:
                 xyxy = box.xyxy[0].cpu().numpy()
-                labelIndex = int(box.cls[0].cpu().numpy())
-                name = self.model.names[labelIndex]
+                label_index = int(box.cls[0].cpu().numpy())
+                name = self.model.names[label_index]
                 xmin, ymin, xmax, ymax = xyxy
                 source = float(box.conf[0].cpu().numpy())
-                resItemList.append((int(xmin), int(ymin), int(xmax), int(ymax), labelIndex, source,name))
-            resList.append(resItemList)
-        return resList
+                res_item_list.append((int(xmin), int(ymin), int(xmax), int(ymax), label_index, source,name))
+            res_list.append(res_item_list)
+        return res_list
+

@@ -67,9 +67,12 @@ Item {
 
         if (auto_server_port){
             // 自动端口映射
-            reUrl = getAutoUrl(args[0])
+
             if (reUrl.indexOf("ws")>=0){
                 reUrl = getAutoWsUrl(args[0])
+            }
+            else{
+                reUrl = getAutoUrl(args[0])
             }
             // else{
             // reUrl = getAutoUrl(args[0])

@@ -39,3 +39,15 @@ cryptography
 fastapi-cache[redis]
 redis
 python-multipart
+typing_extensions
+sympy
+mpmath
+packaging
+colorama
+filelock
+urllib3
+fsspec
+torchaudio
+defusedxml
+minio
+lxml

@@ -72,6 +72,8 @@ Menu{
             enabled: root.backupStatu.canChange
             id:folder_id
             text:"保存位置"
+            value:outputUrl
+            onValueChanged:outputUrl=value
             placeholderText:"桌面/"+ root.outputName
         }
     }
@@ -123,7 +125,7 @@ Menu{
             visible: !root.backupStatu.isError
             onClicked:{
                 root.outputUrl = folder_id.value
-                if (!folder_id.value){
+                if (!root.outputUrl){
                     root.outputUrl =root.outputFolder+"/"+root.outputName
                 }
                 ws_id.sendTextMessage(

@@ -16,6 +16,8 @@ class SurfaceConfigProperty:
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
         self.saveImageType = ".png"
+        self.ImageType = "GRAY"
+        self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):
         return f"{self.saveFolder}/{coil_id}/png/{type_}" + self.saveImageType
@@ -32,7 +34,7 @@ class SurfaceConfigProperty:
     def get_mask_file(self, coil_id, type_):
         return f"{self.saveFolder}/{coil_id}/mask/{type_}" + self.saveImageType
 
-    def get_Info(self, coil_id):
+    def get_info(self, coil_id):
         coil_state = Coil.getCoilStateByCoilId(coil_id, self.key)
         if coil_state:
             return json.loads(Coil.getCoilStateByCoilId(coil_id, self.key).jsonData)
@@ -108,7 +110,7 @@ class ServerConfigProperty:
 
     def get_info(self, coil_id, surface_key):
         surface_config = self.surfaceConfigPropertyDict[surface_key]
-        return surface_config.get_Info(coil_id)
+        return surface_config.get_info(coil_id)
 
     def to_dict(self):
         res = {}

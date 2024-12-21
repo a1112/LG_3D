@@ -15,5 +15,4 @@ def convert_png_to_jpg(root_dir):
             except:
                 pass
 
-root_dir = rf"F:\ALG\SegTrainTest\trainTest\dataList\SaveMask"
-convert_png_to_jpg(root_dir)
+convert_png_to_jpg(rf"F:\ALG\SegTrainTest\trainTest\dataList\SaveMask")

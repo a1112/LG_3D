@@ -13,11 +13,11 @@ Item {
         anchors.fill:parent
 
         ShowDefectNamesRow{
-            implicitHeight:root.height
+            height:root.height
             Layout.fillWidth: true
         }
         ShowTools{
-            implicitHeight:root.height
+            height:root.height
 
         }
     }

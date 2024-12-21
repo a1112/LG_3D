@@ -25,33 +25,34 @@ class CoilClsModel:
             image = Image.fromarray(image)
         return self.transform(image.convert('RGB'))
 
-    def predictImage(self, imageList, bach_size=32):
+    def predict_image(self, image_list, bach_size=32):
         res_index,res_source = [],[]
-        imageCache: torch.Tensor = torch.Tensor().to(self.device)
-        for index, img_ in list(enumerate(imageList)):
-            if isinstance(imageList, (str, WindowsPath)):
-                img_ = Image.open(imageList)
+        image_cache: torch.Tensor = torch.Tensor().to(self.device)
+        for index, img_ in list(enumerate(image_list)):
+            if isinstance(image_list, (str, WindowsPath)):
+                img_ = Image.open(image_list)
             tensor = self.ImageToTensor(img_)
             tensor = tensor.to(self.device)
-            imageCache = torch.cat([imageCache, tensor[None]])
-            if imageCache.shape[0] < bach_size and index < len(imageList) - 1:
+            image_cache = torch.cat([image_cache, tensor[None]])
+            if image_cache.shape[0] < bach_size and index < len(image_list) - 1:
                 pass
             else:
                 with torch.no_grad():
-                    pred_resultsList = self.model(imageCache)
-                    for out in pred_resultsList:
+                    pred_results_list = self.model(image_cache)
+                    for out in pred_results_list:
                         ls = list(torch.nn.functional.softmax(out, dim=0).cpu().numpy())
                         res_index.append(ls.index(max(ls)))
                         res_source.append(max(ls))
-                imageCache: torch.Tensor = torch.Tensor().to('cuda:0')
+                image_cache: torch.Tensor = torch.Tensor().to('cuda:0')
         return res_index,res_source
 
 
-ccm = CoilClsModel()
 
 if __name__ == "__main__":
     st = time.time()
-    r = ccm.predictImage([Image.open(r"E:\clfData\test\边部背景\92537_0.655604_14.jpg")]*100)
+    ccm = CoilClsModel()
+
+    r = ccm.predict_image([Image.open(r"E:\clfData\test\边部背景\92537_0.655604_14.jpg")] * 100)
     et = time.time()
     print(et-st)
 #     p = r"E:\clfData\r5\r5_cls_输出"

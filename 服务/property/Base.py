@@ -131,6 +131,10 @@ class DataIntegration:
             self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
     @property
+    def id_str(self):
+        return f"{self.coilId}_{self.direction}_{self.key}"
+
+    @property
     def next_code(self):
         return str(chr(int(self.currentSecondaryCoil.Weight)))
 

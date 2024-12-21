@@ -39,6 +39,7 @@ class ControlManagement(ThreadClass):
         self.save_3d_obj = True
         self.debug_show = False
         self.debug_raise = False
+        self.save_detection = True  #保存目标检测小图
 
         self.start()
 
