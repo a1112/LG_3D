@@ -10,13 +10,6 @@ import os
 
 isLoc = False
 
-offline_mode = False
-if offline_mode:
-    from CoilDataBase.config import Config,DeriverList
-    Config.deriver = DeriverList.sqlite
-    Config.file_url=fr"D:\lcx_user\test.db"
-    isLoc = True
-
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
 if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G']:
     isLoc = True
@@ -30,6 +23,15 @@ try:
         base_config_folder = drive_config
 except NameError:
     pass
+
+offline_mode = (Path(base_config_folder)/"offline_mode=true").exists()
+print(Path(base_config_folder)/"offline_mode=true")
+if offline_mode:
+    from CoilDataBase.config import Config,DeriverList
+    Config.deriver = DeriverList.sqlite
+    Config.file_url=str(base_config_folder/"Coil.db")
+    isLoc = True
+
 configFile = base_config_folder / "configs/Server3D.json"
 alarmConfigFile = base_config_folder / r"configs/Alarm.json"
 infoConfigFile = base_config_folder / r"configs/Info.json"

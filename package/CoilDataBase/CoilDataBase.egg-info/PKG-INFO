@@ -11,9 +11,5 @@ Classifier: License :: OSI Approved ::  GPL 3.0
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
-Requires-Dist: sqlalchemy
-Requires-Dist: pyyaml
-Requires-Dist: tqdm
-Requires-Dist: pyyaml
 
 README.md

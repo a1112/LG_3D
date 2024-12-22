@@ -168,6 +168,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         for dataFolder in self.dataFolderList:  # 获取所有的图片
             data = dataFolder.get_data()
             datas.append(data)
+            print(data["json"])
             config_datas.append(data["json"])
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas

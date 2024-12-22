@@ -63,6 +63,8 @@ class ServerConfigProperty:
 
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}
         self.useCurrentDerv = _get_config_("useCurrentDerv", False)
+        print(f"useCurrentDerv {self.useCurrentDerv}")
+
         if self.useCurrentDerv:
             drive = Path(__file__).drive
             for surface in self.serverConfig["surface"]:

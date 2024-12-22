@@ -182,8 +182,11 @@ def toMesh(obj, managerQueue):
     cmdBalsam = serverConfigProperty.balsam_exe
     cmd = f"{cmdBalsam} {obj}"
     print(cmd)
-    workPath = os.path.dirname(obj)
-    subprocess.check_call(cmd, shell=True, cwd=workPath)
+    try:
+        workPath = os.path.dirname(obj)
+        subprocess.check_call(cmd, shell=True, cwd=workPath)
+    except BaseException as e:
+        print(e)
     print(cmd + "end")
     # os.system(cmd)
     # managerQueue.put(["cmd",cmd,workPath])

@@ -144,7 +144,6 @@ def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.2,id_s
                 continue
             clip_image = join_image[c_y:c_y + c_h, c_x:c_x + c_w]
             clip_mask = mask_image[c_y:c_y + c_h, c_x:c_x + c_w]
-
             if np.count_nonzero(clip_mask) / (clip_mask.shape[0] * clip_mask.shape[1]) > mask_threshold:
                 clip_image = Image.fromarray(clip_image)
                 clip_image_list.append(clip_image)
@@ -164,7 +163,7 @@ def detection(data_integration: DataIntegration):
     mask = data_integration.npy_mask
     clip_num = serverConfigProperty.clip_num
     id_str = data_integration.id_str
-    res_list,clip_image_list, clip_info_list = detection_by_image(join_image,mask,clip_num,id_str)
+    res_list,clip_image_list, clip_info_list = detection_by_image(join_image,mask,clip_num,id_str=id_str)
 
     defect_dict = defaultdict(list)
     for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):
