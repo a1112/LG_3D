@@ -4,7 +4,7 @@ from .models import *
 
 
 def addObj(obj):
-    return tool.addObj(obj)
+    return tool.add_obj(obj)
 
 
 def addAlarmFlatRoll(alarmFlatRoll):

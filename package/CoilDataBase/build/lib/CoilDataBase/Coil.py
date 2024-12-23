@@ -9,7 +9,7 @@ from .models import *
 
 
 def addObj(obj):
-    return tool.addObj(obj)
+    return tool.add_obj(obj)
 
 
 def getAllJoinQuery(session: Session):
@@ -265,9 +265,9 @@ def deleteCoilByCoilId(Id_):
         session.commit()
 
 
-def getCoilStateByCoilId(coilId, surface):
+def getCoilStateByCoilId(coil_id, surface):
     with Session() as session:
-        return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId,
+        return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id,
                                                CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 

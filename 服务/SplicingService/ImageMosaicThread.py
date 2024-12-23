@@ -136,7 +136,6 @@ class ImageMosaicThread(Thread):
                     #         return -1
             except (BaseException,) as e:
                 error_message = traceback.format_exc()
-                logger.error("打印错位信息 ", e)
                 logger.error(error_message)
                 # if isLoc:
                 #     raise e
