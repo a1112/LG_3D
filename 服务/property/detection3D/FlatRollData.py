@@ -1,7 +1,7 @@
 from typing import Optional
 
 from CoilDataBase.Alarm import addAlarmFlatRoll
-from CoilDataBase.models.AlarmFlatRoll import AlarmFlatRoll
+from CoilDataBase.models import AlarmFlatRoll
 
 from .Base import BaseData
 from ..Types import Point2D

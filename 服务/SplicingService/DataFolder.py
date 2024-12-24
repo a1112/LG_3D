@@ -96,6 +96,7 @@ class DataFolder(Globs.control.BaseDataFolder):
 
     async def load2_d(self, coil_id, stem_list):
         source2_d = self.source / coil_id / "2D"
+
         async def read_2d(stem):
             """异步读取 BMP 文件并返回图像数据"""
             # 异步模拟读取

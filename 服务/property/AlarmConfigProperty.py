@@ -1,8 +1,8 @@
 class AlarmGradResult:
-    def __init__(self, grad, errorMsg, configMsg):
+    def __init__(self, grad, error_msg, config_msg):
         self.grad = grad
-        self.errorMsg = errorMsg
-        self.configMsg = configMsg
+        self.errorMsg = error_msg
+        self.configMsg = config_msg
 
 
 class AlarmFlatRollConfig:
@@ -49,11 +49,11 @@ class AlarmConfigProperty:
     def __init__(self, config):
         self.config = config
 
-    def getAlarmFlatRollConfig(self, nextCode):
-        return AlarmFlatRollConfig(self.config["FlatRoll"][getattr(self.config["FlatRoll"], nextCode, "Base")])
+    def getAlarmFlatRollConfig(self, next_code):
+        return AlarmFlatRollConfig(self.config["FlatRoll"][getattr(self.config["FlatRoll"], next_code, "Base")])
 
-    def getTaperShapeConfig(self, nextCode):
-        return TaperShapeConfig(self.config["TaperShape"][getattr(self.config["TaperShape"], nextCode, "Base")])
+    def getTaperShapeConfig(self, next_code):
+        return TaperShapeConfig(self.config["TaperShape"][getattr(self.config["TaperShape"], next_code, "Base")])
 
-    def getLooseCoilConfig(self, nextCode):
-        return LooseCoilConfig(self.config["LooseCoil"][getattr(self.config["LooseCoil"], nextCode, "Base")])
+    def getLooseCoilConfig(self, next_code):
+        return LooseCoilConfig(self.config["LooseCoil"][getattr(self.config["LooseCoil"], next_code, "Base")])

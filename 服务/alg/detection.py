@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+import PIL.Image
 import numpy as np
 from PIL import Image
 import concurrent.futures
@@ -108,10 +109,11 @@ def save_detection_item(info,image,save_url):
     create_xml(save_url,[h,w,1],info)
 
 
-def save_detection(res_list,clip_image_list,clip_info_list,id_str):
+def save_detection(res_list,clip_image_list,clip_info_list,id_str,save_base_folder=None):
     if not id_str:
         id_str = "null"
-    save_base_folder = Path(list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent/"det_save"
+    if save_base_folder is None:
+        save_base_folder = Path(list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent/"det_save"
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         index=0
@@ -124,7 +126,11 @@ def save_detection(res_list,clip_image_list,clip_info_list,id_str):
             save_url=save_base/""/f"{id_str}_{index}.png"
             executor.submit(save_detection_item,res,clip_image,save_url)
 
-def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.2,id_str=None):
+
+def get_clip_images(join_image,mask_image,clip_num=None,mask_threshold=0.2):
+    if clip_num is None:
+        clip_num = serverConfigProperty.clip_num
+
     if isinstance(join_image,Image.Image):
         join_image = np.array(join_image)
     if isinstance(mask_image,Image.Image):
@@ -149,11 +155,20 @@ def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.2,id_s
                 clip_image_list.append(clip_image)
                 clip_mask_list.append(clip_mask)
                 clip_info_list.append((c_x, c_y, c_w, c_h))
+    return clip_image_list,clip_mask_list,clip_info_list
 
+
+def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.2,id_str=None,save_base_folder=None):
+    if isinstance(join_image,Image.Image):
+        join_image = np.array(join_image)
+    if isinstance(mask_image,Image.Image):
+        mask_image = np.array(mask_image)
+
+    clip_image_list,clip_mask_list,clip_info_list = get_clip_images(join_image,mask_image,clip_num=clip_num,mask_threshold=mask_threshold)
     # print(ccm.predictImage(clip_image_list))
     res_list = cdm.predict(clip_image_list)
     if Globs.control.save_detection:
-        save_detection(res_list,clip_image_list,clip_info_list,id_str)
+        save_detection(res_list,clip_image_list,clip_info_list,id_str,save_base_folder)
 
     return res_list, clip_image_list, clip_info_list  # 目标检测
 
@@ -179,7 +194,7 @@ def detection_all(data_integration_list: DataIntegrationList):
     for dataIntegration in data_integration_list:
         detection(dataIntegration)
 
-def detection_by_coil_id(coil_id:int):
+def detection_by_coil_id(coil_id:int,save_base_folder=None):
     """
     根据 coil_id 进行 识别
     """
@@ -191,4 +206,24 @@ def detection_by_coil_id(coil_id:int):
         gray=Image.open(gray_image_url)
         mask=Image.open(mask_image_url)
         id_str=f"{coil_id}_{key}"
-        detection_by_image(gray,mask,clip_num=10,mask_threshold=0.2,id_str=id_str)
+        detection_by_image(gray,mask,clip_num=10,mask_threshold=0.2,id_str=id_str,save_base_folder=save_base_folder)
+
+
+def clip_by_coil_id(coil_id,save_base_folder):
+    for key,surface in serverConfigProperty.surfaceConfigPropertyDict.items():
+        gray_image_url = surface.get_file(coil_id,surface.ImageType)
+        mask_image_url = surface.get_file(coil_id,surface.MaskType)
+        if not Path(gray_image_url).exists():
+            continue
+        print(gray_image_url)
+        gray=Image.open(gray_image_url)
+        mask=Image.open(mask_image_url)
+        id_str = f"{coil_id}_{key}"
+        clip_image_list,clip_mask_list,clip_info_list = get_clip_images(gray,mask)
+        for clip_image, clip_info in zip(clip_image_list, clip_info_list):
+            x, y, w, h = clip_info
+            print(clip_image)
+            clip_image.save(
+                str(save_base_folder/f"{id_str}_{x}_{y}_{w}_{h}.png")
+            )
+            print(clip_image)
