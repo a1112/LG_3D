@@ -10,8 +10,8 @@ CoreModel_ {
 
     property int currentCoilListIndex: 0
 
-    readonly property bool isListRealModel:currentCoilListIndex==0
-    readonly property bool isListHistoryModel:currentCoilListIndex==1
+    readonly property bool isListRealModel:currentCoilListIndex===0
+    readonly property bool isListHistoryModel:currentCoilListIndex===1
 
     function listToRealModel(){
         currentCoilListIndex=0

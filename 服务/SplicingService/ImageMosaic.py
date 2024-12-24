@@ -272,11 +272,11 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     @DetectionSpeedRecord.timing_decorator("图像保持")
     def sync_save(self,data_integration):
         return asyncio.run(self.save_all_data(data_integration))
+
     async def save_all_data(self, data_integration: DataIntegration):
         await self.save_image(data_integration)
         await self.save3_d(data_integration)
         await self.save_json(data_integration)
-
 
     def run(self):
         # 拼接后的主函数
