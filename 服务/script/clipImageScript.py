@@ -3,7 +3,8 @@ import numpy as np
 from PIL import Image
 from SplicingService.ImageMosaic import ImageMosaic
 from SplicingService.DataFolder import DataFolder
-from SplicingService.ImageMosaicThread import imageMosaicThread
+
+def sqlit_image()
 from PIL import Image
 saveFolder = Path(fr"I:\database\2D")
 saveFolder.mkdir(exist_ok=True)

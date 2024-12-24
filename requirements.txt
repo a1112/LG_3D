@@ -47,7 +47,6 @@ colorama
 filelock
 urllib3
 fsspec
-torchaudio
 defusedxml
 minio
 lxml

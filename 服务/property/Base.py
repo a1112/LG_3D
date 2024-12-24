@@ -7,11 +7,11 @@ import numpy as np
 
 import Globs
 from CoilDataBase.Coil import addCoilState, addServerDetectionError
-from CoilDataBase.models.CoilState import CoilState as CoilStateDB
-from CoilDataBase.models.SecondaryCoil import SecondaryCoil
-from CoilDataBase.models.AlarmTaperShape import AlarmTaperShape
-from CoilDataBase.models.AlarmLooseCoil import AlarmLooseCoil
-from CoilDataBase.models.ServerDetectionError import ServerDetectionError
+from CoilDataBase.models import CoilState as CoilStateDB
+from CoilDataBase.models import SecondaryCoil
+from CoilDataBase.models import AlarmTaperShape
+from CoilDataBase.models import AlarmLooseCoil
+from CoilDataBase.models import ServerDetectionError
 from Globs import control
 from property.Types import BdData, LevelingType
 from property.detection3D import FlatRollData

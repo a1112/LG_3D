@@ -3,9 +3,7 @@ import logging
 from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
-
-from CoilDataBase import Coil
-
+from CoilDataBase.config import Config
 
 class SurfaceConfigProperty:
     def __init__(self, surface_config=None):
@@ -35,6 +33,7 @@ class SurfaceConfigProperty:
         return f"{self.saveFolder}/{coil_id}/mask/{type_}" + self.saveImageType
 
     def get_info(self, coil_id):
+        from CoilDataBase import Coil
         coil_state = Coil.getCoilStateByCoilId(coil_id, self.key)
         if coil_state:
             return json.loads(Coil.getCoilStateByCoilId(coil_id, self.key).jsonData)
@@ -91,6 +90,9 @@ class ServerConfigProperty:
         self.version = _get_config_("VERSION",".".join([str(i) for i in [0, 1, 11]]))
         self.renderer_list = _get_config_("RendererList",["JET"])
         self.save_image_type=_get_config_("SaveImageType",".png")
+        self.sql_url = _get_config_("sql_url",None)
+        if not self.sql_url is None:
+            Config.url = self.sql_url
 
     def get_file(self, coil_id, surface_key, type_, mask=False):
         surface_config = self.surfaceConfigPropertyDict[surface_key]
