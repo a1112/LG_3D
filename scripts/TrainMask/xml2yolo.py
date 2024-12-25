@@ -73,11 +73,12 @@ classes_map = {
     "数据": ['粘连', '毛边', '边部脏污', '脏污', '烂边', '数据缺失', '数据脏污', '封口', '数据遮挡', "数据污染"],
     "细微": ['划伤', '凹坑', '毛刺', '边裂', '结疤'],
     "严重": ['折叠', '卷边', '大卷边', "折叠,"],
-    "其他": ["卷头", '分层', '卷尾', '塔形']
-
+    "其他": ["卷头", '分层', '卷尾', '塔形'],
+    "内折叠": ["内折叠"]
 }
+
 # 示例使用
-xml_folder = Path(r'I:\Data\中间增加_合并')
+xml_folder = Path(r'E:\train\折叠only\detection_sub_image_折叠')
 yolo_folder = xml_folder.parent / "txt"
 yolo_folder.mkdir(parents=True, exist_ok=True)
 process_annotations(xml_folder, yolo_folder, classes_map)
