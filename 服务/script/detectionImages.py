@@ -8,7 +8,7 @@ from alg.CoilMaskModel import CoilDetectionModel
 
 batch_size = 32
 
-cdm = CoilDetectionModel()
+cdm = CoilDetectionModel(base_name="CoilDetection_ZD.pt")
 image_folder= Path("E:\detection_sub_image")
 from alg import detection
 

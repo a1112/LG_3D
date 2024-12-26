@@ -48,10 +48,14 @@ class CoilMaskModel:
 
 
 class CoilDetectionModel:
-    def __init__(self,model_url=None):
+    def __init__(self,model_url=None,base_name=None):
+        assert model_url is None or base_name is None ,ValueError("设置错误")
+        if base_name is not None:
+            model_url = str(CONFIG.base_config_folder /"model" /base_name)
+
         if model_url is None:
             model_url = str(CONFIG.base_config_folder /"model" /"CoilDetection.pt")
-
+        print(model_url)
         self.model_url = model_url
         self.model = YOLO(model_url)  # load a custom model
 

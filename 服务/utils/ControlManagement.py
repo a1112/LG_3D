@@ -15,7 +15,7 @@ class ControlManagement(ThreadClass):
         super().__init__()
         self.config = controlConfig
         self.configFile = controlConfigFile
-        self.ImageSaverWorkNum = 5
+        self.ImageSaverWorkNum = 3
         self.minMaskDetectErrorSize = 2000  # mask 检测最小报警值
         self.median_filter_size = 3
         self.downsampleSize = 3  # 如果下采样 1，数据将会非常庞大
@@ -23,8 +23,8 @@ class ControlManagement(ThreadClass):
         self.ImageSaverThreadType = "multiprocessing"
         self.D3SaverWorkNum = 10
         self.D3SaverThreadType = "multiprocessing"
-        self.D3SaverThreadMaxsize = 10
-        self.ImageSaverQueueSize = 10
+        self.D3SaverThreadMaxsize = 5
+        self.ImageSaverQueueSize = 20
         self.BaseDataFolder = ProcessClass
         self.baseTimeFormat = "%Y-%m-%d %H:%M:%S"
         self.exportTimeFormat = self.baseTimeFormat
@@ -40,6 +40,9 @@ class ControlManagement(ThreadClass):
         self.debug_show = False
         self.debug_raise = False
         self.save_detection = True  #保存目标检测小图
+
+        self.SaveAndDeleteCameraDataBase = ProcessClass
+        self.SaveAndDeleteSaveDataBase = ProcessClass
 
         self.start()
 
