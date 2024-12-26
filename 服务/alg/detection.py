@@ -158,7 +158,7 @@ def get_clip_images(join_image,mask_image,clip_num=None,mask_threshold=0.2):
     return clip_image_list,clip_mask_list,clip_info_list
 
 
-def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.2,id_str=None,save_base_folder=None):
+def detection_by_image(join_image,mask_image,clip_num=10,mask_threshold=0.1,id_str=None,save_base_folder=None):
     if isinstance(join_image,Image.Image):
         join_image = np.array(join_image)
     if isinstance(mask_image,Image.Image):
@@ -227,3 +227,5 @@ def clip_by_coil_id(coil_id,save_base_folder):
                 str(save_base_folder/f"{id_str}_{x}_{y}_{w}_{h}.png")
             )
             print(clip_image)
+
+def

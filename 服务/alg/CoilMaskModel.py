@@ -48,9 +48,12 @@ class CoilMaskModel:
 
 
 class CoilDetectionModel:
-    def __init__(self):
+    def __init__(self,model_url=None):
+        if model_url is None:
+            model_url = str(CONFIG.base_config_folder /"model" /"CoilDetection.pt")
 
-        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilDetection.pt"))  # load a custom model
+        self.model_url = model_url
+        self.model = YOLO(model_url)  # load a custom model
 
     def predict(self, images):
         results = self.model(images)
