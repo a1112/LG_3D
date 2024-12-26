@@ -43,7 +43,7 @@ Item {
                      } else {
                         dataShowCore.canvasScale *= 0.9
                      }
-                     if (dataShowCore.canvasScale > 1){
+                     if (dataShowCore.canvasScale > dataShowCore.maxScale){
                         dataShowCore.canvasScale = dataShowCore.maxScale
                         dataShowCore.setMaxErrorScale("red")
                      }

@@ -1,5 +1,7 @@
+import threading
 import time
-
+import CONFIG
+from BKVisionCamera import crate_capter
 from harvesters.core import ImageAcquirer,Buffer
 
 from core import get_camera_by_sn
@@ -69,3 +71,25 @@ class SickCamera:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 清理资源，例如关闭相机
         self.release()
+
+class DaHengCamera(threading.Thread):
+    def __init__(self, yaml_config):
+        super().__init__()
+        self.yaml_config = yaml_config
+        if yaml_config:
+            self.capter = crate_capter(str(CONFIG.CONFIG_DIR/ self.yaml_config))
+            print(self.capter)
+            self.start()
+        self.last_frame = None
+
+    def get_last_frame(self):
+        return self.last_frame
+    def run(self):
+        with self.capter as cap:
+            while True:
+                frame = cap.getFrame()
+                if frame is None:
+                    time.sleep(0.01)
+                    continue
+                time.sleep(0.01)
+                self.last_frame=frame

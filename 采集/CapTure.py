@@ -8,7 +8,7 @@ from ImageDataSave import ImageDataSave
 from ImageBuffer import SickBuffer
 from Signal import signal, lastTimeDict
 from pathlib import Path
-from Camera import SickCamera
+from Camera import SickCamera, DaHengCamera
 from Log import logger
 import Server
 from CameraControl import CameraControl
@@ -18,13 +18,26 @@ class CapTure(Thread):
     """
     def __init__(self, camera_info:CONFIG.CameraConfig):
         super().__init__()
+        self.cameraControl = None
+        self.dataSave = None
+        self.camera = None
+        self.globCapInfo = None
+        self.running = None
+        self.saveFolder = None
+        self.cameraInfo = None
+        self.captureRunning = None
+        self.coil = None
         self.camera_info=camera_info
 
 
-    def set_camera(self):
+    def set_camera_3d(self):
         camera = SickCamera(self.cameraInfo.sn)
         self.camera = camera
-        self.dataSave.set_camera(camera)
+        return camera
+
+    def set_camera_2d(self):
+        yaml_config = self.cameraInfo.yaml_config
+        camera=DaHengCamera(yaml_config)
         return camera
 
     def get(self):
@@ -60,24 +73,28 @@ class CapTure(Thread):
 
         Server.start_server(camera_info, self)
         logger.debug(f"启动采集 线程 {self.cameraInfo.key}... ...")
-
-
-
+        camera_3d = self.set_camera_3d()
+        camera_2d = self.set_camera_2d()
         while self.running:
             try:
-                if not self.captureRunning:
-                    time.sleep(0.1)
-                    continue
-                camera = self.set_camera()
+                # if not self.c:
+                #     time.sleep(0.1)
+                #     continue
                 logger.debug(f"启动相机 ...  ")
-                with camera as cap:
-                    logger.debug(f"启动相机 {camera}... ...")
-                    while self.captureRunning:
+
+                with camera_3d as cap:
+                    logger.debug(f"启动相机 {camera_3d}... ...")
+                    while True:
                         try:
+                            if self.coil is None:
+                                print(f"coil 为空 ")
+                                time.sleep(0.1)
+                                self.coil = 1
                             buffer = cap.get_buffer()
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(self.coil)
+                            bf.area_cap = camera_2d.last_frame
                             self.dataSave.put(bf)
                             lastTimeDict[self.cameraInfo.key] = time.time()
                         finally:

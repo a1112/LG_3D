@@ -7,7 +7,8 @@
       "saveFolder": "F:\\",
       "key": "Cap_L_D",
       "serverIp": "0.0.0.0",
-      "serverPort": 6101
+      "serverPort": 6101,
+      "yaml_config": ""
     },
         {
       "sn": "22110092",
@@ -15,7 +16,8 @@
       "saveFolder": "F:\\",
       "key": "Cap_L_M",
       "serverIp": "0.0.0.0",
-      "serverPort": 6102
+      "serverPort": 6102,
+      "yaml_config": ""
     },
         {
       "sn": "24170060",
@@ -23,7 +25,8 @@
       "saveFolder": "F:\\",
       "key": "Cap_L_U",
       "serverIp": "0.0.0.0",
-      "serverPort": 6103
+      "serverPort": 6103,
+      "yaml_config": ""
     },
     {
       "sn": "24170059",
@@ -31,7 +34,8 @@
       "saveFolder": "G:\\",
       "key": "Cap_S_D",
       "serverIp": "0.0.0.0",
-      "serverPort": 6104
+      "serverPort": 6104,
+      "yaml_config": "Area_S_D.yaml"
     },
         {
       "sn": "24170061",
@@ -39,14 +43,16 @@
       "saveFolder": "G:\\",
       "key": "Cap_S_M",
       "serverIp": "0.0.0.0",
-      "serverPort": 6105
+      "serverPort": 6105,
+      "yaml_config": "Area_S_M.yaml"
     },{
       "sn": "24150207",
       "name": "S_U",
       "saveFolder": "G:\\",
       "key": "Cap_S_U",
       "serverIp": "0.0.0.0",
-      "serverPort": 6106
+      "serverPort": 6106,
+      "yaml_config": "c.yaml"
     }
   ]
 }

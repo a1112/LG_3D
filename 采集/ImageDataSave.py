@@ -73,6 +73,10 @@ class ImageDataSave(Thread):
         save_file.parent.mkdir(parents=True, exist_ok=True)
         Image.fromarray(buffer.data2D).save(str(save_file))
 
+    def save_area_2d(self,buffer):
+        save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.bmp"
+        save_file.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(buffer.area_cap).save(str(save_file))
     def save_database(self, buffer):
         try:
             return addObj(CapTrueLogItem(
@@ -92,6 +96,11 @@ class ImageDataSave(Thread):
         self.save_json(buffer)
         self.save3_d(buffer)
         self.save2_d(buffer)
+        try:
+            if buffer.area_cap is not None:
+                self.save_area_2d(buffer)
+        except Exception as e:
+            logger.error(e)
         if buffer.save_index == 0:
             if self.camera:
                 self.save_camera_config(buffer)

@@ -105,7 +105,7 @@ DataShowCore_ {
     property int checkRendererIndex:0
 
     property real minScale:Math.min(canvasHeight/sourceWidth,canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
-    property real maxScale: 1.0 // 最大缩放比例
+    property real maxScale: 1 // 最大缩放比例
     property point scaleTempPoint: Qt.point(0,0)
 
     function getAspectRatioByPoint(point){

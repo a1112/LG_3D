@@ -10,6 +10,8 @@ parser.add_argument('--config', type=str, default=None, help='相机采集配置
 args = parser.parse_args()
 
 
+CONFIG_DIR = Path("configs")
+
 isLoc = False
 if socket.gethostname() in ["lcx_ace"]:
     isLoc = True
@@ -26,12 +28,19 @@ elif "CapTure" in sys.executable:
 class CameraConfig(object):
     def __init__(self, config):
         self.config = config
+        def get_item_config(item,key,default):
+            try:
+                return item[key]
+            except KeyError:
+                return default
+
         self.sn = config["sn"]
         self.name=config["name"]
         self.saveFolder= Path(config["saveFolder"])
         self.key=config["key"]
         self.serverIp=config["serverIp"]
         self.serverPort=config["serverPort"]
+        self.yaml_config = get_item_config(config,"yaml_config",None)
 
     def __iter__(self):
         return iter(self.config)

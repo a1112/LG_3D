@@ -21,10 +21,12 @@ class SickBuffer:
         self.data2D_mean = 0
         self.data3D_mean = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
+        self.area_cap = None
 
-    def setCoil(self, coilData: SecondaryCoil):
-        self.coilData = coilData
-        self.coilId = str(coilData.Id)
+
+    def setCoil(self, coil_data: SecondaryCoil):
+        self.coilData = coil_data
+        self.coilId = str(coil_data.Id)
 
     def get_json(self):
         js_data = {
