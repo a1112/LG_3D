@@ -76,20 +76,27 @@ class DaHengCamera(threading.Thread):
     def __init__(self, yaml_config):
         super().__init__()
         self.yaml_config = yaml_config
+        self.last_frame = None
         if yaml_config:
             self.capter = crate_capter(str(CONFIG.CONFIG_DIR/ self.yaml_config))
-            print(self.capter)
+            print(f"self.capter {self.capter}  {yaml_config}")
             self.start()
-        self.last_frame = None
+
 
     def get_last_frame(self):
         return self.last_frame
     def run(self):
-        with self.capter as cap:
-            while True:
-                frame = cap.getFrame()
-                if frame is None:
-                    time.sleep(0.01)
-                    continue
-                time.sleep(0.01)
-                self.last_frame=frame
+        print(self.yaml_config)
+        while True:
+            try:
+                with self.capter as cap:
+                    while True:
+                        frame = cap.getFrame()
+                        self.last_frame = frame
+                        if frame is None:
+                            time.sleep(0.1)
+                            continue
+                        time.sleep(0.01)
+            except BaseException as e:
+                time.sleep(5)
+                print(e)

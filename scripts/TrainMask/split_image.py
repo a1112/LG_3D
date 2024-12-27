@@ -35,9 +35,12 @@ def crop_and_save(image_path, objects, output_dir, image_name_prefix):
     根据对象的边界框裁剪图像，并保存到输出目录。
     """
     image = Image.open(image_path)
+    width, height = image.size
     for idx, obj in enumerate(objects):
         bbox = obj['bbox']
-        cropped = image.crop((bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax']))
+        c_box=[bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax']]
+        c_box = [max(0,c_box[0]-20),max(1,c_box[1]-20),min(width,c_box[2]+20),min(height,c_box[3]+20)]
+        cropped = image.crop(c_box)
         class_name = obj['name']
         # 构建保存路径，可以根据需要调整
         save_dir = os.path.join(output_dir, class_name)
@@ -76,7 +79,7 @@ def process_dataset(images_dir, annotations_dir, output_dir):
 
 if __name__ == "__main__":
     # 设置路径，根据实际情况修改
-    images_directory = Path(fr"I:\Data\中间增加_合并")  # 原始图像文件夹
+    images_directory = Path(fr"D:\样本\中间增加_合并")  # 原始图像文件夹
     annotations_directory = images_directory  # XML 标注文件夹
     output_directory = images_directory.parent/"cropped_images"  # 输出小图文件夹
     output_directory.mkdir(exist_ok=True, parents=True)

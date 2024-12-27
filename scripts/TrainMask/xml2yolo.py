@@ -78,7 +78,7 @@ classes_map = {
 }
 
 # 示例使用
-xml_folder = Path(r'E:\train\折叠only\detection_sub_image_折叠')
+xml_folder = Path(r'D:\样本\中间增加_合并')
 yolo_folder = xml_folder.parent / "txt"
 yolo_folder.mkdir(parents=True, exist_ok=True)
 process_annotations(xml_folder, yolo_folder, classes_map)

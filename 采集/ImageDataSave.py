@@ -97,8 +97,7 @@ class ImageDataSave(Thread):
         self.save3_d(buffer)
         self.save2_d(buffer)
         try:
-            if buffer.area_cap is not None:
-                self.save_area_2d(buffer)
+            self.save_area_2d(buffer)
         except Exception as e:
             logger.error(e)
         if buffer.save_index == 0:
