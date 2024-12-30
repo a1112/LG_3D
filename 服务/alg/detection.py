@@ -179,10 +179,26 @@ def classifiers_data(image_list,res_list):
     for sub_image,res_item in zip(image_list,res_list):
         for res_item_item in res_item:
             xmin, ymin, xmax, ymax, label_index, source, name = res_item_item
-            xmin, ymin, xmax, ymax = get_image_box(sub_image.shape,xmin, ymin, xmax, ymax)
+            xmin, ymin, xmax, ymax = get_image_box(sub_image,xmin, ymin, xmax, ymax)
             sub_image_clip = sub_image.crop([xmin, ymin, xmax, ymax])
             sub_image_clip_list.append(sub_image_clip)
     res_index,res_source = ccm.predict_image(sub_image_clip_list)
+    cls_list = ['刮丝', 'c', '塔形', '头尾', '小型缺陷', '打包带', '折叠', '数据脏污', '毛刺', '背景']
+    un_show_defects=['塔形', '头尾','打包带','数据脏污','背景']
+    index = 0
+
+    for item in res_list:
+        for item_item_index, item_item in enumerate(item):
+            item[item_item_index]=list(item[item_item_index])
+            index_cls,source_cls = res_index[index], res_source[index]
+            if cls_list[index_cls] in un_show_defects:
+                item[item_item_index]=[]
+                continue
+            item[item_item_index][4] = index_cls
+            item[item_item_index][5] = source_cls
+            item[item_item_index][6]=cls_list[index_cls]
+            index+=1
+
 
 def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None,
                        cdm_=None):
