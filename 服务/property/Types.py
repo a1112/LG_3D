@@ -109,3 +109,8 @@ class LevelingType(Flag):
     WK_TYPE = auto()
     LinearRegression = auto()
     Config = auto()
+
+
+class DetectionType(Flag):
+    Detection = auto()
+    DetectionAndClassifiers = auto()

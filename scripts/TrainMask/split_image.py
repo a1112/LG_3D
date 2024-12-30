@@ -5,7 +5,7 @@
 import os
 import xml.etree.ElementTree as ET
 from pathlib import Path
-
+from tqdm import tqdm
 from PIL import Image
 
 
@@ -62,7 +62,7 @@ def process_dataset(images_dir, annotations_dir, output_dir):
     xml_files = [f for f in os.listdir(annotations_dir) if f.endswith('.xml')]
     print(f"Found {len(xml_files)} XML files.")
 
-    for xml_file in xml_files:
+    for xml_file in tqdm(xml_files):
         xml_path = os.path.join(annotations_dir, xml_file)
         objects = parse_voc_xml(xml_path)
         if not objects:
@@ -79,7 +79,7 @@ def process_dataset(images_dir, annotations_dir, output_dir):
 
 if __name__ == "__main__":
     # 设置路径，根据实际情况修改
-    images_directory = Path(fr"F:\subImage\样本_合并")  # 原始图像文件夹
+    images_directory = Path(fr"F:\Data\detection_by_image_list")  # 原始图像文件夹
     annotations_directory = images_directory  # XML 标注文件夹
     output_directory = images_directory.parent/"cropped_images"  # 输出小图文件夹
     output_directory.mkdir(exist_ok=True, parents=True)

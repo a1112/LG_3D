@@ -3,6 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 
 import CONFIG
+from property.Types import DetectionType
 
 
 class CoilAreaModel:
@@ -54,7 +55,11 @@ class CoilDetectionModel:
             model_url = str(CONFIG.base_config_folder /"model" /base_name)
 
         if model_url is None:
-            model_url = str(CONFIG.base_config_folder /"model" /"CoilDetection.pt")
+            from Globs import control
+            if control.detection_model == DetectionType.Detection:
+                model_url = str(CONFIG.base_config_folder /"model" /"CoilDetection.pt")
+            elif control.detection_model == DetectionType.DetectionAndClassifiers:
+                model_url = str(CONFIG.base_config_folder / "model" / "CoilDetection_JC.pt")
         print(model_url)
         self.model_url = model_url
         self.model = YOLO(model_url)  # load a custom model

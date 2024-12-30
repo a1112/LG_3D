@@ -18,6 +18,7 @@ def create_yolo_dataset_structure(base_path):
     print(f"Created YOLO dataset structure at {base_path}")
 
 
+
 def organize_yolo_dataset(image_folder, label_folder, output_folder, train_ratio=0.8):
     create_yolo_dataset_structure(output_folder)
 

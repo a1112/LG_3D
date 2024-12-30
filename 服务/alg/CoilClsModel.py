@@ -1,3 +1,4 @@
+import json
 import time
 from pathlib import WindowsPath
 
@@ -7,12 +8,18 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
-
+from CONFIG import get_file_url
 
 class CoilClsModel:
     def __init__(self,model_name="mobilenetv4_conv_aa_large.e230_r448_in12k_ft_in1k",
-                 checkpoint_path=r'model/mobilenetv4.pth.tar'):
-        self.model = create_model(model_name, checkpoint_path=checkpoint_path, num_classes=None, in_chans=3)
+                 checkpoint_path=r'model/mobilenetv4.pth.tar',in_chans=3,config=None):
+        if config is not None:
+            config=json.load(open(config))
+            model_name=config["model_name"]
+            checkpoint_path = get_file_url(config["checkpoint_path"])
+            in_chans = config["in_chans"]
+
+        self.model = create_model(model_name, checkpoint_path=checkpoint_path, num_classes=None, in_chans=in_chans)
         self.model.eval()
         self.device = 'cuda:0'
         self.model = self.model.cuda()
@@ -20,7 +27,7 @@ class CoilClsModel:
         }, model=self.model)
         self.transform = create_transform(**self.config)
 
-    def ImageToTensor(self, image):
+    def image_to_tensor(self, image):
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
         return self.transform(image.convert('RGB'))
@@ -29,9 +36,9 @@ class CoilClsModel:
         res_index,res_source = [],[]
         image_cache: torch.Tensor = torch.Tensor().to(self.device)
         for index, img_ in list(enumerate(image_list)):
-            if isinstance(image_list, (str, WindowsPath)):
-                img_ = Image.open(image_list)
-            tensor = self.ImageToTensor(img_)
+            if isinstance(img_, (str, WindowsPath)):
+                img_ = Image.open(img_)
+            tensor = self.image_to_tensor(img_)
             tensor = tensor.to(self.device)
             image_cache = torch.cat([image_cache, tensor[None]])
             if image_cache.shape[0] < bach_size and index < len(image_list) - 1:
@@ -42,7 +49,7 @@ class CoilClsModel:
                     for out in pred_results_list:
                         ls = list(torch.nn.functional.softmax(out, dim=0).cpu().numpy())
                         res_index.append(ls.index(max(ls)))
-                        res_source.append(max(ls))
+                        res_source.append(float(max(ls)))
                 image_cache: torch.Tensor = torch.Tensor().to('cuda:0')
         return res_index,res_source
 

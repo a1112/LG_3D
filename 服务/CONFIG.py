@@ -32,13 +32,16 @@ if offline_mode:
     Config.file_url=str(base_config_folder/"Coil.db")
     isLoc = True
 
-configFile = base_config_folder / "configs/Server3D.json"
-alarmConfigFile = base_config_folder / r"configs/Alarm.json"
-infoConfigFile = base_config_folder / r"configs/Info.json"
-controlConfigFile = base_config_folder / r"configs/Control.json"
+def get_file_url(base):
+    return base_config_folder / base
 
+configFile = get_file_url("configs/Server3D.json")
+alarmConfigFile = get_file_url( r"configs/Alarm.json")
+infoConfigFile = get_file_url( r"configs/Info.json")
+controlConfigFile = get_file_url( r"configs/Control.json")
+CoilClassifiersConfigFile = get_file_url( r"model/CoilClassifiersConfig.json")
 if isLoc:
-    configFile = base_config_folder / r"configs/Server3DLoc2.json"
+    configFile = get_file_url( r"configs/Server3DLoc2.json")
 # elif args.config:
 #     configFile = Path(args.config)
 
@@ -46,6 +49,7 @@ ServerConfig = json.load(open(configFile, 'r', encoding="utf-8"))
 alarmConfig = json.load(open(alarmConfigFile, 'r', encoding="utf-8"))
 infoConfig = json.load(open(infoConfigFile, 'r', encoding="utf-8"))
 controlConfig = json.load(open(controlConfigFile, 'r', encoding="utf-8"))
+
 
 if socket.gethostname() == "DESKTOP-94ADH1G":
     ServerConfig["balsam"] = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
