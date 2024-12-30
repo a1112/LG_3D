@@ -1,25 +1,29 @@
-import concurrent.futures
-
-from PIL import Image
+import socket
 from pathlib import Path
-from tqdm import tqdm
+import concurrent.futures
+from tkinter import Image
 
-from alg.CoilMaskModel import CoilDetectionModel
-
-batch_size = 32
-
-cdm = CoilDetectionModel(base_name="CoilDetection_ZD.pt")
-image_folder= Path("E:\detection_sub_image")
 from alg import detection
+from alg.CoilMaskModel import CoilDetectionModel
+from PIL import Image
 
-def predict_one_batch(image_url_list):
-    images=[Image.open(url) for url in image_url_list]
+cdm = CoilDetectionModel(base_name="CoilDetection_JC.pt")
+
+images_folder = Path(fr"F:\subImage\detection_sub_image\detection_sub_image")
+if "DESKTOP-V9D92AP" == socket.gethostname():
+    save_base_folder = Path(fr"E:\detection_save")
+
+batch_size = 16
 
 
-url_list = []
+def predict_images(files, cdm_):
+    return detection.detection_by_image_list(files, cdm_)
+
+
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    for image_url in image_folder.glob("*.png"):
-        url_list.append(image_url)
-        if len(image_url)>=batch_size:
-            executor.submit(predict_one_batch,url_list.copy())
-            url_list=[]
+    image_url_list = []
+    for image_url in images_folder.glob("*.png"):
+        image_url_list.append(image_url)
+        if len(image_url_list) >= batch_size:
+            result = executor.submit(predict_images, image_url_list, cdm_=cdm)
+            image_url_list = []

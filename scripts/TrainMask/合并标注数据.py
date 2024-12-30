@@ -14,8 +14,8 @@ def join_files(from_folder, to_folder):
             except Exception as e:
                 raise e
 
-rootFolder = Path(fr"D:\样本\中间增加")
-toFolder = Path(fr"D:\样本\中间增加_合并")
+rootFolder = Path(fr"F:\subImage\样本")
+toFolder = Path(fr"F:\subImage\样本_合并")
 if toFolder.exists():
     shutil.rmtree(toFolder)
 toFolder.mkdir(exist_ok=True)

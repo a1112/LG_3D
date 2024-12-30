@@ -12,6 +12,7 @@ from property.Base import DataIntegrationList, DataIntegration
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .CoilMaskModel import CoilDetectionModel
 from .tool import create_xml
+
 cdm = CoilDetectionModel()
 
 
@@ -19,8 +20,8 @@ def rectangles_overlap(rect1, rect2):
     """
     判断两个矩形是否重叠。
     """
-    x1, y1, x2, y2,*_ = rect1
-    a1, b1, a2, b2,*_ = rect2
+    x1, y1, x2, y2, *_ = rect1
+    a1, b1, a2, b2, *_ = rect2
 
     return not (x2 < a1 or a2 < x1 or y2 < b1 or b2 < y1)
 
@@ -33,16 +34,16 @@ def merge_two_rectangles(rect1, rect2):
     y1 = min(rect1[1], rect2[1])
     x2 = max(rect1[2], rect2[2])
     y2 = max(rect1[3], rect2[3])
-    *_,index,source1 = rect1
-    *_,source2 = rect2
-    return [x1, y1, x2, y2,index,max(source1,source2)]
+    *_, index, source1 = rect1
+    *_, source2 = rect2
+    return [x1, y1, x2, y2, index, max(source1, source2)]
 
 
 def merge_rectangles(rectangles):
     """
     合并重叠的矩形。
     """
-    print("merge_rectangles  :",rectangles)
+    print("merge_rectangles  :", rectangles)
     if not rectangles:
         return []
 
@@ -92,48 +93,49 @@ def commit_defects(defect_dict, data_integration):
                 "defectW": x2 - x1,
                 "defectH": y2 - y1,
                 "defectSource": source,
-                "defectData":""
+                "defectData": ""
             })
     # deleteDefectsBySecondaryCoilId(coilState.coilId,coilState.key)
     addDefects(
         defect_list
     )
 
-def save_detection_item(info,image,save_url):
 
-    if isinstance(image,np.ndarray):
-        image=Image.fromarray(image)
+def save_detection_item(info, image, save_url):
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
     save_url = save_url.with_suffix(".png")
     image.save(save_url)
-    w,h=image.size
-    create_xml(save_url,[h,w,1],info)
+    w, h = image.size
+    create_xml(save_url, [h, w, 1], info)
 
 
-def save_detection(res_list,clip_image_list,clip_info_list,id_str,save_base_folder=None):
+def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None):
     if not id_str:
         id_str = "null"
     if save_base_folder is None:
-        save_base_folder = Path(list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent/"det_save"
+        save_base_folder = Path(
+            list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        index=0
+        index = 0
         for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):
-            index+=1
+            index += 1
             if not len(res):
                 continue
-            save_base = save_base_folder/res[0][6]/str(int(res[0][5]*10//3))
+            save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
             save_base.mkdir(parents=True, exist_ok=True)
-            save_url=save_base/""/f"{id_str}_{index}.png"
-            executor.submit(save_detection_item,res,clip_image,save_url)
+            save_url = save_base / "" / f"{id_str}_{index}.png"
+            executor.submit(save_detection_item, res, clip_image, save_url)
 
 
-def get_clip_images(join_image,mask_image,clip_num=None,mask_threshold=0.2):
+def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.2):
     if clip_num is None:
         clip_num = serverConfigProperty.clip_num
 
-    if isinstance(join_image,Image.Image):
+    if isinstance(join_image, Image.Image):
         join_image = np.array(join_image)
-    if isinstance(mask_image,Image.Image):
+    if isinstance(mask_image, Image.Image):
         mask_image = np.array(mask_image)
     w = join_image.shape[1]
     h = join_image.shape[0]
@@ -155,25 +157,39 @@ def get_clip_images(join_image,mask_image,clip_num=None,mask_threshold=0.2):
                 clip_image_list.append(clip_image)
                 clip_mask_list.append(clip_mask)
                 clip_info_list.append((c_x, c_y, c_w, c_h))
-    return clip_image_list,clip_mask_list,clip_info_list
+    return clip_image_list, clip_mask_list, clip_info_list
 
 
-def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None, cdm_ = None):
+def detection_by_image_list(clip_image_url_list, cdm_=None):
+    clip_image_list = [Image.open(f) for f in clip_image_url_list]
+    res_list = cdm_.predict(clip_image_list)
+    for url, image, info in zip(clip_image_url_list, clip_image_list, res_list):
+        if len(info):
+            folder = (Path(url).parent.parent / "detection_by_image_list")
+            folder.mkdir(exist_ok=True, parents=True)
+            save_url = folder / Path(url).name
+            save_detection_item(info, image, save_url)
+
+
+def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None,
+                       cdm_=None):
     global cdm
     if cdm_ is None:
         cdm_ = cdm
-    if isinstance(join_image,Image.Image):
+    if isinstance(join_image, Image.Image):
         join_image = np.array(join_image)
-    if isinstance(mask_image,Image.Image):
+    if isinstance(mask_image, Image.Image):
         mask_image = np.array(mask_image)
 
-    clip_image_list,clip_mask_list,clip_info_list = get_clip_images(join_image,mask_image,clip_num=clip_num,mask_threshold=mask_threshold)
+    clip_image_list, clip_mask_list, clip_info_list = get_clip_images(join_image, mask_image, clip_num=clip_num,
+                                                                      mask_threshold=mask_threshold)
     # print(ccm.predictImage(clip_image_list))
     res_list = cdm_.predict(clip_image_list)
     if Globs.control.save_detection:
-        save_detection(res_list,clip_image_list,clip_info_list,id_str,save_base_folder)
+        save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder)
 
     return res_list, clip_image_list, clip_info_list  # 目标检测
+
 
 @DetectionSpeedRecord.timing_decorator("检测数据计时 检出分类")
 def detection(data_integration: DataIntegration):
@@ -181,14 +197,14 @@ def detection(data_integration: DataIntegration):
     mask = data_integration.npy_mask
     clip_num = serverConfigProperty.clip_num
     id_str = data_integration.id_str
-    res_list,clip_image_list, clip_info_list = detection_by_image(join_image,mask,clip_num,id_str=id_str)
+    res_list, clip_image_list, clip_info_list = detection_by_image(join_image, mask, clip_num, id_str=id_str)
 
     defect_dict = defaultdict(list)
     for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):
         for box in res:
-            xmin, ymin, xmax, ymax, label_index,source,name = box
+            xmin, ymin, xmax, ymax, label_index, source, name = box
             x, y, w, h = clip_info
-            defect_dict[name].append((x + xmin, y + ymin, x + xmax, y + ymax,label_index, source))
+            defect_dict[name].append((x + xmin, y + ymin, x + xmax, y + ymax, label_index, source))
     commit_defects(defect_dict, data_integration)
 
 
@@ -197,37 +213,38 @@ def detection_all(data_integration_list: DataIntegrationList):
     for dataIntegration in data_integration_list:
         detection(dataIntegration)
 
-def detection_by_coil_id(coil_id:int, save_base_folder=None, cdm_ = None):
+
+def detection_by_coil_id(coil_id: int, save_base_folder=None, cdm_=None):
     """
     根据 coil_id 进行 识别
     """
-    for key,surface in serverConfigProperty.surfaceConfigPropertyDict.items():
-        gray_image_url = surface.get_file(coil_id,surface.ImageType)
-        mask_image_url = surface.get_file(coil_id,surface.MaskType)
+    for key, surface in serverConfigProperty.surfaceConfigPropertyDict.items():
+        gray_image_url = surface.get_file(coil_id, surface.ImageType)
+        mask_image_url = surface.get_file(coil_id, surface.MaskType)
         if not Path(gray_image_url).exists():
             continue
-        gray=Image.open(gray_image_url)
-        mask=Image.open(mask_image_url)
-        id_str=f"{coil_id}_{key}"
-        detection_by_image(gray, mask, clip_num=10, mask_threshold=0.2, id_str=id_str, save_base_folder=save_base_folder, cdm_=cdm_)
+        gray = Image.open(gray_image_url)
+        mask = Image.open(mask_image_url)
+        id_str = f"{coil_id}_{key}"
+        detection_by_image(gray, mask, clip_num=10, mask_threshold=0.2, id_str=id_str,
+                           save_base_folder=save_base_folder, cdm_=cdm_)
 
 
-def clip_by_coil_id(coil_id,save_base_folder):
-    for key,surface in serverConfigProperty.surfaceConfigPropertyDict.items():
-        gray_image_url = surface.get_file(coil_id,surface.ImageType)
-        mask_image_url = surface.get_file(coil_id,surface.MaskType)
+def clip_by_coil_id(coil_id, save_base_folder):
+    for key, surface in serverConfigProperty.surfaceConfigPropertyDict.items():
+        gray_image_url = surface.get_file(coil_id, surface.ImageType)
+        mask_image_url = surface.get_file(coil_id, surface.MaskType)
         if not Path(gray_image_url).exists():
             continue
         print(gray_image_url)
-        gray=Image.open(gray_image_url)
-        mask=Image.open(mask_image_url)
+        gray = Image.open(gray_image_url)
+        mask = Image.open(mask_image_url)
         id_str = f"{coil_id}_{key}"
-        clip_image_list,clip_mask_list,clip_info_list = get_clip_images(gray,mask)
+        clip_image_list, clip_mask_list, clip_info_list = get_clip_images(gray, mask)
         for clip_image, clip_info in zip(clip_image_list, clip_info_list):
             x, y, w, h = clip_info
             print(clip_image)
             clip_image.save(
-                str(save_base_folder/f"{id_str}_{x}_{y}_{w}_{h}.png")
+                str(save_base_folder / f"{id_str}_{x}_{y}_{w}_{h}.png")
             )
             print(clip_image)
-

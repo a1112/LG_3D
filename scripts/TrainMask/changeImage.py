@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 
+
 def convert_png_to_jpg(root_dir):
     for root, dirs, files in os.walk(root_dir):
         for file in files:
@@ -14,5 +15,6 @@ def convert_png_to_jpg(root_dir):
                     os.remove(png_path)
             except:
                 pass
+
 
 convert_png_to_jpg(rf"F:\ALG\SegTrainTest\trainTest\dataList\SaveMask")

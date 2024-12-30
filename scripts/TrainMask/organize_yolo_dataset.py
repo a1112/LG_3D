@@ -54,7 +54,7 @@ def organize_yolo_dataset(image_folder, label_folder, output_folder, train_ratio
 
 
 # 示例使用
-image_folder = Path(r'D:\样本\中间增加_合并')  # 包含图像文件的文件夹
+image_folder = Path(r'F:\subImage\样本_合并')  # 包含图像文件的文件夹
 label_folder = image_folder.parent/"txt"  # 包含YOLO格式标注文件的文件夹
 output_folder = label_folder.parent/"Dataset"  # 用于保存组织后的数据集的文件夹
 output_folder.mkdir(parents=True, exist_ok=True)
