@@ -1,4 +1,5 @@
 import threading
+from multiprocessing import Process, Queue
 import time
 import CONFIG
 from BKVisionCamera import crate_capter
@@ -72,27 +73,30 @@ class SickCamera:
         # 清理资源，例如关闭相机
         self.release()
 
-class DaHengCamera(threading.Thread):
+class DaHengCamera(Process):
     def __init__(self, yaml_config):
         super().__init__()
         self.yaml_config = yaml_config
         self.last_frame = None
+        self.frame_queue = Queue()
         if yaml_config:
-            self.capter = crate_capter(str(CONFIG.CONFIG_DIR/ self.yaml_config))
-            print(f"self.capter {self.capter}  {yaml_config}")
             self.start()
 
 
     def get_last_frame(self):
-        return self.last_frame
+        if self.frame_queue.qsize() > 0:
+            return self.frame_queue.get()
     def run(self):
         print(self.yaml_config)
+        self.capter = crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
         while True:
             try:
                 with self.capter as cap:
                     while True:
                         frame = cap.getFrame()
-                        self.last_frame = frame
+                        while self.frame_queue.qsize() > 0:
+                            self.frame_queue.get()
+                        self.frame_queue.put(frame)
                         if frame is None:
                             time.sleep(0.1)
                             continue

@@ -127,7 +127,10 @@ def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_
             index += 1
             if not len(res):
                 continue
-            save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
+            try:
+                save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
+            except:
+                save_base = save_base_folder
             save_base.mkdir(parents=True, exist_ok=True)
             save_url = save_base / "" / f"{id_str}_{index}.png"
             executor.submit(save_detection_item, res, clip_image, save_url)
@@ -184,16 +187,16 @@ def classifiers_data(image_list,res_list):
             sub_image_clip_list.append(sub_image_clip)
     res_index,res_source = ccm.predict_image(sub_image_clip_list)
     cls_list = ['刮丝', 'c', '塔形', '头尾', '小型缺陷', '打包带', '折叠', '数据脏污', '毛刺', '背景']
-    un_show_defects=['塔形', '头尾','打包带','数据脏污','背景']
+    # un_show_defects=['塔形', '头尾','打包带','数据脏污','背景']
     index = 0
 
     for item in res_list:
         for item_item_index, item_item in enumerate(item):
             item[item_item_index]=list(item[item_item_index])
             index_cls,source_cls = res_index[index], res_source[index]
-            if cls_list[index_cls] in un_show_defects:
-                item[item_item_index]=[]
-                continue
+            # if cls_list[index_cls] in un_show_defects:
+            #     item[item_item_index]=[]
+            #     continue
             item[item_item_index][4] = index_cls
             item[item_item_index][5] = source_cls
             item[item_item_index][6]=cls_list[index_cls]
