@@ -12,6 +12,8 @@ from Camera import SickCamera, DaHengCamera
 from Log import logger
 import Server
 from CameraControl import CameraControl
+
+
 class CapTure(Thread):
     """
         多线程的主循环

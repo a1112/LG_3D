@@ -1,15 +1,11 @@
 import QtQuick
 import "../../Model"
-import "../../Core/Surface"
+
 import "_base_"
 DataShowCore_ {
     // OBJ
     id:root
-    property SurfaceData surfaceData
 
-    property Binds binds :Binds{
-    surfaceData:root.surfaceData
-    }
 
     property AdjustConfig adjustConfig:binds.adjustConfig
     property DataShowControl controls:  DataShowControl{
@@ -26,26 +22,7 @@ DataShowCore_ {
       // 图标的显示方式
     property int chartShowType: 0
 
-    property var defectDict: {return {}}
 
-    property ListModel currentDefectDictModel:ListModel{
-    }
-
-    property ListModel defectModel: ListModel{
-    }
-
-    function flushDefect(){
-        defectModel.clear()
-        currentDefectDictModel.clear()
-        defectDict={}
-        api.getDefects(surfaceData.coilId,surfaceData.key,
-                       (result)=>{
-                           defectsData = JSON.parse(result)
-                       },
-                       (err)=>{
-                       }
-                       )
-    }
 
     readonly property int coilId: surfaceData.coilId
     readonly property string key:surfaceData.key
@@ -202,34 +179,7 @@ DataShowCore_ {
 
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
-    property var defectsData: []
-    onDefectsDataChanged: {
-        if(defectsData.length>0){
-            for (let i = 0; i < defectsData.length; i++) {
-                let item = defectsData[i]
-                defectModel.append(defectsData[i])
-                // console.log(JSON.stringify(item))
-                let defectName = item.defectName
-                if (defectName in defectDict){
-                    defectDict[defectName].push(item)
-                    for (let j = 0; j < currentDefectDictModel.count; j++) {
-                        if (currentDefectDictModel.get(j).defectName == defectName){
-                            currentDefectDictModel.setProperty(j,"num",currentDefectDictModel.get(j).num+1)
-                        }
-                    }
-                }
-                else{
-                    defectDict[defectName] = [item]
-                    currentDefectDictModel.append({"defectName":defectName,
-                                                      "num":1
-                                                  })
 
-                    if (!(defectName in coreModel.defectDictAll))
-                        coreModel.defectDictAll[defectName]=true
-                }
-            }
-        }
-    }
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
@@ -253,5 +203,4 @@ DataShowCore_ {
         surfaceData.error_visible=true
     }
 
-    property bool defect_show_enable: true
 }
