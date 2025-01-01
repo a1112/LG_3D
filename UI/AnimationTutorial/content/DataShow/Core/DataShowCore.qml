@@ -7,13 +7,13 @@ DataShowCore_ {
     id:root
 
 
-    property AdjustConfig adjustConfig:binds.adjustConfig
+
     property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
     property DataShowControl3D controls3D:  DataShowControl3D{
     }
-    property TopDataManage topDataManage :binds.topDataManage
+
 
     function flush(){
         surfaceData.error_visible=false

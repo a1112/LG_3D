@@ -29,6 +29,7 @@ Item {
     Repeater{
         model: dataShowCore.defectModel
         Rectangle{
+            visible:dataShowCore.defectManage.unShowDefectList.indexOf(defectName)<0
             x: defectX*dataShowCore.canvasScale
             y: defectY*dataShowCore.canvasScale
             width: defectW*dataShowCore.canvasScale
@@ -37,7 +38,7 @@ Item {
             border.width: 1
             opacity:0.7
             color: "transparent"
-            visible: global.defectClassProperty.defectDictAll[defectName]??false
+            // visible: global.defectClassProperty.defectDictAll[defectName]??false
         Label{
             text: defectName
             font.pixelSize: 15

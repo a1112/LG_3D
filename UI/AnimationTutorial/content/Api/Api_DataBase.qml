@@ -110,8 +110,10 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"exportDataSimple"),success,failure)
     }
 
-    function getExportByDateTimeUrl(startTime,endTime){
-        return apiConfig.url(apiConfig.serverUrlDaaBase,"exportxlsxByDateTime",startTime,endTime)
+    function getExportByDateTimeUrl(startTime,endTime,exportType){
+        return apiConfig.url(apiConfig.serverUrlDaaBase,"exportxlsxByDateTime",startTime,endTime,apiConfig.getGetArgs({
+                                                                                                                      export_type:exportType
+                                                                                                                      }))
     }
 
 

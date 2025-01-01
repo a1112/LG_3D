@@ -16,14 +16,14 @@ PopupBase {
     dim:true
     id:menu
     width: 600
-    height: 310
-        onOpened:{
-            let mmList = coreModel.getCurrentCoilListModelMinMaxId()
-            // from_id.value=mmList[0]
-            // to_id.value=mmList[1]
-            // outputName=Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
-            // ws_id.active=true
-        }
+    height:  menu.exportStatus.isNotDownload?310:350
+    onOpened:{
+        let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+        // from_id.value=mmList[0]
+        // to_id.value=mmList[1]
+        // outputName=Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
+        // ws_id.active=true
+    }
 
     property string outputFolder:(""+StandardPaths.writableLocation(StandardPaths.DesktopLocation)).substring(8)
     property string outputName:Qt.formatDateTime(new Date(), "yyyy_MM_dd hh_mm_ss")+".xlsx"
@@ -82,21 +82,40 @@ PopupBase {
             Layout.fillHeight: true
         }
         RowLayout{
-            DownloadingRow{
-                finshed:menu.exportStatus.isDownloadFinished
-                visible: menu.exportStatus.isDownloadFinished || menu.exportStatus.isDownloading
-                progress:menu.exportStatus.progress
-                exportUrl:menu.exportUrl
-            }
-            ErrorRow{
-                visible: menu.exportStatus.isDownloadError
-                errorStr:menu.exportStatus.errorStr
-            }
+            // DownloadingRow{
+            //     finshed:menu.exportStatus.isDownloadFinished
+            //     visible: menu.exportStatus.isDownloadFinished || menu.exportStatus.isDownloading
+            //     progress:menu.exportStatus.progress
+            //     exportUrl:menu.exportUrl
+            // }
+            // ErrorRow{
+            //     visible: menu.exportStatus.isDownloadError
+            //     errorStr:menu.exportStatus.errorStr
+            // }
+            Layout.fillWidth: true
             Item{
-                visible: menu.exportStatus.isNotDownload
                 Layout.fillWidth: true
                 implicitHeight:1
             }
+            Row{
+                spacing: 2
+                Label{
+                    text:"导出类型:"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                ComboBox{
+                    id:combox_export_type
+                    model: coreModel.exportTypeList
+                    implicitHeight: 30
+                    height: 30
+                }
+
+            }
+            Item{
+                width: 5
+                height: 1
+            }
+
             CheckRec{
                 text:menu.exportStatus.isDownloading?"导出中...":"导出"
                 font.pointSize: 18
@@ -119,6 +138,21 @@ PopupBase {
                 }
             }
         }
+        RowLayout{
+            visible: !menu.exportStatus.isNotDownload
+            Layout.fillWidth: true
+            DownloadingRow{
+                finshed:menu.exportStatus.isDownloadFinished
+                visible: menu.exportStatus.isDownloadFinished || menu.exportStatus.isDownloading
+                progress:menu.exportStatus.progress
+                exportUrl:menu.exportUrl
+            }
+            ErrorRow{
+                visible: menu.exportStatus.isDownloadError
+                errorStr:menu.exportStatus.errorStr
+            }
+        }
+
     }
     // FileDownloader{
     //         id:fileDownloader

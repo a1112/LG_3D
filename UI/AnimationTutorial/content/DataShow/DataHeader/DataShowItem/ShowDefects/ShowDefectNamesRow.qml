@@ -4,10 +4,11 @@ import QtQuick
 // import "../../../../Pages/Header"
 Item {
     id:root
+    property alias model:list.model
     ListView{
+        id:list
         anchors.fill:parent
         spacing:5
-        model:dataShowCore.currentDefectDictModel
         orientation:ListView.Horizontal
         delegate:
             DefectLabelShowItem{

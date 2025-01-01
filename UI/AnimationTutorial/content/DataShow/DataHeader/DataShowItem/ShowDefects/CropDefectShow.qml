@@ -59,14 +59,14 @@ Item {
 
                 }
                 }
-                Rectangle{
-                    border.width:1
-                    border.color:"red"
-                    color:"#00000000"
-                    anchors.centerIn: parent
-                    width:px_width*defectW
-                    height:px_width*defectH
-                }
+                // Rectangle{
+                //     border.width:1
+                //     border.color:"red"
+                //     color:"#00000000"
+                //     anchors.centerIn: parent
+                //     width:px_width*defectW
+                //     height:px_width*defectH
+                // }
             }
     DefectInfos{
 

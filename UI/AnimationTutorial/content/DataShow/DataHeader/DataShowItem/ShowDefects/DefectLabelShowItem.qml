@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Material
 CheckDelegate {
+    visible: dataShowCore.defectManage.unShowDefectList.indexOf(defectName)<0
     text: defectName  // num
     font.bold:true
     Material.foreground:global.defectClassProperty.getColorByName(defectName)

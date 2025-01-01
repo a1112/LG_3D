@@ -99,7 +99,7 @@ class ImageDataSave(Thread):
         try:
             self.save_area_2d(buffer)
         except Exception as e:
-            logger.error(e)
+            print(e)
         if buffer.save_index == 0:
             if self.camera:
                 self.save_camera_config(buffer)
