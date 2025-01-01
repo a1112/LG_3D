@@ -8,6 +8,11 @@ Item {
     property Binds binds :Binds{
     surfaceData:surfaceData
     }
+    //      alias objcet
+    readonly property AdjustConfig adjustConfig:binds.adjustConfig
+    readonly property TopDataManage topDataManage :binds.topDataManage
+    readonly property DefectManage defectManage:binds.defectManage
+    //      end alias
     readonly property bool show_visible:surfaceData.show_visible    // 是否显示
     property CircleConfig circleConfig:CircleConfig{}   // 圆的参数
 
@@ -24,10 +29,9 @@ Item {
 
     // 缺陷相关功能
 
-    property bool defect_show_enable: true
     property var defectDict: {return {}}    // 全部缺陷
     property var unShowDefectList: ["塔形", "头尾", "背景","数据脏污"]
-    property bool un_defect_show: false
+
     property ListModel defectModel: ListModel{
     }
     property ListModel un_defectModel: ListModel{
@@ -90,4 +94,5 @@ Item {
                        }
                        )
     }
+
 }

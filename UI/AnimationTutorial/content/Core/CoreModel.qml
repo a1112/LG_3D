@@ -144,5 +144,8 @@ CoreModel_ {
         )
     }
 
-
+    property var exportTypeList:["3D检测数据","缺陷数据","全部检测数据"]
+    function getExportKeyByName(name){
+        return ["3D","2D","ALL"][exportTypeList.indexOf(name)]
+    }
 }
