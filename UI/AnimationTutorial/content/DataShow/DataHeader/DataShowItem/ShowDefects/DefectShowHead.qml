@@ -12,6 +12,7 @@ Item {
     RowLayout{
         anchors.fill:parent
         ShowDefectNamesRow{
+            model:dataShowCore.currentDefectDictModel
             height:root.height
             Layout.fillWidth: true
         }

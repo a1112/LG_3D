@@ -52,10 +52,10 @@ Item {
                 let defectName = item.defectName
                 let cddm=currentDefectDictModel
                 let dm = defectModel
-                if (unShowDefectList.indexOf(defectName)>=0){
-                    cddm = currentUnShowDefectDictModel
-                    dm = un_defectModel
-                }
+                // if (unShowDefectList.indexOf(defectName)>=0){
+                //     cddm = currentUnShowDefectDictModel
+                //     dm = un_defectModel
+                // }
                 if (defectName in defectDict){
                     defectDict[defectName].push(item)
                     for (let j = 0; j < cddm.count; j++) {

@@ -2,7 +2,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 import datetime
-
+from pathlib import Path
 import CONFIG
 
 # 创建 logger
@@ -11,13 +11,13 @@ logger.setLevel(logging.DEBUG)
 
 # 创建控制台处理器
 print("采集日志")
-
+log_dir_base = Path("logs")
 # 创建 TimedRotatingFileHandler
-log_dir = 'logs/采集/'+CONFIG.configFile.stem
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+log_dir = log_dir_base/"采集"/f"{CONFIG.configFile.stem}_{os.getpid()}"
 
-filename = os.path.join(log_dir, 'log')
+log_dir_base.mkdir(parents=True, exist_ok=True)
+
+filename = str(log_dir)
 handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
 handler.suffix = "%Y-%m-%d.log"
 
