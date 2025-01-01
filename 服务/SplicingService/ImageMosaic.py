@@ -82,7 +82,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
     def set_coil_id(self, coil_id):
         coil_id = str(coil_id)
-        if not self.hasData(coil_id):
+        if not self.has_data(coil_id):
             return False
         (self.saveFolder / coil_id).mkdir(parents=True, exist_ok=True)
         self.producer.put(coil_id)
@@ -284,63 +284,63 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.d3Saver = D3Saver(self.managerQueue, self.loggerProcess)
         self.dataFolderList = []
         for folderConfig in self.config["folderList"]:
-            fdDt = [folderConfig, self.config["saveFolder"], self.config["direction"]]
-            self.dataFolderList.append(DataFolder(fdDt, self.loggerProcess.get_logger()))
+            fd_dt = [folderConfig, self.config["saveFolder"], self.config["direction"]]
+            self.dataFolderList.append(DataFolder(fd_dt, self.loggerProcess.get_logger()))
         while True:
-            dataIntegration = DataIntegration(self.producer.get(), self.saveFolder, self.direction, self.key)
+            data_integration = DataIntegration(self.producer.get(), self.saveFolder, self.direction, self.key)
             try:
-                logger.info(f"ImageMosaic {dataIntegration.coilId}")
-                self.__getAllData__(dataIntegration)  # 获取全部的拼接数据
-                dataIntegration.set_original_data(dataIntegration.datas)
+                logger.info(f"ImageMosaic {data_integration.coilId}")
+                self.__getAllData__(data_integration)  # 获取全部的拼接数据
+                data_integration.set_original_data(data_integration.datas)
                 # 裁剪 2D 3D MASK
-                self.__stitching__(dataIntegration)
-                self.sync_save(dataIntegration)
-                # Thread(target=self.sync_save, args=(dataIntegration,)).start()
-                # self.sync_save(dataIntegration)
-                dataIntegration.currentSecondaryCoil = self.currentSecondaryCoil
-                # AlarmDetection.detection(dataIntegration)
+                self.__stitching__(data_integration)
+                self.sync_save(data_integration)
+                # Thread(target=self.sync_save, args=(data_integration,)).start()
+                # self.sync_save(data_integration)
+                data_integration.currentSecondaryCoil = self.currentSecondaryCoil
+                # AlarmDetection.detection(data_integration)
 
-                # AlarmDetection.detectionAll(dataIntegration)
+                # AlarmDetection.detectionAll(data_integration)
 
-                dataIntegration.commit()
+                data_integration.commit()
             except ServerDetectionException as e:
                 error_message = traceback.format_exc()
-                logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
-                dataIntegration.addServerDetectionError(e)
+                logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
+                data_integration.addServerDetectionError(e)
                 print("continue Server")
             except Exception as e:
                 error_message = traceback.format_exc()
                 # raise e
-                logging.error(f"Error in ImageMosaic {dataIntegration.coilId}: {error_message}")
+                logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
                 if isLoc and Globs.control.debug_raise:
                     import six
                     six.reraise(Exception, e)
 
             finally:
-                self.consumer.put(dataIntegration)
+                self.consumer.put(data_integration)
 
-    def getData(self):
+    def get_data(self):
         return self.consumer.get()
 
-    def hasFolder(self, coilId):
+    def has_folder(self, coil_id):
         """
         文件夹是否存在
         Args:
-            coilId:
+            coil_id:
 
         Returns:
 
         """
         for folderConfig in self.config["folderList"]:
-            if not DataFolder.static_has_data(Path(folderConfig["source"]), coilId):
+            if not DataFolder.static_has_data(Path(folderConfig["source"]), coil_id):
                 return False
         return True
 
-    def checkDetectionEnd(self, coilId):
+    def check_detection_end(self, coil_id):
         for folderConfig in self.config["folderList"]:
-            if not DataFolder.static_check_detection_end(Path(folderConfig["source"]), coilId):
+            if not DataFolder.static_check_detection_end(Path(folderConfig["source"]), coil_id):
                 return False
         return True
 
-    def hasData(self, coilId):
-        return self.hasFolder(coilId)
+    def has_data(self, coil_id):
+        return self.has_folder(coil_id)

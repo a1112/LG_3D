@@ -12,6 +12,8 @@ from Camera import SickCamera, DaHengCamera
 from Log import logger
 import Server
 from CameraControl import CameraControl
+
+
 class CapTure(Thread):
     """
         多线程的主循环
@@ -94,7 +96,7 @@ class CapTure(Thread):
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(self.coil)
-                            bf.area_cap = camera_2d.last_frame
+                            bf.area_cap = camera_2d.get_last_frame()
                             self.dataSave.put(bf)
                             lastTimeDict[self.cameraInfo.key] = time.time()
                         finally:

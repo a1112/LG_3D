@@ -1,6 +1,6 @@
 from CONFIG import controlConfig, controlConfigFile
 from property.ControlProperty import ControlProperty
-from property.Types import DetectionTaperShapeType, LevelingType
+from property.Types import DetectionTaperShapeType, LevelingType, DetectionType
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
@@ -43,6 +43,8 @@ class ControlManagement(ThreadClass):
 
         self.SaveAndDeleteCameraDataBase = ProcessClass
         self.SaveAndDeleteSaveDataBase = ProcessClass
+
+        self.detection_model = DetectionType.DetectionAndClassifiers
 
         self.start()
 

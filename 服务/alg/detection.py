@@ -5,16 +5,20 @@ import PIL.Image
 import numpy as np
 from PIL import Image
 import concurrent.futures
-import Globs
 from CoilDataBase.Coil import addDefects
-from Globs import serverConfigProperty
+from CONFIG import CoilClassifiersConfigFile
+from Globs import serverConfigProperty, control
 from property.Base import DataIntegrationList, DataIntegration
+from property.Types import DetectionType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .CoilMaskModel import CoilDetectionModel
-from .tool import create_xml
+from .CoilClsModel import CoilClsModel
+from .tool import create_xml, get_image_box
 
 cdm = CoilDetectionModel()
 
+
+ccm = CoilClsModel( config = CoilClassifiersConfigFile)
 
 def rectangles_overlap(rect1, rect2):
     """
@@ -123,7 +127,10 @@ def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_
             index += 1
             if not len(res):
                 continue
-            save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
+            try:
+                save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
+            except:
+                save_base = save_base_folder
             save_base.mkdir(parents=True, exist_ok=True)
             save_url = save_base / "" / f"{id_str}_{index}.png"
             executor.submit(save_detection_item, res, clip_image, save_url)
@@ -170,6 +177,31 @@ def detection_by_image_list(clip_image_url_list, cdm_=None):
             save_url = folder / Path(url).name
             save_detection_item(info, image, save_url)
 
+def classifiers_data(image_list,res_list):
+    sub_image_clip_list = []
+    for sub_image,res_item in zip(image_list,res_list):
+        for res_item_item in res_item:
+            xmin, ymin, xmax, ymax, label_index, source, name = res_item_item
+            xmin, ymin, xmax, ymax = get_image_box(sub_image,xmin, ymin, xmax, ymax)
+            sub_image_clip = sub_image.crop([xmin, ymin, xmax, ymax])
+            sub_image_clip_list.append(sub_image_clip)
+    res_index,res_source = ccm.predict_image(sub_image_clip_list)
+    cls_list = ['刮丝', 'c', '塔形', '头尾', '小型缺陷', '打包带', '折叠', '数据脏污', '毛刺', '背景']
+    # un_show_defects=['塔形', '头尾','打包带','数据脏污','背景']
+    index = 0
+
+    for item in res_list:
+        for item_item_index, item_item in enumerate(item):
+            item[item_item_index]=list(item[item_item_index])
+            index_cls,source_cls = res_index[index], res_source[index]
+            # if cls_list[index_cls] in un_show_defects:
+            #     item[item_item_index]=[]
+            #     continue
+            item[item_item_index][4] = index_cls
+            item[item_item_index][5] = source_cls
+            item[item_item_index][6]=cls_list[index_cls]
+            index+=1
+
 
 def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None,
                        cdm_=None):
@@ -185,7 +217,11 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
                                                                       mask_threshold=mask_threshold)
     # print(ccm.predictImage(clip_image_list))
     res_list = cdm_.predict(clip_image_list)
-    if Globs.control.save_detection:
+    if control.detection_model == DetectionType.DetectionAndClassifiers:
+        classifiers_data(clip_image_list,res_list)
+
+
+    if control.save_detection:
         save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder)
 
     return res_list, clip_image_list, clip_info_list  # 目标检测

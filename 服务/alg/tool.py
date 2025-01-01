@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from lxml import etree
 
@@ -41,3 +42,7 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder = None):
     xml_path = Path(output_folder) / Path(file_name).with_suffix('.xml').name
     tree.write(str(xml_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
     print(f"Saved XML to {xml_path}")
+
+def get_image_box(image,xmin, ymin, xmax, ymax):
+    w,h=image.size
+    return max(xmin-20,0),max(ymin-20,0),min(xmax+20,w),min(ymax+20,h)

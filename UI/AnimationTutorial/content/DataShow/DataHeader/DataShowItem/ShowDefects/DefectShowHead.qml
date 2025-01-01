@@ -11,14 +11,13 @@ Item {
     }
     RowLayout{
         anchors.fill:parent
-
         ShowDefectNamesRow{
             height:root.height
             Layout.fillWidth: true
         }
+
         ShowTools{
             height:root.height
-
         }
     }
 }

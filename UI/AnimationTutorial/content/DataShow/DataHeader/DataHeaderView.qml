@@ -12,7 +12,7 @@ Loader{
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: dataShowCore.topDataManage.currentShowModel
-            DataShowItemDefects{  // 缺陷显示
+            DataShowItemDefects{  // 缺陷显示 界面
             }
             DataShowItemInfos{      // 数据信息
             }

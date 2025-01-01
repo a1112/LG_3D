@@ -50,7 +50,7 @@ class ImageMosaicThread(Thread):
 
     def check_detection_end(self, secondary_coil_id):
         for imageMosaic in self.imageMosaicList:
-            if not imageMosaic.checkDetectionEnd(secondary_coil_id):
+            if not imageMosaic.check_detection_end(secondary_coil_id):
                 logger.error("checkDetectionEnd ")
                 return False
         return True
@@ -86,18 +86,18 @@ class ImageMosaicThread(Thread):
                     self.startCoilId = secondary_coil.Id
                     status = {}
                     for imageMosaic in self.imageMosaicList:  # 设置 ID
-                        setOk = imageMosaic.set_coil_id(secondary_coil.Id)
+                        set_ok = imageMosaic.set_coil_id(secondary_coil.Id)
                         imageMosaic.currentSecondaryCoil = secondary_coil
                         status[imageMosaic.key] = 0
-                        if not setOk:
-                            logger.error(f"setOK: {setOk}")
+                        if not set_ok:
+                            logger.error(f"setOK: {set_ok}")
                             status[imageMosaic.key] = ErrorMap["DataFolderError"]
                             continue
                     data_integration_list = DataIntegrationList()
                     for imageMosaic in self.imageMosaicList:  # 获取图片
                         if status[imageMosaic.key] < 0:
                             continue
-                        data_integration = imageMosaic.getData()
+                        data_integration = imageMosaic.get_data()
                         data_integration_list.append(data_integration)  # 检测
                         if data_integration.isNone():
                             logger.error(f"image is None {secondary_coil.Id}")
