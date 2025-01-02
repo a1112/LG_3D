@@ -1,0 +1,53 @@
+{
+  "surface": [
+    {
+      "key": "S",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_S",
+      "rotate": 90,
+      "x_rotate": 17,
+      "direction": "L",
+      "folderList": [
+        {
+          "source": "F:\\datasets\\LG_3D_DataBase\\Data\\S_D",
+          "cropLeft": 50,
+          "cropRight": 50
+        },{
+          "source": "F:\\datasets\\LG_3D_DataBase\\Data\\S_M",
+          "cropLeft": 50,
+          "cropRight": 50
+        },{
+          "source": "F:\\datasets\\LG_3D_DataBase\\Data\\S_U",
+          "cropLeft":  50,
+          "cropRight": 50
+        }
+      ]
+    },{
+      "key": "L",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_L",
+      "rotate": -90,
+      "x_rotate": 10,
+      "direction": "R",
+        "folderList": [
+            {
+            "source": "F:\\datasets\\LG_3D_DataBase\\Data2\\L_U",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\datasets\\LG_3D_DataBase\\Data2\\L_M",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\datasets\\LG_3D_DataBase\\Data2\\L_D",
+            "cropLeft":  50,
+            "cropRight": 50
+            }
+        ]
+    }
+  ],
+  "balsam": "D:\\Qt\\6.8.0\\llvm-mingw_64\\bin\\balsam.exe",
+  "colorFromValue": -1200,
+    "colorToValue": 800,
+  "saveJoinMask": false,
+  "max3dSaveThread": 4,
+  "downsampleSize": 5
+}
