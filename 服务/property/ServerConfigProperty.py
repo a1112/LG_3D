@@ -102,7 +102,10 @@ class ServerConfigProperty:
 
     def get_3d_file(self, coil_id, surface_key):
         surface_config = self.surfaceConfigPropertyDict[surface_key]
-        return surface_config.get_3d_file(coil_id)
+        file_url = Path(surface_config.get_3d_file(coil_id))
+        if not file_url.exists():
+            file_url=file_url.with_suffix(".npz")
+        return file_url
 
     def get_mesh_file(self, coil_id, surface_key):
         surface_config = self.surfaceConfigPropertyDict[surface_key]

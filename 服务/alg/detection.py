@@ -186,8 +186,7 @@ def classifiers_data(image_list,res_list):
             sub_image_clip = sub_image.crop([xmin, ymin, xmax, ymax])
             sub_image_clip_list.append(sub_image_clip)
     res_index,res_source = ccm.predict_image(sub_image_clip_list)
-    cls_list = ['刮丝', 'c', '塔形', '头尾', '小型缺陷', '打包带', '折叠', '数据脏污', '毛刺', '背景']
-    # un_show_defects=['塔形', '头尾','打包带','数据脏污','背景']
+    cls_list = ['刮丝', '边部褶皱', '塔形', '头尾', '小型缺陷', '打包带', '折叠', '数据脏污', '毛刺', '背景']
     index = 0
 
     for item in res_list:
