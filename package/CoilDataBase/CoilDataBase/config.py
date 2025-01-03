@@ -15,6 +15,7 @@ PortDict = {
 
 
 class Config:
+    url = None
     deriver = DeriverList.mysql
     user = "root"
     password = "nercar"
@@ -31,6 +32,8 @@ def get_url(config=Config):
         config.deriver.value,config.file_url
     )
     else:
+        if Config.url is not None:
+            return Config.url
         url= "{}://{}:{}@{}:{}/{}?charset={}".format(
             config.deriver.value, config.user, config.password, config.host, config.port, config.database, config.charset
         )

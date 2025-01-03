@@ -33,7 +33,11 @@ if offline_mode:
     isLoc = True
 
 def get_file_url(base):
-    return base_config_folder / base
+    url = base_config_folder / base
+    if not url.exists():
+        print(f"{url}不存在！")
+        return Path("../CONFIG_3D")/base
+    return url
 
 class JsonConfig:
     def __init__(self,base_url):
@@ -47,7 +51,7 @@ alarmConfigFile = get_file_url( r"configs/Alarm.json")
 infoConfigFile = get_file_url( r"configs/Info.json")
 controlConfigFile = get_file_url( r"configs/Control.json")
 coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
-defectClassesConfigFile = get_file_url(r"config/DefectClasses.json")
+defectClassesConfigFile = get_file_url(r"configs/DefectClasses.json")
 if isLoc:
     configFile = get_file_url( r"configs/Server3DLoc2.json")
 # elif args.config:

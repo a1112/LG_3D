@@ -122,10 +122,10 @@ async def get_defects(coil_id: int, direction: str):
     return tool.to_dict(Coil.getDefects(coil_id, direction))
 
 
-@router.get("/search/defectDict")
+@router.get("/defectDict")
 async def get_defect_dict():
-    return tool.to_dict(Coil.getDefetClassDict())
-
+    # return tool.to_dict(Coil.getDefetClassDict())
+    return Globs.defectClassesProperty.config
 
 @router.get("/defectDictAll")
 async def get_defect_dict_all():

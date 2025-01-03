@@ -20,7 +20,7 @@ PopupBase {
             clip:true
             ListView{
                 anchors.fill:parent
-                model:global.defectClassProperty.defectClassModel
+                model:global.defectClassProperty.defectDictModel
                 delegate:DefectClassShowItem{
                 }
             }

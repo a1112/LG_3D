@@ -1,11 +1,15 @@
-import QtQuick 2.15
+import QtQuick
 
 Item {
     property int init_num: 200
 
-
+    function initDefectDict(defectDictData){
+        // 初始化 缺陷图谱
+        global.defectClassProperty.setDefectDict(defectDictData)
+    }
 
     function initCoilByData(coilData){
+        // 初始化 卷 数据
         coreModel.coilListModel.clear()
         let data={
         "coilList":coilData
@@ -30,7 +34,7 @@ Item {
 
     function flushDefectDict(){
         api.getDefectDict((result)=>{
-                        initCoilByData(JSON.parse(result))
+                        initDefectDict(JSON.parse(result))
                         },(error)=>{
                             console.log("error")
                         }
@@ -39,7 +43,6 @@ Item {
 
 
     function flushList(){
-
         api.getInfo((result)=>{
             initApp(JSON.parse(result))
         },(error)=>{
@@ -52,11 +55,5 @@ Item {
                             console.log("error")
                         }
                     )
-    }
-
-    Component.onCompleted: {
-        console.log("app init")
-                flushDefectDict()
-                flushList()
     }
 }

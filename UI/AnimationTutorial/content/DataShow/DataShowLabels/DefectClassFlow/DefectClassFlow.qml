@@ -13,13 +13,13 @@ Flow {
         CheckRec{
             text:defectName+" "+num
             height:25
-            checked:coreModel.defectDictAll[defectName]
-            onCheckedChanged:{
-                if (coreModel.defectDictAll[defectName]!==checked){
-                coreModel.defectDictAll[defectName]=checked
-                coreModel.flushDefectDictAll()
-                    }
-            }
+            // checked:coreModel.defectDictAll[defectName]
+            // onCheckedChanged:{
+            //     if (coreModel.defectDictAll[defectName]!==checked){
+            //     coreModel.defectDictAll[defectName]=checked
+            //     coreModel.flushDefectDictAll()
+            //         }
+            // }
         }
 }
 }

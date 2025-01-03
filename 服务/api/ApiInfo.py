@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 
 import Init
-from Globs import serverConfigProperty
+from Globs import serverConfigProperty, defectClassesProperty
 from .api_core import app
 
 router = APIRouter(tags=["参数服务"])
@@ -20,5 +20,8 @@ async def info():
     info_.update(serverConfigProperty.to_dict())
     return info_
 
+# @router.get("/defectClasses")
+# async def get_defect_classes():
+#     return defectClassesProperty.config
 
 app.include_router(router)

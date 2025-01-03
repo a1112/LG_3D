@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
@@ -11,6 +11,7 @@ ItemDelegate {
         anchors.fill: parent
     }
     function success_function(delay_) {
+        // 连接成功
         valueText=delay_+"  ms"
         valueColor=Material.color(Material.Green)
                 coreModel.coreGlobalError.errorState["网络"][index] = 0
@@ -26,6 +27,7 @@ ItemDelegate {
         repeat:true
         running:true
         interval:5000
+        triggeredOnStart:true
         onTriggered:{
             api.__getDelay__(port,success_function,fail_function)
         }

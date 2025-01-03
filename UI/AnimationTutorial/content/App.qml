@@ -40,7 +40,8 @@ ApplicationWindow {
     property LefeCore leftCore: LefeCore{}
     property Control control: Control{}
     property Auth auth: Auth{}
-
+    property CoreSignal coreSignal :CoreSignal{}
+    property CoreState coreState: CoreState{}
     PopManagement{
             id:popManage
         }

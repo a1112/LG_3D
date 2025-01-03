@@ -1,13 +1,13 @@
 import QtQuick
 
 Item {
-
-    property ListModel defectClassModel:ListModel{
-
+    property var defectDictData:{return {}}
+    property ListModel defectDictModel:ListModel{
     }
 
+
     function getColorByName(name){
-        return "#0F0"
+        return defectDictData[name].color
     }
 
 
@@ -17,5 +17,16 @@ Item {
     let temp = defectDictAll
         defectDictAll = {}
         defectDictAll = temp
+    }
+
+
+    function setDefectDict(defectData){
+        console.log("setDefectDict")
+        console.log(JSON.stringify(defectData))
+        defectDictData = defectData["data"]
+        defectDictModel.clear()
+        defectData["data"].forEach((data,index)=>{
+                                   defectDictModel.append(data)
+                                   })
     }
 }

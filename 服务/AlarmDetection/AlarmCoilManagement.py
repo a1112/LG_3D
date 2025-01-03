@@ -2,7 +2,7 @@ from CoilDataBase import Coil, Alarm, tool
 from CoilDataBase.models import AlarmFlatRoll
 
 
-def get_coil_alarm(coil_id: str):
+def get_coil_alarm(coil_id: int):
     """
     获取报警数据 （分别查询）
     """

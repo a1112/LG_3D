@@ -8,7 +8,6 @@ Item {
     function getLastUrlByKey(key){
         return lastUrls[key]
     }
-
     ListModel{
 
     }

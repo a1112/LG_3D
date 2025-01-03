@@ -91,6 +91,7 @@ class ServerConfigProperty:
         self.renderer_list = _get_config_("RendererList",["JET"])
         self.save_image_type=_get_config_("SaveImageType",".png")
         self.sql_url = _get_config_("sql_url",None)
+        print(f"sql_url {self.sql_url}")
         if not self.sql_url is None:
             Config.url = self.sql_url
 
