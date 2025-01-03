@@ -25,7 +25,7 @@ except NameError:
     pass
 
 offline_mode = (Path(base_config_folder)/"offline_mode=true").exists()
-print(Path(base_config_folder)/"offline_mode=true")
+
 if offline_mode:
     from CoilDataBase.config import Config,DeriverList
     Config.deriver = DeriverList.sqlite
@@ -35,20 +35,31 @@ if offline_mode:
 def get_file_url(base):
     return base_config_folder / base
 
+class JsonConfig:
+    def __init__(self,base_url):
+        self.base_url = base_url
+        self.url = get_file_url(base_url)
+        with self.url.open("r",encoding="utf-8") as f:
+            self.config = json.load(f)
+
 configFile = get_file_url("configs/Server3D.json")
 alarmConfigFile = get_file_url( r"configs/Alarm.json")
 infoConfigFile = get_file_url( r"configs/Info.json")
 controlConfigFile = get_file_url( r"configs/Control.json")
-CoilClassifiersConfigFile = get_file_url( r"model/CoilClassifiersConfig.json")
+coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
+defectClassesConfigFile = get_file_url(r"config/DefectClasses.json")
 if isLoc:
     configFile = get_file_url( r"configs/Server3DLoc2.json")
 # elif args.config:
 #     configFile = Path(args.config)
 
+
+
 ServerConfig = json.load(open(configFile, 'r', encoding="utf-8"))
 alarmConfig = json.load(open(alarmConfigFile, 'r', encoding="utf-8"))
 infoConfig = json.load(open(infoConfigFile, 'r', encoding="utf-8"))
 controlConfig = json.load(open(controlConfigFile, 'r', encoding="utf-8"))
+defectClassesConfig=json.load(open(defectClassesConfigFile, 'r', encoding="utf-8"))
 
 
 if socket.gethostname() == "DESKTOP-94ADH1G":

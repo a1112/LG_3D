@@ -7,6 +7,7 @@ from CONFIG import ServerConfig, alarmConfig, infoConfig
 from property.AlarmConfigProperty import AlarmConfigProperty
 from property.InfoConfigProperty import InfoConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
+from property.DefectClassesProperty import DefectClassesProperty
 from utils.ControlManagement import ControlManagement, ThreadClass, ProcessClass
 from utils.ServerMsg import ServerMsg
 
@@ -21,3 +22,4 @@ serverMsg = ServerMsg()
 serverConfigProperty = ServerConfigProperty(ServerConfig)
 alarmConfigProperty = AlarmConfigProperty(alarmConfig)
 infoConfigProperty = InfoConfigProperty(infoConfig)
+defectClassesProperty = DefectClassesProperty()

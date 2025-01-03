@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 import concurrent.futures
 from CoilDataBase.Coil import addDefects
-from CONFIG import CoilClassifiersConfigFile
+from CONFIG import coilClassifiersConfigFile
 from Globs import serverConfigProperty, control
 from property.Base import DataIntegrationList, DataIntegration
 from property.Types import DetectionType
@@ -18,7 +18,7 @@ from .tool import create_xml, get_image_box
 cdm = CoilDetectionModel()
 
 
-ccm = CoilClsModel( config = CoilClassifiersConfigFile)
+ccm = CoilClsModel(config = coilClassifiersConfigFile)
 
 def rectangles_overlap(rect1, rect2):
     """
