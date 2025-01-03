@@ -70,11 +70,9 @@ Api_Base {
     function getDefects(coilId,key,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects",coilId,key),success,failure)
     }
-    function getAllDefectDict(success,failure){
-        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDictAll"))
-    }
     function getDefectDict(success,failure){
-        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defectDict"),success,failure)
+        console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"))
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"),success,failure)
     }
 
     function getCoilInfo(coilId_,key_,success,failure){
@@ -130,7 +128,10 @@ Api_Base {
     }
 
     function defect_url(coilId,key,viewKey,x,y,w,h){
-
         return apiConfig.url(apiConfig.serverUrlDaaBase,"defect_image",key,coilId,viewKey,x,y,w,h)
     }
+
+    // function defectClasses(success,failure){
+    //      return ajax.get(apiConfig.url("defectClasses"),success,failure)
+    // }
 }

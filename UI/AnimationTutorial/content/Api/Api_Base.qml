@@ -47,15 +47,17 @@ Item {
     function getDelay__(){
         let startTime = new Date().getTime()
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"delay"),function(data){
+            coreState.connectServer=true
             delay = new Date().getTime()-startTime
-            delayTimer.restart()
+            // delayTimer.restart()
             coreModel.coreGlobalError.setError(1001,false)
         }
 
         ,function(err){
+            coreState.connectServer=false
             delay= -1
             coreModel.coreGlobalError.setError(1001,true)
-            delayTimer.restart()
+            // delayTimer.restart()
         }
         )
 
@@ -63,8 +65,10 @@ Item {
 
     Timer{
         interval: 5000
+        repeat:true
         running: true
         id: delayTimer
+        triggeredOnStart:true
         onTriggered: {
             api_base.getDelay__()
         }

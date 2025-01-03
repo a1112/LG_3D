@@ -1,3 +1,3 @@
 from pathlib import Path
 
-print([folder.name for folder in Path(fr"F:\subImage\cropped_images").iterdir()])
+print([folder.name for folder in Path(fr"E:\train\cropped_images\cropped_images").iterdir()])
