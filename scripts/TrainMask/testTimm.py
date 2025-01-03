@@ -2,7 +2,7 @@ from tqdm import tqdm
 from pathlib import Path
 from alg.CoilClsModel import CoilClsModel
 import shutil
-model = CoilClsModel(model_name="mobilenetv4_conv_small",checkpoint_path=fr"D:\lcx_user\pytorch-image-models\output\train\20241230-145111-mobilenetv4_conv_small-224\model_best.pth.tar")
+model = CoilClsModel()
 print(model)
 
 image_folder = Path(fr"E:\train\检出")

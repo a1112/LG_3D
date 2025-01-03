@@ -8,32 +8,43 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
-from CONFIG import get_file_url
+from CONFIG import get_file_url, CoilClassifiersConfigFile
 
 
 class CoilClsModel:
-    def __init__(self, model_name="mobilenetv4_conv_aa_large.e230_r448_in12k_ft_in1k",
-                 checkpoint_path=r'model/mobilenetv4.pth.tar', in_chans=3, config=None):
-
+    def __init__(self, model_name=None,
+                 checkpoint_path=None, in_chans=3, config=None):
+        self.model_name = model_name
+        self.checkpoint_path = checkpoint_path
+        self.in_chans = in_chans
+        if model_name is None and config is None:
+            config = CoilClassifiersConfigFile
         self.names = []
         if config is not None:
             config = json.load(open(config, encoding="utf-8"))
-            model_name = config["model_name"]
-            checkpoint_path = get_file_url(config["checkpoint_path"])
-            in_chans = config["in_chans"]
+            self.model_name = config["model_name"]
+            self.checkpoint_path = get_file_url(config["checkpoint_path"])
+            self.in_chans = config["in_chans"]
             self.names = config["names"]
 
-        self.model = create_model(model_name, checkpoint_path=checkpoint_path, num_classes=None, in_chans=in_chans)
+        self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=None, in_chans=self.in_chans)
         self.model.eval()
         self.device = 'cuda:0'
         self.model = self.model.cuda()
         self.config = resolve_data_config({
         }, model=self.model)
+        if self.in_chans==1:
+            self.config["input_size"]=(1,224,224)
+            self.config["mean"]=(0.485,)
+            self.config["std"]=(0.229, )
+        print(self.config)
         self.transform = create_transform(**self.config)
 
     def image_to_tensor(self, image):
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
+        if self.in_chans == 1:
+            return self.transform(image)
         return self.transform(image.convert('RGB'))
 
     def predict_image(self, image_list, bach_size=32):
