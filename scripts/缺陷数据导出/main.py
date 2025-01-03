@@ -76,15 +76,6 @@ def create_table(worksheet):
     for col_num, header in enumerate(headers):
         worksheet.write(0, col_num, header)
 
-    # 示例数据
-    data = [
-        [1, '张三', 28, '销售部', 5000],
-        [2, '李四', 34, '市场部', 6000],
-        [3, '王五', 45, '人事部', 7000],
-        [4, '赵六', 23, '研发部', 5500],
-        [5, '孙七', 39, '财务部', 6500],
-    ]
-
     # 写入数据
     for row_num, row_data in enumerate(data, start=1):
         for col_num, cell_data in enumerate(row_data):

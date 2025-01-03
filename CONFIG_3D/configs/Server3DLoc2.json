@@ -1,0 +1,47 @@
+{
+  "surface": [
+    {
+      "key": "S",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_S",
+      "rotate": 90,
+      "x_rotate": 17,
+      "direction": "L",
+      "folderList": [
+        {
+          "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_S_D",
+          "cropLeft": 50,
+          "cropRight": 50
+        },{
+          "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_S_M",
+          "cropLeft": 50,
+          "cropRight": 50
+        },{
+          "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_S_U",
+          "cropLeft":  50,
+          "cropRight": 50
+        }
+      ]
+    },{
+      "key": "L",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_L",
+      "rotate": -90,
+      "x_rotate": 10,
+      "direction": "R",
+        "folderList": [
+            {
+            "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_L_U",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_L_M",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\datasets\\LG_3D_DataBase\\COPY\\Cap_L_D",
+            "cropLeft":  50,
+            "cropRight": 50
+            }
+        ]
+    }
+  ]
+}

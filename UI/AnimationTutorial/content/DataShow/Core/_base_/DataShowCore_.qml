@@ -6,7 +6,7 @@ Item {
     property SurfaceData surfaceData
 
     property Binds binds :Binds{
-    surfaceData:surfaceData
+        surfaceData:surfaceData
     }
     //      alias objcet
     readonly property AdjustConfig adjustConfig:binds.adjustConfig
@@ -16,12 +16,12 @@ Item {
     readonly property bool show_visible:surfaceData.show_visible    // 是否显示
     property CircleConfig circleConfig:CircleConfig{}   // 圆的参数
 
-        property string errorScaleColor:"red"   // 超限制报警色
-        property bool errorScaleSignal: false
-        function setMaxErrorScale(col){
-            errorScaleColor = col
-            errorScaleSignal = true
-        }
+    property string errorScaleColor:"red"   // 超限制报警色
+    property bool errorScaleSignal: false
+    function setMaxErrorScale(col){
+        errorScaleColor = col
+        errorScaleSignal = true
+    }
 
     property Image imageItem
 
@@ -30,12 +30,13 @@ Item {
     // 缺陷相关功能
 
     property var defectDict: {return {}}    // 全部缺陷
-    property var unShowDefectList: ["塔形", "头尾", "背景","数据脏污"]
 
-    property ListModel defectModel: ListModel{
-    }
-    property ListModel un_defectModel: ListModel{
-    }
+    property ListModel defectAllModel: ListModel{}
+
+    property ListModel has_defectModel: ListModel{}
+    property ListModel un_defectModel: ListModel{}
+
+    property ListModel defectModel:defectManage.un_defect_show? defectAllModel : has_defectModel
 
     property ListModel currentDefectDictModel:ListModel{ // 缺陷类别
     }
@@ -51,11 +52,7 @@ Item {
                 // console.log(JSON.stringify(item))
                 let defectName = item.defectName
                 let cddm=currentDefectDictModel
-                let dm = defectModel
-                // if (unShowDefectList.indexOf(defectName)>=0){
-                //     cddm = currentUnShowDefectDictModel
-                //     dm = un_defectModel
-                // }
+
                 if (defectName in defectDict){
                     defectDict[defectName].push(item)
                     for (let j = 0; j < cddm.count; j++) {
@@ -67,21 +64,30 @@ Item {
                 else{
                     defectDict[defectName] = [item]
                     cddm.append({"defectName":defectName,
-                                      "num":1
-                                  })
+                                    "num":1
+                                })
                     if (!(defectName in coreModel.defectDictAll))
                         coreModel.defectDictAll[defectName]=true
                 }
-                dm.append(defectsData[i])
+
+                defectAllModel.append(defectsData[i])
+                if (defectManage.defect_is_show(defectName)){
+                    has_defectModel.append(defectsData[i])
+                }
+                else{
+                     un_defectModel.append(defectsData[i])
+                }
             }
         }
     }
 
     function defectClear(){
-        defectModel.clear()
+        has_defectModel.clear()
+        un_defectModel.clear()
+        defectAllModel.clear()
         currentDefectDictModel.clear()
         currentUnShowDefectDictModel.clear()
-        defectDict={}
+        defectDict = {}
     }
 
     function flushDefect(){

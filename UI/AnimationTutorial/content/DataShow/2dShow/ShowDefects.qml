@@ -29,7 +29,7 @@ Item {
     Repeater{
         model: dataShowCore.defectModel
         Rectangle{
-            visible:dataShowCore.defectManage.unShowDefectList.indexOf(defectName)<0
+            visible: dataShowCore.defectManage.defect_is_show(defectName)
             x: defectX*dataShowCore.canvasScale
             y: defectY*dataShowCore.canvasScale
             width: defectW*dataShowCore.canvasScale

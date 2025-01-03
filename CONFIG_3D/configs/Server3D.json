@@ -1,0 +1,59 @@
+{
+  "surface": [
+    {
+      "key": "S",
+      "saveFolder": "D:\\Save_S",
+      "rotate": 90,
+      "x_rotate": 17,
+      "direction": "L",
+      "save3D_data":false,
+      "folderList": [
+        {
+          "source": "G:\\Cap_S_D",
+          "cropLeft": 80,
+          "cropRight": 80
+        },{
+          "source": "G:\\Cap_S_M",
+          "cropLeft": 80,
+          "cropRight": 80
+        },{
+          "source": "G:\\Cap_S_U",
+          "cropLeft":  80,
+          "cropRight": 80
+        }
+      ]
+    },{
+      "key": "L",
+      "saveFolder": "E:\\Save_L",
+      "rotate": -90,
+      "x_rotate": 10,
+      "direction": "R",
+      "save3D_data":false,
+        "folderList": [
+            {
+            "source": "F:\\Cap_L_U",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\Cap_L_M",
+            "cropLeft": 50,
+            "cropRight": 50
+            },{
+            "source": "F:\\Cap_L_D",
+            "cropLeft":  50,
+            "cropRight": 50
+            }
+        ]
+    }
+  ],
+    "balsam": "D:\\project\\llvm-mingw_64\\llvm-mingw_64\\bin\\balsam.exe",
+  "colorFromValue": -800,
+    "colorToValue": 1000,
+  "saveJoinMask": true,
+  "max3dSaveThread": 5,
+  "downsampleSize": 7,
+  "colorFromValue_mm": -30,
+  "colorToValue_mm": 30,
+  "clip_num":10,
+  "max_clip_mun":3000
+}

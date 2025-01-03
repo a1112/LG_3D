@@ -99,9 +99,9 @@ class Data3dCache:
     def _create_cache(self):
         @lru_cache(maxsize=self.cache_size)
         def _load_3d_data(path):
-            if not os.path.exists(path):
-                return None
-            return np.load(path).astype(int)
+            if ".npy" in str(path):
+                return np.load(path).astype(int)
+            return np.load(path)["array"]
         return _load_3d_data
 
     def get_data(self, path):

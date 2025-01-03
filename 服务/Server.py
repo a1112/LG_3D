@@ -6,10 +6,10 @@ from multiprocessing import Process, freeze_support
 import uvicorn
 from utils.StdoutLog import Logger
 
-Logger("服务")
+
 from Globs import serverConfigProperty
 from api import app
-
+Logger("服务")
 # 参数服务
 from api import ApiInfo
 

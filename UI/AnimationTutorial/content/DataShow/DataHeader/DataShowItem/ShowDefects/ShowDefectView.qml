@@ -9,16 +9,7 @@ ColumnLayout {
         Layout.fillHeight:true
 
         Label{
-            visible:dataShowCore.defectModel.count
-
-            // {
-
-            // for(let i =0;i<dataShowCore.defectModel.count;i++)
-            // {
-            //     if
-            // }
-            // return false
-            // }
+            visible:dataShowCore.defectModel.count<1
             font.bold:true
             anchors.centerIn:parent
             text:"无缺陷报警！"

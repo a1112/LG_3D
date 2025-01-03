@@ -38,25 +38,25 @@ async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
 
 
 @router.get("/coilData/Render/{surfaceKey:str}/{coil_id:str}")
-async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, minValue=0, maxValue=255):
+async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, min_value=0, max_value=255):
     mask = get_bool(mask)
     scale = float(scale)
-    sT = time.time()
-    minValue = int(minValue)
-    maxValue = int(maxValue)
-    dataGet = DataGet("image", surfaceKey, coil_id, "MASK", False)
-    npy_data = dataGet.get_3d_data()
-    mask_image = dataGet.get_image()
+    s_t = time.time()
+    min_value = int(min_value)
+    max_value = int(max_value)
+    data_get = DataGet("image", surfaceKey, coil_id, "MASK", False)
+    npy_data = data_get.get_3d_data()
+    mask_image = data_get.get_image()
     mask_image = Image.open(io.BytesIO(mask_image))
     mask_image = np.array(mask_image)
-    rSize = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
-    clip_npy = np.clip(npy_data, minValue, maxValue)
-    clip_npy = (clip_npy - minValue) / (maxValue - minValue) * 255
+    r_size = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
+    clip_npy = np.clip(npy_data, min_value, max_value)
+    clip_npy = (clip_npy - min_value) / (max_value - min_value) * 255
     clip_npy = clip_npy.astype(np.uint8)
     if scale < 0.99:
-        print(rSize)
-        clip_npy = cv2.resize(clip_npy, rSize)
-        mask_image = cv2.resize(mask_image, rSize)
+        print(r_size)
+        clip_npy = cv2.resize(clip_npy, r_size)
+        mask_image = cv2.resize(mask_image, r_size)
 
     colored_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
     if mask:
@@ -65,8 +65,8 @@ async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, minVal
     # 将编码后的图像转换为字节流
     img_bytes = io.BytesIO(img_encoded.tobytes())
     # 返回图像作为响应
-    eT = time.time()
-    print(eT - sT)
+    e_t = time.time()
+    print(e_t - s_t)
     # return StreamingResponse(img_bytes, media_type="image/png")
 
 
@@ -74,8 +74,8 @@ async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, minVal
 async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueFrom=0, valueTo=255, r=255, g=0, b=0):
     mask = get_bool(mask)
     scale = float(scale)
-    minValue, maxValue = int(valueFrom), int(valueTo)
-    sT = time.time()
+    min_value, max_value = int(valueFrom), int(valueTo)
+    s_t = time.time()
     # 数据获取
     data_get = DataGet("image", surface_key, coil_id, "MASK", mask)
     npy_data = data_get.get_3d_data()
@@ -90,11 +90,11 @@ async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueF
     output_image = np.zeros((height, width, 4), dtype=np.uint8)  # BGRA 格式 透明
     color = [int(b), int(g), int(r), 255]
     # 蓝色区域
-    output_image[(npy_data > minValue) & (npy_data < maxValue)] = color  # B, G, R, A
+    output_image[(npy_data > min_value) & (npy_data < max_value)] = color  # B, G, R, A
     _, img_encoded = cv2.imencode('.png', output_image)
     img_bytes = io.BytesIO(img_encoded.tobytes())
     eT = time.time()
-    print(f"Processing Time: {eT - sT:.2f} seconds")
+    print(f"Processing Time: {eT - s_t:.2f} seconds")
     # return StreamingResponse(img_bytes, media_type="image/png")
 
 

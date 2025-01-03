@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Controls.Material
 CheckDelegate {
-    visible: dataShowCore.defectManage.unShowDefectList.indexOf(defectName)<0
+    visible: dataShowCore.defectManage.defect_is_show(defectName)
     text: defectName  // num
     font.bold:true
     Material.foreground:global.defectClassProperty.getColorByName(defectName)
     onCheckedChanged:{
         if (coreModel.defectDictAll[defectName]!==checked){
-        coreModel.defectDictAll[defectName]=checked
-        coreModel.flushDefectDictAll()
+                coreModel.defectDictAll[defectName]=checked
+                coreModel.flushDefectDictAll()
             }
         }
 }

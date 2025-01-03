@@ -1,0 +1,7 @@
+{
+  "model_name": "mobilenetv4_conv_small",
+  "checkpoint_path": "model/mobilenetv4_conv_small.tar",
+  "in_chans": 3
+
+
+}

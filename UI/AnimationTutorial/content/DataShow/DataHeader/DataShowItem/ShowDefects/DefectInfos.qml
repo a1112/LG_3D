@@ -9,8 +9,8 @@ ColumnLayout{
     id:col
     width: parent.width
     Label{
-        anchors.horizontalCenter: parent.horizontalCenter
-        text:defectName
+        Layout.alignment:Qt.AlignHCenter
+        text:defect.defect_name
         font.pointSize: 18
     }
     Item{
@@ -41,19 +41,19 @@ GridView {
         //                 })
         msgModel.append({
                         key:"x",
-                        value:dataShowCore.px_to_pos_x_mm_from_centre(defectX).toFixed(0)
+                        value:defect.defect_x_mm
                         })
         msgModel.append({
                         key:"y",
-                        value:dataShowCore.px_to_pos_y_mm_from_centre(defectY).toFixed(0)
+                        value:defect.defect_y_mm
                         })
         msgModel.append({
                         key:"宽",
-                        value:dataShowCore.px_to_width_mm(defectW).toFixed(0)
+                        value:defect.defect_w_mm
                         })
         msgModel.append({
                         key:"高",
-                        value:dataShowCore.px_to_width_mm(defectH).toFixed(0)
+                        value:defect.defect_h_mm
                         })
 
     }

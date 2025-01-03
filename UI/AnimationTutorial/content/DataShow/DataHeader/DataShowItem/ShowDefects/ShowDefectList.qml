@@ -8,8 +8,7 @@ ListView {
     spacing: 5
     ScrollBar.vertical:ScrollBar{}
     delegate:CropDefectShow{
-             visible:dataShowCore.defectManage.unShowDefectList.indexOf(defectName)<0
-
+             visible:dataShowCore.defectManage.defect_is_show(defectName)
             height:root.height
             width:height
     }

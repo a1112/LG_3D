@@ -10,14 +10,18 @@ from timm.data.transforms_factory import create_transform
 from timm.models import create_model
 from CONFIG import get_file_url
 
+
 class CoilClsModel:
-    def __init__(self,model_name="mobilenetv4_conv_aa_large.e230_r448_in12k_ft_in1k",
-                 checkpoint_path=r'model/mobilenetv4.pth.tar',in_chans=3,config=None):
+    def __init__(self, model_name="mobilenetv4_conv_aa_large.e230_r448_in12k_ft_in1k",
+                 checkpoint_path=r'model/mobilenetv4.pth.tar', in_chans=3, config=None):
+
+        self.names = []
         if config is not None:
-            config=json.load(open(config))
-            model_name=config["model_name"]
+            config = json.load(open(config, encoding="utf-8"))
+            model_name = config["model_name"]
             checkpoint_path = get_file_url(config["checkpoint_path"])
             in_chans = config["in_chans"]
+            self.names = config["names"]
 
         self.model = create_model(model_name, checkpoint_path=checkpoint_path, num_classes=None, in_chans=in_chans)
         self.model.eval()
@@ -33,7 +37,7 @@ class CoilClsModel:
         return self.transform(image.convert('RGB'))
 
     def predict_image(self, image_list, bach_size=32):
-        res_index,res_source = [],[]
+        res_index, res_source, names = [], [], []
         image_cache: torch.Tensor = torch.Tensor().to(self.device)
         for index, img_ in list(enumerate(image_list)):
             if isinstance(img_, (str, WindowsPath)):
@@ -48,11 +52,12 @@ class CoilClsModel:
                     pred_results_list = self.model(image_cache)
                     for out in pred_results_list:
                         ls = list(torch.nn.functional.softmax(out, dim=0).cpu().numpy())
-                        res_index.append(ls.index(max(ls)))
+                        index = ls.index(max(ls))
+                        res_index.append(index)
                         res_source.append(float(max(ls)))
+                        names.append(self.names[index])
                 image_cache: torch.Tensor = torch.Tensor().to('cuda:0')
-        return res_index,res_source
-
+        return res_index, res_source, names
 
 
 if __name__ == "__main__":
@@ -61,7 +66,7 @@ if __name__ == "__main__":
 
     r = ccm.predict_image([Image.open(r"E:\clfData\test\边部背景\92537_0.655604_14.jpg")] * 100)
     et = time.time()
-    print(et-st)
+    print(et - st)
 #     p = r"E:\clfData\r5\r5_cls_输出"
 #     p2 = Path(r"E:\clfData\data")
 #     classList = [f.name for f in Path(p2).glob("*")]
