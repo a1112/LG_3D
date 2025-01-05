@@ -14,6 +14,7 @@ from .api_core import app
 
 router = APIRouter(tags=["深度数据访问服务"])
 
+
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
 async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x2: int = 0, y2: int = 0):
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
@@ -25,6 +26,7 @@ async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x
         x2, y2 = x1 + 10, y1
     line_data = LineData(npy_data, mask_image, Point2D(x1, y1), Point2D(x2, y2))
     return line_data.all_image_line_points().tolist()
+
 
 @router.get("/coilData/heightPoint/{surface_key:str}/{coil_id:str}")
 async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):

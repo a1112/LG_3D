@@ -38,7 +38,7 @@ Item {
         model: Math.ceil(watermarkContainer.width / watermarkWidth) * Math.ceil(watermarkContainer.height / watermarkHeight)
         EffectsImage {
             id:efi
-            source:coreStyle.isDark?"../icons/USTB_Dark.png": "../icons/USTB_Light.png"  // 替换为你的水印图片路径
+            source:coreStyle.isDark?"../../icons/USTB_Dark.png": "../../icons/USTB_Light.png"  // 替换为你的水印图片路径
             opacity:hovered?1:0.2
             rotation: image_rotation // 旋转角度
             x: (index % Math.ceil(watermarkContainer.width / watermarkWidth)) * watermarkWidth

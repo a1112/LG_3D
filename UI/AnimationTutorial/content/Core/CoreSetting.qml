@@ -5,7 +5,7 @@ Item {
 
     id:root
 
-    property bool useSharedFolder: true
+    property bool useSharedFolder: false
     property string sharedFolderBaseName: "Save_"
 
     property bool useImageCache: false

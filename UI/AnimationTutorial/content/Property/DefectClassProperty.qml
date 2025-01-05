@@ -25,8 +25,11 @@ Item {
         console.log(JSON.stringify(defectData))
         defectDictData = defectData["data"]
         defectDictModel.clear()
-        defectData["data"].forEach((data,index)=>{
-                                   defectDictModel.append(data)
-                                   })
+        for(let key in defectData["data"]){
+            let value = defectData["data"][key]
+            value["name"] = key
+            defectDictModel.append(value)
+        }
+        console.log(defectDictModel.count)
     }
 }

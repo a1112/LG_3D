@@ -8,7 +8,7 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
-from CONFIG import get_file_url, CoilClassifiersConfigFile
+from CONFIG import get_file_url, coilClassifiersConfigFile
 
 
 class CoilClsModel:
@@ -18,7 +18,7 @@ class CoilClsModel:
         self.checkpoint_path = checkpoint_path
         self.in_chans = in_chans
         if model_name is None and config is None:
-            config = CoilClassifiersConfigFile
+            config = coilClassifiersConfigFile
         self.names = []
         if config is not None:
             config = json.load(open(config, encoding="utf-8"))

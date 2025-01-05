@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls.Material
 import "../Base"
+import "../Style/Adaptive"
 Item {
     id:root
     readonly property var theme: isDark ? Material.Dark : Material.Light
@@ -8,8 +9,13 @@ Item {
     property color accentColor:Material.color( Material.accentColor)
     property color cardBorderColor:Material.color( Material.Blue)
     property color cardBorderErrorColor:Material.color( Material.Red)
-        property color rootTitleColor:titleColor
+    property color rootTitleColor:titleColor
     property color titleColor:Material.color(Material.Teal)
+
+    property AdaptiveView adaptive_1080p:AdaptiveView{}
+    property AdaptiveView adaptive_base:AdaptiveView{}
+
+    property AdaptiveView currentAdaptive:adaptive_base
 
     function getIcon(name){
         return "../icons/" + name + ".png"
@@ -32,7 +38,6 @@ Item {
     SettingsBase{
         property alias isDark: root.isDark
          fileName: "style.ini"
-
          property alias accentColor: root.accentColor
          property alias cardBorderColor: root.cardBorderColor
          property alias titleColor: root.titleColor
