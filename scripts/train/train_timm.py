@@ -108,7 +108,7 @@ group.add_argument('--dataset-trust-remote-code', action='store_true', default=F
 
 # Model parameters
 group = parser.add_argument_group('Model parameters')
-group.add_argument('--model', default='resnet50', type=str, metavar='MODEL',
+group.add_argument('--model', default='mobilenetv4_conv_small', type=str, metavar='MODEL',
                    help='Name of model to train (default: "resnet50")')
 group.add_argument('--pretrained', action='store_true', default=False,
                    help='Start with pretrained version of specified network (if avail)')

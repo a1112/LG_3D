@@ -16,8 +16,8 @@ Logger("算法")
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23100)
 
-from CoilDataBase.Coil import deleteCoil
-deleteCoil(1700)
+# from CoilDataBase.Coil import deleteCoil
+# deleteCoil(1700)
 # if isLoc:
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23100)
