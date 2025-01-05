@@ -79,7 +79,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 # Dataset parameters
 group = parser.add_argument_group('Dataset parameters')
 # Keep this argument outside the dataset group because it is positional.
-parser.add_argument('data', nargs='?', metavar='DIR', const=None, default=FR"F:\subImage\cropped_images\cropped_images",
+parser.add_argument('data', nargs='?', metavar='DIR', const=None,default=FR"F:\subImage\cropped_images",
                     help='path to dataset (positional is *deprecated*, use --data-dir)')
 parser.add_argument('--data-dir', metavar='DIR',
                     help='path to dataset (root dir)')
@@ -108,7 +108,7 @@ group.add_argument('--dataset-trust-remote-code', action='store_true', default=F
 
 # Model parameters
 group = parser.add_argument_group('Model parameters')
-group.add_argument('--model', default='mobilenetv4_conv_small', type=str, metavar='MODEL',
+group.add_argument('--model', default='resnet50', type=str, metavar='MODEL',
                    help='Name of model to train (default: "resnet50")')
 group.add_argument('--pretrained', action='store_true', default=False,
                    help='Start with pretrained version of specified network (if avail)')
@@ -126,9 +126,9 @@ group.add_argument('--gp', default=None, type=str, metavar='POOL',
                    help='Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None.')
 group.add_argument('--img-size', type=int, default=None, metavar='N',
                    help='Image size (default: None => model default)')
-group.add_argument('--in-chans', type=int, default=1, metavar='N',
+group.add_argument('--in-chans', type=int, default=None, metavar='N',
                    help='Image input channels (default: None => 3)')
-group.add_argument('--input-size', default=[1,224,224], nargs=3, type=int,
+group.add_argument('--input-size', default=None, nargs=3, type=int,
                    metavar='N N N',
                    help='Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty')
 group.add_argument('--crop-pct', default=None, type=float,
@@ -172,7 +172,7 @@ scripting_group.add_argument('--torchcompile', nargs='?', type=str, default=None
 group = parser.add_argument_group('Device parameters')
 group.add_argument('--device', default='cuda', type=str,
                     help="Device (accelerator) to use.")
-group.add_argument('--amp', action='store_true', default=False,
+group.add_argument('--amp', action='store_true', default=True,
                    help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
 group.add_argument('--amp-dtype', default='float16', type=str,
                    help='lower precision AMP dtype (default: float16)')
