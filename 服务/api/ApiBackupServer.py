@@ -1,10 +1,12 @@
+import datetime
 import json
 
 from fastapi import WebSocket, APIRouter
+from fastapi.responses import StreamingResponse
 
 from CoilDataBase import backup
 from Globs import serverConfigProperty
-from utils import Backup
+from utils import Backup, export
 from .api_core import app
 
 router = APIRouter(tags=["备份服务"])
@@ -41,5 +43,25 @@ async def ws_backup_image_task(websocket: WebSocket):
         except Exception as e:
             print(f"Connection error: {e}")
             break
+
+
+@router.get("/exportxlsxByDateTime/{start:str}/{end:str}")
+async def export_xlsx_by_datetime(start, end,export_type = "3D"):
+    start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
+    end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
+    output, file_size = export.export_data_by_time(
+        start, end,export_type=export_type
+    )
+
+    headers = {
+        "Content-Disposition": f"attachment; filename=example.xlsx",
+        "Content-Length": str(file_size)  # 设置文件大小
+    }
+
+    # 将 BytesIO 对象传递给 StreamingResponse，设置内容类型和附件名称
+    response = StreamingResponse(output, headers=headers,
+                                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    return response
 
 app.include_router(router)

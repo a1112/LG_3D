@@ -139,6 +139,9 @@ class ImageMosaicThread(Thread):
                 logger.error(error_message)
                 # if isLoc:
                 #     raise e
+            finally:
+                import torch
+                torch.cuda.empty_cache()
             time.sleep(1)
 
     def addMsg(self, msg, level=logging.DEBUG):

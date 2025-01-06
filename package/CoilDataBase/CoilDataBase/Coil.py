@@ -175,6 +175,7 @@ def getCoil(num):
 
 
 def deleteCoil(id_):
+    print(f"数据删除 {id_}")
     with Session() as session:
         session.query(Coil).filter(Coil.SecondaryCoilId > id_).delete()
         session.commit()

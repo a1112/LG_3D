@@ -120,26 +120,31 @@ def save_detection_item(info, image, save_url):
         image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
 
-def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None):
+def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None,save_to_folders=True):
     if not id_str:
         id_str = "null"
-    if save_base_folder is None:
-        save_base_folder = Path(
-            list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
-
+    save_base_folder_list=[]
+    if save_to_folders:
+        save_base_folder_list.append(save_base_folder)
+    if save_base_folder is None or save_to_folders:
+        # save_base_folder = Path(
+        #     list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
+        save_base_folder_list.append(Path(
+            list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save")
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         index = 0
         for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):
             index += 1
             if not len(res):
                 continue
-            try:
-                save_base = save_base_folder / res[0][6] / str(int(res[0][5] * 10 // 3))
-            except:
-                save_base = save_base_folder
-            save_base.mkdir(parents=True, exist_ok=True)
-            save_url = save_base / "voc" / f"{id_str}_{index}.png"
-            executor.submit(save_detection_item, res, clip_image, save_url)
+            for save_base_folder in save_base_folder_list:
+                try:
+                    save_base = Path(save_base_folder) /"detection"/ res[0][6]
+                except:
+                    save_base = save_base_folder
+                save_base.mkdir(parents=True, exist_ok=True)
+                save_url = save_base / f"{id_str}_{index}.png"
+                executor.submit(save_detection_item, res, clip_image, save_url)
 
 
 def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.2):

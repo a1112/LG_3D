@@ -2,7 +2,6 @@ import datetime
 import json
 
 from fastapi import APIRouter
-from fastapi.responses import StreamingResponse
 
 import CONFIG
 import Globs
@@ -224,26 +223,6 @@ async def backup_image_task(from_id: int, to_id: int, save_folder: str):
     print(to_id)
     print(save_folder)
     return Backup.backup_image_task(from_id, to_id, save_folder)
-
-
-@router.get("/exportxlsxByDateTime/{start:str}/{end:str}")
-async def export_xlsx_by_datetime(start, end):
-    start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
-    end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
-    output, file_size = export.exportDataByTime(
-        start, end
-    )
-
-    headers = {
-        "Content-Disposition": f"attachment; filename=example.xlsx",
-        "Content-Length": str(file_size)  # 设置文件大小
-    }
-
-    # 将 BytesIO 对象传递给 StreamingResponse，设置内容类型和附件名称
-    response = StreamingResponse(output, headers=headers,
-                                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-    return response
 
 
 @router.get("/get_point_data/{coil_id:int}/{surface_key:str}")

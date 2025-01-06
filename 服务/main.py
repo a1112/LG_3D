@@ -15,7 +15,8 @@ Logger("算法")
 # if offline_mode:
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23100)
-
+# from CoilDataBase.Coil import deleteCoil
+# deleteCoil(42000)
 # from CoilDataBase.Coil import deleteCoil
 # deleteCoil(1700)
 # if isLoc:
@@ -35,7 +36,6 @@ if __name__ == '__main__':
     imageMosaicThread.start()
     GlobalSignalHandling(managerQueue).start()
     from api import app
-
     Globs.imageMosaicThread = imageMosaicThread
     ZipServer(managerQueue).start()
     uvicorn.run(app, host="0.0.0.0", port=server_api_port)
