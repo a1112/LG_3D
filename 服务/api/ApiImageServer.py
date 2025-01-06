@@ -44,6 +44,10 @@ async def get_defect_image(surface_key, coil_id:int, type_: str, x:int, y:int, w
     image:Image.Image
     if image is None:
         return Response(noFindImageByte, media_type="image/jpeg")
+    width, height = image.size
+    x1,y1,x2,y2 = x,y,x+w,y+h
+    x1,y1,x2,y2 = max(x1,0),max(y1,0),min(x2,width),min(y2,height)
+    x,y,w,h = x1, y1, x2-x1, y2-y1
     crop_image = image.crop((x,y,x+w,y+h))
     img_byte_arr = io.BytesIO()
     crop_image.save(img_byte_arr, format='jpeg')
