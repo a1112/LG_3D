@@ -1,7 +1,19 @@
 {
   "model_name": "mobilenetv4_conv_small",
   "checkpoint_path": "model/mobilenetv4_conv_small.tar",
-  "in_chans": 3
-
+  "in_chans": 3,
+  "names": [
+        "刮丝",
+        "塔形",
+        "头尾",
+        "小型缺陷",
+        "打包带",
+        "折叠",
+        "数据脏污",
+        "毛刺",
+        "烂边",
+        "背景",
+        "边部褶皱"
+    ]
 
 }

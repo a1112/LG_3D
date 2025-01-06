@@ -156,24 +156,18 @@ def getItemData(secondaryCoil:SecondaryCoil):
     })
     return resData
 
-def exportDataByTime(startTime,endTime):
-    output = BytesIO()
-
-    # 将 BytesIO 对象传递给 xlsxwriter.Workbook
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    worksheet = workbook.add_worksheet()
-    secondaryCoilList = Coil.getAllJoinDataByTime(startTime,endTime)
-    dataAll=[]
-    keyList=[]
-    for secondaryCoil in secondaryCoilList:
-        itemDict=getItemData(secondaryCoil)
-        dataAll.append(itemDict)
-        if len(itemDict.keys())>len(keyList):
-            keyList=itemDict.keys()
-    data = [keyList]
-    for itemData in dataAll:
+def export_data_by_coil_id_list(coil_id_list,worksheet,export_type="3D"):
+    data_all = []
+    key_list = []
+    for secondaryCoil in coil_id_list:
+        itemDict = getItemData(secondaryCoil)
+        data_all.append(itemDict)
+        if len(itemDict.keys()) > len(key_list):
+            key_list = itemDict.keys()
+    data = [key_list]
+    for itemData in data_all:
         row=[]
-        for key in keyList:
+        for key in key_list:
             try:
                 row.append(itemData[key])
             except (Exception,) as e:
@@ -183,7 +177,6 @@ def exportDataByTime(startTime,endTime):
     # 写入数据
     for row_num, row_data in enumerate(data):
         worksheet.write_row(row_num, 0, row_data)
-
     # 添加表格格式
     worksheet.add_table(
         0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
@@ -193,7 +186,46 @@ def exportDataByTime(startTime,endTime):
             "autofilter": True,  # 启用自动筛选
         }
     )
-    # 关闭 Workbook, 将数据写入 BytesIO
+
+def export_data_by_time(start_time, end_time, export_type="3D"):
+    output = BytesIO()
+
+    # 将 BytesIO 对象传递给 xlsxwriter.Workbook
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+    secondary_coil_list = Coil.getAllJoinDataByTime(start_time, end_time)
+    export_data_by_coil_id_list(secondary_coil_list, worksheet, export_type)
+    # data_all = []
+    # key_list = []
+    # for secondaryCoil in secondary_coil_list:
+    #     itemDict=getItemData(secondaryCoil)
+    #     data_all.append(itemDict)
+    #     if len(itemDict.keys())>len(key_list):
+    #         key_list=itemDict.keys()
+    # data = [key_list]
+    # for itemData in data_all:
+    #     row=[]
+    #     for key in key_list:
+    #         try:
+    #             row.append(itemData[key])
+    #         except (Exception,) as e:
+    #             print(e)
+    #             row.append("")
+    #     data.append(row)
+    # # 写入数据
+    # for row_num, row_data in enumerate(data):
+    #     worksheet.write_row(row_num, 0, row_data)
+    #
+    # # 添加表格格式
+    # worksheet.add_table(
+    #     0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
+    #     {
+    #         "columns": [{"header": col} for col in data[0]],  # 设置表头
+    #         "style": "Table Style Medium 9",  # 表格样式
+    #         "autofilter": True,  # 启用自动筛选
+    #     }
+    # )
+    # # 关闭 Workbook, 将数据写入 BytesIO
     workbook.close()
     file_size = output.getbuffer().nbytes
     # 重置 BytesIO 对象的读取位置
@@ -201,46 +233,47 @@ def exportDataByTime(startTime,endTime):
     return output,file_size
 
 
-def exportDataSimple(num=50, maxCoil=None):
-    secondaryCoilList =  Coil.getAllJoinDataByNum(num, maxCoil)
+def exportDataSimple(num=50, max_coil=None,export_type="3D"):
+    secondary_coil_list =  Coil.getAllJoinDataByNum(num, max_coil)
 
     workbook = xlsxwriter.Workbook("数据导出测试.xlsx")
     worksheet = workbook.add_worksheet("完整数据表")
-
-    dataAll=[]
-    keyList=[]
-    for secondaryCoil in secondaryCoilList:
-        itemDict=getItemData(secondaryCoil)
-        dataAll.append(itemDict)
-        if len(itemDict.keys())>len(keyList):
-            keyList=itemDict.keys()
-    data = [keyList]
-    for itemData in dataAll:
-        row=[]
-        for key in keyList:
-            try:
-                row.append(itemData[key])
-            except (Exception,) as e:
-                print(e)
-                row.append("")
-        data.append(row)
-    # 写入数据
-    for row_num, row_data in enumerate(data):
-        worksheet.write_row(row_num, 0, row_data)
-
-    # 添加表格格式
-    worksheet.add_table(
-        0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
-        {
-            "columns": [{"header": col} for col in data[0]],  # 设置表头
-            "style": "Table Style Medium 9",  # 表格样式
-            "autofilter": True,  # 启用自动筛选
-        }
-    )
+    export_data_by_coil_id_list(secondary_coil_list, worksheet, export_type)
+    # dataAll=[]
+    # keyList=[]
+    # for secondaryCoil in secondary_coil_list:
+    #     itemDict=getItemData(secondaryCoil)
+    #     dataAll.append(itemDict)
+    #     if len(itemDict.keys())>len(keyList):
+    #         keyList=itemDict.keys()
+    # data = [keyList]
+    # for itemData in dataAll:
+    #     row=[]
+    #     for key in keyList:
+    #         try:
+    #             row.append(itemData[key])
+    #         except (Exception,) as e:
+    #             print(e)
+    #             row.append("")
+    #     data.append(row)
+    # # 写入数据
+    # for row_num, row_data in enumerate(data):
+    #     worksheet.write_row(row_num, 0, row_data)
+    #
+    # # 添加表格格式
+    # worksheet.add_table(
+    #     0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
+    #     {
+    #         "columns": [{"header": col} for col in data[0]],  # 设置表头
+    #         "style": "Table Style Medium 9",  # 表格样式
+    #         "autofilter": True,  # 启用自动筛选
+    #     }
+    # )
 
     # 保存并关闭工作簿
     workbook.close()
+    workbook.close()
 
-# if __name__ == '__main__':
-    # dt = exportDataSimple(1000,23060)
-    # print(dt)
+if __name__ == '__main__':
+    dt = exportDataSimple(40000,41000)
+    print(dt)
