@@ -112,6 +112,12 @@ def save_detection_item(info, image, save_url):
     image.save(save_url)
     w, h = image.size
     create_xml(save_url, [h, w, 1], info)
+    sub_image_save_folder =save_url.parent/"sub"
+    sub_image_save_folder.mkdir(parents=True, exist_ok=True)
+    for bbox in info:
+        xmin, ymin, xmax, ymax, class_id, source, label = bbox
+        sub_image_save_url = sub_image_save_folder / f"{label}_{xmin}_{ymin}_{xmax}_{ymax}.png"
+        image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
 
 def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None):
@@ -132,7 +138,7 @@ def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_
             except:
                 save_base = save_base_folder
             save_base.mkdir(parents=True, exist_ok=True)
-            save_url = save_base / "" / f"{id_str}_{index}.png"
+            save_url = save_base / "voc" / f"{id_str}_{index}.png"
             executor.submit(save_detection_item, res, clip_image, save_url)
 
 
@@ -214,8 +220,6 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
     res_list = cdm_.predict(clip_image_list)
     if control.detection_model == DetectionType.DetectionAndClassifiers:
         classifiers_data(clip_image_list,res_list)
-
-
     if control.save_detection:
         save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder)
 
@@ -228,7 +232,7 @@ def detection(data_integration: DataIntegration):
     mask = data_integration.npy_mask
     clip_num = serverConfigProperty.clip_num
     id_str = data_integration.id_str
-    res_list, clip_image_list, clip_info_list = detection_by_image(join_image, mask, clip_num, id_str=id_str)
+    res_list, clip_image_list, clip_info_list = detection_by_image(join_image, mask, clip_num, id_str=id_str,save_base_folder=data_integration.save_folder)
 
     defect_dict = defaultdict(list)
     for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):

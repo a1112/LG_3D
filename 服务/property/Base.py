@@ -138,6 +138,10 @@ class DataIntegration:
     def next_code(self):
         return str(chr(int(self.currentSecondaryCoil.Weight)))
 
+    @property
+    def save_folder(self):
+        return Path(self.saveFolder)/str(self.coilId)
+
     def set_npy_data(self, npy_data):
         print("set set_npy_data", npy_data.shape)
         self.__npyData__ = npy_data
@@ -392,11 +396,11 @@ class DataIntegrationList:
 
     def __next__(self):
         if self.index < len(self.dataIntegrationList):
-            dataIntegration = self.dataIntegrationList[self.index]
+            data_integration = self.dataIntegrationList[self.index]
             self.index += 1
-            if dataIntegration.isNone():
+            if data_integration.isNone():
                 return self.__next__()
-            return dataIntegration
+            return data_integration
         else:
             self.index = 0
             raise StopIteration
