@@ -3,8 +3,8 @@ import QtQuick.Controls
 Row {
     Label{
         font.bold: true
-        text:surfaceData.key+"   "
-        font.pointSize: 16
+        text:surfaceData.key_string+"   "
+        font.pointSize: 18
         color: surfaceData.keyColor
     }
     Label{

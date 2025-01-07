@@ -227,14 +227,17 @@ def getCoilState(coilId):
         return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId).order_by(CoilState.Id.desc())[:2]
 
 
-def getPlcData(coilId):
+def getPlcData(coil_id):
     with Session() as session:
-        return session.query(PlcData).filter(PlcData.secondaryCoilId == coilId).order_by(PlcData.Id.desc()).first()
+        return session.query(PlcData).filter(PlcData.secondaryCoilId == coil_id).order_by(PlcData.Id.desc()).first()
 
-
-def getDefects(coilId, direction):
+def get_all_defects(coil_id):
     with Session() as session:
-        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coilId,
+        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id).all()
+
+def getDefects(coil_id, direction):
+    with Session() as session:
+        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id,
                                                 CoilDefect.surface == direction).all()
 
 
@@ -243,18 +246,18 @@ def getDefetClassDict():
         return session.query(DefectClassDict).all()
 
 
-def getCoilByCoilNo(coilNo):
+def getCoilByCoilNo(coil_no):
     with Session() as session:
-        return session.query(SecondaryCoil).filter(SecondaryCoil.CoilNo == coilNo).first()
+        return session.query(SecondaryCoil).filter(SecondaryCoil.CoilNo == coil_no).first()
 
 
-def addToPlc(coilDdata):
+def addToPlc(coil_ddata):
     with Session() as session:
         session.add(PlcData(
-            secondaryCoilId=coilDdata["secondaryCoilId"],
-            location_S=coilDdata["location_S"],
-            location_L=coilDdata["location_L"],
-            location_laser=coilDdata["location_laser"],
+            secondaryCoilId=coil_ddata["secondaryCoilId"],
+            location_S=coil_ddata["location_S"],
+            location_L=coil_ddata["location_L"],
+            location_laser=coil_ddata["location_laser"],
             startTime=datetime.datetime.now(),
         ))
         session.commit()

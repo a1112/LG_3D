@@ -5,8 +5,8 @@ class InfoConfigProperty:
         self.config = config
         self.nextDict = self.config["nextDict"]
 
-    def getNext(self,nextCode):
+    def getNext(self, next_code):
         try:
-            return self.nextDict[nextCode]
+            return self.nextDict[next_code]
         except KeyError:
-            return f"未知代码 {nextCode}"
+            return f"未知代码 {next_code}"
