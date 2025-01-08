@@ -1,23 +1,9 @@
 [
-  {
-    "exe": "C:/Program Files/WinRAR/WinRAR.exe",
-    "args": "",
-    "name": "WinRAR",
-    "delay": "3",
-    "monitorAble": true
-  },
-  {
-    "args": "",
-    "delay": 5,
-    "exe": "C:/Program Files (x86)/XMind/XMind.exe",
-    "monitorAble": true,
-    "name": "XMind"
-  },
-  {
-    "args": "",
-    "delay": 5,
-    "exe": "C:/Users/10428/AppData/Local/Programs/Microsoft VS Code/Code.exe",
-    "monitorAble": true,
-    "name": "Code"
-  }
+    {
+        "exe": "C:/Program Files/WinRAR/WinRAR.exe",
+        "args": "",
+        "name": "WinRAR",
+        "delay": "3",
+        "monitorAble": true
+    }
 ]
