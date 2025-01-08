@@ -10,6 +10,7 @@ from PySide6.QtCore import Slot
 
 from MonitorBase.MonitorBase import MonitorBase
 
+import CONFIG
 
 def is_root_path(path):
     # 标准化路径
@@ -33,13 +34,13 @@ def tryGetInt(number):
 
 class DiskMonitor(MonitorBase):
     def __init__(self, parent=None):
-        logFolder = "logs/DiskMonitor"
-        configF = "config/DiskMonitor.json"
-        super().__init__(configF, logFolder, parent)
+        log_folder = CONFIG.disk_monitor_log_dir
+        config_f = CONFIG.disk_monitor_config
+        super().__init__(config_f, log_folder, parent)
         self.fullData = {}
-        self.initMonitorData()
+        self.init_monitor_data()
 
-    def initMonitorData(self):
+    def init_monitor_data(self):
         for mountpoint in self.monitorData:
             for index in range(len(self.monitorData[mountpoint]["monitor"])):
                 item = self.monitorData[mountpoint]["monitor"][index]
@@ -58,29 +59,29 @@ class DiskMonitor(MonitorBase):
             self.log.debug(f"无法完成删除！无文件 count {len(entries)} minCount {minCount}")
             return
         # 获取每个文件/文件夹的修改时间，并与其路径一起存储
-        fileList = []
-        sortKeys = []
+        file_list = []
+        sort_keys = []
         if sort_type == "time":
             entries = [(entry, os.path.getmtime(entry)) for entry in entries]
             # 按修改时间排序
             entries.sort(key=lambda x: x[1])
-            fileList, sortKeys = zip(*entries)
+            file_list, sort_keys = zip(*entries)
         elif sort_type == "number":
             entries = [(entry, tryGetInt(entry)) for entry in entries]
             entries.sort(key=lambda x: x[1])
-            fileList, sortKeys = zip(*entries)
+            file_list, sort_keys = zip(*entries)
         elif sort_type == "chart":
             entries = [(entry, str(os.path.basename(entry))) for entry in entries]
             entries.sort(key=lambda x: x[1])
-            fileList, sortKeys = zip(*entries)
+            file_list, sort_keys = zip(*entries)
         # 获取最老的文件/文件夹
         if delete_type == "%":
-            delCount = int(len(fileList) * delete_size / 100 + 1)
+            del_count = int(len(file_list) * delete_size / 100 + 1)
         else:
-            delCount = int(delete_size)
-        if len(fileList) - delCount < minCount:
-            delCount = max(len(fileList) - minCount, 0)
-        for oldest_entry in fileList[:delCount]:
+            del_count = int(delete_size)
+        if len(file_list) - del_count < minCount:
+            del_count = max(len(file_list) - minCount, 0)
+        for oldest_entry in file_list[:del_count]:
             try:
                 if os.path.isdir(oldest_entry):
                     shutil.rmtree(oldest_entry)

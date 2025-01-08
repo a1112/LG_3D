@@ -1,1 +1,1 @@
-pyinstaller main.py
+pyinstaller -i app.ico main.py
