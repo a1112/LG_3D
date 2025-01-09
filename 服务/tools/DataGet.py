@@ -1,7 +1,8 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
-from api._cache_ import previewCache, imageCache,_3dDataCache
+from api.data_cache import previewCache, imageCache,d3DataCache
 from Globs import serverConfigProperty
+from property.Types import ImageType
 
 serverConfigProperty:ServerConfigProperty
 
@@ -71,10 +72,14 @@ class DataGet:
     def get_3d_data(self):
         url = self.get3d_source()
         print(url)
-        return _3dDataCache.get_data(url)
+        return d3DataCache.get_data(url)
 
     def get_mesh_source(self):
         return serverConfigProperty.get_mesh_file(self.coil_id, self.surfaceKey)
 
     def get_mesh(self):
         return self.get_mesh_source()
+
+
+def get_pil_image(surface_key,coil_id,source_type="image",type_=ImageType.GRAY):
+    DataGet(source_type, surface_key, coil_id, type_, False).get_image(pil=True)

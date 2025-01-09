@@ -117,7 +117,7 @@ class Data3dCache:
 
 previewCache = ImageCache(512)
 imageCache = ImageCache(256)
-_3dDataCache = Data3dCache(32)
+d3DataCache = Data3dCache(32)
 
 
 

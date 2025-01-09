@@ -3,8 +3,6 @@ import numpy
 import numpy as np
 from PIL import Image
 
-import Globs
-import tools.tool
 from property.Types import Point2D
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from utils.Log import logger

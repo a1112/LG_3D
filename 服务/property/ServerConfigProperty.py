@@ -4,6 +4,7 @@ from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
 from CoilDataBase.config import Config
+from property.Types import ImageType
 
 class SurfaceConfigProperty:
     def __init__(self, surface_config=None):
@@ -14,7 +15,7 @@ class SurfaceConfigProperty:
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
         self.saveImageType = ".png"
-        self.ImageType = "GRAY"
+        self.ImageType = ImageType.GRAY
         self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):

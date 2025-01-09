@@ -1,5 +1,5 @@
 from abc import ABC
-from enum import Flag, auto
+from enum import Flag, auto, Enum
 from typing import Union, List
 
 
@@ -114,3 +114,8 @@ class LevelingType(Flag):
 class DetectionType(Flag):
     Detection = auto()
     DetectionAndClassifiers = auto()
+
+class ImageType(Enum):
+    GRAY = "GRAY"
+    JET = "JET"
+    MASK = "MASK"
