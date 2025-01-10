@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 configSave = Path(fr"D:\CONFIG_3D\model")/"CoilClassifiersConfig.json"
-train_folder = Path(fr"F:\subImage\cropped_images")
+train_folder = Path(fr"E:\train\cropped_images")
 train_split = "cropped_images"
 val_split = "cropped_images"
 model_name = "mobilenetv4_conv_small"

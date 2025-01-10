@@ -14,12 +14,12 @@ class SurfaceConfigProperty:
         self.x_rotate = surface_config["x_rotate"]
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
-        self.saveImageType = ".png"
+        self.saveImageType = ".jpg"
         self.ImageType = ImageType.GRAY
         self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/png/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/jpg/{type_}" + self.saveImageType
 
     def get_3d_file(self, coil_id):
         return f"{self.saveFolder}/{coil_id}/3D.npy"
@@ -35,9 +35,9 @@ class SurfaceConfigProperty:
 
     def get_info(self, coil_id):
         from CoilDataBase import Coil
-        coil_state = Coil.getCoilStateByCoilId(coil_id, self.key)
+        coil_state = Coil.get_coil_state_by_coil_id(coil_id, self.key)
         if coil_state:
-            return json.loads(Coil.getCoilStateByCoilId(coil_id, self.key).jsonData)
+            return json.loads(Coil.get_coil_state_by_coil_id(coil_id, self.key).jsonData)
 
         # jsonFile = self.saveFolder/str(coil_id)/"data.json"
         # with open(jsonFile, "r",encoding="utf-8") as f:

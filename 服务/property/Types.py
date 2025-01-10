@@ -115,7 +115,13 @@ class DetectionType(Flag):
     Detection = auto()
     DetectionAndClassifiers = auto()
 
-class ImageType(Enum):
+class ImageSaveType:
+    JPG = "jpg"
+    PNG = "png"
+    PREVIEW = "preview"
+
+class ImageType:
+    NONE = "NONE"
     GRAY = "GRAY"
     JET = "JET"
     MASK = "MASK"

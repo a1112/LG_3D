@@ -306,7 +306,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             except ServerDetectionException as e:
                 error_message = traceback.format_exc()
                 logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
-                data_integration.addServerDetectionError(e)
+                data_integration.add_server_detection_error(e)
                 print("continue Server")
             except Exception as e:
                 error_message = traceback.format_exc()

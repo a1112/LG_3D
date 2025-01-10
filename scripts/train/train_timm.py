@@ -79,7 +79,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 # Dataset parameters
 group = parser.add_argument_group('Dataset parameters')
 # Keep this argument outside the dataset group because it is positional.
-parser.add_argument('data', nargs='?', metavar='DIR', const=None,default=FR"F:\subImage\cropped_images",
+parser.add_argument('data', nargs='?', metavar='DIR', const=None,default=FR"E:\train\cropped_images",
                     help='path to dataset (positional is *deprecated*, use --data-dir)')
 parser.add_argument('--data-dir', metavar='DIR',
                     help='path to dataset (root dir)')

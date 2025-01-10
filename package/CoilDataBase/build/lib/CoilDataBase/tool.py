@@ -77,6 +77,9 @@ def clear_by_coil_id(coil_id):
         session.commit()
 
 def add_obj(obj):
+    """
+    添加数据
+    """
     with Session() as session:
         if isinstance(obj, list):
             session.add_all(obj)

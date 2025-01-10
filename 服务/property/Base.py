@@ -6,7 +6,7 @@ from typing import List, Optional
 import numpy as np
 
 import Globs
-from CoilDataBase.Coil import addCoilState, addServerDetectionError
+from CoilDataBase.Coil import addCoilState, add_server_detection_error
 from CoilDataBase.models import CoilState as CoilStateDB
 from CoilDataBase.models import SecondaryCoil
 from CoilDataBase.models import AlarmTaperShape
@@ -156,7 +156,7 @@ class DataIntegration:
         return self._circleConfig_
 
     @property
-    def secondaryCoilId(self):
+    def secondary_coil_id(self):
         return self.coilId
 
     @property
@@ -204,7 +204,7 @@ class DataIntegration:
         cw = image.shape[0] // 2
         r1 = cw*r1
         r2 = cw*r2
-        center_x, center_y,circlexRadius = self.circle_config["inner_circle"]["circlex"]
+        center_x, center_y,circlex_radius = self.circle_config["inner_circle"]["circlex"]
         y, x = np.indices(image.shape)
         distance = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
         annulus_mask = (distance >= r1) & (distance <= r2)
@@ -264,10 +264,10 @@ class DataIntegration:
 
     def get_datas_info(self, datas):
         def get_shape_list(datas_):
-            shapeList = []
+            shape_list = []
             for data in datas_:
-                shapeList.append(data['2D'].shape)
-            return shapeList
+                shape_list.append(data['2D'].shape)
+            return shape_list
 
         return {
             "cameraLen": len(datas),  # 摄像头数量
@@ -294,17 +294,17 @@ class DataIntegration:
     def set_telescoped_alarms(self):
         mask = self.npy_mask
         mask_area = np.count_nonzero(mask)
-        npyArea = self.npy_data[mask > 0]
-        lower = npyArea[npyArea < (self.__median_non_zero__ + self.lower_limit)]
-        upper = npyArea[npyArea > (self.__median_non_zero__ + self.upper_limit)]
-        lowerArea = np.count_nonzero(lower)
-        upperArea = np.count_nonzero(upper)
-        self.set("lowerArea", lowerArea)
-        self.set("upperArea", upperArea)
-        lowerArea_percent = lowerArea / mask_area
-        upperArea_percent = upperArea / mask_area
-        self.set("lowerArea_percent", lowerArea_percent)
-        self.set("upperArea_percent", upperArea_percent)
+        npy_area = self.npy_data[mask > 0]
+        lower = npy_area[npy_area < (self.__median_non_zero__ + self.lower_limit)]
+        upper = npy_area[npy_area > (self.__median_non_zero__ + self.upper_limit)]
+        lower_area = np.count_nonzero(lower)
+        upper_area = np.count_nonzero(upper)
+        self.set("lowerArea", lower_area)
+        self.set("upperArea", upper_area)
+        lower_area_percent = lower_area / mask_area
+        upper_area_percent = upper_area / mask_area
+        self.set("lowerArea_percent", lower_area_percent)
+        self.set("upperArea_percent", upper_area_percent)
         self.set("mask_area", mask_area)
 
     def commit(self):
@@ -340,21 +340,21 @@ class DataIntegration:
             jsonData=str(json.dumps(dict_data))
         ))
 
-    def addServerDetectionError(self, errorMsg, errorType="ServerDetectionError"):
+    def add_server_detection_error(self, error_msg, error_type="ServerDetectionError"):
         """
         添加服务器检测错误
         """
-        addServerDetectionError(
+        add_server_detection_error(
             ServerDetectionError(
                 secondaryCoilId=self.coilId,
                 surface=self.key,
-                errorType=errorType,
-                msg=errorMsg
+                errorType=error_type,
+                msg=error_msg
             )
         )
         self._hasDetectionError_ = True
 
-    def hasDetectionError(self):
+    def has_detection_error(self):
         return self._hasDetectionError_
 
     def __iter__(self):
@@ -369,12 +369,12 @@ class DataIntegration:
 
     def flatten_surface_by_rotation(self):
         median_non_zero,annulus_mask=self.annular_region_mean(self.__npyData__,0.6,0.65)  # 获取平均值
-        a, b, c, rotated_data, angleData = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
+        a, b, c, rotated_data, angle_data = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
                                                                                       annulus_mask,
                                                                                       median_non_zero)
-        r_z = int(180 - angleData['angle_with_z'])
-        print(f"{self.key} 旋转 {r_z} {angleData}")
-        self.angleData = angleData
+        r_z = int(180 - angle_data['angle_with_z'])
+        print(f"{self.key} 旋转 {r_z} {angle_data}")
+        self.angleData = angle_data
         # return tool.rotate_around_x_axis(self.__npyData__,r_z)
         return r_z
 
@@ -388,8 +388,8 @@ class DataIntegrationList:
         self.index = 0
         self.dataIntegrationList: List[DataIntegration] = []
 
-    def append(self, dataIntegration: DataIntegration):
-        self.dataIntegrationList.append(dataIntegration)
+    def append(self, data_integration: DataIntegration):
+        self.dataIntegrationList.append(data_integration)
 
     def __iter__(self):
         return self

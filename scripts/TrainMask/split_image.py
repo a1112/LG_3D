@@ -79,7 +79,7 @@ def process_dataset(images_dir, annotations_dir, output_dir):
 
 if __name__ == "__main__":
     # 设置路径，根据实际情况修改
-    images_directory = Path(fr"F:\Data\detection_by_image_list")  # 原始图像文件夹
+    images_directory = Path(fr"E:\train\样本\检出_烂边")  # 原始图像文件夹
     annotations_directory = images_directory  # XML 标注文件夹
     output_directory = images_directory.parent/"cropped_images"  # 输出小图文件夹
     output_directory.mkdir(exist_ok=True, parents=True)

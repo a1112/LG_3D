@@ -203,8 +203,40 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
         res_data.update(get_defect_data(secondary_coil))
 
 
-
     # alarm_info_list = secondary_coil.childrenAlarmInfo
     # for alarm_info in alarm_info_list:
     #     alarm_info_dict[alarm_info.surface]=alarm_info
     return res_data
+
+
+def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None):
+    data_all = []
+    head_key_list = []
+    worksheet = workbook.add_worksheet(export_config.worksheet_name)
+    for secondaryCoil in coil_id_list:
+        item_dict = get_item_data(secondaryCoil,export_config)
+        data_all.append(item_dict)
+        if len(item_dict.keys()) > len(head_key_list):
+            head_key_list = item_dict.keys()
+    data = [head_key_list]
+    for itemData in data_all:
+        row=[]
+        for key in head_key_list:
+            try:
+                row.append(itemData[key])
+            except (Exception,) as e:
+                row.append("")
+        data.append(row)
+  # 写入数据
+    for row_num, row_data in enumerate(data):
+        worksheet.write_row(row_num, 0, row_data)
+    # 添加表格格式
+    worksheet.add_table(
+        0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
+        {
+            "columns": [{"header": col} for col in data[0]],  # 设置表头
+            "style": "Table Style Medium 9",  # 表格样式
+            "autofilter": True,  # 启用自动筛选
+        }
+    )
+    return data_all

@@ -3,7 +3,7 @@ from typing import List
 from CoilDataBase.models import AlarmFlatRoll
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmInfo
-from CoilDataBase.Coil import addObj
+from CoilDataBase.Coil import add_obj
 from Globs import alarmConfigProperty, infoConfigProperty
 from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig
 from property.Base import CoilLineData, DataIntegration, DataIntegrationList
@@ -127,7 +127,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         #     error_msg += f"内径最低值 abs({in_taper_min_value}) >= {height_limit} 检测角度{rotation_angle} \n"
         #     grad = grading_level
 
-    addObj(AlarmTaperShape(
+    add_obj(AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,
         surface=data_integration.surface,
         out_taper_max_x=max_outer_line_data.outer_max_point.x,
@@ -202,7 +202,7 @@ def grading(data_integration: DataIntegration):
         defectMsg="",
         grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad, flat_roll_grad_info.grad)
     )
-    addObj(alarm_info)
+    add_obj(alarm_info)
 
 
 def grading_all(data_integration_list: DataIntegrationList):

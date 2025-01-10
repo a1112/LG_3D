@@ -8,11 +8,11 @@ from .core import Session
 from .models import *
 
 
-def addObj(obj):
+def add_obj(obj):
     return tool.add_obj(obj)
 
 
-def getAllJoinQuery(session: Session):
+def get_all_join_query(session: Session):
     return session.query(SecondaryCoil) \
         .options(
         subqueryload(SecondaryCoil.childrenCoil),
@@ -30,17 +30,23 @@ def getAllJoinQuery(session: Session):
     )
 
 
-def getAllJoinDataByNum(num, maxsize=None):
+def get_all_join_data_by_id(start_id,end_id):
+    with Session() as session:
+        return get_all_join_query(session).filter(SecondaryCoil.Id >= start_id,
+                                                  SecondaryCoil.Id <= end_id).order_by(SecondaryCoil.Id.desc()).all()
+
+
+def get_all_join_data_by_num(num, maxsize=None):
     with Session() as session:
         if maxsize:
-            return getAllJoinQuery(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[:num]
-        return getAllJoinQuery(session).order_by(SecondaryCoil.Id.desc())[:num]
+            return get_all_join_query(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[:num]
+        return get_all_join_query(session).order_by(SecondaryCoil.Id.desc())[:num]
 
 
-def getAllJoinDataByTime(startTime, endTime):
+def get_all_join_data_by_time(start_time, end_time):
     with Session() as session:
-        return getAllJoinQuery(session).filter(SecondaryCoil.CreateTime >= startTime,
-                                               SecondaryCoil.CreateTime <= endTime).order_by(
+        return get_all_join_query(session).filter(SecondaryCoil.CreateTime >= start_time,
+                                                  SecondaryCoil.CreateTime <= end_time).order_by(
             SecondaryCoil.Id.desc()).all()
 
 
@@ -56,7 +62,7 @@ def get_join_query(session: Session, by_coil = True):
     return query
 
 
-def addSecondaryCoil(coil: SecondaryCoil):
+def add_secondary_coil(coil: SecondaryCoil):
     """
         添加二级数据
     Args:
@@ -80,7 +86,7 @@ def addSecondaryCoil(coil: SecondaryCoil):
         session.commit()
 
 
-def getSecondaryCoil(num: int, desc=True) -> List[SecondaryCoil]:
+def get_secondary_coil(num: int, desc=True) -> List[SecondaryCoil]:
     """
         获取二级数据
     Args:
@@ -121,23 +127,23 @@ def addCoil(coil):
         session.commit()
 
 
-def deleteDefectsBySecondaryCoilId(secondaryCoilId, surface):
+def deleteDefectsBySecondaryCoilId(secondary_coil_id, surface):
     """
         移除检测数据
     Args:
-        secondaryCoilId:
+        secondary_coil_id:
         surface:
 
     Returns:
 
     """
     with Session() as session:
-        session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == secondaryCoilId and
+        session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == secondary_coil_id and
                                          surface == CoilDefect.surface).delete()
         session.commit()
 
 
-def addDefects(defects: List[dict]):
+def add_defects(defects: List[dict]):
     """
         增加缺陷数据
     Args:
@@ -164,24 +170,24 @@ def addDefects(defects: List[dict]):
         session.commit()
 
 
-def getSecondaryCoilById(id_):
+def get_secondary_coil_by_id(id_):
     with Session() as session:
         return session.query(SecondaryCoil).where(SecondaryCoil.Id > id_)
 
 
-def getCoil(num):
+def get_coil(num):
     with Session() as session:
         return session.query(Coil).order_by(Coil.Id.desc())[:num]
 
 
-def deleteCoil(id_):
+def delete_coil(id_):
     print(f"数据删除 {id_}")
     with Session() as session:
         session.query(Coil).filter(Coil.SecondaryCoilId > id_).delete()
         session.commit()
 
 
-def getCoilList(num, coil_id=None, by_coil=True):
+def get_coil_list(num, coil_id=None, by_coil=True):
     with (Session() as session):
         query = get_join_query(session, by_coil=by_coil)
 
@@ -190,44 +196,44 @@ def getCoilList(num, coil_id=None, by_coil=True):
         return query.order_by(SecondaryCoil.Id.desc())[:num]
 
 
-def searchByCoilNo(coilNo):
+def search_by_coil_no(coil_no):
     with Session() as session:
         query = get_join_query(session)
-        return query.filter(SecondaryCoil.CoilNo.like(f"%{coilNo}%")).all()
+        return query.filter(SecondaryCoil.CoilNo.like(f"%{coil_no}%")).all()
 
 
-def getIdlistByCoilNo(coilNo, endCoilNo):
+def get_idlist_by_coil_no(coil_no, end_coil_no):
     with Session() as session:
-        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coilNo,
-                                                      SecondaryCoil.CoilNo <= endCoilNo).all()
+        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coil_no,
+                                                      SecondaryCoil.CoilNo <= end_coil_no).all()
 
 
-def searchByCoilId(coilId, endCoilId=None):
-    with Session() as session:
-        query = get_join_query(session)
-        if endCoilId:
-            return query.filter(SecondaryCoil.Id >= coilId, SecondaryCoil.Id <= endCoilId).all()
-        return query.filter(SecondaryCoil.Id == coilId).all()
-
-
-def searchByDateTime(startTime, endTimeq):
+def searchByCoilId(coil_id, end_coil_id = None):
     with Session() as session:
         query = get_join_query(session)
-        return query.filter(SecondaryCoil.CreateTime >= startTime, SecondaryCoil.CreateTime <= endTimeq).all()
+        if end_coil_id:
+            return query.filter(SecondaryCoil.Id >= coil_id, SecondaryCoil.Id <= end_coil_id).all()
+        return query.filter(SecondaryCoil.Id == coil_id).all()
 
 
-def addCoilState(coilState):
+def searchByDateTime(start_time, end_timeq):
     with Session() as session:
-        session.add(coilState)
+        query = get_join_query(session)
+        return query.filter(SecondaryCoil.CreateTime >= start_time, SecondaryCoil.CreateTime <= end_timeq).all()
+
+
+def addCoilState(coil_state):
+    with Session() as session:
+        session.add(coil_state)
         session.commit()
 
 
-def getCoilState(coilId):
+def getCoilState(coil_id):
     with Session() as session:
-        return session.query(CoilState).filter(CoilState.secondaryCoilId == coilId).order_by(CoilState.Id.desc())[:2]
+        return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).order_by(CoilState.Id.desc())[:2]
 
 
-def getPlcData(coil_id):
+def get_plc_data(coil_id):
     with Session() as session:
         return session.query(PlcData).filter(PlcData.secondaryCoilId == coil_id).order_by(PlcData.Id.desc()).first()
 
@@ -235,18 +241,18 @@ def get_all_defects(coil_id):
     with Session() as session:
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id).all()
 
-def getDefects(coil_id, direction):
+def get_defects(coil_id, direction):
     with Session() as session:
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id,
                                                 CoilDefect.surface == direction).all()
 
 
-def getDefetClassDict():
+def get_defect_class_dict():
     with Session() as session:
         return session.query(DefectClassDict).all()
 
 
-def getCoilByCoilNo(coil_no):
+def get_coil_by_coil_no(coil_no):
     with Session() as session:
         return session.query(SecondaryCoil).filter(SecondaryCoil.CoilNo == coil_no).first()
 
@@ -269,14 +275,14 @@ def deleteCoilByCoilId(Id_):
         session.commit()
 
 
-def getCoilStateByCoilId(coil_id, surface):
+def get_coil_state_by_coil_id(coil_id, surface):
     with Session() as session:
         return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id,
                                                CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
 
 
-def addServerDetectionError(error: ServerDetectionError):
-    return addObj(error)
+def add_server_detection_error(error: ServerDetectionError):
+    return add_obj(error)
 
 
 def add_coil(coil):
@@ -300,17 +306,17 @@ def get_last_coil():
         return session.query(SecondaryCoil).order_by(SecondaryCoil.CreateTime.desc()).first()
 
 
-def get_point_data(coil_id, surfaceKey=None):
+def get_point_data(coil_id, surface_key=None):
     with Session() as session:
         que = session.query(PointData).filter(PointData.secondaryCoilId == coil_id)
-        if surfaceKey:
-            que = que.filter(PointData.surface == surfaceKey)
+        if surface_key:
+            que = que.filter(PointData.surface == surface_key)
         return que.all()
 
 
-def get_line_data(coil_id, surfaceKey=None):
+def get_line_data(coil_id, surface_key=None):
     with Session() as session:
         que = session.query(LineData).filter(LineData.secondaryCoilId == coil_id)
-        if surfaceKey:
-            que = que.filter(LineData.surface == surfaceKey)
+        if surface_key:
+            que = que.filter(LineData.surface == surface_key)
         return que.all()

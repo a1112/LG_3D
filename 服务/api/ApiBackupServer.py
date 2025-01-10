@@ -45,8 +45,29 @@ async def ws_backup_image_task(websocket: WebSocket):
             break
 
 
-@router.get("/exportxlsxByDateTime/{start:str}/{end:str}")
+@router.get("/exportXlsxById/{start:int}/{end:int}")
+async def export_xlsx_by_id(start, end,export_type = "3D"):
+    output, file_size = export.export_data_by_coil_id(start, end,export_type=export_type)
+    headers = {
+        "Content-Disposition": f"attachment; filename=example.xlsx",
+        "Content-Length": str(file_size)  # 设置文件大小
+    }
+
+    # 将 BytesIO 对象传递给 StreamingResponse，设置内容类型和附件名称
+    response = StreamingResponse(output, headers=headers,
+                                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    return response
+
+@router.get("/exportXlsxByDateTime/{start:str}/{end:str}")
 async def export_xlsx_by_datetime(start, end,export_type = "3D"):
+    """
+    根据时间导出数据 %Y%m%d%H%M : 202401100100
+    :param start: 开始时间
+    :param end: 结束时间
+    :param export_type: 导出类型
+    :return:
+    """
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     output, file_size = export.export_data_by_time(

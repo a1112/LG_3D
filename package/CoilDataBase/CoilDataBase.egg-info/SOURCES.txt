@@ -2,6 +2,7 @@ setup.cfg
 setup.py
 CoilDataBase/Alarm.py
 CoilDataBase/Coil.py
+CoilDataBase/Log.py
 CoilDataBase/__init__.py
 CoilDataBase/backup.py
 CoilDataBase/config.py
@@ -26,7 +27,9 @@ CoilDataBase/models/CoilState.py
 CoilDataBase/models/DataEllipse.py
 CoilDataBase/models/DeepPoint.py
 CoilDataBase/models/DefectClassDict.py
+CoilDataBase/models/DefectStatistics.py
 CoilDataBase/models/DetectionSpeed.py
+CoilDataBase/models/ImageJoinLog.py
 CoilDataBase/models/LineData.py
 CoilDataBase/models/NextCodeDict.py
 CoilDataBase/models/PlcData.py
