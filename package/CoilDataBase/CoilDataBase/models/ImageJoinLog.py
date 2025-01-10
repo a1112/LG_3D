@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, func, Float,Text,Boolean
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, func, Float,Text
 from sqlalchemy.orm import relationship
 
 from ._base_ import Base
@@ -15,8 +15,8 @@ class ImageJoinLog(Base):
     surface = Column(String(2))
     imageCount = Column(Integer)
     rotate = Column(Float)
-    flipH = Column(Boolean)
-    flipV = Column(Boolean)
+    flipH = Column(Integer)
+    flipV = Column(Integer)
     clip1L = Column(Integer)
     clip1R = Column(Integer)
     clip2L = Column(Integer)

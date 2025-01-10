@@ -20,13 +20,13 @@ def export_data_by_coil_id(start_id, end_id, export_type="3D"):
     output = BytesIO()
     # 将 BytesIO 对象传递给 xlsxwriter.Workbook
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    print("get_all_join_data_by_id")
     secondary_coil_list = Coil.get_all_join_data_by_id(start_id, end_id)
     export_data_by_coil_id_list(secondary_coil_list, workbook, export_type)
     workbook.close()
-    file_size = output.getbuffer().nbytes
     # 重置 BytesIO 对象的读取位置
     output.seek(0)
-    return output,file_size
+    return output,output.getbuffer().nbytes
 
 def export_data_by_time(start_time, end_time, export_type="3D"):
     output = BytesIO()
