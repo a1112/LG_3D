@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse, FileResponse, Response
 from Globs import serverConfigProperty
 from tools.DataGet import DataGet, noFindImageByte
 from .api_core import app
+from tools.tool import expansion_box
 
 router = APIRouter(tags=["图像访问服务"])
 
@@ -17,7 +18,8 @@ async def get_preview_image( surface_key, coil_id:str, type_: str, mask:bool = F
     try:
         image_bytes = DataGet("preview", surface_key, coil_id, type_, mask).get_image()
         return Response(image_bytes, media_type="image/jpeg")
-    except Exception as e:
+    except (Exception,) as e:
+        print(e)
         return Response(content=noFindImageByte, media_type="image/jpeg")
 
 @router.get("/image/source/{surface_key:str}/{coil_id:str}/{type_:str}")
@@ -29,7 +31,7 @@ async def get_image( surface_key, coil_id:str, type_: str, mask:bool = False):
     if image_bytes is None:
         return None
     et=time.time()
-    print(f"图像获取 surface_key：{surface_key} coil_id：{coil_id} type_：{type_}  时间：{et-st}")
+    # print(f"图像获取 surface_key：{surface_key} coil_id：{coil_id} type_：{type_}  时间：{et-st}")
     # return FileResponse(str(url), media_type="image/png")
     # return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")
     # image = DataGet(source_type, surface_key, coil_id, type_, mask).get_image()
@@ -44,10 +46,11 @@ async def get_defect_image(surface_key, coil_id:int, type_: str, x:int, y:int, w
     image:Image.Image
     if image is None:
         return Response(noFindImageByte, media_type="image/jpeg")
-    width, height = image.size
-    x1,y1,x2,y2 = x,y,x+w,y+h
-    x1,y1,x2,y2 = max(x1,0),max(y1,0),min(x2,width),min(y2,height)
-    x,y,w,h = x1, y1, x2-x1, y2-y1
+    x,y,w,h = expansion_box([x,y,w,h],image.size,expand_factor=0)
+    # width, height = image.size
+    # x1,y1,x2,y2 = x,y,x+w,y+h
+    # x1,y1,x2,y2 = max(x1,0),max(y1,0),min(x2,width),min(y2,height)
+    # x,y,w,h = x1, y1, x2-x1, y2-y1
     crop_image = image.crop((x,y,x+w,y+h))
     img_byte_arr = io.BytesIO()
     crop_image.save(img_byte_arr, format='jpeg')

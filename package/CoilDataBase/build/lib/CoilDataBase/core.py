@@ -10,11 +10,11 @@ def get_engine(url=None):
     if url is None:
         url = get_url()
     engine_ = create_engine(url,
-                            pool_size=10,
+                            pool_size=5,
                             max_overflow=10,
                             pool_timeout=20,
                             pool_recycle=600,
-                            # pool_pre_ping=True,
+                            pool_pre_ping=True,
                             echo=False
                             )
     if not database_exists(engine_.url):

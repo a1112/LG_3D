@@ -3,8 +3,10 @@ import logging
 from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
+
+import Globs
 from CoilDataBase.config import Config
-from property.Types import ImageType
+from property.Types import ImageType ,GetFileTypeJpg
 
 class SurfaceConfigProperty:
     def __init__(self, surface_config=None):
@@ -14,12 +16,14 @@ class SurfaceConfigProperty:
         self.x_rotate = surface_config["x_rotate"]
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
-        self.saveImageType = ".jpg"
+        self.get_file_type = Globs.control.get_file_type
+        self.get_file_type:GetFileTypeJpg
+        self.saveImageType = self.get_file_type.suffix
         self.ImageType = ImageType.GRAY
         self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/jpg/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/{self.get_file_type.folder}/{type_}" + self.saveImageType
 
     def get_3d_file(self, coil_id):
         return f"{self.saveFolder}/{coil_id}/3D.npy"
@@ -28,10 +32,10 @@ class SurfaceConfigProperty:
         return f"{self.saveFolder}/{coil_id}/meshes/defaultobject_mesh.mesh"
 
     def get_preview_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/preview/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/preview/{type_}" + ".png"
 
     def get_mask_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/mask/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/mask/{type_}" + ".png"
 
     def get_info(self, coil_id):
         from CoilDataBase import Coil

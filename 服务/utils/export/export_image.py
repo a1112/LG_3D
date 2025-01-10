@@ -25,7 +25,7 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     return res_data
 
 def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None):
-    print(f"coil_id_list:  {len(coil_id_list)}")
+    print(f"coil_id_list: {len(coil_id_list)}")
     data_all = []
     head_key_list = []
     worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name)
@@ -59,13 +59,14 @@ def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None):
         offset=len(row_data)
         for index, defect in enumerate(defects):
             image = get_pil_image_by_defect(defect)
+            image = image.resize([100,100])
             defect:CoilDefect
             insert_image_and_name(worksheet,row_num, offset,defect.defectName, image)
             offset+=2
 
 def insert_image_and_name(worksheet, row_num, index,name, image):
     worksheet.set_row(row_num, 100)  # 设置第一行的高度
-    # worksheet.set_column(index, 50)  # 设置A列的宽度
+    worksheet.set_column(index+1, 100)  # 设置A列的宽度
 
     worksheet.write(row_num, index, name)
 

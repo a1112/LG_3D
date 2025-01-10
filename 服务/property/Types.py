@@ -1,5 +1,6 @@
 from abc import ABC
 from enum import Flag, auto, Enum
+from pathlib import Path
 from typing import Union, List
 
 
@@ -125,3 +126,11 @@ class ImageType:
     GRAY = "GRAY"
     JET = "JET"
     MASK = "MASK"
+
+class GetFileTypeJpg:
+    suffix = ".jpg"
+    folder = "jpg"
+
+class GetFileTypePng:
+    suffix = ".png"
+    folder = "png"

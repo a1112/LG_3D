@@ -68,7 +68,6 @@ class DataGet:
 
     def get_image(self,pil=False):
         url = self.get_source()
-        print(url)
         if self.sourceType == "preview":
             return previewCache.get_image(url,pil=pil)
         else:
@@ -94,7 +93,7 @@ def get_pil_image_by_defect(defect:CoilDefect):
     box_y = defect.defectY
     box_w = defect.defectW
     box_h = defect.defectH
-    box=[box_x,box_y,box_x+box_w,box_y+box_h]
+    box=[box_x,box_y,box_w,box_h]
     max_image = get_pil_image(defect.surface, defect.secondaryCoilId)
     new_box = expansion_box(box,max_image.size,0.1,10, 50)
     return max_image.crop([new_box[0],new_box[1],new_box[2]+new_box[0],new_box[3]+new_box[1]])

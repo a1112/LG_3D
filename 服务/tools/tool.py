@@ -394,8 +394,12 @@ def expansion_box(box, image_size, expand_factor=0.1,min_size=10,max_size=100):
     width, height = image_size
 
     # 计算扩展的尺寸
-    expand_w = max(min_size,min(max_size,w * expand_factor))
-    expand_h = max(min_size,min(max_size,h * expand_factor))
+    if expand_factor==0:
+        expand_w=0
+        expand_h=0
+    else:
+        expand_w = max(min_size,min(max_size,w * expand_factor))
+        expand_h = max(min_size,min(max_size,h * expand_factor))
 
     # 计算新的矩形位置和尺寸
     new_x = max(x - expand_w, 0)
