@@ -33,7 +33,7 @@ def get_coil_item_info(c):
         if "Weight" in c:
             c["NextCode"] = code
             try:
-                c["NextInfo"] = Globs.infoConfigProperty.getNext(str(code))
+                c["NextInfo"] = Globs.infoConfigProperty.get_next(str(code))
             except (Exception,) as e:
                 print(e)
                 c["NextInfo"] = "未知去向，" + str(code)

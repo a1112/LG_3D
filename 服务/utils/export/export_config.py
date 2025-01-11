@@ -15,5 +15,12 @@ class ExportConfig:
         self.export_taper_shape_info = True # 塔形数据导出
         self.export_alarm_loose = True      # 导出松卷 数据
         self.export_defect_data = True      # 导出缺陷数据
-
         self.export_defect_image = True     # 导出 缺陷小图
+
+class XlsxWriterFormatConfig:
+
+    def __init__(self,workbook):
+        self.workbook = workbook
+        self.cell_format = workbook.add_format({'text_wrap': True,
+                                                'align': 'center',
+                                                 'valign': 'vcenter'})

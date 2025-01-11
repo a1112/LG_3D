@@ -26,7 +26,7 @@ def get_header_data(secondary_coil:SecondaryCoil):
                 "流水号": secondary_coil.Id,
                 "卷号": secondary_coil.CoilNo,
                 "钢种": secondary_coil.CoilType,
-                "去向": Globs.infoConfigProperty.getNext(secondary_coil.Weight),
+                "去向": Globs.infoConfigProperty.get_next(secondary_coil.Weight),
                 # "二级内径": secondary_coil.CoilInside,
                 "二级外径": secondary_coil.CoilDia,
                 "二级厚度": secondary_coil.Thickness,
@@ -209,7 +209,7 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     return res_data
 
 
-def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None):
+def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
     data_all = []
     head_key_list = []
     worksheet = workbook.add_worksheet(export_config.worksheet_name)

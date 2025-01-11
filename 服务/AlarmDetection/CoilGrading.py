@@ -175,7 +175,7 @@ def grading(data_integration: DataIntegration):
     """
     # 获取去向
     next_code = str(chr(int(data_integration.currentSecondaryCoil.Weight)))
-    next_name = infoConfigProperty.getNext(next_code)
+    next_name = infoConfigProperty.get_next(next_code)
 
     flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
     taper_shape_grad_info = grading_alarm_taper_shape(data_integration)

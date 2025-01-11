@@ -4,17 +4,17 @@ import xlsxwriter
 from utils.export.export_image import export_defect_image
 from .export_database import export_info_data
 from CoilDataBase import Coil
-from .export_config import ExportConfig
+from .export_config import ExportConfig,XlsxWriterFormatConfig
 
 
 def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D"):
     export_config = ExportConfig()
-
+    format_ = XlsxWriterFormatConfig(workbook)
     if export_config.export_info:
-        export_info_data(coil_id_list, workbook, export_config)
+        export_info_data(coil_id_list, workbook, export_config,format_)
 
     if export_config.export_defect_image:
-        export_defect_image(coil_id_list, workbook, export_config)
+        export_defect_image(coil_id_list, workbook, export_config,format_)
 
 def export_data_by_coil_id(start_id, end_id, export_type="3D"):
     output = BytesIO()

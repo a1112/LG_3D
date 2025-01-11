@@ -3,7 +3,8 @@ import io
 
 from CoilDataBase.models import CoilDefect, SecondaryCoil
 
-from .export_config import ExportConfig
+import Globs
+from .export_config import ExportConfig, XlsxWriterFormatConfig
 from .export_database import get_defects, get_header_data
 from  tools.DataGet import get_pil_image_by_defect
 
@@ -12,10 +13,11 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     res_data={}
     alarm_info_dict={"S":None,"L":None}
     defects = get_defects(secondary_coil)
-    if len(defects) <= 0:
-        return None
+
     if export_config.export_header_data:
         res_data.update(get_header_data(secondary_coil))   # 添加 二级数据信息
+    # if len(defects) <= 0:
+    #     return res_data
     res_data.update({
         "defects":defects
     })
@@ -24,15 +26,17 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     #     alarm_info_dict[alarm_info.surface]=alarm_info
     return res_data
 
-def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None):
-    print(f"coil_id_list: {len(coil_id_list)}")
+def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportConfig=None, names=None,in_list=True,format_=None):
+    if names is None:
+        names = []
     data_all = []
     head_key_list = []
-    worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name)
+    print(f"coil_id_list: {len(coil_id_list)}")
     for secondaryCoil in coil_id_list:
         item_dict = get_item_data(secondaryCoil,export_config)
         if item_dict is None:
             continue
+
         data_all.append(item_dict)
         if len(item_dict.keys()) > len(head_key_list):
             head_key_list = list(item_dict.keys())
@@ -58,17 +62,46 @@ def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None):
             worksheet.write(row_num, index, data_item)
         offset=len(row_data)
         for index, defect in enumerate(defects):
+            defect.defectName = Globs.defectClassesProperty.format_name(defect.defectName)
+            if in_list:
+                if defect.defectName not in names:
+                    continue
+            else:
+                if defect.defectName in names:
+                    continue
+
             image = get_pil_image_by_defect(defect)
-            image = image.resize([100,100])
             defect:CoilDefect
-            insert_image_and_name(worksheet,row_num, offset,defect.defectName, image)
+            text = f"{defect.defectName}\n宽：{int((defect.defectW*0.34))}\n高：{int(defect.defectH*0.34)}"
+            insert_image_and_name(worksheet,row_num, offset,text, image,format_)
             offset+=2
 
-def insert_image_and_name(worksheet, row_num, index,name, image):
-    worksheet.set_row(row_num, 100)  # 设置第一行的高度
-    worksheet.set_column(index+1, 100)  # 设置A列的宽度
+def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
 
-    worksheet.write(row_num, index, name)
+    worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_显示")
+    export_defect_image_by_names(coil_id_list, worksheet,export_config,Globs.defectClassesProperty.show_name_list,format_=format_)
+    worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_屏蔽")
+    export_defect_image_by_names(coil_id_list, worksheet,export_config,Globs.defectClassesProperty.show_name_list,False,format_ = format_)
+
+
+def insert_image_and_name(worksheet, row_num, index,text, image,format_:XlsxWriterFormatConfig):
+    worksheet.set_row(row_num, 150)  # 设置第一行的高度
+    worksheet.set_column(index+1,index+1, 25)  # 设置A列的宽度
+    # 设置单元格格式，使其支持自动换行
+    worksheet.write(row_num, index, text,format_.cell_format)
+
+
+    new_size = 150
+    # Get the original width and height
+    width, height = image.size
+    if width>new_size or height>new_size:
+        # Calculate the scaling factor
+        scaling_factor = min(new_size / width, new_size / height)
+        # Calculate the new dimensions
+        new_width = int(width * scaling_factor)
+        new_height = int(height * scaling_factor)
+        # Resize the image
+        image = image.resize((new_width, new_height))
 
     image_stream = io.BytesIO()
     image.save(image_stream, format='PNG')
