@@ -43,9 +43,10 @@ class ImageMosaicThread(Thread):
         for surface in serverConfigProperty.surface:
             self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue, logger_process))
         try:
-            self.startCoilId = Coil.getCoil(1)[0].SecondaryCoilId  # 最新的 数据
-            self.endCoilId = Coil.getSecondaryCoil(1)[0].Id  # 目标数据
+            self.startCoilId = Coil.get_coil(1)[0].SecondaryCoilId  # 最新的 数据
+            self.endCoilId = Coil.get_secondary_coil(1)[0].Id  # 目标数据
         except IndexError:
+            logger.error(" ")
             self.startCoilId = 0
 
     def check_detection_end(self, secondary_coil_id):
@@ -60,8 +61,8 @@ class ImageMosaicThread(Thread):
             # logger.debug(f"执行 ")
             run_num = 0
             try:
-                max_secondary_coil_id = Coil.getSecondaryCoil(1)[0].Id
-                list_data = Coil.getSecondaryCoilById(self.startCoilId).all()
+                max_secondary_coil_id = Coil.get_secondary_coil(1)[0].Id
+                list_data = Coil.get_secondary_coil_by_id(self.startCoilId).all()
                 # 忽略 list 以前的数据
                 # list_data = list_data[-1:]
 
@@ -144,7 +145,7 @@ class ImageMosaicThread(Thread):
                 torch.cuda.empty_cache()
             time.sleep(1)
 
-    def addMsg(self, msg, level=logging.DEBUG):
+    def add_msg(self, msg, level=logging.DEBUG):
         self.reDetectionSet.add({
             "Base": "ImageMosaicThread",
             "time": datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
@@ -152,15 +153,15 @@ class ImageMosaicThread(Thread):
             "level": logging.getLevelName(level),
         })
 
-    def setReDetectionByCoilId(self, startId, endId):
+    def set_re_detection_by_coil_id(self, startId, endId):
         coilList = Coil.searchByCoilId(startId, endId)
         for coil in coilList:
-            self.setReDetection(coil)
-        self.addMsg("")
+            self.set_re_detection(coil)
+        self.add_msg("")
 
-    def setReDetection(self, coilId):
+    def set_re_detection(self, coilId):
         # 设置 重新检测 列表
         self.reDetectionSet.add(coilId.Id)
 
-    def getReDetectionMsg(self):
+    def get_re_detection_msg(self):
         pass

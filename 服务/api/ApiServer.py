@@ -41,11 +41,11 @@ async def ws_re_detection_task(websocket: WebSocket):
             data = json.loads(data)
             from_id = data["from_id"]
             to_id = data["to_id"]
-            Globs.imageMosaicThread.setReDetectionByCoilId(from_id, to_id)
+            Globs.imageMosaicThread.set_re_detection_by_coil_id(from_id, to_id)
 
     async def send_messages():
         while True:
-            msg = Globs.imageMosaicThread.getReDetectionMsg()
+            msg = Globs.imageMosaicThread.get_re_detection_msg()
             await websocket.send_text(f"Message " + str(msg))  # 非阻塞的发送消息
 
     # 使用 asyncio.gather 来并发运行接收和发送任务
