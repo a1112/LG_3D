@@ -48,11 +48,11 @@ Item {
             }
             FlowRowItem{
                 title:"日期 "
-                value:coilModel.coilDetectionTime.dataString
+                value:coilModel.coilCreateTime.dataString
             }
             FlowRowItem{
                 title:"时间 "
-                value:coilModel.coilDetectionTime.timeString
+                value:coilModel.coilCreateTime.timeString
             }
         }
     }

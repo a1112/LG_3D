@@ -134,7 +134,7 @@ Item {
 
     property string key: ""
 
-    property string key_string : key=="S"?"操作测":"传动侧"
+    property string key_string : key=="S"?"操作":"传动"
 
     property string currentViewKey: "GRAY"
 

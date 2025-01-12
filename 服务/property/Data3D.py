@@ -60,7 +60,7 @@ class PointData(Point3D):
 
     def pointDataModel(self, dataIntegration):
         return PointDataModel(
-            secondaryCoilId=dataIntegration.secondaryCoilId,
+            secondaryCoilId=dataIntegration.secondary_coil_id,
             surface=dataIntegration.key,
             type=self.type_,
             x=float(self.x),
@@ -282,7 +282,7 @@ class LineData:
 
     def line_data_model(self, data_integration):
         return LineDataModel(
-            secondaryCoilId=data_integration.secondaryCoilId,
+            secondaryCoilId=data_integration.secondary_coil_id,
             surface=data_integration.key,
             type="TaperShape",
             center_x=data_integration.flatRollData.get_center().x,

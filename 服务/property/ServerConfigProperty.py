@@ -3,8 +3,10 @@ import logging
 from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
+
+import Globs
 from CoilDataBase.config import Config
-from property.Types import ImageType
+from property.Types import ImageType ,GetFileTypeJpg
 
 class SurfaceConfigProperty:
     def __init__(self, surface_config=None):
@@ -14,12 +16,14 @@ class SurfaceConfigProperty:
         self.x_rotate = surface_config["x_rotate"]
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
-        self.saveImageType = ".png"
+        self.get_file_type = Globs.control.get_file_type
+        self.get_file_type:GetFileTypeJpg
+        self.saveImageType = self.get_file_type.suffix
         self.ImageType = ImageType.GRAY
         self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/png/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/{self.get_file_type.folder}/{type_}" + self.saveImageType
 
     def get_3d_file(self, coil_id):
         return f"{self.saveFolder}/{coil_id}/3D.npy"
@@ -28,16 +32,16 @@ class SurfaceConfigProperty:
         return f"{self.saveFolder}/{coil_id}/meshes/defaultobject_mesh.mesh"
 
     def get_preview_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/preview/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/preview/{type_}" + ".png"
 
     def get_mask_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/mask/{type_}" + self.saveImageType
+        return f"{self.saveFolder}/{coil_id}/mask/{type_}" + ".png"
 
     def get_info(self, coil_id):
         from CoilDataBase import Coil
-        coil_state = Coil.getCoilStateByCoilId(coil_id, self.key)
+        coil_state = Coil.get_coil_state_by_coil_id(coil_id, self.key)
         if coil_state:
-            return json.loads(Coil.getCoilStateByCoilId(coil_id, self.key).jsonData)
+            return json.loads(Coil.get_coil_state_by_coil_id(coil_id, self.key).jsonData)
 
         # jsonFile = self.saveFolder/str(coil_id)/"data.json"
         # with open(jsonFile, "r",encoding="utf-8") as f:
@@ -63,7 +67,6 @@ class ServerConfigProperty:
 
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}
         self.useCurrentDerv = _get_config_("useCurrentDerv", False)
-        print(f"useCurrentDerv {self.useCurrentDerv}")
 
         if self.useCurrentDerv:
             drive = Path(__file__).drive
@@ -92,7 +95,6 @@ class ServerConfigProperty:
         self.renderer_list = _get_config_("RendererList",["JET"])
         self.save_image_type=_get_config_("SaveImageType",".png")
         self.sql_url = _get_config_("sql_url",None)
-        print(f"sql_url {self.sql_url}")
         if not self.sql_url is None:
             Config.url = self.sql_url
 

@@ -1,6 +1,6 @@
 from CONFIG import controlConfig, controlConfigFile
 from property.ControlProperty import ControlProperty
-from property.Types import DetectionTaperShapeType, LevelingType, DetectionType
+from property.Types import DetectionTaperShapeType, LevelingType, DetectionType, GetFileTypeJpg
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
@@ -45,6 +45,8 @@ class ControlManagement(ThreadClass):
         self.SaveAndDeleteSaveDataBase = ProcessClass
 
         self.detection_model = DetectionType.DetectionAndClassifiers
+
+        self.get_file_type = GetFileTypeJpg
 
         self.start()
 

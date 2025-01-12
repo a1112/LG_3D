@@ -109,7 +109,7 @@ Api_Base {
     }
 
     function getExportByDateTimeUrl(startTime,endTime,exportType){
-        return apiConfig.url(apiConfig.serverUrlDaaBase,"exportxlsxByDateTime",startTime,endTime,apiConfig.getGetArgs({
+        return apiConfig.url(apiConfig.serverUrlDaaBase,"exportXlsxByDateTime",startTime,endTime,apiConfig.getGetArgs({
                                                                                                                       export_type:exportType
                                                                                                                       }))
     }

@@ -5,7 +5,9 @@ class InfoConfigProperty:
         self.config = config
         self.nextDict = self.config["nextDict"]
 
-    def getNext(self, next_code):
+    def get_next(self, next_code):
+        if isinstance(next_code, (int, float)):
+            next_code = str(chr(int(next_code)))
         try:
             return self.nextDict[next_code]
         except KeyError:

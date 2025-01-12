@@ -1,11 +1,10 @@
 from collections import defaultdict
 from pathlib import Path
 
-import PIL.Image
 import numpy as np
 from PIL import Image
 import concurrent.futures
-from CoilDataBase.Coil import addDefects
+from CoilDataBase.Coil import add_defects
 from CONFIG import coilClassifiersConfigFile
 from Globs import serverConfigProperty, control
 from property.Base import DataIntegrationList, DataIntegration
@@ -100,7 +99,7 @@ def commit_defects(defect_dict, data_integration):
                 "defectData": ""
             })
     # deleteDefectsBySecondaryCoilId(coilState.coilId,coilState.key)
-    addDefects(
+    add_defects(
         defect_list
     )
 

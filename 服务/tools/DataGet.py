@@ -4,6 +4,10 @@ from api.data_cache import previewCache, imageCache,d3DataCache
 from Globs import serverConfigProperty
 from property.Types import ImageType
 
+from CoilDataBase.models import CoilDefect
+
+from tools.tool import expansion_box
+
 serverConfigProperty:ServerConfigProperty
 
 from PIL import Image, ImageDraw, ImageFont
@@ -71,7 +75,6 @@ class DataGet:
 
     def get_3d_data(self):
         url = self.get3d_source()
-        print(url)
         return d3DataCache.get_data(url)
 
     def get_mesh_source(self):
@@ -81,5 +84,16 @@ class DataGet:
         return self.get_mesh_source()
 
 
-def get_pil_image(surface_key,coil_id,source_type="image",type_=ImageType.GRAY):
-    DataGet(source_type, surface_key, coil_id, type_, False).get_image(pil=True)
+def get_pil_image(surface_key, coil_id, source_type="image", type_=ImageType.GRAY):
+    return DataGet(source_type, surface_key, coil_id, type_, False).get_image(pil=True)
+
+
+def get_pil_image_by_defect(defect:CoilDefect):
+    box_x = defect.defectX
+    box_y = defect.defectY
+    box_w = defect.defectW
+    box_h = defect.defectH
+    box=[box_x,box_y,box_w,box_h]
+    max_image = get_pil_image(defect.surface, defect.secondaryCoilId)
+    new_box = expansion_box(box,max_image.size,0.1,10, 50)
+    return max_image.crop([new_box[0],new_box[1],new_box[2]+new_box[0],new_box[3]+new_box[1]])

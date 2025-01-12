@@ -1,6 +1,6 @@
 from CoilDataBase import config
 config.Config.host="192.168.99.100"
-from CoilDataBase.Coil import getAllJoinQuery
+from CoilDataBase.Coil import get_all_join_query
 from CoilDataBase.core import Session
 
 if __name__=="__main__":
@@ -13,7 +13,7 @@ if __name__=="__main__":
     session=Session()
     # 示例：查询 SecondaryCoil，同时预加载多个子表的数据
     results = (
-        getAllJoinQuery(session)
+        get_all_join_query(session)
         [:10]
     )
 

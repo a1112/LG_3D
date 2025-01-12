@@ -33,7 +33,7 @@ def get_coil_item_info(c):
         if "Weight" in c:
             c["NextCode"] = code
             try:
-                c["NextInfo"] = Globs.infoConfigProperty.getNext(str(code))
+                c["NextInfo"] = Globs.infoConfigProperty.get_next(str(code))
             except (Exception,) as e:
                 print(e)
                 c["NextInfo"] = "未知去向，" + str(code)
@@ -69,7 +69,7 @@ async def get_coil(number: int,coil_id=None):
     """
         获取 n 条数据
     """
-    return format_coil_info(Coil.getCoilList(number,coil_id, by_coil=isLoc)[::-1])
+    return format_coil_info(Coil.get_coil_list(number,coil_id, by_coil=isLoc)[::-1])
 
 
 @router.get("/flush/{coil_id:int}")
@@ -86,7 +86,7 @@ async def get_flush(coil_id: int):
 
 @router.get("/search/coilNo/{coil_no:str}")
 async def search_by_coil_no(coil_no:str):
-    return format_coil_info(Coil.searchByCoilNo(coil_no))
+    return format_coil_info(Coil.search_by_coil_no(coil_no))
 
 
 @router.get("/search/coilId/{coil_id}")
@@ -112,13 +112,13 @@ async def get_coil_state(coil_id: int):
 @router.get("/search/PlcData/{coil_id:int}")
 async def get_plc_data(coil_id: int):
     coil_id = int(coil_id)
-    r = Coil.getPlcData(coil_id)
+    r = Coil.get_plc_data(coil_id)
     return tool.to_dict(r)
 
 
 @router.get("/search/defects/{coil_id:int}/{direction}")
 async def get_defects(coil_id: int, direction: str):
-    return tool.to_dict(Coil.getDefects(coil_id, direction))
+    return tool.to_dict(Coil.get_defects(coil_id, direction))
 
 
 @router.get("/defectDict")
@@ -131,7 +131,7 @@ async def get_defect_dict_all():
     """
     获取全部的表面缺陷数据字段
     """
-    return tool.to_dict(Coil.getDefetClassDict())
+    return tool.to_dict(Coil.get_defect_class_dict())
 
 
 @router.get("/coilInfo/{coil_id:int}/{surface_key:str}")

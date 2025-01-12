@@ -4,6 +4,10 @@ from fastapi import APIRouter
 import Init
 from Globs import serverConfigProperty, defectClassesProperty
 from .api_core import app
+from CoilDataBase.core import engine
+from CoilDataBase.Coil import get_coil
+from CoilDataBase.tool import to_dict
+
 
 router = APIRouter(tags=["参数服务"])
 
@@ -23,5 +27,25 @@ async def info():
 # @router.get("/defectClasses")
 # async def get_defect_classes():
 #     return defectClassesProperty.config
+
+
+
+
+@router.get("/database_info")
+async def database_info():
+    """
+    获取数据库信息
+    """
+    coil_last = None
+    try:
+        coil_last = to_dict(get_coil(1)[0])
+    except (BaseException,) as e:
+        print(e)
+    return {
+        "url":engine.url,
+        "echo":engine.echo,
+        "coil_last":coil_last
+    }
+
 
 app.include_router(router)

@@ -39,6 +39,14 @@ CoreModel_ {
     readonly property ListModel realCoilListModel: coilListModel
 
     readonly property ListModel currentCoilListModel: currentCoilListIndex === 0 ? realCoilListModel : historyCoilListModel
+
+    function insertCoilData(model,data){
+        if (model.count>0){
+
+        }
+
+    }
+
     function getCurrentCoilListModelMinMaxId(){
         return [currentCoilListModel.get(currentCoilListModel.count-1).Id,currentCoilListModel.get(0).Id]
     }

@@ -29,7 +29,7 @@ def getMask(gray_image):
     return binary_image
 
 
-def getForeground(gray_image, direction="L", key=None):
+def get_foreground(gray_image, direction="L", key=None):
     if isinstance(gray_image, Image.Image):
         gray_image = np.array(gray_image)
     blurred_image = cv2.GaussianBlur(gray_image, (9, 9), 0)
@@ -47,17 +47,17 @@ def getForeground(gray_image, direction="L", key=None):
     print([cv2.contourArea(c) for c in contours])
     # 创建掩膜并填充最大的轮廓
     mask = np.zeros_like(gray_image)
-    newContours = []
+    new_contours = []
     for c in contours:
         if direction == "L" or "D" in key or "M" in key:
             if cv2.boundingRect(c)[0] < 300:
-                newContours.append(c)
+                new_contours.append(c)
         elif direction == "R":
 
             if cv2.boundingRect(c)[0] + cv2.boundingRect(c)[2] > cleaned_image.shape[1] - 500:
-                newContours.append(c)
-    if newContours:
-        largest_contour = max(newContours, key=cv2.contourArea)
+                new_contours.append(c)
+    if new_contours:
+        largest_contour = max(new_contours, key=cv2.contourArea)
         rec2 = cv2.boundingRect(largest_contour)
         cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
 
@@ -68,7 +68,7 @@ def getForeground(gray_image, direction="L", key=None):
 
 
 def auto_crop(key, image, star_pos, direction):
-    gray_image, mask = getForeground(image, direction, key)
+    gray_image, mask = get_foreground(image, direction, key)
 
     rec = crop_max_image_black_edges(key, mask, star_pos)
     x, y, w, h = rec
@@ -214,7 +214,7 @@ def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
                     break
         return indices
 
-    def getMean(data):
+    def get_mean(data):
         data = data[data > 1500]
         return numpy.mean(data)
 
@@ -227,10 +227,10 @@ def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
         r_l_line_nz_indexes = n_zeero_indexes(r_l_line, n_, num)
         if r_l_line_nz_indexes:
             sampling_index = r_l_line_nz_indexes[-1]
-            mean_l = getMean(l_npy[:, -5:-2][sampling_index:sampling_index + n_])
-            mean_r = getMean(r_npy[:, 2:5][sampling_index:sampling_index + n_])
+            mean_l = get_mean(l_npy[:, -5:-2][sampling_index:sampling_index + n_])
+            mean_r = get_mean(r_npy[:, 2:5][sampling_index:sampling_index + n_])
             if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l-mean_r) > 1000000:
-                logger.error(f"getMean Error nan mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r} ")
+                logger.error(f"get_mean Error nan mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r} ")
                 continue
             print(f"sampling_index {sampling_index}  mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r}")
             npyList[index] = npyList[index] - mean_r + mean_l
@@ -376,3 +376,35 @@ def get_intersection_points(p1, p2, width, height):
         if p[1] >= height:
             p[1] = height - 1
     return intersection_points[:2]
+
+
+def expansion_box(box, image_size, expand_factor=0.1,min_size=10,max_size=100):
+    """
+    扩展矩形框，使其尺寸增加一定比例，保持在图像尺寸内。
+
+    参数:
+    - box: 原始矩形框 (x, y, w, h)
+    - image_size: 图像的尺寸 (width, height)
+    - expand_factor: 扩展因子，控制扩展比例
+
+    返回:
+    - 扩展后的矩形框 (x, y, w, h)
+    """
+    x, y, w, h = box
+    width, height = image_size
+
+    # 计算扩展的尺寸
+    if expand_factor==0:
+        expand_w=0
+        expand_h=0
+    else:
+        expand_w = max(min_size,min(max_size,w * expand_factor))
+        expand_h = max(min_size,min(max_size,h * expand_factor))
+
+    # 计算新的矩形位置和尺寸
+    new_x = max(x - expand_w, 0)
+    new_y = max(y - expand_h, 0)
+    new_w = min(w + 2 * expand_w, width - new_x)
+    new_h = min(h + 2 * expand_h, height - new_y)
+
+    return int(new_x), int(new_y), int(new_w), int(new_h)

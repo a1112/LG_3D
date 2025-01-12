@@ -21,7 +21,7 @@
         "头尾":{
             "level":1,
             "color":"#FFA500",
-            "show":true
+            "show":false
         },
         "小型缺陷":{
             "level":2,
