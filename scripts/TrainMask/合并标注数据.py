@@ -1,3 +1,4 @@
+import socket
 from pathlib import Path
 import os
 from tqdm import tqdm
@@ -14,10 +15,15 @@ def join_files(from_folder, to_folder):
             except Exception as e:
                 raise e
 
-rootFolder = Path(fr"F:\subImage\样本")
-toFolder = Path(fr"F:\subImage\样本_合并")
-if toFolder.exists():
-    shutil.rmtree(toFolder)
-toFolder.mkdir(exist_ok=True)
 
-join_files(rootFolder,toFolder)
+print(socket.gethostname())
+
+
+if socket.gethostname() == "lcx_ace":
+    rootFolder = Path(fr"F:\subImage\样本")
+    toFolder = rootFolder.parent / "样本_合并"
+    if toFolder.exists():
+        shutil.rmtree(toFolder)
+    toFolder.mkdir(exist_ok=True)
+
+    join_files(rootFolder, toFolder)

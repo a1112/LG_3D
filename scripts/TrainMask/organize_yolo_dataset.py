@@ -1,6 +1,7 @@
 import os
 import shutil
 import random
+import socket
 from pathlib import Path
 
 
@@ -54,9 +55,13 @@ def organize_yolo_dataset(image_folder, label_folder, output_folder, train_ratio
     print(f"Organized YOLO dataset in {output_folder}")
 
 
-# 示例使用
-image_folder = Path(r'F:\subImage\样本_合并')  # 包含图像文件的文件夹
-label_folder = image_folder.parent/"txt"  # 包含YOLO格式标注文件的文件夹
-output_folder = label_folder.parent/"Dataset"  # 用于保存组织后的数据集的文件夹
-output_folder.mkdir(parents=True, exist_ok=True)
-organize_yolo_dataset(image_folder, label_folder, output_folder)
+print(socket.gethostname())
+
+if socket.gethostname() == "lcx_ace":
+    # 示例使用
+    # 示例使用
+    image_folder = Path(r'F:\subImage\样本_合并')  # 包含图像文件的文件夹
+    label_folder = image_folder.parent / "txt"  # 包含YOLO格式标注文件的文件夹
+    output_folder = label_folder.parent / "Dataset"  # 用于保存组织后的数据集的文件夹
+    output_folder.mkdir(parents=True, exist_ok=True)
+    organize_yolo_dataset(image_folder, label_folder, output_folder)
