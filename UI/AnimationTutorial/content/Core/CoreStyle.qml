@@ -1,4 +1,5 @@
-import QtQuick 2.15
+import QtQuick
+import QtQuick.Window
 import QtQuick.Controls.Material
 import "../Base"
 import "../Style/Adaptive"
@@ -12,10 +13,17 @@ Item {
     property color rootTitleColor:titleColor
     property color titleColor:Material.color(Material.Teal)
 
-    property AdaptiveView adaptive_1080p:AdaptiveView{}
     property AdaptiveView adaptive_base:AdaptiveView{}
+    property AdaptiveView1920_1080 adaptive_1920p:AdaptiveView1920_1080{}
+    property AdaptiveView2560_1440 adaptive_2560p:AdaptiveView2560_1440{}
 
-    property AdaptiveView currentAdaptive:adaptive_base
+
+    property AdaptiveView currentAdaptive:{
+        console.log("desktopAvailableWidth: ",Screen.desktopAvailableWidth)
+        console.log("desktopAvailableHeight: ",Screen.desktopAvailableHeight)
+
+
+    }
 
     function getIcon(name){
         return "../icons/" + name + ".png"
