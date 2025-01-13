@@ -25,9 +25,25 @@ QtObject {
     property int coilStatus_S: 0
     property string coilMsg: ""
 
-        property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
+    property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
 
+    property ListModel defectsData : ListModel{}
+
+    function checkDefectShow(fliterDict){
+        for (let i=0;i<defectsData.count;i++ ){
+            let item_defect =defectsData.get(i)
+            // console.log("isShowDefect",Object.keys(item_defect))
+            if(fliterDict[item_defect.defectName]){
+                                return true
+                                }
+        }
+        if (defectsData.length<=0){
+
+        }
+        return false
+
+    }
 
     function setCoil(coil){
         coilId = coil.SecondaryCoilId
@@ -61,6 +77,8 @@ QtObject {
             }
 
         }
+        defectsData = coil.defects
+
     }
 
 }

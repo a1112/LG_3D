@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import "DataListMenu"
@@ -7,6 +7,10 @@ import "Core"
 import "../../../Model"
 import "../../../animation"
 Item {
+
+
+    visible:leftCore.fliterEnable? coilModel.checkDefectShow(leftCore.fliterDict) :true
+
     property  CoilModel coilModel: CoilModel{}
     Component.onCompleted:{
     coilModel.setCoil(model)
@@ -14,7 +18,8 @@ Item {
 
     // property CoilState coilState: CoilState{}
     width: 300
-    height: 25
+    height: visible?25:0.001
+    implicitHeight:height
 
     property string msg:"流水号："+coilModel.coilId+"\n"+"钢卷号："+coilModel.coilNo+"\n"+"钢卷类型："+
                         coilModel.coilType+"\n"+"状态："+coilModel.coilStatus_S+
@@ -47,7 +52,6 @@ Item {
         onClicked: {
             core.setCoilIndex(index)
             coreModel.setKeepLatest(false)
-
         }
     }
     ColumnLayout {
@@ -68,7 +72,7 @@ Item {
                     Label{
                         font.pointSize: 11
                         font.bold: true
-                        text: " "+Id
+                        text: " "+coilModel.coilId
                         color:listItemCoil.detectionStatuColor
                     }
                     Item {
@@ -91,9 +95,7 @@ Item {
                     }
                     Label{
                         font.pointSize: 11
-
-                        // color: "#43CAF1"
-                        text: CoilType
+                        text: coilModel.coilType
                     }
                     Item {
                         Layout.fillWidth: true
@@ -117,7 +119,7 @@ Item {
 
 
     Rectangle{
-        width: 2
+        width: 3
         height: parent.height
         anchors.bottom: parent.bottom
         color: index==core.coilIndex?"red":"#00000000"
@@ -126,6 +128,7 @@ Item {
         acceptedButtons: Qt.RightButton
         anchors.fill: parent
         onClicked: {
+            lefeListMemu.coilModel = coilModel
             lefeListMemu.popup()
         }
     }
@@ -139,10 +142,6 @@ Item {
             }
         }
     }
-    DataListItemMenu{
-        id:lefeListMemu
-    }
-
 
     Rectangle {
         anchors.fill: parent

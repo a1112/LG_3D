@@ -66,7 +66,6 @@ CardBase{
                 source:coreStyle.isDark?coreStyle.getIcon("filter_light"):coreStyle.getIcon("filter")
                 onClicked: {
                     fliterView.open()
-
                     }
             }
         }

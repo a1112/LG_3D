@@ -40,28 +40,34 @@ def get_coil_item_info(c):
     return c
 
 
-def format_coil_info(secondary_coil_list):
-    re = []
-    for secondaryCoil in secondary_coil_list:
-        secondaryCoil: SecondaryCoil
-        c_data = {"hasCoil": False,
-                  "hasAlarmInfo": False
-                  }
-
-        if len(secondaryCoil.childrenCoil) > 0:
-            c_data["hasCoil"] = True
-        for childrenCoil in secondaryCoil.childrenCoil:
-            c_data.update(get_coil_item_info(childrenCoil))
-        c_data["AlarmInfo"] = {}
-
-        if len(secondaryCoil.childrenAlarmInfo) > 0:
+def format_secondary_item_data(secondary_coil: SecondaryCoil):
+    """
+     格式化 单个 二级 返回 数据
+     非 自动添加
+    """
+    c_data = {"hasCoil": False,
+              "hasAlarmInfo": False,
+              "AlarmInfo" : {},
+              "defects": []
+              }
+    if len(secondary_coil.childrenCoil) > 0:
+        c_data["hasCoil"] = True
+    for childrenCoil in secondary_coil.childrenCoil:
+        c_data.update(get_coil_item_info(childrenCoil))
+        if len(secondary_coil.childrenAlarmInfo) > 0:
             c_data["hasAlarmInfo"] = True
-        for childrenAlarmInfo in secondaryCoil.childrenAlarmInfo:
+        for childrenAlarmInfo in secondary_coil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
             c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
-        c_data.update(get_coil_item_info(secondaryCoil))
-        re.append(c_data)
-    return re
+        c_data.update(get_coil_item_info(secondary_coil))
+    c_data["defects"] = secondary_coil.childrenCoilDefect   # 返回缺陷数据
+    return c_data
+
+def format_coil_info(secondary_coil_list):
+    """
+     格式化 二级 返回 数据
+    """
+    return [format_secondary_item_data(secondary_coil) for secondary_coil in secondary_coil_list]
 
 
 @router.get("/coilList/{number}")
@@ -79,7 +85,7 @@ async def get_flush(coil_id: int):
     """
     if coil_id>0:
         return {
-            "coilList": await get_coil(5,coil_id=coil_id)
+            "coilList": await get_coil(10,coil_id=coil_id)
         }
     return {}
 

@@ -7,6 +7,7 @@ import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItemSimple"
 import "DataList"
 import "SearchView"
+import "FliterSelect"
 Item {
     id:root
     Pane{
@@ -25,7 +26,6 @@ Item {
         anchors.fill: parent
         spacing:8
         orientation: Qt.Vertical
-
         CurrentInfo{ // 当前卷信息
             SplitView.fillWidth: true
         }
@@ -42,6 +42,9 @@ Item {
             visible: leftCore.searchViewShow
             Layout.fillWidth: true
             SplitView.fillWidth: true
+        }
+        FliterSelectView{
+
         }
         DataListView{
             SplitView.fillWidth: true

@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls
+import QtQuick
 import QtQuick.Controls.Material
-import QtQuick.Layouts 1.15
+import QtQuick.Layouts
 import "../../../btns"
 import "../../Header"
 Item {
@@ -76,18 +75,23 @@ Item {
              coreModel.listToRealModel()
             }
         }
-        Item{
-               height: parent.height
-               width: height
-        ExportButton{
-            tipText: "导出"
-            visible:auth.isAdmin
-            anchors.fill: parent
-            onClicked: {
-               popManage.popupExportView()
-            }
+
+        FliterBtn{  // 筛选
+
         }
-        }
+
+        // Item{
+        //        height: parent.height
+        //        width: height
+        // ExportButton{
+        //     tipText: "导出"
+        //     visible:auth.isAdmin
+        //     anchors.fill: parent
+        //     onClicked: {
+        //        popManage.popupExportView()
+        //     }
+        // }
+        // }
         Item{
                height: parent.height
                width: height

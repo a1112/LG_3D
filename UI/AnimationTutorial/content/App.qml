@@ -9,6 +9,7 @@ import "PopupView"
 import "Pages/AlarmPage"
 import "Dialogs"
 import "./Style/Adaptive"
+import "Pages/LeftPage/DataList/DataListMenu"
 ApplicationWindow {
     id:app
     visible: true
@@ -49,6 +50,10 @@ ApplicationWindow {
     PopManagement{
             id:popManage
         }
+
+    DataListItemMenu{
+        id:lefeListMemu
+    }
 }
 
 

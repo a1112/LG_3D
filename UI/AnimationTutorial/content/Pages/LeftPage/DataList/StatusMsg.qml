@@ -19,8 +19,17 @@ Row {
         font.family:"Microsoft YaHei"
     }
     Row{
-            spacing:5
+            spacing:10
             visible:listItemCoil.hasCoilData && listItemCoil.hasAlarmData
+
+            Label{
+                text: "T"
+                font.pointSize:9
+                color:Material.color(Material.Green)
+                font.bold:true
+                font.family:"Microsoft YaHei"
+            }
+
     // Rectangle{
     //     implicitWidth: 6
     //     implicitHeight: width
@@ -35,6 +44,8 @@ Row {
     //     color: Status_L==-3?"black":Status_L==-2?"red":"green"
     // }
         AlarmRectangleItem{
+            anchors.verticalCenter:parent.verticalCenter
+
             level:Math.max(
                       listItemCoil.flatRollGrad,
                       listItemCoil.taperShapeGrad,

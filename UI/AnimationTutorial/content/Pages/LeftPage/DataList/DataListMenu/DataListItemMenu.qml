@@ -2,10 +2,11 @@ import QtQuick
 import QtQuick.Controls
 Menu{
     id:lefeListMemu
+    property var coilModel
     MenuItem{
         text: "复制卷号"
         onClicked:{
-            cpp.clipboard.setText(CoilNo)
+            cpp.clipboard.setText(coilModel.coilNo)
         }
     }
 
@@ -34,13 +35,13 @@ Menu{
             MenuItem{
                 text: "S端"
                 onClicked: {
-                     cpp.clipboard.setText((coreModel.surfaceS.getBaseUrl(Id)+"").substring(8))
+                     cpp.clipboard.setText((coreModel.surfaceS.getBaseUrl(coilModel.coilId)+"").substring(8))
                 }
             }
             MenuItem{
                 text: "L端"
                 onClicked: {
-                    cpp.clipboard.setText((coreModel.surfaceL.getBaseUrl(Id)+"").substring(8))
+                    cpp.clipboard.setText((coreModel.surfaceL.getBaseUrl(coilModel.coilId)+"").substring(8))
                 }
             }
         }
@@ -52,21 +53,21 @@ Menu{
         MenuItem{
             text: "卷号"
             onClicked:{
-                cpp.clipboard.setText(CoilNo)
+                cpp.clipboard.setText(coilModel.coilNo)
         }
         }
 
         MenuItem{
             text: "流水号"
             onClicked:{
-                cpp.clipboard.setText(Id)
+                cpp.clipboard.setText(coilModel.coilId)
             }
         }
 
         MenuItem{
             text: "时间"
             onClicked:{
-                cpp.clipboard.setText(Qt.formatDateTime(new Date(CreateTime.year,CreateTime.month-1,CreateTime.day,CreateTime.hour,CreateTime.minute,CreateTime.second), "yyyy-MM-dd hh:mm:ss"))
+                cpp.clipboard.setText(Qt.formatDateTime(new Date(coilModel.createTime.year,coilModel.createTime.month-1,coilModel.createTime.day,CreateTime.hour,CreateTime.minute,CreateTime.second), "yyyy-MM-dd hh:mm:ss"))
 
             }
 

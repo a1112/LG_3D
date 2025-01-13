@@ -52,10 +52,15 @@ def get_all_join_data_by_time(start_time, end_time):
 
 def get_join_query(session: Session, by_coil = True):
     """
-        运行较慢
+        查询的返回数据
+    Args:
+        session: Session
+        by_coil:
     """
-    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo),
-                                                 subqueryload(SecondaryCoil.childrenCoil))
+    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo), # 塔形报警
+                                                 subqueryload(SecondaryCoil.childrenCoil),       # 二级数据
+                                                 subqueryload(SecondaryCoil.childrenCoilDefect)  # 缺陷数据
+                                                 )
     if by_coil:
         last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
         query = query.filter(SecondaryCoil.Id <= last_coil.SecondaryCoilId)

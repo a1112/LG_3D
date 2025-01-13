@@ -6,9 +6,30 @@ Item {
 
     property string leftMsg:""
 
+    property bool fliterEnable:false    // 对 list 界面 进行 筛选
+
+    property var fliterDict:{return {}}
+
+
+    function flushFliterDict(){
+        let temp = fliterDict
+        fliterDict={}
+        fliterDict=temp
+    }
+    function setLiewViewFilterClass(defectClass,show){
+        // 设置 列表 筛选的显示类别
+        fliterDict[defectClass] = show
+        flushFliterDict()
+    }
+
+    function isShowDefect(defectName){
+        return fliterDict[defectName]
+
+    }
 
 
     onSearchViewShowChanged: {
+        // 显示隐藏 查询界面
         if (! searchViewShow){
             coreModel.currentCoilListIndex = 0
         }
