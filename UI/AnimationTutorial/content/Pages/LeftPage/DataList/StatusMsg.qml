@@ -23,9 +23,9 @@ Row {
             visible:listItemCoil.hasCoilData && listItemCoil.hasAlarmData
 
             Label{
-                text: "T"
+                text: coilModel.maxDefect.defectName
                 font.pointSize:9
-                color:Material.color(Material.Green)
+                color:  coilModel.defectErrorColor  //Material.color(Material.Green)
                 font.bold:true
                 font.family:"Microsoft YaHei"
             }

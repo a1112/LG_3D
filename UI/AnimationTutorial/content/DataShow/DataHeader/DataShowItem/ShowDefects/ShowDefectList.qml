@@ -7,10 +7,6 @@ ListView {
     orientation:ListView.Horizontal
     spacing: 5
     ScrollBar.vertical:ScrollBar{}
-    delegate:CropDefectShow{
-             visible:dataShowCore.defectManage.defect_is_show(defectName)
-            height:root.height
-            width:height
-    }
+    delegate:CropDefectShow{}
 
 }

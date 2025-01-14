@@ -1,6 +1,10 @@
 import QtQuick
-
+import QtQuick.Controls.Material
+import "../Model/server"
 QtObject {
+
+    property var coilData
+
     property int coilId: 0  // 二级ID
     property string coilNo: ""
     property string coilType: ""
@@ -45,7 +49,8 @@ QtObject {
 
     }
 
-    function setCoil(coil){
+    function init(coil){
+        coilData = coil
         coilId = coil.SecondaryCoilId
         coilNo = coil.CoilNo
         coilType = coil.CoilType
@@ -78,7 +83,36 @@ QtObject {
 
         }
         defectsData = coil.defects
+        initMaxLevelDefect()
+    }
 
+    function getDefectNameList(){
+        return _getDefectNameList_(coilData)
+    }
+
+    function _getDefectNameList_(list_model){
+        let name_list = []
+        tool.for_list_model(list_model.defects,(value)=>{
+                                name_list.push(value.defectName)
+                            })
+        return name_list
+    }
+    property DefectItemModel maxDefect: DefectItemModel{}
+
+    property int defectMaxErrorLevel:0
+    property color defectErrorColor:Material.color(Material.LightBlue)
+    function initMaxLevelDefect(){
+        tool.for_list_model(defectsData,(defect)=>{
+                    let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
+                    if (defectLevel>=defectMaxErrorLevel){
+                                    if (leftCore.isShowDefect(defect.defectName)){
+                                        maxDefect.init(defect)
+                                        defectMaxErrorLevel=defectLevel
+                                    }
+                                }
+                            })
+
+        return maxDefect.defectName
     }
 
 }

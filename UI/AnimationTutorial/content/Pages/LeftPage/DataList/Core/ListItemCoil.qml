@@ -60,7 +60,6 @@ Item {
     }
     Component.onCompleted:{
         alarmNodel.clear()
-
         let keyList=[]
         for (let key in AlarmInfo) {
             keyList.push(key)
@@ -78,176 +77,176 @@ Item {
         }
     }
 
-    property var testData:    {
-        "hasCoil": true,
-        "hasAlarmInfo": true,
-        "DefectCountS": 0,
-        "Id": 23053,
-        "DefectCountL": 0,
-        "Status_L": 0,
-        "Grade": 0,
-        "SecondaryCoilId": 23053,
-        "DetectionTime": {
-            "year": 2024,
-            "month": 11,
-            "weekday": 4,
-            "day": 1,
-            "hour": 16,
-            "minute": 49,
-            "second": 14
-        },
-        "CheckStatus": 0,
-        "Status_S": 0,
-        "Msg": "",
-        "AlarmInfo": {
-            "L": {
-                "nextCode": "2",
-                "secondaryCoilId": 23053,
-                "Id": 41,
-                "nextName": "冷轧基板",
-                "taperShapeGrad": 2,
-                "looseCoilGrad": 1,
-                "flatRollGrad": 1,
-                "defectGrad": 1,
-                "grad": 2,
-                "data": null,
-                "surface": "L",
-                "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
-                "looseCoilMsg": "",
-                "flatRollMsg": "正常",
-                "defectMsg": "",
-                "crateTime": {
-                    "year": 2024,
-                    "month": 11,
-                    "weekday": 4,
-                    "day": 1,
-                    "hour": 16,
-                    "minute": 49,
-                    "second": 11
-                }
-            },
-            "S": {
-                "nextCode": "2",
-                "secondaryCoilId": 23053,
-                "Id": 42,
-                "nextName": "冷轧基板",
-                "taperShapeGrad": 1,
-                "looseCoilGrad": 1,
-                "flatRollGrad": 1,
-                "defectGrad": 1,
-                "grad": 1,
-                "data": null,
-                "surface": "S",
-                "taperShapeMsg": "正常",
-                "looseCoilMsg": "",
-                "flatRollMsg": "正常",
-                "defectMsg": "",
-                "crateTime": {
-                    "year": 2024,
-                    "month": 11,
-                    "weekday": 4,
-                    "day": 1,
-                    "hour": 16,
-                    "minute": 49,
-                    "second": 12
-                }
-            }
-        },
-        "Thickness": 2.9,
-        "Width": 1273,
-        "Weight": 50,
-        "ActWidth": 1288,
-        "CoilType": "DX51D-2",
-        "CreateTime": {
-            "year": 2024,
-            "month": 10,
-            "weekday": 3,
-            "day": 17,
-            "hour": 23,
-            "minute": 21,
-            "second": 1
-        },
-        "CoilNo": "4V08312800",
-        "CoilInside": 762,
-        "CoilDia": 1936,
-        "childrenCoil": [
-            {
-                "DefectCountS": 0,
-                "Id": 42827,
-                "DefectCountL": 0,
-                "Status_L": 0,
-                "Grade": 0,
-                "SecondaryCoilId": 23053,
-                "DetectionTime": {
-                    "year": 2024,
-                    "month": 11,
-                    "weekday": 4,
-                    "day": 1,
-                    "hour": 16,
-                    "minute": 49,
-                    "second": 14
-                },
-                "CheckStatus": 0,
-                "Status_S": 0,
-                "Msg": ""
-            }
-        ],
-        "childrenAlarmInfo": [
-            {
-                "nextCode": "2",
-                "secondaryCoilId": 23053,
-                "Id": 41,
-                "nextName": "冷轧基板",
-                "taperShapeGrad": 2,
-                "looseCoilGrad": 1,
-                "flatRollGrad": 1,
-                "defectGrad": 1,
-                "grad": 2,
-                "data": null,
-                "surface": "L",
-                "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
-                "looseCoilMsg": "",
-                "flatRollMsg": "正常",
-                "defectMsg": "",
-                "crateTime": {
-                    "year": 2024,
-                    "month": 11,
-                    "weekday": 4,
-                    "day": 1,
-                    "hour": 16,
-                    "minute": 49,
-                    "second": 11
-                }
-            },
-            {
-                "nextCode": "2",
-                "secondaryCoilId": 23053,
-                "Id": 42,
-                "nextName": "冷轧基板",
-                "taperShapeGrad": 1,
-                "looseCoilGrad": 1,
-                "flatRollGrad": 1,
-                "defectGrad": 1,
-                "grad": 1,
-                "data": null,
-                "surface": "S",
-                "taperShapeMsg": "正常",
-                "looseCoilMsg": "",
-                "flatRollMsg": "正常",
-                "defectMsg": "",
-                "crateTime": {
-                    "year": 2024,
-                    "month": 11,
-                    "weekday": 4,
-                    "day": 1,
-                    "hour": 16,
-                    "minute": 49,
-                    "second": 12
-                }
-            }
-        ],
-        "NextCode": "2",
-        "NextInfo": "冷轧基板"
-    }
+    // property var testData:    {
+    //     "hasCoil": true,
+    //     "hasAlarmInfo": true,
+    //     "DefectCountS": 0,
+    //     "Id": 23053,
+    //     "DefectCountL": 0,
+    //     "Status_L": 0,
+    //     "Grade": 0,
+    //     "SecondaryCoilId": 23053,
+    //     "DetectionTime": {
+    //         "year": 2024,
+    //         "month": 11,
+    //         "weekday": 4,
+    //         "day": 1,
+    //         "hour": 16,
+    //         "minute": 49,
+    //         "second": 14
+    //     },
+    //     "CheckStatus": 0,
+    //     "Status_S": 0,
+    //     "Msg": "",
+    //     "AlarmInfo": {
+    //         "L": {
+    //             "nextCode": "2",
+    //             "secondaryCoilId": 23053,
+    //             "Id": 41,
+    //             "nextName": "冷轧基板",
+    //             "taperShapeGrad": 2,
+    //             "looseCoilGrad": 1,
+    //             "flatRollGrad": 1,
+    //             "defectGrad": 1,
+    //             "grad": 2,
+    //             "data": null,
+    //             "surface": "L",
+    //             "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
+    //             "looseCoilMsg": "",
+    //             "flatRollMsg": "正常",
+    //             "defectMsg": "",
+    //             "crateTime": {
+    //                 "year": 2024,
+    //                 "month": 11,
+    //                 "weekday": 4,
+    //                 "day": 1,
+    //                 "hour": 16,
+    //                 "minute": 49,
+    //                 "second": 11
+    //             }
+    //         },
+    //         "S": {
+    //             "nextCode": "2",
+    //             "secondaryCoilId": 23053,
+    //             "Id": 42,
+    //             "nextName": "冷轧基板",
+    //             "taperShapeGrad": 1,
+    //             "looseCoilGrad": 1,
+    //             "flatRollGrad": 1,
+    //             "defectGrad": 1,
+    //             "grad": 1,
+    //             "data": null,
+    //             "surface": "S",
+    //             "taperShapeMsg": "正常",
+    //             "looseCoilMsg": "",
+    //             "flatRollMsg": "正常",
+    //             "defectMsg": "",
+    //             "crateTime": {
+    //                 "year": 2024,
+    //                 "month": 11,
+    //                 "weekday": 4,
+    //                 "day": 1,
+    //                 "hour": 16,
+    //                 "minute": 49,
+    //                 "second": 12
+    //             }
+    //         }
+    //     },
+    //     "Thickness": 2.9,
+    //     "Width": 1273,
+    //     "Weight": 50,
+    //     "ActWidth": 1288,
+    //     "CoilType": "DX51D-2",
+    //     "CreateTime": {
+    //         "year": 2024,
+    //         "month": 10,
+    //         "weekday": 3,
+    //         "day": 17,
+    //         "hour": 23,
+    //         "minute": 21,
+    //         "second": 1
+    //     },
+    //     "CoilNo": "4V08312800",
+    //     "CoilInside": 762,
+    //     "CoilDia": 1936,
+    //     "childrenCoil": [
+    //         {
+    //             "DefectCountS": 0,
+    //             "Id": 42827,
+    //             "DefectCountL": 0,
+    //             "Status_L": 0,
+    //             "Grade": 0,
+    //             "SecondaryCoilId": 23053,
+    //             "DetectionTime": {
+    //                 "year": 2024,
+    //                 "month": 11,
+    //                 "weekday": 4,
+    //                 "day": 1,
+    //                 "hour": 16,
+    //                 "minute": 49,
+    //                 "second": 14
+    //             },
+    //             "CheckStatus": 0,
+    //             "Status_S": 0,
+    //             "Msg": ""
+    //         }
+    //     ],
+    //     "childrenAlarmInfo": [
+    //         {
+    //             "nextCode": "2",
+    //             "secondaryCoilId": 23053,
+    //             "Id": 41,
+    //             "nextName": "冷轧基板",
+    //             "taperShapeGrad": 2,
+    //             "looseCoilGrad": 1,
+    //             "flatRollGrad": 1,
+    //             "defectGrad": 1,
+    //             "grad": 2,
+    //             "data": null,
+    //             "surface": "L",
+    //             "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
+    //             "looseCoilMsg": "",
+    //             "flatRollMsg": "正常",
+    //             "defectMsg": "",
+    //             "crateTime": {
+    //                 "year": 2024,
+    //                 "month": 11,
+    //                 "weekday": 4,
+    //                 "day": 1,
+    //                 "hour": 16,
+    //                 "minute": 49,
+    //                 "second": 11
+    //             }
+    //         },
+    //         {
+    //             "nextCode": "2",
+    //             "secondaryCoilId": 23053,
+    //             "Id": 42,
+    //             "nextName": "冷轧基板",
+    //             "taperShapeGrad": 1,
+    //             "looseCoilGrad": 1,
+    //             "flatRollGrad": 1,
+    //             "defectGrad": 1,
+    //             "grad": 1,
+    //             "data": null,
+    //             "surface": "S",
+    //             "taperShapeMsg": "正常",
+    //             "looseCoilMsg": "",
+    //             "flatRollMsg": "正常",
+    //             "defectMsg": "",
+    //             "crateTime": {
+    //                 "year": 2024,
+    //                 "month": 11,
+    //                 "weekday": 4,
+    //                 "day": 1,
+    //                 "hour": 16,
+    //                 "minute": 49,
+    //                 "second": 12
+    //             }
+    //         }
+    //     ],
+    //     "NextCode": "2",
+    //     "NextInfo": "冷轧基板"
+    // }
 
 }

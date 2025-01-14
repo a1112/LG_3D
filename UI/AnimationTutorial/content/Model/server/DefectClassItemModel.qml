@@ -5,11 +5,13 @@ QtObject {
     property int defectLevel: level??0
     property color defectColor:color??""
     property int defectShow:show??false
+    property int defectNum:num??0
 
     function init(itemData){
         defectName = itemData["name"]
         defectLevel = itemData["level"]
         defectColor = itemData["color"]
         defectShow = itemData["show"]
+        defectNum = itemData["num"]
     }
 }

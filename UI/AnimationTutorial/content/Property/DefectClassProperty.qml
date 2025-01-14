@@ -23,22 +23,22 @@ Item {
     // 记录缺陷显示
     property var defectDictAll: {return {}}
 
+    property var defecShowTabel:defectDictAll
+
     function flushDefectDictAll(){
     let temp = defectDictAll
         defectDictAll = {}
         defectDictAll = temp
     }
 
-
     function setDefectDict(defectData){
-        console.log("setDefectDict")
-        console.log(JSON.stringify(defectData))
         defectDictData = defectData["data"]
         defectDictModel.clear()
         // 先添加显示的缺陷
         for(let key in defectData["data"]){
             let value = defectData["data"][key]
             value["name"] = key
+            value["num"] = 0
             if (value["show"]){
             defectDictModel.append(value)
                 }
@@ -52,6 +52,9 @@ Item {
                 }
         }
         defaultDefectClass.init(defectData["default"])
-        console.log(defectDictModel.count)
+    }
+
+    function getDefectLevelByDefectName(defectName){
+        return defectDictData[defectName]["level"]??defaultDefectClass.defectLevel
     }
 }

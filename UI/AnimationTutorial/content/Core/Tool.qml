@@ -14,4 +14,9 @@ Item {
         return lastSlashIndex !== -1 ? path.substring(0, lastSlashIndex) : ""
     }
 
+    function for_list_model(list_model,func){
+        for (let i=0;i<list_model.count;i++){
+            if (func(list_model.get(i)) === true)return
+        }
+    }
 }

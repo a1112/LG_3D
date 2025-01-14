@@ -14,7 +14,7 @@ Item {
         if (c_data.SecondaryCoilId===currentCoilModel.coilId) {
             return
         }
-        currentCoilModel.setCoil(c_data)
+        currentCoilModel.init(c_data)
         if (currentCoilModel.coilStatus_L>=0) {
             coreModel.surfaceL.hasData = true
         }

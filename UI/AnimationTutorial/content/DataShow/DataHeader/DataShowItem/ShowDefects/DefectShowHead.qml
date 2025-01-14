@@ -5,20 +5,22 @@ Item {
     id:root
     height:25
     Layout.fillWidth: true
+
     Pane{
         anchors.fill:parent
         Material.elevation:5
     }
     RowLayout{
         anchors.fill:parent
+        clip:true
         ShowDefectNamesRow{
-            model:dataShowCore.currentDefectDictModel
-            height:root.height
-            Layout.fillWidth: true
-        }
+            model: dataShowCore.defecClassListModel // global.defectClassProperty.defectDictModel // dataShowCore.currentDefectDictModel
 
+            Layout.fillWidth: true
+            Layout.fillHeight:true
+        }
         ShowTools{
-            height:root.height
+           Layout.fillHeight:true
         }
     }
 }

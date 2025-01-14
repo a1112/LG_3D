@@ -9,7 +9,7 @@ Flow {
     spacing: 5
     Layout.fillWidth: true
     Repeater{
-        model:dataShowCore.currentDefectDictModel
+        model:dataShowCore.defecClassListModel
         CheckRec{
             text:defectName+" "+num
             height:25

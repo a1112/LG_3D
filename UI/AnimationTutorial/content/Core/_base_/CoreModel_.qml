@@ -19,5 +19,6 @@ CoreModel_Data {
     }
 
     readonly property var defectDictAll:global.defectClassProperty.defectDictAll
+
     readonly property var flushDefectDictAll:global.defectClassProperty.flushDefectDictAll
 }

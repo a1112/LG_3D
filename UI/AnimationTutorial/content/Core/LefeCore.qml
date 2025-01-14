@@ -1,5 +1,6 @@
 import QtQuick
 import "../Model"
+
 Item {
     property int hovedCoilId: 0
     property bool searchViewShow: true
@@ -7,9 +8,32 @@ Item {
     property string leftMsg:""
 
     property bool fliterEnable:false    // 对 list 界面 进行 筛选
+    onFliterEnableChanged:{
+        flushFliter()
+    }
+
+    property ListModel fliterListModel: ListModel{}
+
 
     property var fliterDict:{return {}}
+    property var tempCoilModel :  CoilModel{}
+    function flushModel(){
+        fliterListModel.clear()
+        tool.for_list_model(coreModel.currentCoilListModel,(item_data)=>{
+                                tempCoilModel._getDefectNameList_(item_data).some((name)=>{
+                                                                    if(isShowDefect(name)){
+                                                                            fliterListModel.append(item_data)
+                                                                            return true//throw new Error('End Loop'); // 抛出异常终止循环
+                                                                        }
+                                                                    })
+                            })
 
+    }
+
+    function flushFliter(){
+    flushFliterDict()
+    flushModel()
+    }
 
     function flushFliterDict(){
         let temp = fliterDict
@@ -19,12 +43,11 @@ Item {
     function setLiewViewFilterClass(defectClass,show){
         // 设置 列表 筛选的显示类别
         fliterDict[defectClass] = show
-        flushFliterDict()
+        flushFliter()
     }
 
     function isShowDefect(defectName){
         return fliterDict[defectName]
-
     }
 
 

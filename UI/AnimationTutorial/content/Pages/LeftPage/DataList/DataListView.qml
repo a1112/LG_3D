@@ -117,7 +117,7 @@ Item{
                     core.setCoilIndex(currentIndex)
                 }
                 spacing:5
-                model: coreModel.currentCoilListModel
+                model: leftCore.fliterEnable?leftCore.fliterListModel : coreModel.currentCoilListModel
                 highlight: Rectangle {
                     color: "lightsteelblue"
                     radius: 5
@@ -136,7 +136,6 @@ Item{
         id:mask
         anchors.fill: parent
         color: "#00000000"
-
         border.width: 1
         border.color: Material.color(Material.Blue)
     }
