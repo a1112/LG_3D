@@ -3,6 +3,12 @@ from pathlib import Path
 import json
 import os
 
+from property.AlarmConfigProperty import AlarmConfigProperty
+from property.ControlConfigProperty import ControlConfigProperty
+from property.DefectClassesProperty import DefectClassesProperty
+from property.InfoConfigProperty import InfoConfigProperty
+from property.ServerConfigProperty import ServerConfigProperty
+
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
 # args = parser.parse_args()
@@ -52,23 +58,11 @@ infoConfigFile = get_file_url( r"configs/Info.json")
 controlConfigFile = get_file_url( r"configs/Control.json")
 coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
 defectClassesConfigFile = get_file_url(r"configs/DefectClasses.json")
+
 if isLoc:
     configFile = get_file_url( r"configs/Server3DLoc2.json")
 # elif args.config:
 #     configFile = Path(args.config)
-
-
-
-ServerConfig = json.load(open(configFile, 'r', encoding="utf-8"))
-alarmConfig = json.load(open(alarmConfigFile, 'r', encoding="utf-8"))
-infoConfig = json.load(open(infoConfigFile, 'r', encoding="utf-8"))
-controlConfig = json.load(open(controlConfigFile, 'r', encoding="utf-8"))
-defectClassesConfig=json.load(open(defectClassesConfigFile, 'r', encoding="utf-8"))
-
-
-if socket.gethostname() == "DESKTOP-94ADH1G":
-    ServerConfig["balsam"] = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
-
 
 def set_console_mode():
     import ctypes
@@ -81,3 +75,8 @@ if not isLoc:
 data_base_api_port = 6011
 server_api_port = 6010
 image_api_port = 6012
+serverConfigProperty = ServerConfigProperty(configFile)
+alarmConfigProperty = AlarmConfigProperty(alarmConfigFile)
+infoConfigProperty = InfoConfigProperty(infoConfigFile)
+defectClassesProperty = DefectClassesProperty(defectClassesConfigFile)
+controlConfigProperty = ControlConfigProperty(controlConfigFile)

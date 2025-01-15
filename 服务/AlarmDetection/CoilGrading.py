@@ -4,7 +4,7 @@ from CoilDataBase.models import AlarmFlatRoll
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmInfo
 from CoilDataBase.Coil import add_obj
-from Globs import alarmConfigProperty, infoConfigProperty
+from CONFIG import alarmConfigProperty, infoConfigProperty
 from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig
 from property.Base import CoilLineData, DataIntegration, DataIntegrationList
 from property.Data3D import LineData
@@ -19,7 +19,7 @@ def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config:
         alarm_flat_roll_config:
     Returns:
     """
-    name, config_max, config_min, config_msg = alarm_flat_roll_config.getConfig()
+    name, config_max, config_min, config_msg = alarm_flat_roll_config.get_config()
     error_msg = "正常"
     grad = 1
     if alarm_flat_roll.inner_circle_width <= config_min:
@@ -32,7 +32,7 @@ def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config:
 
 
 def gradingAlarmTaperShape(alarm_taper_shape_list: List[AlarmTaperShape], taper_shape_config: TaperShapeConfig):
-    name, height_limit_list, inner, out, info = taper_shape_config.getConfig()
+    name, height_limit_list, inner, out, info = taper_shape_config.get_config()
     error_msg = "正常"
     grad = 1
     for alarmTaperShape in alarm_taper_shape_list:
@@ -57,7 +57,7 @@ def gradingAlarmTaperShape(alarm_taper_shape_list: List[AlarmTaperShape], taper_
 
 
 def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_config: LooseCoilConfig):
-    name, width, info = loose_coil_config.getConfig()
+    name, width, info = loose_coil_config.get_config()
     grad_msg = ""
     grad = 1
 
@@ -70,12 +70,12 @@ def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_co
 
 def grading_alarm_flat_roll(data_integration: DataIntegration):
     next_code = data_integration.next_code
-    alarm_flat_roll_config = alarmConfigProperty.getAlarmFlatRollConfig(next_code)  # 判及 参数
+    alarm_flat_roll_config = alarmConfigProperty.get_alarm_flat_roll_config(next_code)  # 判及 参数
     flat_roll_data = data_integration.flatRollData
     inner_circle_width = data_integration.x_to_mm(flat_roll_data.inner_circle_width)
     flat_roll_data: FlatRollData
     alarmFlatRollConfig: AlarmFlatRollConfig
-    name, config_max, config_min, config_msg = alarm_flat_roll_config.getConfig()
+    name, config_max, config_min, config_msg = alarm_flat_roll_config.get_config()
     error_msg = "正常"
     grad = 1
     if inner_circle_width <= config_min:
@@ -89,8 +89,8 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
     next_code = data_integration.next_code
-    taper_shape_config = alarmConfigProperty.getTaperShapeConfig(next_code)  # 判及 参数
-    name, height_limit_list, inner, out, info = taper_shape_config.getConfig()
+    taper_shape_config = alarmConfigProperty.get_taper_shape_config(next_code)  # 判及 参数
+    name, height_limit_list, inner, out, info = taper_shape_config.get_config()
     error_msg = "正常"
     grad = 1
 
@@ -151,8 +151,8 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
 
 def grading_alarm_loose_coil(data_integration: DataIntegration):
     next_code = data_integration.next_code
-    loose_coil_config = alarmConfigProperty.getLooseCoilConfig(next_code)  # 判及 参数
-    name, width, info = loose_coil_config.getConfig()
+    loose_coil_config = alarmConfigProperty.get_loose_coil_config(next_code)  # 判及 参数
+    name, width, info = loose_coil_config.get_config()
     grad_msg = ""
     grad = 1
     for lineData in data_integration.lineDataDict.values():

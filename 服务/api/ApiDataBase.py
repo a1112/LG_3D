@@ -6,10 +6,9 @@ from fastapi import APIRouter
 import CONFIG
 import Globs
 from AlarmDetection import AlarmCoilManagement
-from CONFIG import isLoc
+from CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.models import AlarmInfo,SecondaryCoil
-from Globs import serverConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
 from utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
@@ -33,7 +32,7 @@ def get_coil_item_info(c):
         if "Weight" in c:
             c["NextCode"] = code
             try:
-                c["NextInfo"] = Globs.infoConfigProperty.get_next(str(code))
+                c["NextInfo"] = CONFIG.infoConfigProperty.get_next(str(code))
             except (Exception,) as e:
                 print(e)
                 c["NextInfo"] = "未知去向，" + str(code)
@@ -130,7 +129,7 @@ async def get_defects(coil_id: int, direction: str):
 @router.get("/defectDict")
 async def get_defect_dict():
     # return tool.to_dict(Coil.getDefetClassDict())
-    return Globs.defectClassesProperty.config
+    return CONFIG.defectClassesProperty.config
 
 @router.get("/defectDictAll")
 async def get_defect_dict_all():

@@ -18,11 +18,11 @@ from property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from tools import tool, FlattenSurface
 
-from CONFIG import isLoc
+from CONFIG import isLoc, serverConfigProperty
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
-from Globs import control, serverConfigProperty
+from Globs import control
 from property.Base import DataIntegration
 
 from utils.Log import logger

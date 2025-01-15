@@ -2,16 +2,18 @@ import QtQuick
 import QtQuick.Controls.Material
 import "../../../../Model/server"
 CheckDelegate {
-
+    id:root
     property int defectNum:dataShowCore.getNumByDefectName(defectClassItemModel.defectName)
 
     visible: defectClassItemModel.defectShow || dataShowCore.defectManage.un_defect_show //dataShowCore.defectManage.defect_is_show(defectName)
+    width:visible?implicitWidth:0
+    Behavior on width {NumberAnimation{duration:260}}
     property DefectClassItemModel defectClassItemModel:DefectClassItemModel{}
     checked: global.defectClassProperty.defectDictAll[defectClassItemModel.defectName]??false// defectClassItemModel.defectShow
-    text: defectNum+" "+defectClassItemModel.defectName  // num
+    text: defectClassItemModel.defectName  // num
     font.bold:true
     Material.foreground: defectClassItemModel.defectColor
-    onCheckedChanged:{
+    onClicked:{
         if (coreModel.defectDictAll[defectClassItemModel.defectName]!==checked){
                 coreModel.defectDictAll[defectClassItemModel.defectName]=checked
                 coreModel.flushDefectDictAll()
@@ -21,11 +23,10 @@ CheckDelegate {
     Component.onCompleted:{
         defectClassItemModel.init(this)
     }
-
-    Label{
-        anchors.bottom:parent.top
-        x:15
-        text: " x"
+    DefectNumLabel{
+                    defect_num:root.defectNum
+                    anchors.bottom:parent.top
+                    anchors.horizontalCenter:parent.horizontalCenter
 
     }
     Rectangle{

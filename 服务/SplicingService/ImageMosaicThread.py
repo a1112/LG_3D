@@ -9,8 +9,7 @@ import logging
 from numpy.distutils.log import debug
 
 import AlarmDetection
-from CONFIG import isLoc
-from Globs import serverConfigProperty
+from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap
 from property.Base import DataIntegrationList
 from .ImageMosaic import ImageMosaic

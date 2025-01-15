@@ -48,6 +48,22 @@ Item {
     function getNumByDefectName(defectName){
         return defectDict[defectName].length
     }
+
+    function set_num(){
+                console.log("get_un_show_num")
+                var num = 0
+                for (var defectName_ in defectDict){
+                    console.log(defectName_)
+                if (!defect_show(defectName_)){
+                    num += defectDict[defectName_].length
+                    }
+                }
+                un_show_num =  num
+
+    }
+
+    property int un_show_num
+
     function defect_show(defectName){
         return global.defectClassProperty.defectDictAll[defectName]??false
     }
@@ -113,6 +129,7 @@ Item {
             //          un_defectModel.append(defectsData[i])
             //     }
             // }
+        set_num()
     }
 
     function defectClear(){

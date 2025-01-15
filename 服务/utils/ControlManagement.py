@@ -1,4 +1,4 @@
-from CONFIG import controlConfig, controlConfigFile
+from CONFIG import controlConfigFile, controlConfigProperty
 from property.ControlProperty import ControlProperty
 from property.Types import DetectionTaperShapeType, LevelingType, DetectionType, GetFileTypeJpg
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
@@ -13,7 +13,7 @@ class ControlManagement(ThreadClass):
 
     def __init__(self):
         super().__init__()
-        self.config = controlConfig
+        self.config = controlConfigProperty.config
         self.configFile = controlConfigFile
         self.ImageSaverWorkNum = 3
         self.minMaskDetectErrorSize = 2000  # mask 检测最小报警值
@@ -56,7 +56,7 @@ class ControlManagement(ThreadClass):
     def get_config(self):
         return self.config
 
-    def setConfig(self, data):
+    def set_config(self, data):
         self.config.update(data)
 
     def set_property(self, key, value):

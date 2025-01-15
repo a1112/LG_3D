@@ -4,26 +4,30 @@ import QtQuick.Layouts
 import "../../Model/server"
 ItemDelegate{
     id:root
-    width:parent.width
-    height:30
+
 
     function setColor(color_){
-        defectClassItem.defectColor = color_
+        set_defect_dict_property(index,"color",color_)
+        // defectClassItem.defectColor = color_
+
     }
 
     property DefectClassItemModel defectClassItem: DefectClassItemModel{}
+
     Frame{
         anchors.fill:parent
     }
+
     RowLayout {
         anchors.fill:parent
 
         Row{
             Layout.preferredWidth:150
             Label{
-                text: "名称:  "
+                text: qsTr("名称:  ")
                 font.pointSize:12
             }
+
             Label{
                 text: defectClassItem.defectName
                 font.pointSize:12
@@ -33,7 +37,7 @@ ItemDelegate{
         Row{
             Layout.preferredWidth:100
             Label{
-                text: "等级: "
+                text: qsTr("等级: ")
                 font.pointSize:12
                 anchors.verticalCenter:parent.verticalCenter
             }
@@ -49,7 +53,7 @@ ItemDelegate{
             Layout.preferredWidth:100
 
             CheckDelegate{
-                text: "屏蔽: "
+                text: qsTr("屏蔽: ")
                 height:20
                 checked:!defectClassItem.defectShow
             }

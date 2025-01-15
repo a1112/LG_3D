@@ -14,4 +14,5 @@ Item {
         fileName: "Control.ini"
         property alias lockControl:root.lockControl
     }
+
 }

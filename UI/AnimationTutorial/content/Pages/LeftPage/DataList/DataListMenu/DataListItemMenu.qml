@@ -10,9 +10,9 @@ Menu{
         }
     }
 
-    MenuItem{
-        text: "标注"
-    }
+    // MenuItem{
+    //     text: "标注"
+    // }
     Menu{
         title: "打开..."
         MenuItem{

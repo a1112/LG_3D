@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 
 app = FastAPI()
 

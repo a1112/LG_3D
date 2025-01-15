@@ -10,8 +10,11 @@ Row {
         onClicked:{
             dataShowCore.defectManage.un_defect_show = checked
         }
-    }
 
+    }
+    DefectNumLabel{
+        defect_num:dataShowCore.un_show_num
+    }
     ItemDelegate{
         height:parent.height
         text:"取消"

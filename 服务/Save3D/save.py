@@ -6,7 +6,7 @@ import traceback
 from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 
 import threading
 import multiprocessing

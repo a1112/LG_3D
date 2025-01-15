@@ -6,7 +6,7 @@ from PIL import Image
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, FileResponse, Response
 
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 from tools.DataGet import DataGet, noFindImageByte
 from .api_core import app
 from tools.tool import expansion_box

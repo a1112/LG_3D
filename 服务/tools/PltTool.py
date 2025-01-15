@@ -2,8 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from CONFIG import SaveImageType, RendererList
-from Globs import serverConfigProperty
+from CONFIG import SaveImageType, RendererList, serverConfigProperty
 from Init import ColorMaps, PreviewSize
 
 

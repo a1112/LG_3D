@@ -74,6 +74,11 @@ Api_Base {
         console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"))
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"),success,failure)
     }
+    function setDefecctClassConfig(data,success,failure){
+        // 设置 缺陷数据
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"setDefectDict"),data,success,failure)
+    }
+
 
     function getCoilInfo(coilId_,key_,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coilInfo",coilId_,key_),success,failure)

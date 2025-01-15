@@ -1,6 +1,7 @@
 import QtQuick
 
 Item {
+    id:root
     property int id_
     property int coilId
     property string surface
@@ -14,6 +15,7 @@ Item {
     property real defectSource
     property var defectData
     property int defectLevel:global.defectClassProperty.getDefectLevelByDefectName(defectName)
+    property color defectColor:global.defectClassProperty.getColorByName(defectName)
 
     // defectTime = Column(DateTime, server_default=func.now())
 
@@ -31,4 +33,6 @@ Item {
             defectSource = item.defectSource
             defectData = item.defectData
     }
+
+
 }

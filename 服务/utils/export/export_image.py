@@ -3,6 +3,7 @@ import io
 
 from CoilDataBase.models import CoilDefect, SecondaryCoil
 
+import CONFIG
 import Globs
 from .export_config import ExportConfig, XlsxWriterFormatConfig
 from .export_database import get_defects, get_header_data
@@ -62,7 +63,7 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
             worksheet.write(row_num, index, data_item)
         offset=len(row_data)
         for index, defect in enumerate(defects):
-            defect.defectName = Globs.defectClassesProperty.format_name(defect.defectName)
+            defect.defectName = CONFIG.defectClassesProperty.format_name(defect.defectName)
             if in_list:
                 if defect.defectName not in names:
                     continue
@@ -79,9 +80,9 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
 def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
 
     worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_显示")
-    export_defect_image_by_names(coil_id_list, worksheet,export_config,Globs.defectClassesProperty.show_name_list,format_=format_)
+    export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list, format_=format_)
     worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_屏蔽")
-    export_defect_image_by_names(coil_id_list, worksheet,export_config,Globs.defectClassesProperty.show_name_list,False,format_ = format_)
+    export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list, False, format_ = format_)
 
 
 def insert_image_and_name(worksheet, row_num, index,text, image,format_:XlsxWriterFormatConfig):

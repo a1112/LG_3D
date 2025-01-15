@@ -1,3 +1,8 @@
+from pathlib import Path
+
+from property.BaseConfigProperty import BaseConfigProperty
+
+
 class DefectClassesItemProperty:
     def __init__(self, name, data):
         self.name = name
@@ -11,14 +16,19 @@ class DefectClassesItemProperty:
         return self.show
 
 
-class DefectClassesProperty:
-    def __init__(self, config: dict):
-        self.config = config
-        self.defect_item_list = [DefectClassesItemProperty(name, data) for name, data in config["data"].items()]
+class DefectClassesProperty(BaseConfigProperty):
+    def __init__(self,file_path: Path):
+        super().__init__(file_path)
+
+        self.defect_item_list = [DefectClassesItemProperty(name, data) for name, data in self.config["data"].items()]
 
     @property
     def data(self):
         return self.config["data"]
+
+    @data.setter
+    def data(self,data):
+        self.config["data"] = data
 
     @property
     def default(self):
@@ -42,3 +52,12 @@ class DefectClassesProperty:
         if name in name_map:
             return name_map[name]
         return name
+
+    def set_data(self, data:list):
+        new_data = data
+        # for value in  data:
+        #     new_data[value["name"]]=value
+        self.config["data"] = new_data
+
+        self.save_config()
+

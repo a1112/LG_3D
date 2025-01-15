@@ -12,10 +12,8 @@ Item {
     }
     RowLayout{
         anchors.fill:parent
-        clip:true
         ShowDefectNamesRow{
             model: dataShowCore.defecClassListModel // global.defectClassProperty.defectDictModel // dataShowCore.currentDefectDictModel
-
             Layout.fillWidth: true
             Layout.fillHeight:true
         }

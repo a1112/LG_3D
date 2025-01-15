@@ -7,8 +7,7 @@ import time
 import cv2
 import numpy as np
 from PIL import Image
-from CONFIG import isLoc
-from Globs import serverConfigProperty
+from CONFIG import isLoc, serverConfigProperty
 from SplicingService.DataFolderLog import DataFolderLog
 from tools.Glob import cmdThread
 

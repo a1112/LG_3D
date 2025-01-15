@@ -17,10 +17,10 @@ Item {
     {
 
         // WARNING: For POST requests, body is set to null by browsers.
-        var data = JSON.stringify(arg);
+        var data = JSON.stringify(arg)
 
-        var xhr = new XMLHttpRequest();
-        xhr.withCredentials = true;
+        var xhr = new XMLHttpRequest()
+        xhr.withCredentials = true
         xhr.onreadystatechange = function() {
             handleResponse(xhr, success, failure);
         }

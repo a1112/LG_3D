@@ -5,7 +5,7 @@ from fastapi import WebSocket, APIRouter
 from fastapi.responses import StreamingResponse
 
 from CoilDataBase import backup
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 from utils import Backup, export
 from .api_core import app
 

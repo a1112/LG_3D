@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 
 import Init
-from Globs import serverConfigProperty, defectClassesProperty
+from CONFIG import serverConfigProperty, defectClassesProperty
 from .api_core import app
 from CoilDataBase.core import engine
 from CoilDataBase.Coil import get_coil

@@ -8,6 +8,8 @@ from CoilDataBase.models import SecondaryCoil
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmLooseCoil
 from CoilDataBase.models import AlarmInfo
+
+import CONFIG
 import Globs
 from .export_tool import format_time ,spit_data_list
 
@@ -26,7 +28,7 @@ def get_header_data(secondary_coil:SecondaryCoil):
                 "流水号": secondary_coil.Id,
                 "卷号": secondary_coil.CoilNo,
                 "钢种": secondary_coil.CoilType,
-                "去向": Globs.infoConfigProperty.get_next(secondary_coil.Weight),
+                "去向": CONFIG.infoConfigProperty.get_next(secondary_coil.Weight),
                 # "二级内径": secondary_coil.CoilInside,
                 "二级外径": secondary_coil.CoilDia,
                 "二级厚度": secondary_coil.Thickness,

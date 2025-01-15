@@ -5,8 +5,8 @@ import numpy as np
 from PIL import Image
 import concurrent.futures
 from CoilDataBase.Coil import add_defects
-from CONFIG import coilClassifiersConfigFile
-from Globs import serverConfigProperty, control
+from CONFIG import coilClassifiersConfigFile, serverConfigProperty
+from Globs import control
 from property.Base import DataIntegrationList, DataIntegration
 from property.Types import DetectionType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord

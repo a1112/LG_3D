@@ -1,3 +1,4 @@
+import CONFIG
 import Globs
 from CONFIG import isLoc
 from Globs import control
@@ -19,7 +20,7 @@ class ZipServer(control.ProcessClass):
             return
         print("原始数据压缩  进程启动")
         zip_and_deletion_list = []
-        for surface in Globs.serverConfigProperty.surfaceConfigPropertyDict.values():
+        for surface in CONFIG.serverConfigProperty.surfaceConfigPropertyDict.values():
             surface: SurfaceConfigProperty
             for folder in surface.folderList:
                 zip_and_deletion_list.append(ZipAndDeletionCameraData(folder["source"], reserve_num=100))

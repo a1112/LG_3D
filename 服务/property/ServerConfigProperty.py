@@ -4,8 +4,9 @@ from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict
 
-import Globs
 from CoilDataBase.config import Config
+
+from .BaseConfigProperty import BaseConfigProperty
 from property.Types import ImageType ,GetFileTypeJpg
 
 class SurfaceConfigProperty:
@@ -16,7 +17,7 @@ class SurfaceConfigProperty:
         self.x_rotate = surface_config["x_rotate"]
         self.direction = surface_config["direction"]
         self.folderList = surface_config["folderList"]
-        self.get_file_type = Globs.control.get_file_type
+        self.get_file_type = GetFileTypeJpg
         self.get_file_type:GetFileTypeJpg
         self.saveImageType = self.get_file_type.suffix
         self.ImageType = ImageType.GRAY
@@ -53,13 +54,13 @@ def change_path_drive(path, new_drive):
     return str(Path(new_drive) / path.relative_to(path.drive))
 
 
-class ServerConfigProperty:
-    def __init__(self, server_config=None):
-        self.serverConfig = server_config
+class ServerConfigProperty(BaseConfigProperty):
+    def __init__(self, file_path):
+        super().__init__(file_path)
 
         def _get_config_(property_, default):
             try:
-                return server_config[property_]
+                return self.config[property_]
             except KeyError:
                 if current_process().name == "MainProcess":
                     logging.warn(f"{property_} 参数获取失败，使用默认参数 {default}")
@@ -70,12 +71,12 @@ class ServerConfigProperty:
 
         if self.useCurrentDerv:
             drive = Path(__file__).drive
-            for surface in self.serverConfig["surface"]:
+            for surface in self.config["surface"]:
                 surface["saveFolder"] = change_path_drive(surface["saveFolder"], drive)
 
                 for folder in surface["folderList"]:
                     folder["source"] = change_path_drive(folder["source"], folder["source"])
-        self.surface = self.serverConfig["surface"]
+        self.surface = self.config["surface"]
         for surface in self.surface:
             self.surfaceConfigPropertyDict[surface["key"]] = SurfaceConfigProperty(surface)
         self.balsam_exe = _get_config_("balsam", "balsam.exe")  # balsam.exe 位置
@@ -125,6 +126,6 @@ class ServerConfigProperty:
 
     def to_dict(self):
         res = {}
-        for surface in self.serverConfig["surface"]:
+        for surface in self.config["surface"]:
             res["surface" + surface["key"]] = surface
         return res

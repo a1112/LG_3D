@@ -1,5 +1,6 @@
 import QtQuick
 import "../Model/server"
+import "../Base"
 Item {
     id:root
     property var defectDictData:{return {}}
@@ -15,9 +16,7 @@ Item {
         defectLevel:0
         defectColor:coreStyle.labelColor
     }
-    function getColorByName(name){
-        return defectDictData[name].color
-    }
+
 
 
     // 记录缺陷显示
@@ -31,30 +30,62 @@ Item {
         defectDictAll = temp
     }
 
-    function setDefectDict(defectData){
-        defectDictData = defectData["data"]
+    function upDefectDictModelByDefectDictData(){
         defectDictModel.clear()
-        // 先添加显示的缺陷
-        for(let key in defectData["data"]){
-            let value = defectData["data"][key]
+        for(let key in defectDictData){
+            let value = defectDictData[key]
             value["name"] = key
             value["num"] = 0
             if (value["show"]){
             defectDictModel.append(value)
                 }
         }
-        // 添加隐藏的缺陷
-        for(let key in defectData["data"]){
-            let value = defectData["data"][key]
+
+        for(let key in defectDictData){
+            let value = defectDictData[key]
             value["name"] = key
+            value["num"] = 0
             if (!value["show"]){
             defectDictModel.append(value)
                 }
         }
+    }
+
+    function setDefectDict(defectData){
+        defectDictData = defectData["data"]
+        upDefectDictModelByDefectDictData()
+        // defectDictModel.clear()
+        // // 先添加显示的缺陷
+        // for(let key in defectData["data"]){
+        //     let value = defectData["data"][key]
+        //     value["name"] = key
+        //     value["num"] = 0
+        //     if (value["show"]){
+        //     defectDictModel.append(value)
+        //         }
+        // }
+        // 添加隐藏的缺陷
+        // for(let key in defectData["data"]){
+        //     let value = defectData["data"][key]
+        //     value["name"] = key
+        //     if (!value["show"]){
+        //     defectDictModel.append(value)
+        //         }
+        // }
         defaultDefectClass.init(defectData["default"])
     }
 
     function getDefectLevelByDefectName(defectName){
         return defectDictData[defectName]["level"]??defaultDefectClass.defectLevel
+    }
+    function getColorByName(name){
+        return defectDictData[name]["color"]
+    }
+    property bool defeftDrawShowLasbel:true
+
+
+    SettingsBase{
+        property alias defeftDrawShowLasbel:root.defeftDrawShowLasbel
+
     }
 }

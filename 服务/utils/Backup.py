@@ -1,6 +1,6 @@
 from pathlib import Path
 import shutil
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 from threading import Thread
 from .Zip import ZipAndDeletionCameraData
 async def backup_image_task(from_id:int, to_id:int, save_folder:str, msg_func=None):

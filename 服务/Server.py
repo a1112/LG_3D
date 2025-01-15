@@ -6,8 +6,7 @@ from multiprocessing import Process, freeze_support
 import uvicorn
 from utils.StdoutLog import Logger
 
-
-from Globs import serverConfigProperty
+from CONFIG import serverConfigProperty
 from api import app
 Logger("服务")
 # 参数服务
@@ -30,6 +29,9 @@ from api import ApiBackupServer
 
 # 测试服务
 from api import ApiTest
+
+# 参数设置
+from api import ApiSettings
 
 # from api import ApiDocs
 

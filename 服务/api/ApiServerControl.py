@@ -24,7 +24,7 @@ async def set_config(data: Dict):
     """
     控制配置设置
     """
-    return control.setConfig(data)
+    return control.set_config(data)
 
 
 @router.get("/control/set_property")
