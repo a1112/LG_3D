@@ -1,8 +1,9 @@
 import QtQuick
 import QtQuick.Controls
+import "../../../../Model"
 Menu{
     id:lefeListMemu
-    property var coilModel
+    property CoilModel coilModel
     MenuItem{
         text: "复制卷号"
         onClicked:{
@@ -18,30 +19,29 @@ Menu{
         MenuItem{
             text: "打开 S端 保存位置"
             onClicked: {
-                Qt.openUrlExternally(coreModel.surfaceS.getBaseUrl(Id))
+                coreModel.surfaceS.openSaveFolderById(coilModel.coilId)
             }
 
         }
         MenuItem{
             text: "打开 L端 保存位置"
             onClicked: {
-                Qt.openUrlExternally(coreModel.surfaceL.getBaseUrl(Id))
-                // Qt.openUrlExternally(coreModel.surfaceL.getBaseUrl(Id))
+                coreModel.surfaceL.openSaveFolderById(coilModel.coilId)
             }
         }
         MenuSeparator{}
         Menu{
-            title: "复制保存位置"
+            title: qsTr("复制保存位置")
             MenuItem{
-                text: "S端"
+                text: qsTr("S端")
                 onClicked: {
-                     cpp.clipboard.setText((coreModel.surfaceS.getBaseUrl(coilModel.coilId)+"").substring(8))
+                     cpp.clipboard.setText(tool.url_to_str(coreModel.surfaceS.getBaseUrl(coilModel.coilId)+""))
                 }
             }
             MenuItem{
-                text: "L端"
+                text: qsTr("L端")
                 onClicked: {
-                    cpp.clipboard.setText((coreModel.surfaceL.getBaseUrl(coilModel.coilId)+"").substring(8))
+                    cpp.clipboard.setText(tool.url_to_str(coreModel.surfaceL.getBaseUrl(coilModel.coilId)+""))
                 }
             }
         }
@@ -67,8 +67,7 @@ Menu{
         MenuItem{
             text: "时间"
             onClicked:{
-                cpp.clipboard.setText(Qt.formatDateTime(new Date(coilModel.createTime.year,coilModel.createTime.month-1,coilModel.createTime.day,CreateTime.hour,CreateTime.minute,CreateTime.second), "yyyy-MM-dd hh:mm:ss"))
-
+                cpp.clipboard.setText(coilModel.coilCreateTime.str)
             }
 
         }
@@ -92,10 +91,31 @@ Menu{
     MenuItem{
         text: "查看原始返回数据"
         onClicked:{
-            Qt.openUrlExternally(api.getSearchByCoilIdUrl(Id))
+            Qt.openUrlExternally(api.getSearchByCoilIdUrl(coilModel.coilId))
         }
     }
-    MenuItem{
-        text: "重新检测该卷"
+    Menu{
+        title:qsTr("工具")
+        Menu{
+                title:qsTr("分割小图")
+                MenuItem{
+                    text: qsTr("S端")
+                    onClicked:{
+                        api.clipMaxImage(coilModel.coilId,coreModel.surfaceS.key)
+                        coreModel.surfaceS.openSaveFolderById(coilModel.coilId)
+                    }
+                }
+                MenuItem{
+                    text: qsTr("L端")
+                    onClicked:{
+                     api.clipMaxImage(coilModel.coilId,coreModel.surfaceL.key)
+                        coreModel.surfaceL.openSaveFolderById(coilModel.coilId)
+                    }
+                }
+        }
+        MenuItem{
+            text: "重新检测该卷"
+        }
     }
+
 }

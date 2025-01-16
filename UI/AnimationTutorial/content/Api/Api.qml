@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 // import QtWebSockets 1.8
 Api_DataBase {
 
@@ -23,5 +23,9 @@ Api_DataBase {
     }
 
 
+    function clipMaxImage(coilId,key,success,failure){
+        let url =  apiConfig.url(apiConfig.serverUrlData,"clipMaxImage",coilId,key)
+            return ajax.get(url,success,failure)
 
+    }
 }

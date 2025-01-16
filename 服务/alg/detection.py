@@ -103,21 +103,48 @@ def commit_defects(defect_dict, data_integration):
         defect_list
     )
 
+def save_classifier_item(image, save_url):
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
+    save_url = save_url.with_suffix(".png")
+    save_url.parent.mkdir(parents=True, exist_ok=True)
+    image.save(save_url)
 
 def save_detection_item(info, image, save_url):
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
     save_url = save_url.with_suffix(".png")
+    save_url.parent.mkdir(parents=True, exist_ok=True)
     image.save(save_url)
     w, h = image.size
     create_xml(save_url, [h, w, 1], info)
-    sub_image_save_folder =save_url.parent/"sub"
-    sub_image_save_folder.mkdir(parents=True, exist_ok=True)
-    for bbox in info:
-        xmin, ymin, xmax, ymax, class_id, source, label = bbox
-        sub_image_save_url = sub_image_save_folder / f"{label}_{xmin}_{ymin}_{xmax}_{ymax}.png"
-        image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
+    # sub_image_save_folder =save_url.parent/"sub"
+    # sub_image_save_folder.mkdir(parents=True, exist_ok=True)
+    # for bbox in info:
+    #     xmin, ymin, xmax, ymax, class_id, source, label = bbox
+    #     sub_image_save_url = sub_image_save_folder / f"{label}_{xmin}_{ymin}_{xmax}_{ymax}.png"
+    #     image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
+def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder=None, save_to_folders=True):
+    if not id_str:
+        id_str = "null"
+    save_base_folder_list = []
+    if save_to_folders:
+        save_base_folder_list.append(save_base_folder)
+    if save_base_folder is None or save_to_folders:
+        # save_base_folder = Path(
+        #     list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
+        save_base_folder_list.append(Path(
+            list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "classifier_save")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        index = 0
+        for res, sub_image in zip(sub_info_list, sub_image_list):
+            index += 1
+            for save_base_folder in save_base_folder_list:
+                xmin, ymin, xmax, ymax, label_index, source, name = res
+                save_base = Path(save_base_folder) /"classifier"/ name
+                save_url = save_base/f"{id_str}_{label_index}_{name}_{index}.png"
+                executor.submit(save_classifier_item, sub_image, save_url)
 
 def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None,save_to_folders=True):
     if not id_str:
@@ -137,16 +164,13 @@ def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_
             if not len(res):
                 continue
             for save_base_folder in save_base_folder_list:
-                try:
-                    save_base = Path(save_base_folder) /"detection"/ res[0][6]
-                except:
-                    save_base = save_base_folder
+                save_base = Path(save_base_folder) /"detection"/ res[0][6]
                 save_base.mkdir(parents=True, exist_ok=True)
                 save_url = save_base / f"{id_str}_{index}.png"
                 executor.submit(save_detection_item, res, clip_image, save_url)
 
 
-def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.2):
+def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.1):
     if clip_num is None:
         clip_num = serverConfigProperty.clip_num
 
@@ -187,13 +211,18 @@ def detection_by_image_list(clip_image_url_list, cdm_=None):
             save_url = folder / Path(url).name
             save_detection_item(info, image, save_url)
 
-def classifiers_data(image_list,res_list):
+def classifiers_data(image_list,res_list,pil_image,clip_info_list):
+    sub_info_list = []
     sub_image_clip_list = []
-    for sub_image,res_item in zip(image_list,res_list):
+    for sub_image,res_item,clip_info in zip(image_list,res_list,clip_info_list):
         for res_item_item in res_item:
             xmin, ymin, xmax, ymax, label_index, source, name = res_item_item
-            xmin, ymin, xmax, ymax = get_image_box(sub_image,xmin, ymin, xmax, ymax)
-            sub_image_clip = sub_image.crop([xmin, ymin, xmax, ymax])
+            x_offset, y_offset, *_= clip_info
+            max_image_x1, max_image_y1, max_image_x2, max_image_y2 =xmin+x_offset, ymin+y_offset, xmax+x_offset, ymax+y_offset
+
+            xmin, ymin, xmax, ymax = get_image_box(pil_image,max_image_x1, max_image_y1, max_image_x2, max_image_y2)
+
+            sub_image_clip = pil_image.crop([xmin, ymin, xmax, ymax])
             sub_image_clip_list.append(sub_image_clip)
     res_index,res_source,names = ccm.predict_image(sub_image_clip_list)
     index = 0
@@ -205,25 +234,32 @@ def classifiers_data(image_list,res_list):
             item[item_item_index][4] = index_cls
             item[item_item_index][5] = source_cls
             item[item_item_index][6]= name
+            sub_info_list.append(item[item_item_index])
             index+=1
-
+    return sub_info_list, sub_image_clip_list
 
 def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None,
                        cdm_=None):
     global cdm
     if cdm_ is None:
         cdm_ = cdm
+    pil_image = None
     if isinstance(join_image, Image.Image):
+        pil_image = join_image
         join_image = np.array(join_image)
     if isinstance(mask_image, Image.Image):
         mask_image = np.array(mask_image)
+    if pil_image is None:
+        pil_image = Image.fromarray(join_image)
 
     clip_image_list, clip_mask_list, clip_info_list = get_clip_images(join_image, mask_image, clip_num=clip_num,
                                                                       mask_threshold=mask_threshold)
     # print(ccm.predictImage(clip_image_list))
     res_list = cdm_.predict(clip_image_list)
     if control.detection_model == DetectionType.DetectionAndClassifiers:
-        classifiers_data(clip_image_list,res_list)
+        sub_info_list,sub_image_list = classifiers_data(clip_image_list, res_list, pil_image, clip_info_list)
+        if control.save_sub_image:
+            save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder)
     if control.save_detection:
         save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder)
 
@@ -265,15 +301,22 @@ def detection_by_coil_id(coil_id: int, save_base_folder=None, cdm_=None):
         gray = Image.open(gray_image_url)
         mask = Image.open(mask_image_url)
         id_str = f"{coil_id}_{key}"
-        detection_by_image(gray, mask, clip_num=10, mask_threshold=0.2, id_str=id_str,
+        detection_by_image(gray, mask, clip_num=10, mask_threshold=0.1, id_str=id_str,
                            save_base_folder=save_base_folder, cdm_=cdm_)
 
 
-def clip_by_coil_id(coil_id, save_base_folder):
+def clip_by_coil_id(coil_id, save_base_folder,suf_key = None):
+    """
+    裁决图像到保存位置
+    """
     for key, surface in serverConfigProperty.surfaceConfigPropertyDict.items():
+        if suf_key is not None and surface ==  suf_key:
+            continue
         gray_image_url = surface.get_file(coil_id, surface.ImageType)
         mask_image_url = surface.get_file(coil_id, surface.MaskType)
+        print(gray_image_url)
         if not Path(gray_image_url).exists():
+            print(" not exist")
             continue
         print(gray_image_url)
         gray = Image.open(gray_image_url)

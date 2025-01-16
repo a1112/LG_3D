@@ -44,6 +44,9 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder=None):
     print(f"Saved XML to {xml_path}")
 
 
-def get_image_box(image, xmin, ymin, xmax, ymax):
+def get_image_box(image, xmin, ymin, xmax, ymax, out_size_=5):
     w, h = image.size
-    return max(xmin - 20, 0), max(ymin - 20, 0), min(xmax + 20, w), min(ymax + 20, h)
+    out_size=out_size_
+    if w<30 or h<30:
+        out_size=int(out_size_*2)
+    return max(xmin - out_size, 0), max(ymin - out_size, 0), min(xmax + out_size, w), min(ymax + out_size, h)

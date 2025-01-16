@@ -40,7 +40,7 @@ class ControlManagement(ThreadClass):
         self.debug_show = False
         self.debug_raise = False
         self.save_detection = True  #保存目标检测小图
-
+        self.save_sub_image = True
         self.SaveAndDeleteCameraDataBase = ProcessClass
         self.SaveAndDeleteSaveDataBase = ProcessClass
 

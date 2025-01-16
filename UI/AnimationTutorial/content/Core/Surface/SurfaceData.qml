@@ -60,8 +60,6 @@ Item {
     property var coilInfo: {return {}}
     onCoilInfoChanged: {
         if (coilInfo && coilInfo.circleConfig){
-        console.log("coilInfo.circleConfig")
-        console.log(JSON.stringify(coilInfo.circleConfig))
         let inner_circle = coilInfo.circleConfig.inner_circle
         // circleTool.init(coilInfo.circleConfig)
 
@@ -381,4 +379,9 @@ Item {
     property real tower_warning_threshold_up: 50
     property real tower_warning_threshold_down: -50
 
+
+
+    function openSaveFolderById(coilId){
+        return Qt.openUrlExternally(getBaseUrl(coilId))
+    }
 }

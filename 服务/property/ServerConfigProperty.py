@@ -99,6 +99,10 @@ class ServerConfigProperty(BaseConfigProperty):
         if not self.sql_url is None:
             Config.url = self.sql_url
 
+    def get_folder(self,coil_id,surface_key):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.saveFolder/str(coil_id)
+
     def get_file(self, coil_id, surface_key, type_, mask=False):
         surface_config = self.surfaceConfigPropertyDict[surface_key]
         if mask:
