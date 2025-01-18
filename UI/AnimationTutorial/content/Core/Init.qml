@@ -9,6 +9,7 @@ Item {
     }
 
     function initCoilByData(coilData){
+        // 初始化
         // 初始化 卷 数据
         coreModel.coilListModel.clear()
         let data={

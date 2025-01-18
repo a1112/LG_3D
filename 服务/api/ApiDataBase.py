@@ -58,7 +58,7 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
         for childrenAlarmInfo in secondary_coil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
             c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
-        c_data.update(get_coil_item_info(secondary_coil))
+    c_data.update(get_coil_item_info(secondary_coil))
     c_data["defects"] = secondary_coil.childrenCoilDefect   # 返回缺陷数据
     return c_data
 

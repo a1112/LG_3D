@@ -71,8 +71,7 @@ QtObject {
         coilMsg = coil.Msg
         nextInfo = coil.NextInfo
         nextCode = coil.NextCode
-        coilCreateTime.initByDict(coil.CreateTime)
-        coilDetectionTime.initByDict(coil.DetectionTime)
+
         for (let key in coil.AlarmInfo){
             if (key=="S"){
                 alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo[key])
@@ -83,6 +82,8 @@ QtObject {
 
         }
         defectsData = coil.defects
+        coilCreateTime.initByDict(coil.CreateTime)
+        coilDetectionTime.initByDict(coil.DetectionTime)
         initMaxLevelDefect()
     }
 

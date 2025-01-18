@@ -10,7 +10,7 @@ save_checkpoint_path = f"model/{model_name}.tar"
 in_chans = 3
 amp = True
 names = [f_.name for f_ in (train_folder / train_split).iterdir()]
-
+print(names)
 with configSave.open("w", encoding="utf-8") as f:
     json.dump(
         {
