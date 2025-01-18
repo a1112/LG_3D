@@ -143,18 +143,16 @@ def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_fold
             for save_base_folder in save_base_folder_list:
                 xmin, ymin, xmax, ymax, label_index, source, name = res
                 save_base = Path(save_base_folder) /"classifier"/ name
-                save_url = save_base/f"{id_str}_{label_index}_{name}_{index}.png"
+                save_url = save_base/f"{id_str}_{label_index}_{name}_{index}_{xmin}_{ymin}_{xmax}_{ymax}.png"
                 executor.submit(save_classifier_item, sub_image, save_url)
 
 def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None,save_to_folders=True):
     if not id_str:
         id_str = "null"
     save_base_folder_list=[]
-    if save_to_folders:
+    if save_base_folder is not None:
         save_base_folder_list.append(save_base_folder)
     if save_base_folder is None or save_to_folders:
-        # save_base_folder = Path(
-        #     list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
         save_base_folder_list.append(Path(
             list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save")
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
@@ -239,7 +237,7 @@ def classifiers_data(image_list,res_list,pil_image,clip_info_list):
     return sub_info_list, sub_image_clip_list
 
 def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, id_str=None, save_base_folder=None,
-                       cdm_=None):
+                       cdm_=None,save_only=False):
     global cdm
     if cdm_ is None:
         cdm_ = cdm
@@ -259,9 +257,9 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
     if control.detection_model == DetectionType.DetectionAndClassifiers:
         sub_info_list,sub_image_list = classifiers_data(clip_image_list, res_list, pil_image, clip_info_list)
         if control.save_sub_image:
-            save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder)
+            save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder,save_to_folders=save_only)
     if control.save_detection:
-        save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder)
+        save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder,save_to_folders=save_only)
 
     return res_list, clip_image_list, clip_info_list  # 目标检测
 
@@ -289,7 +287,7 @@ def detection_all(data_integration_list: DataIntegrationList):
         detection(dataIntegration)
 
 
-def detection_by_coil_id(coil_id: int, save_base_folder=None, cdm_=None):
+def detection_by_coil_id(coil_id: int, save_base_folder=None, cdm_=None, save_only = False):
     """
     根据 coil_id 进行 识别
     """
@@ -302,7 +300,7 @@ def detection_by_coil_id(coil_id: int, save_base_folder=None, cdm_=None):
         mask = Image.open(mask_image_url)
         id_str = f"{coil_id}_{key}"
         detection_by_image(gray, mask, clip_num=10, mask_threshold=0.1, id_str=id_str,
-                           save_base_folder=save_base_folder, cdm_=cdm_)
+                           save_base_folder=save_base_folder, cdm_=cdm_,save_only=save_only)
 
 
 def clip_by_coil_id(coil_id, save_base_folder,suf_key = None):
