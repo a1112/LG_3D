@@ -76,7 +76,10 @@ Item {
     }
 
     function getDefectLevelByDefectName(defectName){
+        if(defectName in defectDictData){
         return defectDictData[defectName]["level"]??defaultDefectClass.defectLevel
+        }
+        return 1
     }
     function getColorByName(name){
         return defectDictData[name]["color"]
