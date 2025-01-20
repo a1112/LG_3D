@@ -7,7 +7,22 @@ Row {
         height:parent.height
         text:"显示屏蔽"
         checked:dataShowCore.defectManage.un_defect_show
+        onCheckedChanged:{
+            if(dataShowCore.defectManage.un_defect_show!= checked){
+                if (checked){
+                    global.defectClassProperty.selecct_all_un_defect_show()
+                }
+                else{
+                    global.defectClassProperty.un_selecct_all_un_defect_show()
+                }
+            }
+
+        }
+
+
         onClicked:{
+
+
             dataShowCore.defectManage.un_defect_show = checked
         }
 

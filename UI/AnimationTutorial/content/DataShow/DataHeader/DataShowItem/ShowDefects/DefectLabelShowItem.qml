@@ -7,7 +7,7 @@ CheckDelegate {
 
     visible: defectClassItemModel.defectShow || dataShowCore.defectManage.un_defect_show //dataShowCore.defectManage.defect_is_show(defectName)
     width:visible?implicitWidth:0
-    Behavior on width {NumberAnimation{duration:260}}
+    Behavior on width {NumberAnimation{duration:200}}
     property DefectClassItemModel defectClassItemModel:DefectClassItemModel{}
     checked: global.defectClassProperty.defectDictAll[defectClassItemModel.defectName]??false// defectClassItemModel.defectShow
     text: defectClassItemModel.defectName  // num
