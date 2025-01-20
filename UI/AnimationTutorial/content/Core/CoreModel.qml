@@ -56,7 +56,7 @@ CoreModel_ {
 
     function getLastCoilId(){
         if (coilListModel.count>0){
-            return coilListModel.get(0).SecondaryCoilId
+            return coilListModel.get(0).Id
             }
         return 0
     }

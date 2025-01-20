@@ -7,8 +7,8 @@ from CoilDataBase import Coil
 from .export_config import ExportConfig,XlsxWriterFormatConfig
 
 
-def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D"):
-    export_config = ExportConfig()
+def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D",export_config=None):
+    export_config = ExportConfig(export_config)
     format_ = XlsxWriterFormatConfig(workbook)
     if export_config.export_info:
         export_info_data(coil_id_list, workbook, export_config,format_)
@@ -16,24 +16,24 @@ def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D"):
     if export_config.export_defect_image:
         export_defect_image(coil_id_list, workbook, export_config,format_)
 
-def export_data_by_coil_id(start_id, end_id, export_type="3D"):
+def export_data_by_coil_id(start_id, end_id, export_type="3D",export_config=None):
     output = BytesIO()
     # 将 BytesIO 对象传递给 xlsxwriter.Workbook
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     print("get_all_join_data_by_id")
     secondary_coil_list = Coil.get_all_join_data_by_id(start_id, end_id)
-    export_data_by_coil_id_list(secondary_coil_list, workbook, export_type)
+    export_data_by_coil_id_list(secondary_coil_list, workbook, export_type, export_config=export_config)
     workbook.close()
     # 重置 BytesIO 对象的读取位置
     output.seek(0)
     return output,output.getbuffer().nbytes
 
-def export_data_by_time(start_time, end_time, export_type="3D"):
+def export_data_by_time(start_time, end_time, export_type="3D", export_config=None):
     output = BytesIO()
     # 将 BytesIO 对象传递给 xlsxwriter.Workbook
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     secondary_coil_list = Coil.get_all_join_data_by_time(start_time, end_time)
-    export_data_by_coil_id_list(secondary_coil_list, workbook, export_type)
+    export_data_by_coil_id_list(secondary_coil_list, workbook, export_type, export_config=export_config)
     workbook.close()
     file_size = output.getbuffer().nbytes
     # 重置 BytesIO 对象的读取位置

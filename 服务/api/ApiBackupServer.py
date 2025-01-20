@@ -46,8 +46,8 @@ async def ws_backup_image_task(websocket: WebSocket):
 
 
 @router.get("/exportXlsxById/{start:int}/{end:int}")
-async def export_xlsx_by_id(start, end,export_type = "3D"):
-    output, file_size = export.export_data_by_coil_id(start, end,export_type=export_type)
+async def export_xlsx_by_id(start, end,export_type = "3D", export_config = None ):
+    output, file_size = export.export_data_by_coil_id(start, end,export_type=export_type, export_config=export_config)
     headers = {
         "Content-Disposition": f"attachment; filename=example.xlsx",
         "Content-Length": str(file_size)  # 设置文件大小
@@ -60,7 +60,7 @@ async def export_xlsx_by_id(start, end,export_type = "3D"):
     return response
 
 @router.get("/exportXlsxByDateTime/{start:str}/{end:str}")
-async def export_xlsx_by_datetime(start, end,export_type = "3D"):
+async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config = None ):
     """
     根据时间导出数据 %Y%m%d%H%M : 202401100100
     :param start: 开始时间
@@ -71,7 +71,7 @@ async def export_xlsx_by_datetime(start, end,export_type = "3D"):
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     output, file_size = export.export_data_by_time(
-        start, end,export_type=export_type
+        start, end,export_type=export_type,export_config = export_config
     )
 
     headers = {

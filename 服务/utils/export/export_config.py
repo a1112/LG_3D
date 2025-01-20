@@ -1,7 +1,11 @@
 
 
 class ExportConfig:
-    def __init__(self):
+    def __init__(self,export_config=None):
+        self.export_config=export_config
+
+        def get_export_config(key,default_value):
+
 
         self.worksheet_name = "数据报表"
         self.worksheet_defect_image_name = "缺陷识别"
