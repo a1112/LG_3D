@@ -51,7 +51,7 @@ QtObject {
 
     function init(coil){
         coilData = coil
-        coilId = coil.SecondaryCoilId
+        coilId = coil.Id
         coilNo = coil.CoilNo
         coilType = coil.CoilType
         coilInside = coil.CoilInside
@@ -100,15 +100,27 @@ QtObject {
     }
     property DefectItemModel maxDefect: DefectItemModel{}
 
-    property int defectMaxErrorLevel:0
-    property color defectErrorColor:Material.color(Material.LightBlue)
+    property int defectMaxErrorLevel:maxDefect.defectLevel
+    property color defectErrorColor:{
+        if (defectMaxErrorLevel<=2){
+            return Material.color(Material.LightBlue)
+            }
+        else if (defectMaxErrorLevel<=3){
+            return Material.color(Material.Yellow)
+            }
+        else if (defectMaxErrorLevel<=4){
+            return Material.color(Material.Orange)
+            }
+        else{
+            return Material.color(Material.Red)
+        }
+    }
     function initMaxLevelDefect(){
         tool.for_list_model(defectsData,(defect)=>{
                     let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
                     if (defectLevel>=defectMaxErrorLevel){
                                     if (leftCore.isShowDefect(defect.defectName)){
                                         maxDefect.init(defect)
-                                        defectMaxErrorLevel=defectLevel
                                     }
                                 }
                             })

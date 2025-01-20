@@ -76,6 +76,8 @@ Item {
     }
 
     function getDefectLevelByDefectName(defectName){
+        // console.log("defectDictData",JSON.stringify(defectDictData))
+        // {"刮丝":{"level":3,"color":"#00007f","show":true,"name":"刮丝","num":0},"边部褶皱":{"level":4,"color":"#aaff00","show":true,"name":"边部褶皱","num":0},"背景_塔形":{"level":1,"color":"#FFA500","show":false,"name":"背景_塔形","num":0},"背景_头尾":{"level":1,"color":"#FFA500","show":false,"name":"背景_头尾","num":0},"小型缺陷":{"level":2,"color":"#FFA500","show":true,"name":"小型缺陷","num":0},"背景_打包带":{"level":1,"color":"#FFA500","show":false,"name":"背景_打包带","num":0},"折叠":{"level":5,"color":"#FFA500","show":true,"name":"折叠","num":0},"背景_数据脏污":{"level":1,"color":"#FFA500","show":false,"name":"背景_数据脏污","num":0},"毛刺":{"level":3,"color":"#FFA500","show":true,"name":"毛刺","num":0},"背景":{"level":0,"color":"#FFFFFF","show":false,"name":"背景","num":0},"烂边":{"level":5,"color":"#aa00ff","show":true,"name":"烂边","num":0},"分层":{"level":5,"color":"red","show":true,"name":"分层","num":0},"脏污":{"level":1,"color":"#FFA500","show":false,"name":"脏污","num":0},"背景_边部":{"level":1,"color":"#FFA500","show":false,"name":"背景_边部","num":0}}
         if(defectName in defectDictData){
         return defectDictData[defectName]["level"]??defaultDefectClass.defectLevel
         }

@@ -13,6 +13,9 @@ QtObject {
     property DateTimeProject crateTime_:DateTimeProject{}
     property var allTypes : ["user","min_inner","max_inner","min_outer","max_outer"]
 
+    property int px_x:dataShowCore.toPx(x_)
+
+    property int px_y:dataShowCore.toPx(y_)
 
     property var defaultPoint: {
         "type": "user",

@@ -6,7 +6,6 @@ Item {
     PointItemPointShow{}
     PointItemLabelShow{}
     Component.onCompleted:{
-
         pointData.x_=p_x
         pointData.y_=p_y
         pointData.z_=p_z

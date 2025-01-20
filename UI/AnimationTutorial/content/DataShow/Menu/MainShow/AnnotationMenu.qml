@@ -53,4 +53,24 @@ Menu {
                 }
         }
     }
+
+    Menu{
+        title:"深度显示"
+        SelectMenuItem{
+            text:"mm 相对值"
+            selectd:surfaceData.currentPointValueShowType== surfaceData.mm_pointValueShowType
+            onClicked:surfaceData.currentPointValueShowType= surfaceData.mm_pointValueShowType
+        }
+        SelectMenuItem{
+            text:"mm 绝对值"
+             selectd:surfaceData.currentPointValueShowType== surfaceData.mm_int_pointValueShowType
+             onClicked:surfaceData.currentPointValueShowType= surfaceData.mm_int_pointValueShowType
+        }
+        SelectMenuItem{
+            text:"int 原始值"
+             selectd:surfaceData.currentPointValueShowType== surfaceData.int_pointValueShowType
+             onClicked:surfaceData.currentPointValueShowType= surfaceData.int_pointValueShowType
+        }
+    }
+
 }

@@ -6,8 +6,8 @@ import "../GlobalView"
 import "View3D"
 Item{
     id:root
-    property SurfaceData surfaceData
-    property DataShowCore dataShowCore
+    property SurfaceData surfaceData:SurfaceData{}
+    property DataShowCore dataShowCore:DataShowCore{}
 
     readonly property DataShowControl controls:dataShowCore.controls
 

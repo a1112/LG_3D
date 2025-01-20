@@ -22,14 +22,36 @@ Item {
     property real medianZInt: 0
     property real medianZ: 0.0
 
+
+    readonly property int mm_pointValueShowType: 0
+    readonly property int int_pointValueShowType:1
+    readonly property int mm_int_pointValueShowType:2
+
+    property int currentPointValueShowType:mm_pointValueShowType
+
     function i_to_info(value){
-        if(value<0.01)
-            return "-inf"
-        return ""+iz_to_mm(value)
+        if (currentPointValueShowType == mm_pointValueShowType){
+            if(value<0.01){
+                return "-inf"
+                }
+            return ""+iz_to_mm(value)
+        }
+        else if (currentPointValueShowType == int_pointValueShowType){
+            return ""+value
+        }
+        else {
+            return ""+iz_to_mm_int(value)
+
+        }
+
+
     }
 
     function iz_to_mm(value){
         return ((value-medianZInt)*scan3dScaleZ).toFixed(2)
+    }
+    function iz_to_mm_int(value){
+        return (value*scan3dScaleZ).toFixed(2)
     }
 
     function getZValue(z){

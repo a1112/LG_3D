@@ -46,7 +46,10 @@ Item {
     // }
 
     function getNumByDefectName(defectName){
-        return defectDict[defectName].length
+        if (defectName in defectDict){
+            return defectDict[defectName].length
+            }
+        return 0
     }
 
     function set_num(){

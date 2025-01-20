@@ -56,11 +56,11 @@ CoreModel_ {
 
     function getLastCoilId(){
         if (coilListModel.count>0){
-        return coilListModel.get(0).SecondaryCoilId
+            return coilListModel.get(0).SecondaryCoilId
             }
         return 0
     }
-    readonly property int lastCoilId: realCoilListModel.get(Math.min(0,realCoilListModel.count)).SecondaryCoilId
+    readonly property int lastCoilId: realCoilListModel.get(Math.min(0,realCoilListModel.count)).Id
 
     property ListModel surfaceModel: ListModel{
     }
@@ -96,13 +96,16 @@ CoreModel_ {
         while(coilListModel.count > maxCoilListModelLen){
             coilListModel.remove(coilListModel.count-1,1)
         }
+
+        if (upData["coilList"]== undefined){
+            return -2
+        }
         upData["coilList"].forEach(function(coil){
             if(coil.SecondaryCoilId > lastCoilId){
                 realCoilListModel.insert(0,coil)
-                // lastCoilId = coil.SecondaryCoilId
             }
             else{
-                for (let i = 0;i<20;i++){
+                for (let i = 0;i<30;i++){
                     if (realCoilListModel.get(i).SecondaryCoilId == coil.SecondaryCoilId){
                         realCoilListModel.set(i,coil)
                     }
