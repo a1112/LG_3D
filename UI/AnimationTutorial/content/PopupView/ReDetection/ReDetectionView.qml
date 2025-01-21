@@ -7,6 +7,7 @@ import "../../Input"
 import "../../Labels"
 import "../../Pages/Header"
 import QtCore
+
 Menu{
 
     property ReDetectionStatus reDetectionStatus: ReDetectionStatus{}
@@ -30,11 +31,8 @@ Menu{
         Row{
             spacing:20
             Layout.alignment: Qt.AlignHCenter
-            Label{
+            TitleLabel{
                 text: "重新识别"
-                font.pixelSize: 25
-                font.family:"Microsoft YaHei"
-                font.bold: true
                 color: Material.color(Material.Brown)
             }
             Button{

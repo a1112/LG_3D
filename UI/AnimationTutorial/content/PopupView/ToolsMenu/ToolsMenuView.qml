@@ -28,10 +28,18 @@ Menu {
             onClicked:{
             }
         }
+        MenuItem{
+            text:"服务管理"
+            onClicked:{
+                popManage.popupServerMangeView()
 
+            }
+        }
         MenuItem{
             text:"重启服务器"
             onClicked:{
+
+
             }
         }
 

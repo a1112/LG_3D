@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItem"
 import "../Base"

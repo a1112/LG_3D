@@ -10,6 +10,7 @@ import "ReDetection"
 import "GlobalAlarm"
 import "../SettingPage"
 import "../Style"
+import "ServerMange"
 Item {
 
 
@@ -35,4 +36,7 @@ Item {
     function popupReDetectionView(){reDetectonView.popup()}
     GlobalAlarmView{id:globalAlarmView} // 设备报警
     function popupGlobalAlarmView(){globalAlarmView.popup()}
+    ServerMangeView{id:serverMangeView}
+    function popupServerMangeView(){serverMangeView.popup()}
+
 }

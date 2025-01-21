@@ -28,19 +28,19 @@ ApplicationWindow {
     MainLayout{ //          入口 <-
         anchors.fill: parent
     }
-    property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}
-    property Api api: Api{}
-    property Global global:Global{}
-    property Dialogs dialogs: Dialogs{}
-    property Core core: Core{}
-    property Tool tool: Tool{}
-    property CoreModel coreModel:CoreModel{}
-    property Init init:Init{}
-    property CoreStyle coreStyle: CoreStyle{}
-    property CoreTimer coreTimer:CoreTimer{}
-    property CoreSetting coreSetting: CoreSetting{}
-    property ImageCache imageCache: ImageCache{}
-    property LefeCore leftCore: LefeCore{}
+    property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息
+    property Api api: Api{}     //    服务器 接口访问
+    property Global global:Global{}  // 全局功能
+    property Dialogs dialogs: Dialogs{} // 全局 弹窗
+    property Core core: Core{}          // 核心
+    property Tool tool: Tool{}          // 功能
+    property CoreModel coreModel:CoreModel{}// 全局模型
+    property Init init:Init{}               // 初始化
+    property CoreStyle coreStyle: CoreStyle{}   // 样式
+    property CoreTimer coreTimer:CoreTimer{}     // 定时器
+    property CoreSetting coreSetting: CoreSetting{}// 设置
+    property ImageCache imageCache: ImageCache{} // 缓冲
+    property LefeCore leftCore: LefeCore{}  //列表全局
     property Control control: Control{}
     property Auth auth: Auth{}
     property CoreSignal coreSignal :CoreSignal{}
