@@ -119,6 +119,11 @@ Api_Base {
                                                                                                                       }))
     }
 
+    function getPostExportUrl(){
+        // 通过 post 全球完成下载，导出
+        return apiConfig.url(apiConfig.serverUrlDaaBase,"export_xlsx")
+    }
+
 
     function getPointDatas(coilId,key,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"get_point_data",coilId,key),success,failure)

@@ -1,10 +1,13 @@
 import datetime
 import json
+from typing import Optional, Dict
 
 from fastapi import WebSocket, APIRouter
 from fastapi.responses import StreamingResponse
 
 from CoilDataBase import backup
+from pydantic import BaseModel
+
 from CONFIG import serverConfigProperty
 from utils import Backup, export
 from .api_core import app
@@ -45,6 +48,8 @@ async def ws_backup_image_task(websocket: WebSocket):
             break
 
 
+
+
 @router.get("/exportXlsxById/{start:int}/{end:int}")
 async def export_xlsx_by_id(start, end,export_type = "3D", export_config = None ):
     output, file_size = export.export_data_by_coil_id(start, end,export_type=export_type, export_config=export_config)
@@ -59,6 +64,8 @@ async def export_xlsx_by_id(start, end,export_type = "3D", export_config = None 
 
     return response
 
+
+
 @router.get("/exportXlsxByDateTime/{start:str}/{end:str}")
 async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config = None ):
     """
@@ -66,12 +73,47 @@ async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config =
     :param start: 开始时间
     :param end: 结束时间
     :param export_type: 导出类型
+    :param export_config:
     :return:
     """
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     output, file_size = export.export_data_by_time(
         start, end,export_type=export_type,export_config = export_config
+    )
+
+    headers = {
+        "Content-Disposition": f"attachment; filename=example.xlsx",
+        "Content-Length": str(file_size)  # 设置文件大小
+    }
+
+    # 将 BytesIO 对象传递给 StreamingResponse，设置内容类型和附件名称
+    response = StreamingResponse(output, headers=headers,
+                                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    return response
+
+# class ExportXlsxConfig:
+#     def __init__(self, config):
+#         self.config = config
+#         self.export_type = config
+
+
+class ExportXlsxConfig(BaseModel):
+    detection_info:bool
+    export_type: str
+    from_time: str
+    city: Optional[str] = None
+
+
+@router.post("/export_xlsx")
+async def export_xlsx_post(export_xlsx_config:ExportXlsxConfig ):
+    print(data)
+    # config = ExportXlsxConfig(data)
+    start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
+    end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
+    output, file_size = export.export_data_by_time(
+        start, end, export_type=export_type, export_config=export_config
     )
 
     headers = {

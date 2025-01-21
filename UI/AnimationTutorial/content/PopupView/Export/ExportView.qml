@@ -16,7 +16,7 @@ PopupBase {
     dim:true
     id:menu
     width: 600
-    height:  menu.exportStatus.isNotDownload?310:350
+    height:  menu.exportStatus.isNotDownload?360:400
     onOpened:{
         let mmList = coreModel.getCurrentCoilListModelMinMaxId()
         // from_id.value=mmList[0]
@@ -81,6 +81,14 @@ PopupBase {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+        ExportConfigView{
+            id:export_data_id
+         Layout.fillWidth: true
+         implicitHeight:50
+        }
+
+
+
         RowLayout{
             // DownloadingRow{
             //     finshed:menu.exportStatus.isDownloadFinished
@@ -97,23 +105,22 @@ PopupBase {
                 Layout.fillWidth: true
                 implicitHeight:1
             }
-            Row{
-                spacing: 2
-                Label{
-                    text:"导出类型:"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                ComboBox{
-                    id:combox_export_type
-                    model: coreModel.exportTypeList
-                    implicitHeight: 30
-                    height: 30
-                }
-
-            }
+            // Row{
+            //     spacing: 2
+            //     Label{
+            //         text:"导出类型:"
+            //         anchors.verticalCenter: parent.verticalCenter
+            //     }
+            //     ComboBox{
+            //         id:combox_export_type
+            //         model: coreModel.exportTypeList
+            //         implicitHeight: 30
+            //         height: 30
+            //     }
+            // }
             Item{
-                width: 5
-                height: 1
+                implicitHeight: 5
+                implicitWidth: 1
             }
 
             CheckRec{
@@ -131,10 +138,19 @@ PopupBase {
                     else{
                         menu.exportUrl = saveFileInput.value
                     }
+                    let export_data_config=export_data_id.getExportConfig()
+                    var jsonString = JSON.stringify(export_data_config)
+                                  // 将 JSON 对象转换为字符串
+                                  var jsonString = JSON.stringify(jsonObj);
 
-                    fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
-                                                                           endDate.dateTime_.dateTimeString
-                                                                           ),menu.exportUrl)
+
+                    fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
+                                                )
+                    // fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
+                    //                                                        endDate.dateTime_.dateTimeString
+                    //                                                        ),menu.exportUrl)
+
+
                 }
             }
         }
@@ -154,12 +170,6 @@ PopupBase {
         }
 
     }
-    // FileDownloader{
-    //         id:fileDownloader
-
-    //     }
-
-
     Connections {
         target: fileDownloader
         function onDownloadProgress(bytesReceived,bytesTotal) {

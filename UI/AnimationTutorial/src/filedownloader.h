@@ -10,6 +10,7 @@ class FileDownloader : public QObject {
 public:
     explicit FileDownloader(QObject *parent = nullptr);
     Q_INVOKABLE void downloadFile(const QString &url, const QString &filePath);
+    Q_INVOKABLE void downloadFile(const QString &url, const QString &filePath,const QString &postData);
 
 signals:
     void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
