@@ -3,7 +3,8 @@
 class ExportConfig:
     def __init__(self,export_config=None):
         self.export_config=export_config
-
+        if self.export_config is None:
+            self.export_config={}
         self.export_info = True
         self.export_path = None
         self.export_header_data = True      # 导出

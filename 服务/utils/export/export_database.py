@@ -74,8 +74,8 @@ def get_alarm_info(secondary_coil,alarm_info_dict):
             alarm_flat_roll=value[0]
             alarm_flat_roll:AlarmFlatRoll
             res_data.update({
-                key + "端 检测外径":alarm_flat_roll.out_circle_width,
-                key + "端 检测内径":alarm_flat_roll.inner_circle_width,
+                key + "端 检测外径":alarm_flat_roll.out_circle_width*0.3415023386478424,
+                key + "端 检测内径":alarm_flat_roll.inner_circle_width*0.3415023386478424,
                 # 更多参数
             })
             if alarm_info_dict[key]:

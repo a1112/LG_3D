@@ -141,14 +141,14 @@ PopupBase {
                     let export_data_config=export_data_id.getExportConfig()
                     var jsonString = JSON.stringify(export_data_config)
                                   // 将 JSON 对象转换为字符串
-                                  var jsonString = JSON.stringify(jsonObj);
+                                  // var jsonString = JSON.stringify(jsonObj);
 
 
-                    fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
-                                                )
-                    // fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
-                    //                                                        endDate.dateTime_.dateTimeString
-                    //                                                        ),menu.exportUrl)
+                    // fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
+                    //                             )
+                    fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
+                                                                           endDate.dateTime_.dateTimeString
+                                                                           ),menu.exportUrl)
 
 
                 }

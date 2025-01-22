@@ -108,7 +108,7 @@ class ExportXlsxConfig(BaseModel):
 
 @router.post("/export_xlsx")
 async def export_xlsx_post(export_xlsx_config:ExportXlsxConfig ):
-    print(data)
+    print(export_xlsx_config)
     # config = ExportXlsxConfig(data)
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")

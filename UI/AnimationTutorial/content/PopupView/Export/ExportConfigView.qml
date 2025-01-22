@@ -35,7 +35,8 @@ Item {
     function getExportConfig(){
         return {
             export_type:"xlsx",
-            data:tx.checked
+            detection_3d_info:tx.checked
+            // detection_defect_info
         }
     }
 }
