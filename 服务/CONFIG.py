@@ -19,7 +19,7 @@ isLoc = False
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
 if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G']:
     isLoc = True
-base_config_folder = Path("D://CONFIG_3D")
+base_config_folder = Path(fr"D:\CONFIG_3D")
 
 try:
     file_url=Path(__file__)
@@ -27,7 +27,7 @@ try:
     print(drive_config)
     if drive_config.exists():
         base_config_folder = drive_config
-except NameError:
+except (NameError,ValueError):
     pass
 
 offline_mode = (Path(base_config_folder)/"offline_mode=true").exists()
