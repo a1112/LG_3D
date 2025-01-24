@@ -8,7 +8,7 @@ CardBase {
     property string global_key: ""
     property bool showMore: false
     height: coll.height
-    title: "报警综合"
+    title: qsTr("报警综合")
     max_height:160
     content_body:Column{
         id:coll

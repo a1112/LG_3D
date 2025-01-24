@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse, FileResponse, Response
 from CONFIG import serverConfigProperty
 from tools.DataGet import DataGet, noFindImageByte
 from .api_core import app
-from tools.tool import expansion_box
+from tools.tool import expansion_box, bound_box
 
 router = APIRouter(tags=["图像访问服务"])
 
@@ -40,12 +40,15 @@ async def get_image( surface_key, coil_id:str, type_: str, mask:bool = False):
     return Response(image_bytes, media_type="image/png")
 
 
-@router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:int}/{y:int}/{w:int}/{h:int}")
-async def get_defect_image(surface_key, coil_id:int, type_: str, x:int, y:int, w:int, h:int):
+@router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
+async def get_defect_image(surface_key, coil_id:int, type_: str, x:str, y:str, w:str, h:str):
+    x, y, w, h = int(x), int(y), int(w),int(h)
+    old_box = [x, y, w, h]
     image = DataGet("image", surface_key, coil_id, type_, False).get_image(pil=True)
     image:Image.Image
     if image is None:
         return Response(noFindImageByte, media_type="image/jpeg")
+
     x,y,w,h = expansion_box([x,y,w,h],image.size,expand_factor=0)
     # width, height = image.size
     # x1,y1,x2,y2 = x,y,x+w,y+h
@@ -53,7 +56,15 @@ async def get_defect_image(surface_key, coil_id:int, type_: str, x:int, y:int, w
     # x,y,w,h = x1, y1, x2-x1, y2-y1
     crop_image = image.crop((x,y,x+w,y+h))
     img_byte_arr = io.BytesIO()
-    crop_image.save(img_byte_arr, format='jpeg')
+
+    if bound_box([x,y,w,h],image.size):
+        new_image = Image.new(crop_image.mode, (old_box[2], old_box[3]), (0, 0, 0))
+        paste_x_y = (int((old_box[2] - w) / 2), int((old_box[3] - h) / 2))
+        new_image.paste(crop_image, paste_x_y)
+        new_image.paste(crop_image,paste_x_y)
+        new_image.save(img_byte_arr, format='jpeg')
+    else:
+        crop_image.save(img_byte_arr, format='jpeg')
     img_byte_arr.seek(0)
     return StreamingResponse(img_byte_arr, media_type="image/png")
 

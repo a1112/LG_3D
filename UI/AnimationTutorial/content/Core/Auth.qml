@@ -1,24 +1,31 @@
-import QtQuick 2.15
+import QtQuick
 import "Auth"
-
+import "../Base"
 Item {
+    id:root
+    property string key:"user"
+    onKeyChanged:{
+        setUserByKey(key)
+    }
+
 
     property User currentUser: User{
         name:"用户模式"
         key: "user"
     }
-    Component.onCompleted:{
-        setUserByKey(currentUser.key)
+    function setUserKey(key){
+        root.key=key
     }
+
     function setUserByKey(key){
-        currentUser.key = key
         let item=getItemByKey(key)
         currentUser.name =item.name
         currentUser.level =item.level
-    }
+        currentUser.key =item.key
+        }
 
 
-    property bool isAdmin: currentUser.level > 1
+    readonly property bool isAdmin: currentUser.level > 1
 
 
 
@@ -52,5 +59,10 @@ Item {
         return userModels.get(0)
     }
 
+    SettingsBase{
+        category:"auth"
+        property alias key: root.key
+
+    }
 
 }

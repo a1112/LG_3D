@@ -40,4 +40,6 @@ qt6_add_qml_module(content
         fonts/fonts.txt
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
+
+
     )

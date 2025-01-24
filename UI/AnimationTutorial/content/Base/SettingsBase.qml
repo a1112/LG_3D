@@ -1,4 +1,3 @@
-import QtQuick
 import Qt.labs.settings
 // import QtCore
 Settings {

@@ -377,6 +377,21 @@ def get_intersection_points(p1, p2, width, height):
             p[1] = height - 1
     return intersection_points[:2]
 
+def bound_box(box, image_size):
+    """
+    判断数组是否越界
+    Args:
+        box:
+        image_size:
+
+    Returns:
+
+    """
+    x,y,w,h = box
+    width, height = image_size
+    if x <0 or y < 0 or width <w+x or height< y+h:
+        return True
+    return False
 
 def expansion_box(box, image_size, expand_factor=0.1,min_size=10,max_size=100):
     """

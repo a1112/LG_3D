@@ -5,7 +5,9 @@ import QtQuick.Layouts
 import "../../Labels"
 import "../../Model"
 Popup {
-    width: col.width+20
+    id:root
+    width:620 //col.width+20
+    property int body_width:width-20
     height: col.height+30
     visible: leftCore.isHoved
 
@@ -15,11 +17,12 @@ Popup {
         if (leftCore.isHoved)
             open()
     }
+
     x: left.width+20
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
 
-    Label{
-        text:"数据摘要"
+    Label{    // title
+        text:qsTr("数据摘要")
         anchors.left: parent.Left
         color:Material.color(Material.Orange)
     }
@@ -27,39 +30,29 @@ Popup {
     Column{
         id:col
         spacing:10
-
         TitleLabel{
             text:coilModel.coilNo
             color:Material.color(Material.Blue)
             anchors.horizontalCenter:parent.horizontalCenter
             font.pointSize: 20
         }
-
-        Row{
-        height: 150
-        spacing: 3
-        id:row
-        Repeater{
-            model: leftCore.preSourceModelS
-            ImageItem{
-                hasImage: leftCore.hovelCoilData.Status_S>=0
-            }
+        ImageRow{
         }
-        Repeater{
-            model: leftCore.preSourceModelL
-            ImageItem{
-                hasImage: leftCore.hovelCoilData.Status_L>=0
-            }
+
+        CoilInfo{
+            width:  root.width
+            height: 100
+        }
+
+        AlarmInfo{
+            width:body_width
+        }
+        DefectInfo{
+            width:body_width
+        }
+        TextArea{
+            text:leftCore.leftMsg
         }
     }
-    CoilInfo{
-        width:  col.width
-        height: 100
-    }
-    TextArea{
-        text:leftCore.leftMsg
 
-    }
-    }
-
-    }
+}

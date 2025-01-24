@@ -18,15 +18,15 @@ Menu{
 
 
     Menu{
-        title:"主题"
+        title:qsTr("主题")
         MenuItem{
-            text:"深色"
+            text:qsTr("深色")
             onTriggered: {
                 coreStyle.isDark=true
             }
         }
         MenuItem{
-            text:"浅色"
+            text:qsTr("浅色")
             onTriggered: {
                 coreStyle.isDark=false
             }
@@ -34,16 +34,16 @@ Menu{
     }
 
     Menu{
-        title:"色彩设置"
+        title:qsTr("色彩设置")
         TextColorMenuItem{
-            text:"主标题颜色"
+            text:qsTr("主标题颜色")
             selectedColor: coreStyle.rootTitleColor
             onSelectedColorChanged: {
                 coreStyle.rootTitleColor=selectedColor
             }
         }
         TextColorMenuItem{
-            text:"标题颜色"
+            text:qsTr("标题颜色")
             selectedColor: coreStyle.titleColor
             onSelectedColorChanged: {
                 coreStyle.titleColor=selectedColor
@@ -51,7 +51,7 @@ Menu{
         }
 
         TextColorMenuItem{
-            text:"边框颜色"
+            text:qsTr("边框颜色")
             selectedColor: coreStyle.cardBorderColor
             onSelectedColorChanged: {
                 coreStyle.cardBorderColor=selectedColor
@@ -59,7 +59,7 @@ Menu{
         }
 
         TextColorMenuItem{
-            text:"前景色"
+            text:qsTr("前景色")
             selectedColor: coreStyle.accentColor
             onSelectedColorChanged: {
                 coreStyle.accentColor=selectedColor
@@ -69,38 +69,38 @@ Menu{
     }
 
     MenuItem{
-        text: consoleController.isShow ? "隐藏控制台" : "显示控制台"
+        text: consoleController.isShow ? qsTr("隐藏控制台") : qsTr("显示控制台")
         onClicked: consoleController.isShow = !consoleController.isShow
     }
     Menu{
-        title:"图像模式"
+        title:qsTr("图像模式")
         SelectMenuItem{
-            text: "共享文件夹模式"
+            text: qsTr("共享文件夹模式")
             selectd:coreSetting.useSharedFolder
             onClicked: coreSetting.useSharedFolder=true
         }
         SelectMenuItem{
-            text: "HTTP模式"
+            text: qsTr("HTTP模式")
             selectd:!coreSetting.useSharedFolder
             onClicked: coreSetting.useSharedFolder=false
         }
     }
 
     Menu{
-        title:"界面模式"
+        title:qsTr("界面模式")
         Repeater{
             model:auth.userModels
             SelectMenuItem{
                 text: name
                 selectd:auth.currentUser.key==key
-                onClicked: auth.setUserByKey(key)
+                onClicked: auth.setUserKey(key)
             }
         }
     }
     Menu{
-        title:"其他工具"
+        title:qsTr("其他工具")
         MenuItem{
-            text:"API 访问记录"
+            text:qsTr("API 访问记录")
             onClicked:{
                 popManage.popupApiList()
             }
