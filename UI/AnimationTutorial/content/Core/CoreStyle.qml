@@ -18,12 +18,13 @@ Item {
     property AdaptiveView2560_1440 adaptive_2560p:AdaptiveView2560_1440{}
 
 
-    property AdaptiveView currentAdaptive:{
+    function autoGetAdaptiveView(){
         console.log("desktopAvailableWidth: ",Screen.desktopAvailableWidth)
         console.log("desktopAvailableHeight: ",Screen.desktopAvailableHeight)
-
-
+        return
     }
+
+    property AdaptiveView currentAdaptive:autoGetAdaptiveView()
 
     function getIcon(name){
         return "../icons/" + name + ".png"

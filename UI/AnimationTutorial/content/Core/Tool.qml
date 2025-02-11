@@ -38,4 +38,11 @@ Item {
         return res
     }
 
+
+    function getNowString(){
+       return Qt.formatDateTime(new Date(), "yyyy_MM_dd hh_mm_ss")
+    }
+    function getNowTimeString(){
+       return Qt.formatDateTime(new Date(), "hh:mm:ss")
+    }
 }

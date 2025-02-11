@@ -98,6 +98,19 @@ Menu{
         }
     }
     Menu{
+        title:qsTr("显示设置")
+        Menu{
+            title:qsTr("适配模式")
+            Repeater{
+                model:
+                MenuItem{
+
+                }
+            }
+        }
+    }
+
+    Menu{
         title:qsTr("其他工具")
         MenuItem{
             text:qsTr("API 访问记录")

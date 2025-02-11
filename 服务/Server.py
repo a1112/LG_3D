@@ -3,6 +3,7 @@ LG_3D
 完整的服务
 """
 from multiprocessing import Process, freeze_support
+from threading import Thread
 import uvicorn
 from utils.StdoutLog import Logger
 
@@ -35,7 +36,7 @@ from api import ApiSettings
 
 # from api import ApiDocs
 
-class ServerProcess(Process):
+class ServerProcess(Thread):
     def __init__(self, port):
         super().__init__()
         self.port = port
@@ -46,5 +47,11 @@ class ServerProcess(Process):
 
 if __name__ == '__main__':
     freeze_support()
+    print(f"server main start count {serverConfigProperty.server_count} base_point {serverConfigProperty.server_port}")
+    server_llist=[]
     for port_ in range(serverConfigProperty.server_count):
-        ServerProcess(serverConfigProperty.server_port + port_).start()
+        server_llist.append(ServerProcess(serverConfigProperty.server_port + port_))
+    for server in server_llist:
+        server.start()
+    for server in server_llist:
+        server.join()

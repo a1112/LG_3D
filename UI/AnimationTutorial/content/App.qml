@@ -10,6 +10,7 @@ import "Pages/AlarmPage"
 import "Dialogs"
 import "./Style/Adaptive"
 import "Pages/LeftPage/DataList/DataListMenu"
+import "./types"
 ApplicationWindow {
     id:app
     visible: true

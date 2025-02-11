@@ -1,3 +1,4 @@
+import logging
 import socket
 from pathlib import Path
 import json
@@ -41,7 +42,7 @@ if offline_mode:
 def get_file_url(base):
     url = base_config_folder / base
     if not url.exists():
-        print(f"{url}不存在！")
+        logging.error(f"{url}不存在！")
         return Path("../CONFIG_3D")/base
     return url
 

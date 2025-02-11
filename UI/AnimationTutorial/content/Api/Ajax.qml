@@ -1,9 +1,11 @@
-import QtQuick 2.15
+import QtQuick
 
 Item {
 
     function get(url, success, failure)
     {
+        api.appendUrl(url,"get")
+
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url);
         xhr.onreadystatechange = function() {
