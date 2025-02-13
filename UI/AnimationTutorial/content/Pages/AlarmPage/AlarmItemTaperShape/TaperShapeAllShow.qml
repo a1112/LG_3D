@@ -40,25 +40,25 @@ Item {
                 width:col.width
                 height: 30
                 title:"外塔形最高"
-                value:coreTaperShapeItem.out_taper_max_value
+                value:coreTaperShapeItem.out_taper_max_value.toFixed(1)
             }
             SimpleValueRow{
                 width:col.width
                 height: 30
                 title:"外塔形最低"
-                value:coreTaperShapeItem.out_taper_min_value
+                value:coreTaperShapeItem.out_taper_min_value.toFixed(1)
             }
             SimpleValueRow{
                 width:col.width
                 height: 30
                 title:"内塔形最高"
-                value:coreTaperShapeItem.in_taper_max_value
+                value:coreTaperShapeItem.in_taper_max_value.toFixed(1)
             }
             SimpleValueRow{
                 width:col.width
                 height: 30
                 title:"内塔形最低"
-                value:coreTaperShapeItem.in_taper_min_value
+                value:coreTaperShapeItem.in_taper_min_value.toFixed(1)
             }
 
         }

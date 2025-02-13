@@ -17,20 +17,21 @@ BaseSelectPop{
     property int days:flush(currentYear,currentMonth)
 
     function flush(year,month){
-        let dat= new Date(currentYear, currentMonth + 1, 0)
+        let dat= new Date(currentYear, currentMonth , 0)
 
         dayOfWeek = dat.getDay()
         return dat.getDate()
     }
 
-
     Column {
         id:col
         anchors.centerIn: parent
         spacing: 2
-        RowLayout{
+        Pane{
             height: titleLab.height
             width: col.width
+        RowLayout{
+            anchors.fill:parent
             // Pane{
             //     anchors.fill: parent
             // }
@@ -52,6 +53,7 @@ BaseSelectPop{
                 }
 
                 implicitHeight: titleLab.height
+
             }
             ComboBox{
                  model:  root.dateTime.monthModel
@@ -62,6 +64,7 @@ BaseSelectPop{
                  root.dateTime.month=parseInt(currentText)
                  }
             }
+        }
         }
         Grid {
             columns: 7

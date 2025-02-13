@@ -98,7 +98,7 @@ def commit_defects(defect_dict, data_integration):
                 "defectSource": source,
                 "defectData": ""
             })
-    # deleteDefectsBySecondaryCoilId(coilState.coilId,coilState.key)
+    # delete_defects_by_secondary_coil_id(coilState.coilId,coilState.key)
     add_defects(
         defect_list
     )

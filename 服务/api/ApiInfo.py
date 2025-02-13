@@ -5,7 +5,7 @@ import Init
 from CONFIG import serverConfigProperty, defectClassesProperty
 from .api_core import app
 from CoilDataBase.core import engine
-from CoilDataBase.Coil import get_coil
+from CoilDataBase.Coil import get_coil, list_data_keys
 from CoilDataBase.tool import to_dict
 
 
@@ -46,6 +46,11 @@ async def database_info():
         "echo":engine.echo,
         "coil_last":coil_last
     }
+
+@router.get("/coil_list_value_change_keys")
+async def coil_list_value_change_keys():
+
+    return list(list_data_keys.keys())
 
 
 app.include_router(router)

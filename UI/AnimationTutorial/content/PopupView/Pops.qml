@@ -11,6 +11,7 @@ import "GlobalAlarm"
 import "../SettingPage"
 import "../Style"
 import "ServerMange"
+import "ListValueChange"
 Item {
 
 
@@ -38,5 +39,7 @@ Item {
     function popupGlobalAlarmView(){globalAlarmView.popup()}
     ServerMangeView{id:serverMangeView}
     function popupServerMangeView(){serverMangeView.popup()}
+    ListValueChangeView{id:listValueChangeView} // 列表数值变化取消
+    function popupListValueChangeView(){listValueChangeView.popup()}
 
 }

@@ -144,4 +144,10 @@ Api_Base {
     // function defectClasses(success,failure){
     //      return ajax.get(apiConfig.url("defectClasses"),success,failure)
     // }
+
+    function getCoilListValueChangeKeys(success,failure){
+        // 获取变化曲线数值键
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coil_list_value_change_keys"),success,failure)
+    }
+
 }

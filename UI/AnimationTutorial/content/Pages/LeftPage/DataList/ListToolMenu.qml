@@ -33,4 +33,11 @@ Menu {
         }
     }
 
+    MenuItem{
+        text: "变化曲线"
+        onClicked: {
+            popManage.popupListValueChangeView()
+        }
+    }
+
 }

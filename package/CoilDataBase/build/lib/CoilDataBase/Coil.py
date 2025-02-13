@@ -132,7 +132,7 @@ def addCoil(coil):
         session.commit()
 
 
-def deleteDefectsBySecondaryCoilId(secondary_coil_id, surface):
+def delete_defects_by_secondary_coil_id(secondary_coil_id, surface):
     """
         移除检测数据
     Args:
@@ -325,3 +325,15 @@ def get_line_data(coil_id, surface_key=None):
         if surface_key:
             que = que.filter(LineData.surface == surface_key)
         return que.all()
+
+list_data_keys={
+    "二级内径":SecondaryCoil.CoilInside,
+    "二级卷径":SecondaryCoil.CoilDia,
+    "二级厚度":SecondaryCoil.Thickness,
+    "宽度": SecondaryCoil.Width,
+    "PLC位置信息": PlcData,
+    "缺陷":CoilDefect,
+    "距离平均":"",
+    "识别速度":"",
+    "生产间隔":""
+}
