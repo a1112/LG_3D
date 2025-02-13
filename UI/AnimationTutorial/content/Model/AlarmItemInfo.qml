@@ -38,7 +38,7 @@ Item {
                 "grad": 3,
                 "data": null,
                 "surface": "L",
-                "taperShapeMsg": "正常内径最高值 65.13409604399351 >= 60 检测角度180 \n",
+                "taperShapeMsg": "正常内径最高值 65.134 >= 60 检测角度180 \n",
                 "looseCoilMsg": "松卷检测最宽 38.0 超过限制值 25",
                 "flatRollMsg": "正常",
                 "defectMsg": "",

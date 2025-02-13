@@ -15,7 +15,8 @@ CheckDelegateBase{
     text:"3D预览"
     font.bold:true
     height:parent.height
-    checked:dataShowCore.controls.thumbnail_view_3d_enable
+    enabled: surfaceData.meshExits
+    checked:dataShowCore.controls.thumbnail_view_3d_enable && surfaceData.meshExits
     onCheckedChanged:dataShowCore.controls.thumbnail_view_3d_enable = checked
 }
 

@@ -20,15 +20,16 @@ Logger("算法")
 # from CoilDataBase.Coil import deleteCoil
 # deleteCoil(1700)
 # if isLoc:
-#     from CoilDataBase.Coil import deleteCoil
-#     deleteCoil(23100)
-
+#     from CoilDataBase.Coil import delete_coil
+#     delete_coil(23000)
+#     print("删除完成。")
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
+    # multiprocessing.freeze_support()
     manager = multiprocessing.Manager()
     managerQueue = manager.Queue()
     from SplicingService.ImageMosaicThread import ImageMosaicThread
+    print("manager")
 
     loggerProcess = LoggerProcess(log_file="logs/app.log")
     loggerProcess.start()

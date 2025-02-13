@@ -21,6 +21,7 @@ process->start("cmd", QStringList() << text);
 // returns true if process started successfully
 process->waitForStarted(-1);
 }
+
 void ScriptLauncher::launchScriptExplorer(QString text)
 {
     qDebug()<<"hello qt!";

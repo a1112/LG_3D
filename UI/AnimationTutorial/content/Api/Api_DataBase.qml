@@ -67,7 +67,7 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","DateTime",startTime,endTime),success,failure)
     }
 
-    function getDefects(coilId,key,success,failure){
+    function  getDefects(coilId,key,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects",coilId,key),success,failure)
     }
     function getDefectDict(success,failure){

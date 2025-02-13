@@ -84,6 +84,9 @@ Item {
         return 1
     }
     function getColorByName(name){
+        if (defectDictData[name] === undefined){
+            return "#FFF"
+        }
         return defectDictData[name]["color"]
     }
     property bool defeftDrawShowLasbel:true
@@ -93,8 +96,6 @@ Item {
         property alias defeftDrawShowLasbel:root.defeftDrawShowLasbel
 
     }
-
-
 
     function selecct_all_un_defect_show(){
         console.log("selecct_all_un_defect_show")

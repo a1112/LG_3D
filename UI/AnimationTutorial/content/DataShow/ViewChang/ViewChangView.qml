@@ -10,11 +10,16 @@ ColumnLayout {
     id:root
     width: 300
     // height: width/dataShowCore.aspectRatio
-        View3D{
 
+        Loader{
             width:root.width
             Layout.fillHeight:true
+            active: surfaceData.meshExits
+            sourceComponent:View3D{
+            }
+
         }
+
         View2D{
             width:root.width
             height:width

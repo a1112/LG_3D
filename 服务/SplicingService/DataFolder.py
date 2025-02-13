@@ -46,8 +46,8 @@ class DataFolder(Globs.control.BaseDataFolder):
         return self.static_check_detection_end(self.source, coil_id)
 
     @staticmethod
-    def static_check_detection_end(source, coilId):
-        source = source / str(coilId) / "2D"
+    def static_check_detection_end(source, coil_id):
+        source = source / str(coil_id) / "2D"
         if not source.exists():
             return False
         bmp_list = list(source.glob("*.bmp"))
@@ -73,6 +73,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         cmdThread.put(cmd)
 
     def load_json(self, coil_id):
+        print("load_json")
         source_json = self.source / coil_id / "json"
         source_json_list = list(source_json.glob("*.json"))
         source_json_list.sort(key=lambda x: int(x.stem))

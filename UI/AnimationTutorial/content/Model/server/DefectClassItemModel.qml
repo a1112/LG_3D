@@ -8,6 +8,10 @@ QtObject {
     property int defectNum:num??0
 
     function init(itemData){
+        if (undefined === itemData){
+            return false
+        }
+
         defectName = itemData["name"]
         defectLevel = itemData["level"]
         defectColor = itemData["color"]

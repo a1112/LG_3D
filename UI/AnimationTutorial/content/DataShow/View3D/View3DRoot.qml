@@ -1,12 +1,21 @@
 import QtQuick
+
 import QtQuick3D
 
 import QtQuick.Layouts
 import QtQuick3D.Helpers
+
+import QtQuick.Controls.Material
 Item {
     Layout.fillWidth:true
     Layout.fillHeight:true
     anchors.fill:parent
+    Rectangle{
+        anchors.fill: parent
+        color: "#22000000"
+        border.width: 1
+        border.color:Material.color(Material.Blue)
+    }
     View3D {
         id: view3D
         anchors.fill: parent

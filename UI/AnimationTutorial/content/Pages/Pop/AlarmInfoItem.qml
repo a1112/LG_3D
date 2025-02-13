@@ -1,13 +1,11 @@
 import QtQuick
+import QtQuick.Controls
 import "../../Model"
 Column {
     property AlarmItemInfo alarmItemInfo:AlarmItemInfo{}
     Row{
-    Text{
+    Label{
         text: alarmItemInfo.taperShapeMsg
-
     }
-
     }
-
 }

@@ -8,7 +8,7 @@ Row {
         text:"显示屏蔽"
         checked:dataShowCore.defectManage.un_defect_show
         onCheckedChanged:{
-            if(dataShowCore.defectManage.un_defect_show!= checked){
+            if(dataShowCore.defectManage.un_defect_show !== checked){
                 if (checked){
                     global.defectClassProperty.selecct_all_un_defect_show()
                 }

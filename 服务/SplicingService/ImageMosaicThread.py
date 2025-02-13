@@ -28,6 +28,7 @@ class ImageMosaicThread(Thread):
     """
 
     def __init__(self, manager_queue, logger_process: LoggerProcess):
+        print("ImageMosaicThread init")
         super().__init__()
         self.managerQueue = manager_queue
         self.loggerProcess = logger_process
@@ -51,13 +52,13 @@ class ImageMosaicThread(Thread):
     def check_detection_end(self, secondary_coil_id):
         for imageMosaic in self.imageMosaicList:
             if not imageMosaic.check_detection_end(secondary_coil_id):
-                logger.error("checkDetectionEnd ")
+                logger.error(f"checkDetectionEnd {secondary_coil_id}")
                 return False
         return True
 
     def run(self):
+        logger.debug(f"执行 算法主进程")
         while True:
-            # logger.debug(f"执行 ")
             run_num = 0
             try:
                 max_secondary_coil_id = Coil.get_secondary_coil(1)[0].Id
@@ -69,7 +70,7 @@ class ImageMosaicThread(Thread):
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
                 #     lastCoilSecondaryCoilId = 0
-
+                print(f"max_secondary_coil_id {max_secondary_coil_id}")
                 for secondaryCoilIndex in range(len(list_data)):
                     defection_time1 = time.time()
                     secondary_coil = list_data[secondaryCoilIndex]

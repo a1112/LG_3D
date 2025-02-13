@@ -25,6 +25,7 @@ Popup {
         text:qsTr("数据摘要")
         anchors.left: parent.Left
         color:Material.color(Material.Orange)
+
     }
 
     Column{

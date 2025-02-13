@@ -4,8 +4,8 @@ from property.Types import DetectionTaperShapeType, LevelingType, DetectionType,
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
-ProcessClass = WorkerProcessBase
-
+# ProcessClass = WorkerProcessBase
+ProcessClass = ThreadClass
 
 class ControlManagement(ThreadClass):
     ThreadClass = ThreadClass
