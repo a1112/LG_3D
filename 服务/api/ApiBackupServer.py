@@ -6,10 +6,10 @@ from fastapi import WebSocket, APIRouter
 from fastapi.responses import StreamingResponse
 
 from CoilDataBase import backup
-from pydantic import BaseModel
 
 from CONFIG import serverConfigProperty
 from utils import Backup, export
+from .Models import ExportXlsxConfigModel
 from .api_core import app
 
 router = APIRouter(tags=["备份服务"])
@@ -93,27 +93,17 @@ async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config =
 
     return response
 
-# class ExportXlsxConfig:
-#     def __init__(self, config):
-#         self.config = config
-#         self.export_type = config
-
-
-class ExportXlsxConfig(BaseModel):
-    detection_info:bool
-    export_type: str
-    from_time: str
-    city: Optional[str] = None
-
 
 @router.post("/export_xlsx")
-async def export_xlsx_post(export_xlsx_config:ExportXlsxConfig ):
+async def export_xlsx_post(export_xlsx_config:ExportXlsxConfigModel ):
     print(export_xlsx_config)
-    # config = ExportXlsxConfig(data)
-    start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
-    end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
+    # config = ExportXlsxConfigModel(data)
+    # {'export_type': 'xlsx', 'detection_3d_info': True, 'defect_info': True, 'defect_show_info': True,
+    #  'defect_un_show_info': False, 'startDate': '202502140929', 'endDate': '202502140929'}
+    start = datetime.datetime.strptime(export_xlsx_config.startDate, "%Y%m%d%H%M")
+    end = datetime.datetime.strptime(export_xlsx_config.endDate, "%Y%m%d%H%M")
     output, file_size = export.export_data_by_time(
-        start, end, export_type=export_type, export_config=export_config
+        start, end, export_config=export_xlsx_config
     )
 
     headers = {

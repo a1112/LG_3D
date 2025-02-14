@@ -24,18 +24,27 @@ Item {
                     checked:true
             }
             CheckDelegate{
+                    id: plc_export
+                    text:"plc数据"
+                    height:25
+                    checked:false
+            }
+            CheckDelegate{
                     id: df_su_v
                     height:25
-                    text: qsTr("屏蔽")
+                    text: qsTr("缺陷屏蔽")
                     checked:false
             }
     }
 
-
     function getExportConfig(){
         return {
             export_type:"xlsx",
-            detection_3d_info:tx.checked
+            detection_3d_info:tx.checked,
+            defect_info:df.checked,
+            defect_show_info:df_v.checked,
+            defect_un_show_info:df_su_v.checked,
+            export_plc_data:plc_export.checked
             // detection_defect_info
         }
     }

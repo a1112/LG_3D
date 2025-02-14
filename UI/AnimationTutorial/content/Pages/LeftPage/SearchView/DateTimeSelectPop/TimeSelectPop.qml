@@ -21,7 +21,12 @@ BaseSelectPop {
             id: hoursTumbler
             model: 24
             currentIndex:dateTime.hour
-            onCurrentIndexChanged:dateTime.hour=currentIndex
+            onCurrentIndexChanged:
+                        {
+                            if (moving){
+                            dateTime.hour=currentIndex
+                            }
+                        }
             delegate :Label {
                 text: modelData
                 opacity: 1.0 - Math.abs(Tumbler.displacement) / (Tumbler.tumbler.visibleItemCount / 2)
@@ -47,7 +52,11 @@ BaseSelectPop {
             model: 60
 
             currentIndex:dateTime.minute
-            onCurrentIndexChanged:dateTime.minute=currentIndex
+            onCurrentIndexChanged:{
+                if (moving){
+                dateTime.minute = currentIndex
+                }
+            }
             delegate :              Label {
                 text: modelData
                 opacity: 1.0 - Math.abs(Tumbler.displacement) / (Tumbler.tumbler.visibleItemCount / 2)

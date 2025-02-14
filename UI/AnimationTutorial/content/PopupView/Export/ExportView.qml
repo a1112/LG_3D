@@ -18,7 +18,15 @@ PopupBase {
     width: 600
     height:  menu.exportStatus.isNotDownload?360:400
     onOpened:{
+        console.log("onOpened")
         let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+        let frist_item = coreModel.currentCoilListModel.get(0)
+        let end_item = coreModel.currentCoilListModel.get(coreModel.currentCoilListModel.count-1)
+        console.log(tool.getDataByJson(end_item.CreateTime))
+        console.log(tool.getDataByJson(frist_item.CreateTime))
+        start_dt.dateTime = tool.getDataByJson(end_item.CreateTime)
+        end_dt.dateTime =  tool.getDataByJson(frist_item.CreateTime)
+        // start_dt.dateTime=
         // from_id.value=mmList[0]
         // to_id.value=mmList[1]
         // outputName=Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
@@ -53,7 +61,9 @@ PopupBase {
         DateTimeSelectItem{
             id:startDate
             title_:"起始导出日期:"
-            dateTime_:DateTime{}
+            dateTime_:DateTime{
+                id:start_dt
+            }
         }
         Rectangle{
             Layout.fillWidth: true
@@ -63,7 +73,9 @@ PopupBase {
         DateTimeSelectItem{
             id:endDate
             title_:"结束导出日期:"
-            dateTime_:DateTime{}
+            dateTime_:DateTime{
+                id:end_dt
+            }
         }
         SimpleFileInput{
             id:saveFileInput
@@ -139,16 +151,18 @@ PopupBase {
                         menu.exportUrl = saveFileInput.value
                     }
                     let export_data_config=export_data_id.getExportConfig()
+                    export_data_config["startDate"] = startDate.dateTime_.dateTimeString
+                    export_data_config["endDate"] = endDate.dateTime_.dateTimeString
                     var jsonString = JSON.stringify(export_data_config)
                                   // 将 JSON 对象转换为字符串
                                   // var jsonString = JSON.stringify(jsonObj);
 
 
-                    // fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
-                    //                             )
-                    fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
-                                                                           endDate.dateTime_.dateTimeString
-                                                                           ),menu.exportUrl)
+                    fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
+                                                )
+                    // fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
+                    //                                                        endDate.dateTime_.dateTimeString
+                    //                                                        ),menu.exportUrl)
 
 
                 }

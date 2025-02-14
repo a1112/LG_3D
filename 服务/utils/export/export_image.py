@@ -77,12 +77,15 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
             insert_image_and_name(worksheet,row_num, offset,text, image,format_)
             offset+=2
 
-def export_defect_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
+def export_defect_show_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
 
     worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_显示")
     export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list, format_=format_)
-    worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_屏蔽")
-    export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list, False, format_ = format_)
+
+def export_defect_un_show_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
+    worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name + "_屏蔽")
+    export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list,
+                                 False, format_=format_)
 
 
 def insert_image_and_name(worksheet, row_num, index,text, image,format_:XlsxWriterFormatConfig):

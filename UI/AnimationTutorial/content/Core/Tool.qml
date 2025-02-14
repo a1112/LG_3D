@@ -45,4 +45,8 @@ Item {
     function getNowTimeString(){
        return Qt.formatDateTime(new Date(), "hh:mm:ss")
     }
+
+    function getDataByJson(date_time){
+            return new Date(date_time["year"],date_time["month"]-1,date_time["day"],date_time["hour"],date_time["minute"],date_time["second"])
+        }
 }

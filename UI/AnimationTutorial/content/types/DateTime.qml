@@ -18,7 +18,11 @@ Item {
     readonly property var formatDate: Qt.formatDate(new Date(fullYear, month-1, day), "yyyy-MM-dd")
 
     readonly property var formatDateTimeString:"yyyyMMddHHmm"
-     property string dateTimeString:Qt.formatDateTime(new Date(fullYear, month-1, day, hour, minute, second), formatDateTimeString)
+     property string dateTimeString:Qt.formatDateTime(getCurrentDate(), formatDateTimeString)
+
+    function getCurrentDate(){
+        return new Date(fullYear,month-1,day,hour,minute,second )
+    }
 
     function getNow(){
         return new Date()
