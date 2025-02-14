@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 from threading import Thread
-
+from pathlib import Path
 import win32api
 import win32gui
 from PySide6 import QtCore
@@ -24,7 +24,7 @@ class SoftMonitor(MonitorBase):
 
     def _start_exe_(self, exe, args):
         self.log.info(f"执行 \"{exe}\" {args}")
-        return win32api.ShellExecute(win32gui.GetDesktopWindow(), 'open', exe, args, '', 1)
+        return win32api.ShellExecute(win32gui.GetDesktopWindow(), 'open', exe, args, str(Path(str(exe)).parent), 1)
 
     @Slot(str, result=int)
     def getState_(self, name):

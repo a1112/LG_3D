@@ -41,7 +41,6 @@ allAttrs = ['pid', 'name', 'ppid',
 def getProcessDict():
     process = getProcess()
     processDict = {}
-
     for pro in process:
         if "exe" in pro:
             processDict[os.path.normpath(pro["exe"])] = pro
