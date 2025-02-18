@@ -53,27 +53,30 @@ Item {
     }
 
     function set_num(){
-                console.log("get_un_show_num")
-                var num = 0
-                for (var defectName_ in defectDict){
-                    console.log(defectName_)
-                if (!defect_show(defectName_)){
-                    num += defectDict[defectName_].length
-                    }
-                }
-                un_show_num =  num
+        var num = 0
+        let temp_show_num=0
+        for (var defectName_ in defectDict){
+        if (!defect_show(defectName_)){
+            num += defectDict[defectName_].length
+            }
+        else{
+            temp_show_num += defectDict[defectName_].length
+        }
 
+        }
+
+        un_show_num =  num
+        show_num = temp_show_num
     }
 
-    property int un_show_num
+    property int show_num:0
+    property int un_show_num:0
 
     function defect_show(defectName){
         return global.defectClassProperty.defectDictAll[defectName]??false
     }
     property var defectsData: []
     onDefectsDataChanged: {
-
-        // tool.copy_list_model(global.defectClassProperty.defectDictModel,defecClassListModel)
 
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
@@ -90,58 +93,20 @@ Item {
             }
             tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
                 let name = item.name
-
-                    if (!(item["name"] in coreModel.defectDictAll)){
-                        coreModel.defectDictAll[item["name"]]=item["show"]
-                        }
+                if (!(item["name"] in coreModel.defectDictAll)){
+                    coreModel.defectDictAll[item["name"]]=item["show"]
+                    }
 
                 if (name in defectDict){
-                                   // item["num"] =  defectDict[name]
                                     defecClassListModel.append(item)
                                     }
                                 })
-            // for (let i = 0; i < defectsData.length; i++) {
-            //     let item = defectsData[i]
-
-            //     // console.log(JSON.stringify(item))
-            //     let defectName = item.defectName
-            //     let cddm=currentDefectDictModel
-
-            //     if (defectName in defectDict){
-            //         defectDict[defectName].push(item)
-            //         for (let j = 0; j < cddm.count; j++) {
-            //             if (cddm.get(j).defectName == defectName){
-            //                 cddm.setProperty(j,"num",cddm.get(j).num+1)
-            //             }
-            //         }
-            //     }
-            //     else{
-            //         defectDict[defectName] = [item]
-            //         cddm.append({"defectName":defectName,
-            //                         "num":1
-            //                     })
-            //         if (!(defectName in coreModel.defectDictAll))
-            //             coreModel.defectDictAll[defectName]=true
-            //     }
-
-            //     defectAllModel.append(defectsData[i])
-            //     if (defectManage.defect_is_show(defectName)){
-            //         has_defectModel.append(defectsData[i])
-            //     }
-            //     else{
-            //          un_defectModel.append(defectsData[i])
-            //     }
-            // }
         set_num()
     }
 
     function defectClear(){
-        // has_defectModel.clear()
-        // un_defectModel.clear()
         defectAllModel.clear()
         defecClassListModel.clear()
-        // currentDefectDictModel.clear()
-        // currentUnShowDefectDictModel.clear()
         defectDict = {}
     }
 
