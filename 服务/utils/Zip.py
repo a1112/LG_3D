@@ -27,8 +27,8 @@ def _zip_camera_data_(folder):
 
 def _zip_save_data_(folder):
     obj_file = folder / "3D.obj"
-    if obj_file.exists():
-        os.remove(str(obj_file))
+    # if obj_file.exists():
+    #     os.remove(str(obj_file))
     npy_file = folder / "3D.npy"
     if npy_file.exists():
         d3 = np.load(npy_file)

@@ -3,11 +3,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../../../Model/server"
 Item {
-    visible:dataShowCore.defect_show(defectName)
-    Behavior on width{NumberAnimation{duration:300}}
-    Behavior on height{NumberAnimation{duration:300}}
-    height:  visible?parent.height:0
-    width:   visible?height:0
+
     id:root
     property ServerDefectModel defect: ServerDefectModel{}
 

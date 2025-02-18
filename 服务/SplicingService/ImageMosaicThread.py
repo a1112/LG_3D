@@ -37,7 +37,7 @@ class ImageMosaicThread(Thread):
         self.debugType = False
         self.imageMosaicList = []
         # 重新识别的排队机制
-        self.reDetectionSet = set()
+        self.reDetectionSet = set() # 重新检测 set
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
@@ -70,7 +70,6 @@ class ImageMosaicThread(Thread):
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
                 #     lastCoilSecondaryCoilId = 0
-                print(f"max_secondary_coil_id {max_secondary_coil_id}")
                 for secondaryCoilIndex in range(len(list_data)):
                     defection_time1 = time.time()
                     secondary_coil = list_data[secondaryCoilIndex]
@@ -164,4 +163,4 @@ class ImageMosaicThread(Thread):
         self.reDetectionSet.add(coilId.Id)
 
     def get_re_detection_msg(self):
-        pass
+        return list(self.reDetectionSet)

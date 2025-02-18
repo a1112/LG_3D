@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 from CONFIG import capTureConfig
-from CoilDataBase.Coil import addObj
+from CoilDataBase.Coil import add_obj
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 from CoilDataBase.models.CapTrueLogItem import CapTrueLogItem
 from ImageBuffer import SickBuffer
@@ -79,7 +79,7 @@ class ImageDataSave(Thread):
         Image.fromarray(buffer.area_cap).save(str(save_file))
     def save_database(self, buffer):
         try:
-            return addObj(CapTrueLogItem(
+            return add_obj(CapTrueLogItem(
                 secondaryCoilId=buffer.coilId,
                 cameraId =capTureConfig.index(self.name),
                 cameraName=self.name,

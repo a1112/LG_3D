@@ -8,11 +8,11 @@ import "V2D"
 import "V3D"
 ColumnLayout {
     id:root
-    width: 300
+    width: adaptive.mask_tool_width
     // height: width/dataShowCore.aspectRatio
 
         Loader{
-            width:root.width
+            width: root.width
             Layout.fillHeight:true
             active: surfaceData.meshExits
             sourceComponent:View3D{
@@ -21,8 +21,8 @@ ColumnLayout {
         }
 
         View2D{
-            width:root.width
-            height:width
+            width: root.width
+            height: width
         }
 //     Item{
 //         implicitHeight:50

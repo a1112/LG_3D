@@ -6,8 +6,6 @@ DataShowCore_ {
     // OBJ
     id:root
 
-
-
     property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
