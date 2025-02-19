@@ -5,7 +5,7 @@ Item {
     readonly property bool serverInLocal: api.apiConfig.hostname === "127.0.0.1"
 
     // 是否显示图像遮挡
-    property bool imageMaskChecked: true
+    property bool imageMaskChecked: false
     // 显示区域初始状态
     property var toolDict: {
         return {

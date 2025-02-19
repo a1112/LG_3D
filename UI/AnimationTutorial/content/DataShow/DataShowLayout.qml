@@ -17,21 +17,21 @@ DataShowBackground {
         anchors.fill: parent
         DataShowView{
             id: dataShowView_R
+            surfaceData:coreModel.surfaceS
             dataShowCore : DataShowCore{
                 surfaceData:coreModel.surfaceS
                 binds:control.lockControl?binds_base:binds_s
             }
-            surfaceData:coreModel.surfaceS
             SplitView.preferredWidth: root.is_half?root.viewWidth_half:root.viewWidth
         }
 
         DataShowView{
+            surfaceData:coreModel.surfaceL
             dataShowCore : DataShowCore{
                 surfaceData:coreModel.surfaceL
                 binds:control.lockControl?binds_base:binds_l
             }
             id: dataShowView_L
-            surfaceData:coreModel.surfaceL
             SplitView.preferredWidth : root.is_half?root.viewWidth_half:root.viewWidth
         }
 

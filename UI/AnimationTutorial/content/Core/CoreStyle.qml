@@ -25,12 +25,10 @@ Item {
 
 
     function autoGetAdaptiveView(){
-        console.log("desktopAvailableWidth: ",Screen.desktopAvailableWidth)
-        console.log("desktopAvailableHeight: ",Screen.desktopAvailableHeight)
         return adaptive_base
     }
 
-    property AdaptiveView currentAdaptive:autoGetAdaptiveView()
+    property AdaptiveViewBase currentAdaptive:autoGetAdaptiveView()
 
     function getIcon(name){
         return "../icons/" + name + ".png"

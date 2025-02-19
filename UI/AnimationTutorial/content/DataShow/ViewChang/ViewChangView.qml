@@ -14,7 +14,7 @@ ColumnLayout {
         Loader{
             width: root.width
             Layout.fillHeight:true
-            active: surfaceData.meshExits
+                        active: surfaceData.meshExits
             sourceComponent:View3D{
             }
 
@@ -36,7 +36,6 @@ ColumnLayout {
 //     }
 // }
     Item{
-
         implicitHeight:20
         height: implicitHeight
         Layout.fillWidth:true

@@ -12,8 +12,8 @@ Node {
             id: defaultobject
             pickable:false
             objectName: "defaultobject"
-            source: "file:////"+surfaceData.meshUrl
-            // source: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+surfaceData.key+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
+            //source: "file:////"+surfaceData.meshUrl
+            source: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+surfaceData.key+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
             materials: [
                 defaultMaterial_material,
             ]

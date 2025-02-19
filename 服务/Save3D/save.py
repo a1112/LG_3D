@@ -7,7 +7,7 @@ from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
 from CONFIG import serverConfigProperty
-
+from threading import Thread
 import threading
 import multiprocessing
 from multiprocessing import JoinableQueue as MulQueue
@@ -247,7 +247,8 @@ def _save_3d(data, managerQueue):
     save_colored_obj(mesh, colors, str(saveFile))
     t4 = time.time()
     logger.debug(f"save_colored_obj {t4 - t3}")
-    toMesh(str(saveFile), managerQueue)
+    Thread(target=toMesh,args=(str(saveFile), managerQueue)).start()
+    # toMesh(str(saveFile), managerQueue)
     logger.debug("toMesh end")
 
 

@@ -1,6 +1,11 @@
 import QtQuick
 
 Row {
+    id:root
+    property bool meshExits: ScriptLauncher.fileExists("\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + surfaceData.key + "/"+surfaceData.coilId + "/meshes/defaultobject_mesh.mesh")
+    onMeshExitsChanged:{
+        surfaceData.meshExits = root.meshExits
+    }
 height:25
 CheckDelegateBase{
     text:"塔形标注"
@@ -15,8 +20,8 @@ CheckDelegateBase{
     text:"3D预览"
     font.bold:true
     height:parent.height
-    enabled: surfaceData.meshExits
-    checked:dataShowCore.controls.thumbnail_view_3d_enable && surfaceData.meshExits
+    enabled: root.meshExits
+    checked:dataShowCore.controls.thumbnail_view_3d_enable
     onCheckedChanged:dataShowCore.controls.thumbnail_view_3d_enable = checked
 }
 

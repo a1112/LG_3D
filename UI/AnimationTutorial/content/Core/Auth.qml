@@ -60,9 +60,8 @@ Item {
     }
 
     SettingsBase{
-        category:"auth"
+        category:"authModel"
         property alias key: root.key
-
     }
 
 }

@@ -5,7 +5,7 @@ import QtQuick.Layouts
 Label {
     Layout.alignment:Qt.AlignVCenter
     text: core.appTitle
-    font.pixelSize: 26
+    font.pixelSize: 24
     font.bold: true
     font.family: "Inter"
     color: coreStyle.rootTitleColor

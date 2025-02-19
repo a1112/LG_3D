@@ -406,7 +406,8 @@ Item {
     function openSaveFolderById(coilId){
         return Qt.openUrlExternally(getBaseUrl(coilId))
     }
+    // 不可用
+    readonly property string meshUrl:"\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + key + "/"+coilId + "/meshes/defaultobject_mesh.mesh"
 
-    property string meshUrl:api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + surfaceData.key + "/"+surfaceData.coilId + "/meshes/defaultobject_mesh.mesh"
     property bool meshExits: ScriptLauncher.fileExists(meshUrl)
 }
