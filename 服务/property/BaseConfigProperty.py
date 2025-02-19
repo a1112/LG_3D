@@ -4,10 +4,10 @@ from pathlib import Path
 
 
 class BaseConfigProperty(ABC):
-    def __init__(self, file_path:Path):
+    def __init__(self, file_path: Path):
         self.file_path = file_path
-        self.encoding="utf-8"
-        self.config=self.load_config()
+        self.encoding = "utf-8"
+        self.config = self.load_config()
 
     def load_config(self):
         """
@@ -21,4 +21,4 @@ class BaseConfigProperty(ABC):
         保存配置文件
         :return:None
         """
-        json.dump(self.config, open(self.file_path, 'w', encoding=self.encoding),indent=4,ensure_ascii=False)
+        json.dump(self.config, open(self.file_path, 'w', encoding=self.encoding), indent=4, ensure_ascii=False)

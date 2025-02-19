@@ -6,8 +6,6 @@ from queue import Queue
 
 import logging
 
-from numpy.distutils.log import debug
-
 import AlarmDetection
 from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap
@@ -112,7 +110,7 @@ class ImageMosaicThread(Thread):
                     logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
                     logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
                     logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")
-                    logger.debug(f"完整检测时间 {defection_time4 - defection_time1}==============================================")
+                    logger.debug(f"完整检测时间 {defection_time4 - defection_time1}====================================")
                     if self.saveDataBase:
                         Coil.addCoil({
                             "SecondaryCoilId": secondary_coil.Id,
@@ -135,7 +133,7 @@ class ImageMosaicThread(Thread):
                     # if self.debugType:
                     #     if self.endCoilId <= secondary_coil.Id:
                     #         return -1
-            except (BaseException,) as e:
+            except (BaseException,) :
                 error_message = traceback.format_exc()
                 logger.error(error_message)
                 # if isLoc:

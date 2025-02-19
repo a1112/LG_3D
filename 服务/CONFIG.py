@@ -18,50 +18,56 @@ from property.ServerConfigProperty import ServerConfigProperty
 isLoc = False
 
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
-if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G',"MS-LGKRSZGOVODD"]:
+if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G', "MS-LGKRSZGOVODD"]:
     isLoc = True
 base_config_folder = Path(fr"D:\CONFIG_3D")
 
 try:
-    file_url=Path(__file__)
+    file_url = Path(__file__)
     drive_config = Path(file_url.drive) / base_config_folder.relative_to(base_config_folder.drive)
     print(drive_config)
     if drive_config.exists():
         base_config_folder = drive_config
-except (NameError,ValueError):
+except (NameError, ValueError):
     pass
 
-offline_mode = (Path(base_config_folder)/"offline_mode=true").exists()
+offline_mode = (Path(base_config_folder) / "offline_mode=true").exists()
 
 if offline_mode:
-    from CoilDataBase.config import Config,DeriverList
+    from CoilDataBase.config import Config, DeriverList
+
     Config.deriver = DeriverList.sqlite
-    Config.file_url=str(base_config_folder/"Coil.db")
+    Config.file_url = str(base_config_folder / "Coil.db")
     isLoc = True
+
 
 def get_file_url(base):
     url = base_config_folder / base
     if not url.exists():
         logging.error(f"{url}不存在！")
-        return Path("../CONFIG_3D")/base
+        return Path("../CONFIG_3D") / base
     return url
 
+
 class JsonConfig:
-    def __init__(self,base_url):
+    def __init__(self, base_url):
         self.base_url = base_url
         self.url = get_file_url(base_url)
-        with self.url.open("r",encoding="utf-8") as f:
+        with self.url.open("r", encoding="utf-8") as f:
             self.config = json.load(f)
 
+
 configFile = get_file_url("configs/Server3D.json")
-alarmConfigFile = get_file_url( r"configs/Alarm.json")
-infoConfigFile = get_file_url( r"configs/Info.json")
-controlConfigFile = get_file_url( r"configs/Control.json")
+alarmConfigFile = get_file_url(r"configs/Alarm.json")
+infoConfigFile = get_file_url(r"configs/Info.json")
+controlConfigFile = get_file_url(r"configs/Control.json")
 coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
 defectClassesConfigFile = get_file_url(r"configs/DefectClasses.json")
 
 if isLoc:
-    configFile = get_file_url( r"configs/Server3DLoc2.json")
+    configFile = get_file_url(r"configs/Server3DLoc2.json")
+
+
 # elif args.config:
 #     configFile = Path(args.config)
 
