@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../../../Model/server"
-Item {
+ItemDelegate {
 
     id:root
     property ServerDefectModel defect: ServerDefectModel{}
@@ -92,5 +92,13 @@ Item {
 
 
     }
+
+    MouseArea{
+        anchors.fill:parent
+        onClicked:{
+            dataShowCore.view2DTool.setDefectShowView(defect)
+        }
+
     }
+}
 

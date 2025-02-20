@@ -7,7 +7,6 @@ import "DataShow"
 import "Pages/Header"
 import "Pages/Pop"
 Item {
-
     width: 1980
     height: 1080
     anchors.fill: parent
@@ -29,7 +28,6 @@ Item {
                 SplitView.minimumWidth: 300
                 SplitView.maximumWidth: 500
             }
-
                 DataShowLayout{    // 数据显示
                     Layout.fillWidth: true
                     Layout.fillHeight: true

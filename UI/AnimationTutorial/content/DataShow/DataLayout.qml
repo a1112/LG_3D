@@ -20,19 +20,21 @@ ColumnLayout{
         DataShowRootLayout{     // <----------
         // SplitView.fillWidth: true
         // SplitView.fillHeight:true
-
         }
+
         ShowViewListView{
             visible: dataShowCore.viewRendererListView
             implicitHeight: 100
             SplitView.fillWidth: true
         }
+
         MaxMinValueShow{
             id:showViewListView
             visible: dataShowCore.viewRendererMaxMinValue
             implicitHeight: 40
             SplitView.fillWidth: true
         }
+
     }
     DataShowItemFoot{
         Layout.fillWidth: true

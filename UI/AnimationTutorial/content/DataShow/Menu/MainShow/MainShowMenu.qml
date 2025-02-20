@@ -6,7 +6,6 @@ Menu {
         text:"打开URL..."
         onClicked:{
             Qt.openUrlExternally(dataShowCore.source)
-
         }
     }
 

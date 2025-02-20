@@ -31,7 +31,7 @@ Item{
             Rectangle{
                 width: 5
                 height: 5
-                x:index*item_width
+                x:index * item_width
                 Label{
                     text: index
                     anchors.top: parent.bottom
@@ -57,16 +57,19 @@ Item{
         }
         //        contentWidth: steelDrawWidth//defectShowViewroot.steelDrawWidth
         DefectDraw{
-            width: imageCount*item_width//defectShowViewroot.steelDrawWidth //
+            width: imageCount * item_width //defectShowViewroot.steelDrawWidth //
             height:root.height
             id:contentView
             x:0
         }
+
         SelectCursor{   // 选择指针
             visible: otherImageModel
         }
+
         ScrollBar.horizontal:scr
     }
+
     SelectItemInfoView{
         //        height: 1.2*dpi
         visible: contentView.selectCanView
@@ -74,6 +77,7 @@ Item{
         x:defectViewState.selectRec.x-flick.contentX+contentView.x
         y:defectViewState.selectRec.y-height
     }
+
     ScrollBar{
         anchors.top: flick.bottom
         id:scr

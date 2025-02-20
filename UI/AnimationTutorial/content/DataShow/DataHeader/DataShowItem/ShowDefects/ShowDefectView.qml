@@ -16,11 +16,11 @@ ColumnLayout {
             color : "green"
         }
 
-    ShowDefectList{
-        anchors.fill:parent
-        model:dataShowCore.defectModel
-    }
+        ShowDefectList{
+            anchors.fill:parent
+            model:dataShowCore.defectModel
         }
+    }
     // Rectangle{
     //     implicitWidth:1
     //     Layout.fillHeight:true

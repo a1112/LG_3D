@@ -14,7 +14,6 @@ AppBase {
     id:app
     visible: true
     visibility:control.visibility
-
     Material.theme: coreStyle.theme
     width: global.screenConfig.width-100
     height: global.screenConfig.height-100
@@ -44,7 +43,7 @@ AppBase {
     property Auth auth: Auth{}
     property CoreSignal coreSignal :CoreSignal{}
     property CoreState coreState: CoreState{}
-    readonly property AdaptiveView adaptive:coreStyle.currentAdaptive
+    readonly property AdaptiveViewBase adaptive:coreStyle.currentAdaptive
 }
 
 

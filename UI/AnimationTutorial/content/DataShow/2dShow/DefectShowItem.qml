@@ -4,6 +4,8 @@ import "../../Model/server"
 Rectangle{
     property DefectItemModel defectItem: DefectItemModel{
     }
+    // property ServerDefectModel srverDefectModel: ServerDefectModel{
+    // }
 
     visible: dataShowCore.defect_show(defectName)
     x: defectItem.defectX*dataShowCore.canvasScale

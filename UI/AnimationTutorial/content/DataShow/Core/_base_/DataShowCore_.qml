@@ -1,6 +1,7 @@
 import QtQuick
 import "../"
 import "../../../Core/Surface"
+import "../../../DataShow/2dShow/ViewTool"
 Item {
 
     property SurfaceData surfaceData
@@ -38,10 +39,10 @@ Item {
 
     property ListModel defectModel:defectAllModel// defectManage.un_defect_show? defectAllModel : has_defectModel
 
-
     property ListModel defecClassListModel:ListModel{}
     // property ListModel currentDefectDictModel:ListModel{ // 缺陷类别
     // }
+
     // property ListModel currentUnShowDefectDictModel:ListModel{ // 不显示的缺陷类别
     // }
 
@@ -120,5 +121,7 @@ Item {
                        }
                        )
     }
+
+    property View2DTool view2DTool:View2DTool{}
 
 }

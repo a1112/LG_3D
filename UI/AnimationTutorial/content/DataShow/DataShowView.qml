@@ -19,7 +19,6 @@ Item{
 
     DataLayout{}
 
-    GlobItemErrorView{
+    GlobItemErrorView{}
 
-    }
 }
