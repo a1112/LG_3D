@@ -41,6 +41,9 @@ DataShowCore_ {
     function setToMaxScale(){
         canvasScale = maxScale
     }
+    function setToMinScale(){
+        canvasScale = minScale
+    }
 
     onCanvasScaleChanged: {
         if(canvasScale<minScale){

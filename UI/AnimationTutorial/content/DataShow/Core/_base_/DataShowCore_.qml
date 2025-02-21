@@ -6,6 +6,8 @@ Item {
 
     property SurfaceData surfaceData
 
+    property Image image_show
+
     property Binds binds :Binds{
         surfaceData:surfaceData
     }

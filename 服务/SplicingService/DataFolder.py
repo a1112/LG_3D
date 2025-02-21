@@ -51,11 +51,11 @@ class DataFolder(Globs.control.BaseDataFolder):
         if not source.exists():
             return False
         bmp_list = list(source.glob("*.bmp"))
-        if len(list(bmp_list)) < 5:
+        if len(list(bmp_list)) < 3.2:   # 判断采集结束
             return False
         for bmp in bmp_list:
             file_time = bmp.stat().st_mtime
-            if time.time() - file_time < 5:
+            if time.time() - file_time < 3.2:
                 return False
         return True
 

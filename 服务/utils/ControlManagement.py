@@ -48,6 +48,8 @@ class ControlManagement(ThreadClass):
 
         self.get_file_type = GetFileTypeJpg
 
+        self.out_side_px = 0 #  拓展 像素
+
         self.start()
 
     def get(self):

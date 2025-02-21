@@ -6,8 +6,6 @@ from queue import Queue
 
 import logging
 
-from numpy.distutils.log import debug
-
 import AlarmDetection
 from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap

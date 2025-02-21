@@ -29,50 +29,50 @@ ItemDelegate {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 Image{
-                anchors.centerIn: parent
-                width: parent.width
-                height: parent.height
-                asynchronous:true
-                fillMode: Image.PreserveAspectFit
-                source: {
-                    let x_ = defect.defect_x
-                    let w_ = defect.defect_w
-                    // if (defect.defect_w<body.width){
+                    anchors.centerIn: parent
+                    width: parent.width
+                    height: parent.height
+                    asynchronous:true
+                    fillMode: Image.PreserveAspectFit
+                    source: {
+                        let x_ = defect.defect_x
+                        let w_ = defect.defect_w
+                        // if (defect.defect_w<body.width){
 
-                    //     let out_w = (body.width - defect.defect_w)
-                    //     console.log("out_w ",out_w," ", body.width)
+                        //     let out_w = (body.width - defect.defect_w)
+                        //     console.log("out_w ",out_w," ", body.width)
 
-                    //     x_=parseInt(x_-out_w/2)
-                    //     w_=parseInt(w_+out_w)
-                    // }
-                    if (px_width*defectW <body.width){
-                        let out_w = body.width/px_width-defectW
-                        x_=parseInt(x_-out_w/2)
-                        w_=parseInt(w_+out_w)
+                        //     x_=parseInt(x_-out_w/2)
+                        //     w_=parseInt(w_+out_w)
+                        // }
+                        if (px_width*defectW <body.width){
+                            let out_w = body.width/px_width-defectW
+                            x_=parseInt(x_-out_w/2)
+                            w_=parseInt(w_+out_w)
+                        }
+
+                        let y_=defect.defect_y
+                        let h_=defect.defect_h
+                        // if (defect.defect_h<body.height){
+                        //     let out_h = (body.height - defect.defect_h)
+                        //     y_=parseInt(y_-out_h/2 )
+                        //     h_=parseInt(h_+out_h )
+                        // }
+
+                        if (px_width*defectH <body.height){
+                            let out_h = body.height/px_width-defectH
+                            y_=parseInt(y_-out_h/2)
+                            h_=parseInt(h_+out_h)
+                        }
+
+                        // 外扩
+
+                        return api.defect_url(dataShowCore.coilId,dataShowCore.key,
+                                              dataShowCore.currentViewKey,
+                                              x_,y_,w_,h_
+                                              )
+
                     }
-
-                    let y_=defect.defect_y
-                    let h_=defect.defect_h
-                    // if (defect.defect_h<body.height){
-                    //     let out_h = (body.height - defect.defect_h)
-                    //     y_=parseInt(y_-out_h/2 )
-                    //     h_=parseInt(h_+out_h )
-                    // }
-
-                    if (px_width*defectH <body.height){
-                        let out_h = body.height/px_width-defectH
-                        y_=parseInt(y_-out_h/2)
-                        h_=parseInt(h_+out_h)
-                    }
-
-                    // 外扩
-
-                return api.defect_url(dataShowCore.coilId,dataShowCore.key,
-                                      dataShowCore.currentViewKey,
-                                      x_,y_,w_,h_
-                                      )
-
-                }
                 }
                 Rectangle{
                     border.width:1
@@ -83,20 +83,21 @@ ItemDelegate {
                     height:px_width*defectH
                 }
             }
-    DefectInfos{
-
+            DefectInfos{
+            }
+        }
     }
-
-
-    }
-
-
-    }
-
     MouseArea{
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         anchors.fill:parent
         onClicked:{
-            dataShowCore.view2DTool.setDefectShowView(defect)
+            if (mouse.button == Qt.LeftButton){
+                dataShowCore.view2DTool.setDefectShowView(defect)
+            }
+            if (mouse.button == Qt.RightButton)
+            {
+                dataShowCore.setToMinScale()
+            }
         }
 
     }
