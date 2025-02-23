@@ -3,9 +3,9 @@ import Qt5Compat.GraphicalEffects
 import "../../Base"
 Item {
         anchors.fill: parent
-        BackSvg{
-            anchors.fill: parent
-        }
+    BackSvg{
+        anchors.fill: parent
+    }
     Image {
         cache: true
         width: parent.width
@@ -53,5 +53,7 @@ Item {
         enabled:visible
         opacity: surfaceData.tower_warning_show_opacity/100
     }
-
+    Component.onCompleted:{
+        dataShowCore.image_show = image_show
+    }
 }

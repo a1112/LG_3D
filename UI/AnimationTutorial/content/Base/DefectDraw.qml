@@ -1,14 +1,16 @@
-import QtQuick 2.15
+import QtQuick
 import "../Comp/CrossView"
 Rectangle {
     id:drawView
     color: "#20000000"
     property bool selectCanView: true
     property alias containsMouse: mouse.containsMouse
+
     SelectItem{
         visible: selectCanView
         id:sel
     }
+
     BorderToolItem{
         width: sel.width
         height: sel.height
@@ -16,13 +18,15 @@ Rectangle {
         y:sel.y
         checked:!selectCanView
     }
+
     CrossView{
         id:cross
         visible: mouse.containsMouse
         labelX: flick.contentX
-        cross_x:mouse.mouseX
-        cross_y:mouse.mouseY
+        cross_x : mouse.mouseX
+        cross_y : mouse.mouseY
     }
+
     MouseArea{
         id:mouse
         hoverEnabled: true

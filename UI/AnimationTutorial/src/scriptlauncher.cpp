@@ -33,3 +33,9 @@ void ScriptLauncher::launchScriptExplorer(QString text)
     // returns true if process started successfully
     process->waitForStarted(-1);
 }
+
+
+bool ScriptLauncher::fileExists(QString filePath)
+{
+    return QFileInfo::exists(filePath);
+}

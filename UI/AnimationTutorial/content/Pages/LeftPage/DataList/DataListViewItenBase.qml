@@ -62,8 +62,7 @@ Item {
         acceptedButtons: Qt.RightButton
         anchors.fill: parent
         onClicked: {
-            lefeListMemu.coilModel = coilModel
-            lefeListMemu.popup()
+            popManage.popupDataListItemMenu(coilModel)
         }
     }
     Rectangle{

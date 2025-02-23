@@ -13,7 +13,7 @@ Item {
 
 
     property string server_ip: "127.0.0.1"
-    property int server_port: 6010
+    property int server_port: 5010
 
     property int databasPort: 6011
     property int imageServerPort: 6012

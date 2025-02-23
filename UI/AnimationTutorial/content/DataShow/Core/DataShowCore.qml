@@ -6,8 +6,6 @@ DataShowCore_ {
     // OBJ
     id:root
 
-
-
     property DataShowControl controls:  DataShowControl{
         hoverPoint:root.hoverPoint
     }
@@ -39,6 +37,13 @@ DataShowCore_ {
 
     // 画布数据
     property real canvasScale: minScale // 画布缩放比例
+
+    function setToMaxScale(){
+        canvasScale = maxScale
+    }
+    function setToMinScale(){
+        canvasScale = minScale
+    }
 
     onCanvasScaleChanged: {
         if(canvasScale<minScale){

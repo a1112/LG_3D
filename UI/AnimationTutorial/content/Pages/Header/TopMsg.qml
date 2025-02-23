@@ -10,11 +10,11 @@ Base.DropShadowLabel{
     visible:coreModel.isListRealModel && core.isLast
 }
 Base.DropShadowLabel{
-    text: coreModel.isListRealModel? "实时模式" :"历史查询模式"
+    text: coreModel.isListRealModel? "实时" :"历史"
     color: coreModel.currentCoilListTextColor
 }
 Base.DropShadowLabel{
-    text:"     Local Model !"
+    text:global.screenConfig.width>2000?"     Local Model !":"Loc"
     visible: core.isLocal
     color:  Material.color(Material.Pink)
     layer.enabled: true
@@ -33,7 +33,7 @@ CheckRec{
     }
 }
 Base.DropShadowLabel{
-    visible:auth.isAdmin
+    visible:auth.isAdmin && global.screenConfig.width>2000
     text: core.currentCoilModel.coilNo
     font.family: "Microsoft YaHei"
     font.pixelSize: 18

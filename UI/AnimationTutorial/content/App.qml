@@ -1,25 +1,22 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Windows
 
 import QtQuick.Controls.Material
 import "./Api"
 import "./Core"
-import "PopupView"
+
 import "Pages/AlarmPage"
 import "Dialogs"
 import "./Style/Adaptive"
-import "Pages/LeftPage/DataList/DataListMenu"
-import "./types"
-ApplicationWindow {
+
+
+AppBase {
     id:app
     visible: true
     visibility:control.visibility
-    x:50
-    y:50
     Material.theme: coreStyle.theme
-    width: Screen.width-100
-    height: Screen.height-100
+    width: global.screenConfig.width-100
+    height: global.screenConfig.height-100
     title: "LG3D "
     Material.accent: coreStyle.accentColor
     CoreAction{}
@@ -46,15 +43,7 @@ ApplicationWindow {
     property Auth auth: Auth{}
     property CoreSignal coreSignal :CoreSignal{}
     property CoreState coreState: CoreState{}
-    readonly property AdaptiveView adaptive:coreStyle.currentAdaptive
-
-    PopManagement{
-            id:popManage
-        }
-
-    DataListItemMenu{
-        id:lefeListMemu
-    }
+    readonly property AdaptiveViewBase adaptive:coreStyle.currentAdaptive
 }
 
 

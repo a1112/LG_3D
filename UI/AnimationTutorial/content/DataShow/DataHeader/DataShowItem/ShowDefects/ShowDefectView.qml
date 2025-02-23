@@ -8,7 +8,7 @@ ColumnLayout {
         Layout.fillWidth : true
         Layout.fillHeight : true
         Label{
-            visible : dataShowCore.show_num
+            visible : false//dataShowCore.show_num
             font.bold : true
             anchors.centerIn : parent
             text:"无缺陷报警！"
@@ -16,11 +16,11 @@ ColumnLayout {
             color : "green"
         }
 
-    ShowDefectList{
-        anchors.fill:parent
-        model:dataShowCore.defectModel
-    }
+        ShowDefectList{
+            anchors.fill:parent
+            model:dataShowCore.defectModel
         }
+    }
     // Rectangle{
     //     implicitWidth:1
     //     Layout.fillHeight:true

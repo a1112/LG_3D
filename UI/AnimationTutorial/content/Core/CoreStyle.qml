@@ -13,18 +13,22 @@ Item {
     property color rootTitleColor:titleColor
     property color titleColor:Material.color(Material.Teal)
 
-    property AdaptiveView adaptive_base:AdaptiveView{}
-    property AdaptiveView1920_1080 adaptive_1920p:AdaptiveView1920_1080{}
-    property AdaptiveView2560_1440 adaptive_2560p:AdaptiveView2560_1440{}
+    property AdaptiveView adaptive_base:AdaptiveView{
+        adaptive_name:"base"
+    }
+    property AdaptiveView1920_1080 adaptive_1920p:AdaptiveView1920_1080{
+        adaptive_name:"1920_1080"
+    }
+    property AdaptiveView2560_1440 adaptive_2560p:AdaptiveView2560_1440{
+        adaptive_name:"2560_1440"
+    }
 
 
     function autoGetAdaptiveView(){
-        console.log("desktopAvailableWidth: ",Screen.desktopAvailableWidth)
-        console.log("desktopAvailableHeight: ",Screen.desktopAvailableHeight)
-        return
+        return adaptive_base
     }
 
-    property AdaptiveView currentAdaptive:autoGetAdaptiveView()
+    property AdaptiveViewBase currentAdaptive:autoGetAdaptiveView()
 
     function getIcon(name){
         return "../icons/" + name + ".png"

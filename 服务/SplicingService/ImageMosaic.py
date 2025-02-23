@@ -3,20 +3,19 @@ import json
 import traceback
 from pathlib import Path
 import logging
-from threading import Thread
 from typing import List, Optional
 
 import cv2
 import numpy as np
 from PIL import Image
 
-import AlarmDetection
+# import AlarmDetection
 from Save3D.save import D3Saver
 
 from property.ErrorBase import ServerDetectionException
 from property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from tools import tool, FlattenSurface
+from tools import tool  # FlattenSurface
 
 from CONFIG import isLoc, serverConfigProperty
 from Init import ColorMaps, PreviewSize
@@ -52,6 +51,9 @@ def leveling_2d(datas):
 
 
 class ImageMosaic(Globs.control.BaseImageMosaic):
+    """
+    单表面处理
+    """
     def __init__(self, config, managerQueue, logger_process: LoggerProcess):
         super().__init__()
         self.dataFolderList: List[DataFolder] = []
@@ -187,7 +189,13 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 if data["rec"][1] + data["rec"][3] > max_h:
                     max_h = data["rec"][1] + data["rec"][3]
         for data in datas:  # 裁剪，减低计算
+
+
+            out_side_px = Globs.control.out_side_px
+            min_h = max(min_h - out_side_px, 0)
+            max_h = min(max_h + out_side_px, data["2D"].shape[0])
             for key in ["2D", "MASK", "3D"]:
+                # 少裁剪固定像素
                 data[key] = data[key][min_h:max_h, :]
         horizontal_projection_list = tool.get_horizontal_projection_list([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontal_projection_list)

@@ -4,8 +4,8 @@ from property.Types import DetectionTaperShapeType, LevelingType, DetectionType,
 from property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
-# ProcessClass = WorkerProcessBase
-ProcessClass = ThreadClass
+ProcessClass = WorkerProcessBase
+
 
 class ControlManagement(ThreadClass):
     ThreadClass = ThreadClass
@@ -47,6 +47,8 @@ class ControlManagement(ThreadClass):
         self.detection_model = DetectionType.DetectionAndClassifiers
 
         self.get_file_type = GetFileTypeJpg
+
+        self.out_side_px = 0 #  拓展 像素
 
         self.start()
 

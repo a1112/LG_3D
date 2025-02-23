@@ -1,15 +1,19 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import "../Aerial"
 import "Draw"
 import "../Comps"
+import "ViewTool"
 Item {
     id:root
     anchors.fill: parent
+    property View2DTool view2DTool: View2DTool{}
+
     Rectangle{
     color: "black"
     anchors.fill: parent
     }
+
     Flickable{
         id:flick
         clip: true
@@ -33,7 +37,8 @@ Item {
 
             ImageView{
             }
-            ShowDefects{
+            ShowDefects{ // 缺陷绘制
+
             }
             DrawView{
                 // 绘制
@@ -42,6 +47,8 @@ Item {
             // 控制系统
             }
         }
+
+
     }
     CrossView{
         visible: dataShowCore.chartHovered | dataShowCore.imageShowHovered
@@ -61,5 +68,9 @@ Item {
                 coreModel.setKeepLatest(false)
             dataShowCore.hoverPoint = point.position
         }
+    }
+
+    Component.onCompleted:{
+        dataShowCore.view2DTool = root.view2DTool
     }
 }

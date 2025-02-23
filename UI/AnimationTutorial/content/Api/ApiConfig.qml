@@ -11,14 +11,13 @@ Item {
     ListModel{
 
     }
-    property var server_port_base: 5010
-    property int server_port_count:10
-    property var port_assignments:{
-        //  端口自动分配字典
-        return {}
-    }
+
+
     readonly property string protocol: "http://"
     readonly property string ws_protocol:"ws://"
+
+    property PortTool portTool :PortTool{
+    }
 
     readonly property string serverUrl: protocol+hostname+":"+port
     readonly property string wsServerUrl: ws_protocol+hostname+":"+port
@@ -40,42 +39,21 @@ Item {
 
     property bool auto_server_port:true
     property int _pre_port_value_:0
-    function get_key_port(key){
-        if (key in port_assignments){
-            return server_port_base+ Math.max(port_assignments[key],server_port_count-1)
-        }
-        port_assignments[key] = parseInt(_pre_port_value_)
-        _pre_port_value_+=1
-        if (_pre_port_value_>=server_port_count){
-            _pre_port_value_=0
-        }
-        return get_key_port(key)
-    }
+
     function getBaseUrl(){
         return protocol+hostname+":"+server_port_base
     }
-    function getAutoUrl(key){
-        return protocol+hostname+":"+get_key_port(key)
-    }
-    function getAutoWsUrl(key){
-        return ws_protocolChanged+":"+server_port_base
-    }
-
     function url(reUrl,...args){
         let key =""
 
         if (auto_server_port){
             // 自动端口映射
-
             if (reUrl.indexOf("ws")>=0){
-                reUrl = getAutoWsUrl(args[0])
+                reUrl = portTool.getAutoWsUrl(args[0])
             }
             else{
-                reUrl = getAutoUrl(args[0])
+                reUrl = portTool.getAutoUrl(args[0])
             }
-            // else{
-            // reUrl = getAutoUrl(args[0])
-            // }
         }
 
         for(let argIndex in args){

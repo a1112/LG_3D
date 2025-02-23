@@ -2,6 +2,8 @@ import QtQuick.Controls
 import "../../../Controls/Menu"
 Menu {
     title: "显示"
+
+
     Menu{
         title:"塔形标注"
         Menu{

@@ -25,7 +25,6 @@ Popup {
         text:qsTr("数据摘要")
         anchors.left: parent.Left
         color:Material.color(Material.Orange)
-
     }
 
     Column{
@@ -37,7 +36,9 @@ Popup {
             anchors.horizontalCenter:parent.horizontalCenter
             font.pointSize: 20
         }
+
         ImageRow{
+
         }
 
         CoilInfo{

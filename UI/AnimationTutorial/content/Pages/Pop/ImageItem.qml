@@ -24,31 +24,26 @@ ItemDelegate {
         Image {
             id:image
             asynchronous: true
-            source:hasImage?image_source:""
-            width: parent.width
-            height: parent.height
-            fillMode: Image.PreserveAspectFit
-            sourceSize.width: parent.width
-            sourceSize.height: parent.height
-            onStateChanged: {
+            source : hasImage?image_source : ""
+            width : parent.width
+            height : parent.height
+            fillMode : Image.PreserveAspectFit
+            sourceSize.width : parent.width
+            sourceSize.height : parent.height
+            onStateChanged : {
                 if (state == Image.Loaded) {
                 err.visible = true
                 }
                 else
                     err.visible = false
-
             }
-
-
         }
-
-
         Label{
-            anchors.centerIn: parent
-            text: key
-            background: Rectangle {
-                color: "#2f2f2f"
-                radius: 5
+            anchors.centerIn : parent
+            text : key
+            background : Rectangle {
+                color : "#2f2f2f"
+                radius : 5
             }
     }
 }

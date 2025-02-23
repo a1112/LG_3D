@@ -4,4 +4,6 @@ import QtQuick.Controls
 
 AdaptiveViewBase {
 
+
+
 }

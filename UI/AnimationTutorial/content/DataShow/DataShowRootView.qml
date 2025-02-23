@@ -8,9 +8,10 @@ Item{
         currentIndex:root.surfaceData.rootViewIndex
         Data2DLayout{
         }
+
         Data3DLayout{
         }
     }
-    MaskTool{
+    MaskTool{  // 遮挡
     }
 }

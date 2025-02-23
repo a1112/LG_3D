@@ -1,7 +1,12 @@
 import QtQuick
 import QtQuick.Window
 
-Item {
+QtObject {
+
+    property int width :Screen.width
+
+    property int height :Screen.height
+
     // 获取屏幕的可用宽度（不包括任务栏等系统保留区域）
     property int desktopAvailableWidth: Screen.desktopAvailableWidth
 

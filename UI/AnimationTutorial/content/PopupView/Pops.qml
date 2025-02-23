@@ -12,6 +12,7 @@ import "../SettingPage"
 import "../Style"
 import "ServerMange"
 import "ListValueChange"
+import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
 
 
@@ -41,5 +42,9 @@ Item {
     function popupServerMangeView(){serverMangeView.popup()}
     ListValueChangeView{id:listValueChangeView} // 列表数值变化取消
     function popupListValueChangeView(){listValueChangeView.popup()}
+    DataListItemMenu{id:lefeListMemu} // 左侧列表
+    function popupDataListItemMenu(coilModel){
+         lefeListMemu.coilModel = coilModel
+        lefeListMemu.popup()}
 
 }

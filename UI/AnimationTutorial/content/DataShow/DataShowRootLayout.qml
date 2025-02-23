@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import "Header"
 
 Item {
+
     DataShowItemHead{
         id:dsh
     }
@@ -16,11 +17,13 @@ Item {
 
     ColumnLayout{
         anchors.fill:parent
+
         LayoutItemProxy{
             Layout.fillWidth: true
             target:dsh
             height: 27
         }
+
         LayoutItemProxy{
             Layout.fillWidth: true
             Layout.fillHeight:true

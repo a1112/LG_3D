@@ -6,8 +6,8 @@ import "../GlobalView"
 import "View3D"
 Item{
     id:root
-    property SurfaceData surfaceData:SurfaceData{}
-    property DataShowCore dataShowCore:DataShowCore{}
+    property SurfaceData surfaceData
+    property DataShowCore dataShowCore
 
     readonly property DataShowControl controls:dataShowCore.controls
 
@@ -19,7 +19,6 @@ Item{
 
     DataLayout{}
 
-    GlobItemErrorView{
+    GlobItemErrorView{}
 
-    }
 }

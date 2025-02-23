@@ -22,7 +22,7 @@ Item {
     }
     ViewChangView{  // 右侧的数据切换
         height:root.height
-        x:root.width- width -20 -50
+        x:root.width- width -70
         y:25
     }
 

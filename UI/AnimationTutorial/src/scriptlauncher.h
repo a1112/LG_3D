@@ -13,9 +13,7 @@ public:
     explicit ScriptLauncher(QObject *parent = 0);
     Q_INVOKABLE void launchScript(QString text);
     Q_INVOKABLE void launchScriptExplorer(QString text);
-    Q_INVOKABLE bool fileExists(const QString filePath) {
-        return QFileInfo::exists(filePath);
-    }
+    Q_INVOKABLE bool fileExists(QString filePath) ;
 
 private:
     QProcess *m_process;
