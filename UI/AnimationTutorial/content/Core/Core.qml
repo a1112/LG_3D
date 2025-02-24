@@ -43,4 +43,6 @@ Item {
     function setCoilIndex(index) {
         coilIndex = index
     }
+
+    property var allKey:["S","L"]
 }

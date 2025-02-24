@@ -46,11 +46,13 @@ class ImageMosaicThread(Thread):
         except IndexError:
             logger.error(" ")
             self.startCoilId = 0
-
+    check_num=0
     def check_detection_end(self, secondary_coil_id):
         for imageMosaic in self.imageMosaicList:
             if not imageMosaic.check_detection_end(secondary_coil_id):
-                logger.error(f"checkDetectionEnd {secondary_coil_id}")
+                self.check_num+=1
+                if not (self.check_num % 10):
+                    logger.error(f"checkDetectionEnd {secondary_coil_id}")
                 return False
         return True
 

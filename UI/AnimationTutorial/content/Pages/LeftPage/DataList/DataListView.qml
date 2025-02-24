@@ -11,99 +11,7 @@ Item{
         anchors.fill: parent
         HeadView{
         }
-        Item {
-            Layout.fillWidth: true
-            implicitHeight: 25
-            // anchors.verticalCenter: parent.verticalCenter
-            Rectangle{
-                anchors.fill: parent
-                color: Material.color(Material.Blue)
-                opacity: 0.1
-            }
-            RowLayout{
-                anchors.fill: parent
-                Rectangle{
-                    implicitWidth: 2
-                    implicitHeight: 1
-                }
-
-                ColumnLayout{
-                    spacing: 0
-                    Layout.fillWidth: true
-                    implicitHeight: 30
-                    RowLayout{
-                        Label{
-                            font.pointSize: 13
-                            font.family: "Microsoft YaHei"
-                            font.bold: true
-                            text: "  Id "
-                        }
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 1
-                        }
-                        Label{
-                            text:"   卷号"
-                            font.pointSize: 13
-                            font.bold: true
-                            font.family: "Microsoft YaHei"
-                        }
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 1
-                        }
-                        Label{
-                            font.pointSize: 13
-                            font.bold: true
-
-                            text: "   钢种"
-                            font.family: "Microsoft YaHei"
-                        }
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 1
-                        }
-                        Label{
-                            font.pointSize: 13
-                            font.bold: true
-                            font.family: "Microsoft YaHei"
-                            text: " 状态"
-                        }
-                    }
-                    // RowLayout{
-                    //     Layout.fillWidth: true
-                    //     Label{
-                    //         font.pointSize: 10
-                    //         font.bold: true
-                    //         color: "#747474"
-                    //         text: "外："+CoilDia
-                    //     }
-
-                    //     Label{
-                    //         font.pointSize: 10
-                    //         font.bold: true
-                    //         color: "#747474"
-                    //         text: "宽："+Width
-                    //     }
-
-                    //     Label{
-                    //         font.pointSize: 10
-                    //         font.bold: true
-                    //         color: "#747474"
-                    //         text: "厚："+Thickness
-                    //     }
-                    // }
-                    // TimeLabel{
-
-                    // }
-                }
-                Item{
-                    implicitWidth: 5
-                    implicitHeight: 2
-                }
-            }
-
-        }
+        ListTitleView{}  // 列表头
 
         Item{
             clip: true
@@ -116,16 +24,9 @@ Item{
                 onCurrentIndexChanged: {
                     core.setCoilIndex(currentIndex)
                 }
-                spacing:5
+
                 model: leftCore.fliterEnable?leftCore.fliterListModel : coreModel.currentCoilListModel
-                highlight: Rectangle {
-                    color: "lightsteelblue"
-                    radius: 5
-                    border.color: "steelblue"
-                    border.width: 3
-                }
-                ScrollBar.vertical: ScrollBar {
-                }
+
                 delegate:DataListViewIten{    //    -----------------------------
                     width: listView.width
                 }

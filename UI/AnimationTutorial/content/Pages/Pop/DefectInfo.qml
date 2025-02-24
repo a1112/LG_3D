@@ -1,13 +1,34 @@
 import QtQuick
-
-Row {
+import QtQuick.Controls
+Item {
     id:root
-    spacing:0
-    DefectInfoItem{
-        width:root.width/2
+    height:223
+
+    property ListModel defectModel:ListModel{}
+    property var defectsData:coilModel.defectsData
+    onDefectsDataChanged:{
+        defectModel.clear()
+
+        tool.for_list_model(defectsData,(defect)=>{
+                    defectModel.append(defect)
+                            })
     }
 
-    DefectInfoItem{
-        width:root.width/2
+
+    ScrollView{
+        anchors.fill:parent
+        ScrollBar.vertical: ScrollBar{}
+        Flow{
+            spacing:2
+            anchors.fill:parent
+        Repeater{
+            model:root.defectModel
+            DefectInfoItem{
+
+            }
+
+        }
+        }
+
     }
 }

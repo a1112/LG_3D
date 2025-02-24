@@ -45,4 +45,11 @@ Api_DataBase {
             return ajax.get(url,success,failure)
 
     }
+
+    function get_defect_url(suface, coil_id, defect_name, x, y, w, h){
+        let url = apiConfig.url("classifier_image",defect_name,coil_id,x,y,w,h)
+        console.log(url)
+        return url
+        // E:\Save_L\53501\classifier\背景\53501_1148_5058_1177_5080.png
+    }
 }

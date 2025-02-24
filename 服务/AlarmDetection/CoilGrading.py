@@ -174,7 +174,10 @@ def grading(data_integration: DataIntegration):
 
     """
     # 获取去向
-    next_code = str(chr(int(data_integration.currentSecondaryCoil.Weight)))
+    try:
+        next_code = str(chr(int(data_integration.currentSecondaryCoil.Weight)))
+    except:
+        next_code = "N"
     next_name = infoConfigProperty.get_next(next_code)
 
     flat_roll_grad_info = grading_alarm_flat_roll(data_integration)

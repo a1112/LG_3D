@@ -49,12 +49,13 @@ Popup {
         AlarmInfo{
             width:body_width
         }
+        // TextArea{
+        //     text:leftCore.leftMsg
+        // }
         DefectInfo{
-            width:body_width
+            width:620
         }
-        TextArea{
-            text:leftCore.leftMsg
-        }
+
     }
 
 }

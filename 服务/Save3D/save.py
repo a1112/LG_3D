@@ -180,11 +180,12 @@ def save_colored_obj(mesh, colors, filename):
 
 def toMesh(obj, managerQueue):
     cmdBalsam = serverConfigProperty.balsam_exe
-    cmd = f"{cmdBalsam} {obj}"
+    cmd = f"{cmdBalsam} --optimizeMeshes {obj}"
     print(cmd)
     try:
         workPath = os.path.dirname(obj)
-        subprocess.check_call(cmd, shell=True, cwd=workPath)
+        env = os.environ.copy()
+        subprocess.check_call(cmd, shell=True, cwd=workPath,env=env)
     except BaseException as e:
         print(e)
     print(cmd + "end")

@@ -1,11 +1,8 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 import QtQuick.Controls.Material
-import "DataListMenu"
 import "Core"
 import "../../../Model"
-import "../../../animation"
 Item {
     id:root
     width: 300
@@ -13,15 +10,6 @@ Item {
     visible:leftCore.fliterEnable? coilModel.checkDefectShow(leftCore.fliterDict) :true
 
     property bool isCurrentIndex: index == core.coilIndex
-
-    // property string msg:"流水号："+coilModel.coilId+"\n"+"钢卷号："+coilModel.coilNo+"\n"+"钢卷类型："+
-    //                     coilModel.coilType+"\n"+"状态："+coilModel.coilStatus_S+
-    //                     " "+coilModel.coilStatus_L+"\n"+"外径："+coilModel.coilDia+" 宽度："+
-    //                     coilModel.coilWidth+" 厚度："+coilModel.coilThickness+
-    //                     "\n"+"时间："
-    //                     +coilModel.coilTimeString
-    //                   + listItemCoil.errorMsg
-
     property  CoilModel coilModel: CoilModel{}
     Component.onCompleted:{
         coilModel.init(model)
@@ -77,7 +65,7 @@ Item {
             if(hovered){
                 leftCore.hovedIndex = index
                 // leftCore.leftMsg = msg
-                leftCore.hovedCoilModel=coilModel
+                leftCore.hovedCoilModel = coilModel
             }
         }
     }

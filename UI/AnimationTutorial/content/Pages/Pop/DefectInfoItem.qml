@@ -1,17 +1,13 @@
 import QtQuick
 import QtQuick.Controls
+import "../../Model/server"
 Rectangle {
-    height: 50
-    property ListModel defectModel: ListModel{}
+    property DefectItemModel defectItem:DefectItemModel{}
+    property int currentCoilId: coilModel.coilId
+    height: 100
+    width: height
 
-    property int currentCoilId:coilModel.coilId
-    onCurrentCoilIdChanged: {
-    //
-        api.getDefects(coilModel.coilId)
-    }
-
-    ListView{
-        anchors.fill: parent
-
+    Component.onCompleted:{
+        defectItem.init(defectModel.get(index))
     }
 }

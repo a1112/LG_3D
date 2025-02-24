@@ -34,5 +34,13 @@ Item {
             defectData = item.defectData
     }
 
-
+    property string defect_url:api.get_defect_url(
+                                   surface,
+                                   coilId,
+                                   defectName,
+                                   defectX,
+                                   defectY,
+                                   defectW,
+                                   defectH
+                                   )
 }

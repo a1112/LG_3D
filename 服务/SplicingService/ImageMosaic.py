@@ -30,10 +30,6 @@ from utils.LoggerProcess import LoggerProcess
 import Globs
 
 
-def getAllKey():
-    return "2D", "MASK", "3D"
-
-
 def leveling_2d(datas):
     if Globs.control.leveling_gray:  # 调整灰度
         media_gray_list = []
@@ -41,7 +37,7 @@ def leveling_2d(datas):
             media_gray = np.median(data["2D"][data["2D"] != 0])
             media_gray_list.append(media_gray)
         print(f"media_gray_list {media_gray_list}")
-        if min(media_gray_list) < 0.5 or max(media_gray_list) > 2:
+        if min(media_gray_list) < 0.4 or max(media_gray_list) > 2.5:
             logger.error(f"leveling_2d 失败")
             return
         datas[0]["2D"] = (datas[0]["2D"].astype(np.float32) * (media_gray_list[1] / media_gray_list[0])).astype(
