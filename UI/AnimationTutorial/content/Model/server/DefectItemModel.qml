@@ -32,15 +32,17 @@ Item {
             defectH = item.defectH
             defectSource = item.defectSource
             defectData = item.defectData
+            defect_url = api.get_defect_url(
+                                           surface,
+                                           coilId,
+                                           defectName,
+                                           defectX,
+                                           defectY,
+                                           defectW,
+                                           defectH
+                                           )
+
     }
 
-    property string defect_url:api.get_defect_url(
-                                   surface,
-                                   coilId,
-                                   defectName,
-                                   defectX,
-                                   defectY,
-                                   defectW,
-                                   defectH
-                                   )
+    property string defect_url:""
 }

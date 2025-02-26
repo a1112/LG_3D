@@ -78,7 +78,6 @@ Item {
     }
 
     function selecct_all_un_defect_show(){
-        console.log("selecct_all_un_defect_show")
         for(let key in defectDictData){
             let value = defectDictData[key]
             if(!value["show"]){

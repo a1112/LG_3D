@@ -6,7 +6,7 @@ Row {
     CheckDelegate{
         height:parent.height
         text:"显示屏蔽"
-        checked:dataShowCore.defectManage.un_defect_show
+        checked: dataShowCore.defectManage.un_defect_show
         onCheckedChanged:{
             if(dataShowCore.defectManage.un_defect_show !== checked){
                 if (checked){

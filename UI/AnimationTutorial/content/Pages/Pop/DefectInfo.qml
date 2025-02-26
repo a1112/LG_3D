@@ -1,9 +1,12 @@
 import QtQuick
 import QtQuick.Controls
-Item {
+import QtQuick.Layouts
+Rectangle {
     id:root
-    height:223
-
+    // width:620
+    // height:223
+    Layout.fillWidth:true
+    Layout.fillHeight:true
     property ListModel defectModel:ListModel{}
     property var defectsData:coilModel.defectsData
     onDefectsDataChanged:{
@@ -16,11 +19,13 @@ Item {
 
 
     ScrollView{
-        anchors.fill:parent
+        width:parent.width
+        height:parent.height
         ScrollBar.vertical: ScrollBar{}
         Flow{
             spacing:2
-            anchors.fill:parent
+            width:parent.width
+            height:parent.height
         Repeater{
             model:root.defectModel
             DefectInfoItem{

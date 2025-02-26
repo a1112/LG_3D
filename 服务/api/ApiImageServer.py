@@ -92,9 +92,12 @@ async def get_preview(surface_key, coil_id:str, type_: str):
     #
     # return Response(content=image_data, media_type="image/jpg")
 
-@router.get("/classifier_image/{surface_key:str}/{coil_id:str}/{url:str}")
-async def get_classifier_image(surface_key,coil_id,url):
-    image = DataGet("classifier_image", surface_key, coil_id, type_, False).get_image(pil=True)
+@router.get("/classifier_image/{coil_id:str}/{surface_key:str}/{class_name:str}/{x:int}/{y:int}/{w:int}/{h:int}")
+async def get_classifier_image(coil_id,surface_key,class_name,x,y,w,h):
+    #  http://127.0.0.1:5015/classifier_image/53956/S/背景_头尾/3188/5410/426/153
+    # image = DataGet("classifier_image", surface_key, coil_id, None, False).get_image()
+    url = serverConfigProperty.get_classifier_image(coil_id, surface_key,class_name,x,y,w,h)
+    return FileResponse(str(url), media_type="image/jpg")
 
 app.include_router(router)
 

@@ -69,7 +69,7 @@ Item {
 
     property int hovedIndex:-1
 
-    property  CoilModel hovedCoilModel:CoilModel{}
+    property  CoilModel hovedCoilModel :CoilModel{}
 
     onHovedIndexChanged: {
         let p = coreModel.currentCoilListModel.get(hovedIndex)
