@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-// import "../../Base"
+import "../../labels"
 import "../../Comp/Card"
 import "AlarmItemCoil"
 import "AlarmItemTaperShape"
@@ -66,4 +66,5 @@ CardBase{
             }
         }
     }
+
 }

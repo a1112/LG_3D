@@ -47,7 +47,11 @@ Item {
     }
 
     function isShowDefect(defectName){
-        return fliterDict[defectName]
+        // 缺陷是否显示
+        if (defectName in fliterDict){
+            return fliterDict[defectName]
+        }
+        return false
     }
 
 

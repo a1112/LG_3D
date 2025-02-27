@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-Rectangle {
+Item {
     id:root
     // width:620
-    // height:223
+    height:flow.height
     Layout.fillWidth:true
     Layout.fillHeight:true
     property ListModel defectModel:ListModel{}
@@ -18,22 +18,18 @@ Rectangle {
     }
 
 
-    ScrollView{
-        width:parent.width
-        height:parent.height
-        ScrollBar.vertical: ScrollBar{}
+
         Flow{
+            id:flow
             spacing:2
             width:parent.width
-            height:parent.height
+            // height:parent.height
         Repeater{
             model:root.defectModel
             DefectInfoItem{
-
             }
 
         }
         }
 
-    }
 }

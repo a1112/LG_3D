@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Shapes
 Item {
     id:root
@@ -70,10 +71,20 @@ Item {
 
     }
 
+    // Rectangle{
+    //    anchors.fill: parent
+    //    transform:Rotation{
+    //        // origin.x: ellipse.center.x;
+    //        // origin.y: ellipse.center.y;
+    //        angle:ellipse.angle
+    //    }
+    // }
+
     Shape {
         id: ellipseShape
+
         ShapePath {
-            strokeWidth: 1
+            strokeWidth: 2
             strokeColor: "green"
             fillColor: "#12222222"
             // 计算旋转后的路径
@@ -84,15 +95,61 @@ Item {
                       "a " + (ellipse.axes.major_axis / 2) + "," + (ellipse.axes.minor_axis / 2) + " 0 1,0 -" +
                       ellipse.axes.major_axis + ",0"
             }
+
+        }
+    }
+        Shape {
+    ShapePath {
+        strokeColor: "blue"
+        strokeWidth: 1
+        fillColor: "transparent"
+
+        dashPattern: [ 2, 2 ]
+
+        property int joinStyleIndex: 0
+        startX: ellipse.center.x
+        startY: ellipse.center.y
+        PathLine {
+            x: ellipse.axes.major_axis + ellipse.center.x
+            y:ellipse.center.y
+
+        }
+        PathMove{
+            x:ellipse.center.x + ellipse.axes.major_axis/2
+            y:ellipse.center.y  - ellipse.axes.minor_axis/2
         }
 
+        PathLine {
+
+            x: ellipse.center.x + ellipse.axes.major_axis/2;
+            y: ellipse.axes.minor_axis +ellipse.center.y  - ellipse.axes.minor_axis/2
+
+        }
     }
+    }
+        Label{
+            x:ellipse.center.x+ellipse.axes.major_axis/2+5
+            y:ellipse.center.y - ellipse.axes.minor_axis * (1/3)
+            text:surfaceData.ix_to_mm( inner_ellipse[1][1])
+            color: "green"
+            font.bold: true
+            font.pointSize: 14
+        }
+
+        Label{
+            x:ellipse.center.x+ellipse.axes.major_axis*(2/3)
+            y:ellipse.center.y+5
+            text:surfaceData.ix_to_mm( inner_ellipse[1][0])
+            color: "green"
+            font.bold: true
+            font.pointSize: 14
+        }
     Rectangle{
         width: 4
         height: 4
         radius: 2
         color:"#00000000"
-        border.width: 1
+        border.width: 2
         border.color: "orange"
         x:dataShowCore.perpendicularPoint.x*dataShowCore.canvasScale-2
         y:dataShowCore.perpendicularPoint.y*dataShowCore.canvasScale-2

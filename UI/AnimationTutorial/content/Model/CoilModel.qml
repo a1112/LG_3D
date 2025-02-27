@@ -119,6 +119,7 @@ QtObject {
             return Material.color(Material.Red)
         }
     }
+
     function initMaxLevelDefect(){
         tool.for_list_model(defectsData,(defect)=>{
                     let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)

@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
@@ -9,8 +9,6 @@ import "../../btns"
 Item {
     id:root
     width:root.width
-    Layout.fillWidth: true
-    Layout.fillHeight: true
         Flow{
             anchors.fill: parent
             FlowRowItem{

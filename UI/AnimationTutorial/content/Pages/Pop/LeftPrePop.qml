@@ -10,7 +10,7 @@ Menu {
     x: left.width+20
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
     width:620 //col.width+20
-    height:620 //col.height+30
+    height:col.height+30
     property int body_width:width-20
     property CoilModel coilModel:leftCore.hovedCoilModel
 
@@ -18,41 +18,45 @@ Menu {
         if (leftCore.isHoved)
             open()
     }
-    Item{
-        anchors.fill:parent
-        Label{    // title
-            text:qsTr("数据摘要")
-            anchors.left: parent.Left
-            color:Material.color(Material.Orange)
+
+    Label{    // title
+        text:qsTr("数据摘要")
+        anchors.left: parent.Left
+        color:Material.color(Material.Orange)
+    }
+    Column{
+        id:col
+        width:parent.width
+        spacing:0
+        TitleLabel{
+            Layout.fillWidth:true
+            text:coilModel.coilNo
+            color:Material.color(Material.Blue)
+            Layout.alignment:Qt.AlignHCenter
+            anchors.horizontalCenter:parent.horizontalCenter
+            font.pointSize: 20
         }
-        ColumnLayout{
-            id:col
-            anchors.fill:parent
-            spacing:2
-            TitleLabel{
-                text:coilModel.coilNo
-                color:Material.color(Material.Blue)
-                anchors.horizontalCenter:parent.horizontalCenter
-                font.pointSize: 20
-            }
-            ImageRow{
-            }
-            CoilInfo{
-                width:  root.width
-                height: 100
-            }
-            AlarmInfo{
-                width:body_width
-            }
-            // TextArea{
-            //     text:leftCore.leftMsg
-            // }
-            DefectInfo{
-                Layout.fillWidth:true
-                width:body_width
-                Layout.fillHeight:true
-            }
+        ImageRow{
+            width:parent.width
+            Layout.fillWidth:true
         }
+        CoilInfo{
+            width:parent.width
+            Layout.fillWidth:true
+            height: 100
+        }
+        AlarmInfo{
+            width:parent.width
+            Layout.fillWidth:true
+        }
+        // TextArea{
+        //     text:leftCore.leftMsg
+        // }
+        DefectInfo{
+            width:parent.width
+            Layout.fillWidth:true
+        }
+
     }
 
 

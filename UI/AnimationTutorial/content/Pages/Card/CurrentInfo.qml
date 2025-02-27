@@ -1,10 +1,10 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtGraphs
 import "../../Base"
 import "../../Comp/Card"
-import "../../btns"
 CardBase {
     id:root
     Layout.fillWidth: true
@@ -90,4 +90,14 @@ CardBase {
             onClicked:{popManage.popupMsgPopView()}
         }
     }
+
+
+    LabelBase{
+        font.bold:true
+        font.pointSize:11
+        anchors.right:parent.right
+        anchors.top:parent.top
+        text:tool.getDelTimeStr(core.nowTime,core.currentCoilModel.coilCreateTime.dateTime)
+    }
+
 }
