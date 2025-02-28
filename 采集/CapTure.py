@@ -1,6 +1,6 @@
 import time
 from threading import Thread
-from multiprocessing import Process
+
 
 import CONFIG
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
@@ -13,6 +13,56 @@ from Log import logger
 import Server
 from CameraControl import CameraControl
 
+
+class CapTureBase(Thread):
+    def __init__(self, dataSave:ImageDataSave,camera, parent):
+        self.parent = parent
+        self.camera = camera
+        self.dataSave = dataSave
+        self.running = True
+        super().__init__()
+        pass
+
+
+class CapTure2D(CapTureBase):
+    def __init__(self, dataSave:ImageDataSave, camera, parent):
+        super().__init__(dataSave, camera, parent)
+        pass
+
+
+class CapTure3D(CapTureBase):
+    def __init__(self, dataSave:ImageDataSave, camera, parent):
+        super().__init__(dataSave, camera, parent)
+        pass
+
+    def run(self):
+        while self.running:
+            try:
+                # if not self.c:
+                #     time.sleep(0.1)
+                #     continue
+                logger.debug(f"启动相机 ...  ")
+
+                with self.camera as cap:
+                    logger.debug(f"启动相机 {self.camera}... ...")
+                    while True:
+                        try:
+                            if self.coil is None:
+                                print(f"coil 为空 ")
+                                time.sleep(0.1)
+                                self.coil = 1
+                            buffer = cap.get_buffer()
+                            bf = SickBuffer(buffer)
+                            bf.setBDconfig(cap.getBDconfig())
+                            bf.setCoil(self.coil)
+                            bf.area_cap = camera_2d.get_last_frame()
+                            self.dataSave.put(bf)
+                            lastTimeDict[self.cameraInfo.key] = time.time()
+                        finally:
+                            buffer.queue()
+            except BaseException as e:
+                logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
+                time.sleep(5)
 
 class CapTure(Thread):
     """
@@ -29,21 +79,27 @@ class CapTure(Thread):
         self.cameraInfo = None
         self.captureRunning = None
         self.coil = None
-        self.camera_info=camera_info
+        self.camera_3d = None
+        self.camera_2d = None
+        self.camera_info = camera_info
 
 
     def set_camera_3d(self):
-        camera = SickCamera(self.cameraInfo.sn)
-        self.camera = camera
-        return camera
+        if self.get_value("3D",True):
+            camera = SickCamera(self.cameraInfo.sn)
+            self.camera = camera
+            return camera
+        return None
 
     def set_camera_2d(self):
         yaml_config = self.cameraInfo.yaml_config
-        camera=DaHengCamera(yaml_config)
+        camera = DaHengCamera(yaml_config)
         return camera
 
-    def get(self):
-        pass
+    def get_value(self, key, default):
+        if key in self.camera_info:
+            return self.camera_info[key]
+        return default
 
     def on_signal(self, sig_type, coil):
         # 接收到新的信号
@@ -75,8 +131,18 @@ class CapTure(Thread):
 
         Server.start_server(camera_info, self)
         logger.debug(f"启动采集 线程 {self.cameraInfo.key}... ...")
+
+
         camera_3d = self.set_camera_3d()
         camera_2d = self.set_camera_2d()
+
+        if camera_3d is not None:
+            CapTure3D(self.dataSave,camera_3d).start()
+
+        if camera_3d is not None:
+            CapTure3D(self.dataSave,camera_3d).start()
+
+
         while self.running:
             try:
                 # if not self.c:
