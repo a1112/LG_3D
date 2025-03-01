@@ -55,7 +55,7 @@ class CapTure3D(CapTureBase):
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(self.coil)
-                            bf.area_cap = camera_2d.get_last_frame()
+                            bf.area_cap = self.camera.get_last_frame()
                             self.dataSave.put(bf)
                             lastTimeDict[self.cameraInfo.key] = time.time()
                         finally:
