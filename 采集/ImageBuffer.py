@@ -5,7 +5,11 @@ from harvesters.core import Buffer
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 
 
-class SickBuffer:
+class BufferBase:
+    pass
+
+
+class SickBuffer(BufferBase):
     def __init__(self, buffer):
         self.bdConfig = None
         buffer: Buffer
@@ -48,3 +52,9 @@ class SickBuffer:
 
     def setBDconfig(self, bdConfig):
         self.bdConfig = bdConfig
+
+
+class DaHengBuffer(BufferBase):
+    def __init__(self, buffer):
+        self.buffer  = buffer
+        self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')

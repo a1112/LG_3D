@@ -89,20 +89,20 @@ class ImageDataSave(Thread):
             logger.error(e)
 
     def save(self, buffer):
-        logger.debug(f"save folder: {self.saveFolder / buffer.coilId}  index: {buffer.save_index}")
-        self.save_database(buffer)
-
-        buffer: SickBuffer
-        self.save_json(buffer)
-        self.save3_d(buffer)
-        self.save2_d(buffer)
-        try:
-            self.save_area_2d(buffer)
-        except Exception as e:
-            print(e)
-        if buffer.save_index == 0:
-            if self.camera:
-                self.save_camera_config(buffer)
+        if isinstance(buffer, SickBuffer ):
+            logger.debug(f"save folder: {self.saveFolder / buffer.coilId}  index: {buffer.save_index}")
+            self.save_database(buffer)
+            buffer: SickBuffer
+            self.save_json(buffer)
+            self.save3_d(buffer)
+            # self.save2_d(buffer)
+            try:
+                self.save_area_2d(buffer)
+            except Exception as e:
+                print(e)
+            if buffer.save_index == 0:
+                if self.camera:
+                    self.save_camera_config(buffer)
 
     def run(self):
         while self.running:
