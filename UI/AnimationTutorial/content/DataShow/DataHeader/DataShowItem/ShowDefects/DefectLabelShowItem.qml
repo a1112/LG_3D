@@ -36,33 +36,5 @@ CheckDelegate {
         color: defectClassItemModel.defectShow?Material.color(Material.Orange):Material.color(Material.Green)
     }
 }
-// CheckRec{
-// text:defectName+" "+num
-// height:25
-// width:100
-// fillWidth:true
-// checked:coreModel.defectDictAll[defectName]
-// onCheckedChanged:{
-//     if (coreModel.defectDictAll[defectName]!==checked){
-//     coreModel.defectDictAll[defectName]=checked
-//     coreModel.flushDefectDictAll()
-//         }
-// }
 
-
-
-
-
-// CheckRec{
-// text:defectName+" "+num
-// height:30
-// width:100
-// // fillWidth:true
-// checked:coreModel.defectDictAll[defectName]
-// onCheckedChanged:{
-//     if (coreModel.defectDictAll[defectName]!==checked){
-//     coreModel.defectDictAll[defectName]=checked
-//     coreModel.flushDefectDictAll()
-//         }
-// }
 

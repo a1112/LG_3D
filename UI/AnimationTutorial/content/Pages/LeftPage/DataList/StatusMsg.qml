@@ -29,20 +29,6 @@ Row {
                 font.bold:true
                 font.family:"Microsoft YaHei"
             }
-
-    // Rectangle{
-    //     implicitWidth: 6
-    //     implicitHeight: width
-    //     radius: 3
-
-    //     color: Status_S==-3?"black":Status_S==-2?"red":"green"
-    // }
-    // Rectangle{
-    //     implicitWidth: 6
-    //     implicitHeight: width
-    //     radius: 3
-    //     color: Status_L==-3?"black":Status_L==-2?"red":"green"
-    // }
         AlarmRectangleItem{
             anchors.verticalCenter:parent.verticalCenter
 

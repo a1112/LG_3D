@@ -78,9 +78,28 @@ Item {
     function defect_show(defectName){
         return global.defectClassProperty.defectDictAll[defectName]??false
     }
-    property var defectsData: []
-    onDefectsDataChanged: {
 
+    function appendDefect(item){
+
+
+    }
+    function set_show_state(){ // 设置显示状态
+        return tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
+            let name = item.name
+            if (!(item["name"] in coreModel.defectDictAll)){
+                coreModel.defectDictAll[item["name"]]=item["show"]
+                }
+
+            if (name in defectDict){
+                                defecClassListModel.append(item)
+                                }
+                            })
+
+
+    }
+    property var defectsData: []
+
+    onDefectsDataChanged: {
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
                                     let defectName = item.defectName
@@ -94,16 +113,7 @@ Item {
                                     defectAllModel.append(item)
                                  })
             }
-            tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
-                let name = item.name
-                if (!(item["name"] in coreModel.defectDictAll)){
-                    coreModel.defectDictAll[item["name"]]=item["show"]
-                    }
-
-                if (name in defectDict){
-                                    defecClassListModel.append(item)
-                                    }
-                                })
+        set_show_state()
         set_num()
     }
 

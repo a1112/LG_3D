@@ -87,3 +87,7 @@ alarmConfigProperty = AlarmConfigProperty(alarmConfigFile)
 infoConfigProperty = InfoConfigProperty(infoConfigFile)
 defectClassesProperty = DefectClassesProperty(defectClassesConfigFile)
 controlConfigProperty = ControlConfigProperty(controlConfigFile)
+
+
+def getAllKey():
+    return "2D", "MASK", "3D"

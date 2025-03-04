@@ -195,7 +195,6 @@ def delete_coil(id_):
 def get_coil_list(num, coil_id=None, by_coil=True):
     with (Session() as session):
         query = get_join_query(session, by_coil=by_coil)
-
         if coil_id:
             query = query.filter(SecondaryCoil.Id > coil_id)
         return query.order_by(SecondaryCoil.Id.desc())[:num]

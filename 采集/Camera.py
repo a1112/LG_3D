@@ -97,8 +97,8 @@ class DaHengCamera(Process):
                         if frame is None:
                             time.sleep(0.1)
                             continue
-                        while self.frame_queue.qsize() > 0:
-                            self.frame_queue.get()
+                        # while self.frame_queue.qsize() > 0:
+                        #     self.frame_queue.get()
                         self.frame_queue.put(frame)
 
                         time.sleep(0.01)

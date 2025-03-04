@@ -46,7 +46,12 @@ Item {
 
 
     }
-
+    function ix_to_mm(value){
+        return (value*scan3dScaleX).toFixed(0)
+    }
+    function iy_to_mm(value){
+        return (value*scan3dScaleY).toFixed(0)
+    }
     function iz_to_mm(value){
         return ((value-medianZInt)*scan3dScaleZ).toFixed(2)
     }

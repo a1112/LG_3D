@@ -24,13 +24,11 @@ async def get_preview_image( surface_key, coil_id:str, type_: str, mask:bool = F
 
 @router.get("/image/source/{surface_key:str}/{coil_id:str}/{type_:str}")
 async def get_image( surface_key, coil_id:str, type_: str, mask:bool = False):
-    st=time.time()
     data_get = DataGet("source", surface_key, coil_id, type_, mask)
     # url = Path(data_get.get_source())
     image_bytes=data_get.get_image()
     if image_bytes is None:
         return None
-    et=time.time()
     # print(f"图像获取 surface_key：{surface_key} coil_id：{coil_id} type_：{type_}  时间：{et-st}")
     # return FileResponse(str(url), media_type="image/png")
     # return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")
@@ -94,4 +92,12 @@ async def get_preview(surface_key, coil_id:str, type_: str):
     #
     # return Response(content=image_data, media_type="image/jpg")
 
+@router.get("/classifier_image/{coil_id:str}/{surface_key:str}/{class_name:str}/{x:int}/{y:int}/{w:int}/{h:int}")
+async def get_classifier_image(coil_id,surface_key,class_name,x,y,w,h):
+    #  http://127.0.0.1:5015/classifier_image/53956/S/背景_头尾/3188/5410/426/153
+    # image = DataGet("classifier_image", surface_key, coil_id, None, False).get_image()
+    url = serverConfigProperty.get_classifier_image(coil_id, surface_key,class_name,x,y,w,h)
+    return FileResponse(str(url), media_type="image/jpg")
+
 app.include_router(router)
+

@@ -35,6 +35,11 @@ class SurfaceConfigProperty:
     def get_preview_file(self, coil_id, type_):
         return f"{self.saveFolder}/{coil_id}/preview/{type_}" + ".png"
 
+    def get_classifier_image(self,coil_id,class_name,x,y,w,h):
+        base_path = f"{self.saveFolder}/{coil_id}/classifier/{class_name}"
+        return str(Path(base_path).glob(f"{coil_id}_{x}_{y}_*" + ".png").__next__())
+
+
     def get_mask_file(self, coil_id, type_):
         return f"{self.saveFolder}/{coil_id}/mask/{type_}" + ".png"
 
@@ -110,6 +115,9 @@ class ServerConfigProperty(BaseConfigProperty):
         return surface_config.get_file(coil_id, type_)
 
     def get_3d_file(self, coil_id, surface_key):
+        """
+        3d 文件
+        """
         surface_config = self.surfaceConfigPropertyDict[surface_key]
         file_url = Path(surface_config.get_3d_file(coil_id))
         if not file_url.exists():
@@ -117,12 +125,22 @@ class ServerConfigProperty(BaseConfigProperty):
         return file_url
 
     def get_mesh_file(self, coil_id, surface_key):
+        """
+        获取 mesh
+        """
         surface_config = self.surfaceConfigPropertyDict[surface_key]
         return surface_config.get_mesh_file(coil_id)
 
     def get_preview_file(self, coil_id, surface_key, type_):
+        """
+        获取预览图像
+        """
         surface_config = self.surfaceConfigPropertyDict[surface_key]
         return surface_config.get_preview_file(coil_id, type_)
+
+    def get_classifier_image(self,coil_id, surface_key,class_name,x,y,w,h):
+        surface_config = self.surfaceConfigPropertyDict[surface_key]
+        return surface_config.get_classifier_image(coil_id,class_name,x,y,w,h)
 
     def get_info(self, coil_id, surface_key):
         surface_config = self.surfaceConfigPropertyDict[surface_key]

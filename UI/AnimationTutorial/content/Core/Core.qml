@@ -1,6 +1,16 @@
-import QtQuick 2.15
+import QtQuick
 import "../Model"
 Item {
+    id:root
+    property var nowTime: new Date()
+    Timer{
+        interval:1000
+        running:true
+        repeat:true
+        onTriggered:{
+            root.nowTime = new Date()
+        }
+    }
 
     property string appTitle: "涟钢热轧1580端面缺陷检测系统"
 
@@ -43,4 +53,6 @@ Item {
     function setCoilIndex(index) {
         coilIndex = index
     }
+
+    property var allKey:["S","L"]
 }

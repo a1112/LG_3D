@@ -47,7 +47,11 @@ Item {
     }
 
     function isShowDefect(defectName){
-        return fliterDict[defectName]
+        // 缺陷是否显示
+        if (defectName in fliterDict){
+            return fliterDict[defectName]
+        }
+        return false
     }
 
 
@@ -69,7 +73,7 @@ Item {
 
     property int hovedIndex:-1
 
-    property  CoilModel hovedCoilModel:CoilModel{}
+    property  CoilModel hovedCoilModel :CoilModel{}
 
     onHovedIndexChanged: {
         let p = coreModel.currentCoilListModel.get(hovedIndex)

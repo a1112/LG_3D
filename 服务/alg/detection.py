@@ -106,6 +106,7 @@ def commit_defects(defect_dict, data_integration):
 def save_classifier_item(image, save_url):
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
+    print(f"c {save_url}")
     save_url = save_url.with_suffix(".png")
     save_url.parent.mkdir(parents=True, exist_ok=True)
     image.save(save_url)
@@ -126,11 +127,16 @@ def save_detection_item(info, image, save_url):
     #     image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
 def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder=None, save_to_folders=True):
+    print("save_classifier_result")
     if not id_str:
-        id_str = "null"
+        id_str = ""
+    else:
+        id_str=id_str+"_"
+    id_str=""
     save_base_folder_list = []
-    if save_to_folders:
+    if save_base_folder is not None:
         save_base_folder_list.append(save_base_folder)
+    print(save_base_folder_list)
     if save_base_folder is None or save_to_folders:
         # save_base_folder = Path(
         #     list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
@@ -140,10 +146,11 @@ def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_fold
         index = 0
         for res, sub_image in zip(sub_info_list, sub_image_list):
             index += 1
+            coil_id_name = save_base_folder.name
             for save_base_folder in save_base_folder_list:
                 xmin, ymin, xmax, ymax, label_index, source, name = res
                 save_base = Path(save_base_folder) /"classifier"/ name
-                save_url = save_base/f"{id_str}_{label_index}_{name}_{index}_{xmin}_{ymin}_{xmax}_{ymax}.png"
+                save_url = save_base/f"{coil_id_name}_{xmin}_{ymin}_{xmax}_{ymax}.png" #  {id_str}{label_index}_{name}_{index}_
                 executor.submit(save_classifier_item, sub_image, save_url)
 
 def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None,save_to_folders=True):
@@ -212,23 +219,29 @@ def detection_by_image_list(clip_image_url_list, cdm_=None):
 def classifiers_data(image_list,res_list,pil_image,clip_info_list):
     sub_info_list = []
     sub_image_clip_list = []
-    for sub_image,res_item,clip_info in zip(image_list,res_list,clip_info_list):
+    for sub_image, res_item, clip_info in zip(image_list, res_list, clip_info_list):  #  数据准备循环
+        x_offset, y_offset, *_ = clip_info
         for res_item_item in res_item:
             xmin, ymin, xmax, ymax, label_index, source, name = res_item_item
-            x_offset, y_offset, *_= clip_info
             max_image_x1, max_image_y1, max_image_x2, max_image_y2 =xmin+x_offset, ymin+y_offset, xmax+x_offset, ymax+y_offset
-
             xmin, ymin, xmax, ymax = get_image_box(pil_image,max_image_x1, max_image_y1, max_image_x2, max_image_y2)
 
             sub_image_clip = pil_image.crop([xmin, ymin, xmax, ymax])
             sub_image_clip_list.append(sub_image_clip)
-    res_index,res_source,names = ccm.predict_image(sub_image_clip_list)
+    res_index, res_source, names = ccm.predict_image(sub_image_clip_list)
     index = 0
 
-    for item in res_list:
+    for item, clip_info in zip(res_list, clip_info_list):
+        x_offset, y_offset, *_ = clip_info
         for item_item_index, item_item in enumerate(item):
             item[item_item_index]=list(item[item_item_index])
             index_cls,source_cls,name = res_index[index], res_source[index],names[index]
+            x1, y1, x2, y2, *_ = item[item_item_index]
+            w,h = x2-x1,y2-y1
+            item[item_item_index][0] = x1+x_offset
+            item[item_item_index][1] = y1+y_offset
+            item[item_item_index][2] = x2+x_offset
+            item[item_item_index][3] = y2+y_offset
             item[item_item_index][4] = index_cls
             item[item_item_index][5] = source_cls
             item[item_item_index][6]= name
@@ -247,6 +260,7 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
         join_image = np.array(join_image)
     if isinstance(mask_image, Image.Image):
         mask_image = np.array(mask_image)
+
     if pil_image is None:
         pil_image = Image.fromarray(join_image)
 
@@ -273,10 +287,11 @@ def detection(data_integration: DataIntegration):
     res_list, clip_image_list, clip_info_list = detection_by_image(join_image, mask, clip_num, id_str=id_str,save_base_folder=data_integration.save_folder)
 
     defect_dict = defaultdict(list)
-    for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list):
+    for res, clip_image, clip_info in zip(res_list, clip_image_list, clip_info_list): # 数据提交
         for box in res:
             xmin, ymin, xmax, ymax, label_index, source, name = box
-            x, y, w, h = clip_info
+            # x, y, w, h = clip_info
+            x,y = 0, 0
             defect_dict[name].append((x + xmin, y + ymin, x + xmax, y + ymax, label_index, source))
     commit_defects(defect_dict, data_integration)
 

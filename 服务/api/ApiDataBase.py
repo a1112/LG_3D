@@ -1,5 +1,6 @@
 import datetime
 import json
+from collections import defaultdict
 
 from fastapi import APIRouter
 
@@ -8,7 +9,7 @@ import Globs
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
-from CoilDataBase.models import AlarmInfo,SecondaryCoil
+from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect
 from property.ServerConfigProperty import ServerConfigProperty
 from utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
@@ -58,8 +59,16 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
         for childrenAlarmInfo in secondary_coil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
             c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
+        c_data["defects"] =defaultdict(list)
+        for childrenCoilDefect in secondary_coil.childrenCoilDefect:
+            childrenCoilDefect: CoilDefect
+            c_data["defects"][childrenCoilDefect.surface] .append(childrenCoilDefect)
+    # del secondary_coil.childrenCoilDefect
+    # del secondary_coil.childrenAlarmInfo
     c_data.update(get_coil_item_info(secondary_coil))
-    c_data["defects"] = secondary_coil.childrenCoilDefect   # 返回缺陷数据
+    # c_data["defects"] = secondary_coil.childrenCoilDefect
+
+    # c_data["defects"] = secondary_coil.childrenCoilDefect   # 返回缺陷数据
     return c_data
 
 def format_coil_info(secondary_coil_list):
@@ -74,6 +83,7 @@ async def get_coil(number: int,coil_id=None):
     """
         获取 n 条数据
     """
+    number= min(number, 1000)
     return format_coil_info(Coil.get_coil_list(number,coil_id, by_coil=isLoc)[::-1])
 
 

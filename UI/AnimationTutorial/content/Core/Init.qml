@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-    property int init_num: 200
+    property int init_num: 150
 
     function initDefectDict(defectDictData){
         // 初始化 缺陷图谱
@@ -44,6 +44,7 @@ Item {
 
 
     function flushList(){
+
         api.getInfo((result)=>{
             initApp(JSON.parse(result))
         },(error)=>{
@@ -51,6 +52,7 @@ Item {
         })
         coreModel.coilListModel.clear()
         api.getCoilList(init_num,(result)=>{
+                             console.log("init_num")
                         initCoilByData(JSON.parse(result))
                         },(error)=>{
                             console.log("error")

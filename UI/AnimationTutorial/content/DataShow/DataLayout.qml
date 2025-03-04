@@ -11,13 +11,13 @@ ColumnLayout{
         Layout.fillWidth: true
         Layout.fillHeight: true
         orientation: Qt.Vertical
-
         DataHeaderView{
             SplitView.fillWidth: true
             SplitView.preferredHeight: coreSetting.dataHeaderHeight//260
         }
 
-        DataShowRootLayout{     // <----------
+        DataShowRootLayout{
+        // <----------
         // SplitView.fillWidth: true
         // SplitView.fillHeight:true
         }

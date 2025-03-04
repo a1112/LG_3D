@@ -7,6 +7,10 @@ Item {
 
     property int porintCount:0
 
+    property var eqMap:{
+    "defect_image":"image"
+    }
+
     property var port_assignments:{
         //  端口自动分配字典
         return {}
@@ -23,12 +27,14 @@ Item {
     }
 
     function get_key_port(key){
-
+        if (key in eqMap){
+            key=eqMap[key]
+        }
         if (key in port_assignments){
-            return server_port_base+ Math.max(port_assignments[key],server_port_count-1)
+            return server_port_base+ Math.min(port_assignments[key],server_port_count-1)
         }
         let hash_key = stringToHash(key)
-        port_assignments[key] = parseInt(hash_key%server_port_count)
+        port_assignments[key] = Math.abs(parseInt(hash_key%server_port_count))
         // _pre_port_value_+=1
         // if (_pre_port_value_>=server_port_count){
         //     _pre_port_value_=0

@@ -32,7 +32,8 @@ QtObject {
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
 
-    property ListModel defectsData : ListModel{}
+    property var defectsData
+
 
     function checkDefectShow(fliterDict){
         for (let i=0;i<defectsData.count;i++ ){
@@ -72,6 +73,8 @@ QtObject {
         nextInfo = coil.NextInfo
         nextCode = coil.NextCode
 
+
+
         for (let key in coil.AlarmInfo){
             if (key=="S"){
                 alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo[key])
@@ -81,9 +84,10 @@ QtObject {
             }
 
         }
-        defectsData = coil.defects
+        defectsData = coil.childrenCoilDefect  // 全部缺陷
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
+
         initMaxLevelDefect()
     }
 
@@ -115,6 +119,7 @@ QtObject {
             return Material.color(Material.Red)
         }
     }
+
     function initMaxLevelDefect(){
         tool.for_list_model(defectsData,(defect)=>{
                     let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
