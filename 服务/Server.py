@@ -9,6 +9,7 @@ from utils.StdoutLog import Logger
 
 from CONFIG import serverConfigProperty
 from api import app
+
 Logger("服务")
 # 参数服务
 from api import ApiInfo
@@ -34,7 +35,9 @@ from api import ApiTest
 # 参数设置
 from api import ApiSettings
 
+
 # from api import ApiDocs
+
 
 class ServerProcess(Thread):
     def __init__(self, port):
@@ -48,7 +51,7 @@ class ServerProcess(Thread):
 if __name__ == '__main__':
     freeze_support()
     print(f"server main start count {serverConfigProperty.server_count} base_point {serverConfigProperty.server_port}")
-    server_llist=[]
+    server_llist = []
     for port_ in range(serverConfigProperty.server_count):
         server_llist.append(ServerProcess(serverConfigProperty.server_port + port_))
     for server in server_llist:

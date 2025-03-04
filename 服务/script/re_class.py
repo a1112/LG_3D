@@ -1,6 +1,7 @@
 from pathlib import Path
 import socket
-
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 import shutil
 from pathlib import Path
 import concurrent.futures
@@ -30,14 +31,20 @@ def classifiers_folder(from_folder, out_folder, file_func):
         file_folder = Path(file_folder)
         print(file_folder)
         if not file_folder.is_dir():
+            print(f"file_folder.is_dir {file_folder}")
             continue
         class_name = file_folder.name
-        files = list(file_folder.glob("*.png"))
-        res_index, res_source, names = ccm.predict_image(files)
-        do_files(files, class_name, names, out_folder, file_func)
+        files = list(file_folder.glob("*.*"))
+        file_len = len(files)
+        count_len = 640
+        for i in range(file_len//count_len):
+            print(i)
+            files_c = files[i*count_len:(i+1)*count_len]
+            res_index, res_source, names = ccm.predict_image(files_c)
+            do_files(files_c, class_name, names, out_folder, file_func)
 
 
-from_ = Path(fr"E:\detection_save6\classifier")
+from_ = Path(fr"I:\detection_save6\classifier")
 out_ = from_.parent / "classifier_out"
 func = shutil.move
 if socket.gethostname() == "lcx_ace":

@@ -40,7 +40,7 @@ class SickCamera:
 
     def getBDconfig(self):
         bdData = {}
-        for key in ["CoordinateA","CoordinateB","CoordinateC"]:
+        for key in ["CoordinateA", "CoordinateB", "CoordinateC"]:
             self.camera.remote_device.node_map.Scan3dCoordinateSelector.value = key
             bdData[key] = {
                 "Scan3dCoordinateOffset": self.camera.remote_device.node_map.Scan3dCoordinateOffset.value,

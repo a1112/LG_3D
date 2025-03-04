@@ -27,7 +27,7 @@ class CapTureBase(Thread):
 
 
 class CapTure2D(CapTureBase):
-    def __init__(self, dataSave:ImageDataSave, camera, parent, cameraInfo):
+    def __init__(self, dataSave: ImageDataSave, camera, parent, cameraInfo):
         super().__init__(dataSave, camera, parent, cameraInfo)
         pass
 
@@ -45,12 +45,14 @@ class CapTure2D(CapTureBase):
                         try:
                             coil = self.parent.coil
                             if coil is None:
-                                print(f"coil 为空: ",self.parent.coil)
+                                print(f"coil 为空: ", self.parent.coil)
                                 time.sleep(0.1)
                                 coil = 1
 
                             area_cap = self.camera.get_last_frame()
                             bf = DaHengBuffer(area_cap)
+
+
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(coil)
                             self.dataSave.put(bf)
@@ -60,6 +62,7 @@ class CapTure2D(CapTureBase):
             except BaseException as e:
                 logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
                 time.sleep(5)
+
 
 class CapTure3D(CapTureBase):
     def __init__(self, dataSave:ImageDataSave, camera, parent, cameraInfo):

@@ -52,7 +52,11 @@ class CoilClsModel:
         image_cache: torch.Tensor = torch.Tensor().to(self.device)
         for index, img_ in list(enumerate(image_list)):
             if isinstance(img_, (str, WindowsPath)):
-                img_ = Image.open(img_)
+                try:
+                    img_ = Image.open(img_)
+                except BaseException as e:
+                    print(e)
+                    continue
             tensor = self.image_to_tensor(img_)
             tensor = tensor.to(self.device)
             image_cache = torch.cat([image_cache, tensor[None]])
