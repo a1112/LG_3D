@@ -34,7 +34,6 @@ CardBase{
         currentIndex: leftCore.searchPageIndex
         width: root.width-5
         id:swipe
-
         onCurrentIndexChanged: {
             leftCore.searchPageIndex = currentIndex
             max_height = [95,130,95][currentIndex]

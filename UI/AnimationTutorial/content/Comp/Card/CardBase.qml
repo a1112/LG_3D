@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
@@ -6,16 +6,17 @@ import "../../animation"
 Item {
     id:root
     property alias title: title_id.text
+    property bool title_vis: title_id.visible
     property alias content_head_tool: title_row.children
     property alias content_body: content_row.children
     property bool isShow: true
     property bool showError:false
     height: isShow? max_height : 35
-    SplitView.preferredHeight:isShow?max_height:35
-
-
+    SplitView.preferredHeight: isShow?max_height:35
     onIsShowChanged:{
-        content_body.visible=isShow
+        content_body.visible = isShow
+        content_row.width += 1
+        content_row.width -= 1
     }
     property int max_height: 120
     // height:columnLayout.height
@@ -75,8 +76,6 @@ Item {
                     root.isShow=!root.isShow
                 }
             }
-
-
         }
         ColumnLayout{
         id:content_row

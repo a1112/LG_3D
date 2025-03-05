@@ -7,15 +7,15 @@ Item {
     property alias font: cetLabel.font
     property alias text: cetLabel.text
     property bool checked: true
-    width: cetLabel.width+25
-    property var checkColor: Material.color(Material.Blue)
+    width: cetLabel.width + 25
+    property color checkColor: Material.color(Material.Blue)
     property alias color:cetLabel.color
     property int typeIndex: 0
     property bool fillWidth: false
     property int fillWidthWidth: 1
     signal clicked
     // height: root.height-12
-        height:30
+    height:30
     Pane{
         anchors.centerIn: parent
         width: parent.width
@@ -30,7 +30,8 @@ Item {
         height: 2
         anchors.top: parent.top
         color: item.checkColor
-        visible: item.checked && !item.fillWidth
+        visible: item.checked && ! item.fillWidth
+
     }
     Rectangle{
         anchors.horizontalCenter: parent.horizontalCenter
@@ -38,6 +39,7 @@ Item {
         height: 2
         anchors.bottom: parent.bottom
         color: item.checkColor
+
         visible: item.checked && !item.fillWidth
     }
 
@@ -47,26 +49,25 @@ Item {
         color:"transparent"
         border.color: item.checkColor
         border.width: item.fillWidthWidth
+
     }
-ItemDelegate{
-
-    height: parent.height
-    font.bold: true
-    font.pixelSize: 15
-    id:itemDelegate
-    anchors.fill:parent
-    onClicked: {
-    item.checked = !item.checked
-        item.clicked()
+    ItemDelegate{
+        height: parent.height
+        font.bold: true
+        font.pixelSize: 15
+        id:itemDelegate
+        anchors.fill:parent
+        onClicked: {
+            item.checked = !item.checked
+            item.clicked()
+        }
     }
-}
 
-Label{
-id:cetLabel
-
-font.bold: true
-font.pointSize: 14
-anchors.centerIn:parent
-}
+    Label{
+        id:cetLabel
+        font.bold: true
+        font.pointSize: 14
+        anchors.centerIn:parent
+    }
 
 }

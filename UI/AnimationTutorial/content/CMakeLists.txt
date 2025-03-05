@@ -7,6 +7,7 @@ qt_add_library(content STATIC)
 file(GLOB_RECURSE QML_FILES_ABS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.qml"
 )
+
 # 创建一个变量用于存储相对路径
 set(QML_FILES)
 
@@ -40,6 +41,5 @@ qt6_add_qml_module(content
         fonts/fonts.txt
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
-
 
     )
