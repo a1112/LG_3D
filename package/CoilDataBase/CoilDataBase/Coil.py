@@ -325,6 +325,11 @@ def get_line_data(coil_id, surface_key=None):
             que = que.filter(LineData.surface == surface_key)
         return que.all()
 
+def get_coil_status_by_coil_id(coil_id):
+    with Session() as session:
+        que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
+        return que.first()
+
 list_data_keys={
     "二级内径":SecondaryCoil.CoilInside,
     "二级卷径":SecondaryCoil.CoilDia,

@@ -99,5 +99,6 @@ async def get_classifier_image(coil_id,surface_key,class_name,x,y,w,h):
     url = serverConfigProperty.get_classifier_image(coil_id, surface_key,class_name,x,y,w,h)
     return FileResponse(str(url), media_type="image/jpg")
 
+
 app.include_router(router)
 

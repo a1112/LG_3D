@@ -9,6 +9,7 @@ import Globs
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
+from CoilDataBase.Coil import get_coil_status_by_coil_id
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect
 from property.ServerConfigProperty import ServerConfigProperty
 from utils import Hardware, Backup, export
@@ -253,5 +254,10 @@ async def get_point_data(coil_id: int, surface_key: str):
 async def get_line_data(coil_id: int, surface_key: str):
     surface_key = get_surface_key(surface_key)
     return tool.to_dict(Coil.get_line_data(coil_id, surface_key))
+
+
+@router.get("/check/coilStatus/{coil_id:int}")
+async def get_coil_status(coil_id):
+    return tool.to_dict( get_coil_status_by_coil_id(coil_id))
 
 app.include_router(router)

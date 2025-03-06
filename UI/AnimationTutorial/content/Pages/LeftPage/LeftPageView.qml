@@ -11,7 +11,6 @@ import "SearchView"
 import "FliterSelect"
 
 
-
 Item {
     id:root
     Pane{

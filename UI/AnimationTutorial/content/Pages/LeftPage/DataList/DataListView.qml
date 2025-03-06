@@ -44,6 +44,7 @@ Item{
         onPointChanged: {
             leftCore.hoverPoint = Qt.point(point.position.x,point.position.y+100) // point.position
         }
+
         onHoveredChanged: {
             if(hovered){
                 leftCore.isHoved = true

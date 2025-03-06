@@ -22,6 +22,7 @@ CoilDataBase/models/CapTrueLog.py
 CoilDataBase/models/CapTrueLogItem.py
 CoilDataBase/models/Coil.py
 CoilDataBase/models/CoilAlarmStatus.py
+CoilDataBase/models/CoilCheck.py
 CoilDataBase/models/CoilDefect.py
 CoilDataBase/models/CoilState.py
 CoilDataBase/models/DataEllipse.py

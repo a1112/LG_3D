@@ -26,6 +26,7 @@ AppBase {
     MainLayout{ //          入口 <-
         anchors.fill: parent
     }
+
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息
     property Api api: Api{}     //    服务器 接口访问
     property Global global:Global{}  // 全局功能

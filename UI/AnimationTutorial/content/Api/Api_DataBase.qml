@@ -150,4 +150,13 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coil_list_value_change_keys"),success,failure)
     }
 
+    function getCoilStatus(coil_id){
+        return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"get_coil_status",coil_id),success,failure)
+    }
+
+    function setCoilStatus(coil_id, status, msg)
+    {
+         return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"set_coil_status",coil_id, msg),success,failure)
+    }
+
 }

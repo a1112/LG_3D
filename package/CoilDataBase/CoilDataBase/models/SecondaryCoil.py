@@ -39,6 +39,7 @@ class SecondaryCoil(Base):
     childrenLineData = relationship("LineData", back_populates="parent")
     childrenPointData = relationship("PointData", back_populates="parent")
     childrenAlarmFlatRollData = relationship("AlarmFlatRollData", back_populates="parent")
+    childrenCoilCheck = relationship("CoilCheck", back_populates="parent")
 
     def get_json(self):
         return {

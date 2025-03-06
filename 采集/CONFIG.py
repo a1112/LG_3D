@@ -29,21 +29,31 @@ elif "CapTure" in sys.executable:
     configFile = CONFIG_DIR/fr"{Path(sys.executable).stem}.json"
 
 class CameraConfig(object):
-    def __init__(self, config):
+    def __init__(self, config, cap3D = True, cap2D = True):
         self.config = config
         def get_item_config(item,key,default):
             try:
                 return item[key]
             except KeyError:
                 return default
+        if "cap3D" in self.config:
+            self.cap3D = self.config["cap3D"]
+        else:
+            self.cap3D=self.config["cap3D"]=cap3D
 
+        if "cap2D" in self.config:
+            self.cap2D = self.config["cap2D"]
+        else:
+            self.cap2D=self.config["cap2D"]=cap2D
         self.sn = config["sn"]
         self.name=config["name"]
         self.saveFolder= Path(config["saveFolder"])
         self.key=config["key"]
         self.serverIp=config["serverIp"]
         self.serverPort=config["serverPort"]
-        self.yaml_config = get_item_config(config,"yaml_config",None)
+        self.yaml_config = get_item_config(config,"yaml_config",None)  # 2D 图像 采集的 参数
+
+
 
     def __iter__(self):
         return iter(self.config)

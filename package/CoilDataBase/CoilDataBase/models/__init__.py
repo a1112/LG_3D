@@ -22,3 +22,4 @@ from .SecondaryCoil import SecondaryCoil
 from .ServerDetectionError import ServerDetectionError
 from .TaperShapePoint import TaperShapePoint
 from .ImageJoinLog import ImageJoinLog
+from .CoilCheck import CoilCheck
