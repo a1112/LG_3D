@@ -75,7 +75,7 @@ class SickCamera:
         # 清理资源，例如关闭相机
         self.release()
 
-class DaHengCamera(Thread):
+class DaHengCamera(Process):
     def __init__(self, yaml_config):
         super().__init__()
         self.yaml_config = yaml_config
@@ -90,6 +90,7 @@ class DaHengCamera(Thread):
     def run(self):
         print(self.yaml_config)
         self.capter = crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
+
         while True:
             try:
                 with self.capter as cap:

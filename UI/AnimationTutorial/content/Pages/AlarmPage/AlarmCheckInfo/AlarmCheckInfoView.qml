@@ -10,6 +10,10 @@ CardBase {
     title: "判级"
     property int currentPortInt: 0
 
+    function setCurrentPortInt(currentPortInt){
+        currentPortInt = currentPortInt
+    }
+
     // title_vis:false
     content_body: Item{
         RowLayout{

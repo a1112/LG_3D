@@ -7,7 +7,6 @@ from ._base_ import Base
 class Coil(Base):
     """
     检测数据
-
     """
     __tablename__ = 'Coil'
     Id = Column(Integer, primary_key=True, autoincrement=True)

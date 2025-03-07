@@ -24,14 +24,20 @@ Item {
         }else if(level>=3){
             return "../../../icons/warning_1.png"
         }
-
     }
 
     property string nullCoilString: "无数据"
     property string nullAlarmString: "未识别"
     property string detectionStatuColor:
-        !hasCoilData?Material.color(Material.Grey):
-        !hasAlarmData?Material.color(Material.Yellow):
+        !hasCoilData?
+
+
+            Material.color(Material.Grey)
+
+
+                    :
+        !hasAlarmData?Material.color(Material.Yellow)
+                     :
         "#5AEDFF"
 
     property ListModel alarmNodel:

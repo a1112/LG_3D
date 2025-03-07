@@ -31,6 +31,9 @@ QtObject {
 
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
+    property CoilCheck coilCheck: CoilCheck{
+
+    }
 
     property var defectsData
 
@@ -72,9 +75,6 @@ QtObject {
         coilMsg = coil.Msg
         nextInfo = coil.NextInfo
         nextCode = coil.NextCode
-
-
-
         for (let key in coil.AlarmInfo){
             if (key=="S"){
                 alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo[key])
@@ -82,13 +82,14 @@ QtObject {
             if (key=="L"){
                 alarmItemInfo_L.setAlarmInfo(coil.AlarmInfo[key])
             }
-
         }
+
         defectsData = coil.childrenCoilDefect  // 全部缺陷
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
 
         initMaxLevelDefect()
+        coilCheck.init(coil.childrenCoilCheck)
     }
 
     function getDefectNameList(){
@@ -129,7 +130,6 @@ QtObject {
                                     }
                                 }
                             })
-
         return maxDefect.defectName
     }
 

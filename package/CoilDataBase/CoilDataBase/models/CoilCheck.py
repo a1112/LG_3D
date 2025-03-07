@@ -6,6 +6,7 @@ from ._base_ import Base
 class CoilCheck(Base):
     __tablename__ = 'CoilCheck'
     Id = Column(Integer, primary_key=True, autoincrement=True)
+
     secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'))
 
     status = Column(Integer)

@@ -57,9 +57,10 @@ def get_join_query(session: Session, by_coil = True):
         session: Session
         by_coil:
     """
-    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo), # 塔形报警
-                                                 subqueryload(SecondaryCoil.childrenCoil),       # 二级数据
-                                                 subqueryload(SecondaryCoil.childrenCoilDefect)  # 缺陷数据
+    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo),   # 塔形报警
+                                                 subqueryload(SecondaryCoil.childrenCoil),        # 二级数据
+                                                 subqueryload(SecondaryCoil.childrenCoilDefect),  # 缺陷数据
+                                                 subqueryload(SecondaryCoil.childrenCoilCheck)    # 检测
                                                  )
     if by_coil:
         last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
