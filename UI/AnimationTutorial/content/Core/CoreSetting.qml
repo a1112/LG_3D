@@ -14,6 +14,7 @@ Item {
 
     property string server_ip: "127.0.0.1"
     property int server_port: 5010
+    property int server_port_count: 10
 
     property int databasPort: 6011
     property int imageServerPort: 6012
@@ -41,6 +42,7 @@ Item {
 
         property alias server_ip: root.server_ip
         property alias server_port: root.server_port
+        property alias server_port_count: root.server_port_count
         property alias databasPort: root.databasPort
         property alias imageServerPort: root.imageServerPort
         property alias dataPort: root.dataPort

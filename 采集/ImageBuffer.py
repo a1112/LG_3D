@@ -6,24 +6,20 @@ from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 
 
 class BufferBase:
+    pass
+
     def __init__(self):
-        self.bdConfig = None
-        self.save_index = 0
+        self.coilData: SecondaryCoil|None = None
         self.coilId = None
-        self.coilData: SecondaryCoil | None = None
-        self.data2D_mean = 0
-        self.data3D_mean = 0
-        self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
-        self.area_cap = None
-
-    def setBDconfig(self, bdConfig):
-        self.bdConfig = bdConfig
-
+        
+    def setCoil(self, coil_data: SecondaryCoil):
+        self.coilData = coil_data
+        self.coilId = str(coil_data.Id)
 
 class SickBuffer(BufferBase):
     def __init__(self, buffer):
         super().__init__()
-
+        self.bdConfig = None
         buffer: Buffer
         self.timestamp = buffer.timestamp
         self.timestamp_frequency = buffer.timestamp_frequency
@@ -31,10 +27,15 @@ class SickBuffer(BufferBase):
         self.height = buffer.payload.components[0].height
         self.data3D: np.array = buffer.payload.components[0].data.reshape((self.height, self.width)).copy()
         self.data2D: np.array = buffer.payload.components[1].data.reshape((self.height, self.width)).copy()
+        self.save_index = 0
 
-    def setCoil(self, coil_data: SecondaryCoil):
-        self.coilData = coil_data
-        self.coilId = str(coil_data.Id)
+
+        self.data2D_mean = 0
+        self.data3D_mean = 0
+        self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
+        self.area_cap = None
+
+
 
     def get_json(self):
         js_data = {
@@ -54,10 +55,16 @@ class SickBuffer(BufferBase):
             js_data["bdConfig"] = self.bdConfig
         return js_data
 
+    def setBDconfig(self, bdConfig):
+        self.bdConfig = bdConfig
+
 
 class DaHengBuffer(BufferBase):
     def __init__(self, buffer):
         super().__init__()
-        self.buffer = buffer
+        self.buffer  = buffer
+        self.data2D = buffer
+        self.coilId = None
+        self.save_index = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
 

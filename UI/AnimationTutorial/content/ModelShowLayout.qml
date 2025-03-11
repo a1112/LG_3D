@@ -18,6 +18,7 @@ Item {
             Layout.fillWidth: true
             implicitHeight: coreStyle.topHeight
         }
+
         SplitView{
             Layout.fillWidth: true
             Layout.fillHeight: true

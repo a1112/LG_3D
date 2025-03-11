@@ -24,7 +24,6 @@ Item {
         color:Qt.lighter(defectItem.defectColor)
         background:Rectangle{
             color:"#88000000"
-
         }
     }
 

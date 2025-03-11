@@ -10,11 +10,9 @@ class CameraServer(Thread):
 
     def run(self):
         app = FastAPI()
-
         @app.get("/getListenerAddFile")
         def get_listener_add_file():
             return self.cap.getCreatedFile()
-
         uvicorn.run(app, host=self.cameraInfo.serverIp, port=self.cameraInfo.serverPort)
 
 

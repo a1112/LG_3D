@@ -1,13 +1,16 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import "../../Pages/Card"
 import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItemSimple"
+import "../../Pages/AlarmPage/AlarmCheckInfo"
 import "DataList"
 import "SearchView"
 import "FliterSelect"
+
+
 Item {
     id:root
     Pane{
@@ -33,6 +36,11 @@ Item {
         //     SplitView.fillWidth: true
         //     Layout.fillWidth: true
         // }
+        AlarmCheckInfoView{
+            max_height: 70
+            visible: true
+            width: parent.width
+        }
         AlarmItemSimple{
             visible:true
             width: parent.width
@@ -43,9 +51,11 @@ Item {
             Layout.fillWidth: true
             SplitView.fillWidth: true
         }
+
         FliterSelectView{
 
         }
+
         DataListView{
             SplitView.fillWidth: true
             SplitView.fillHeight: true
@@ -53,10 +63,12 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+
         FootView{
             SplitView.fillWidth: true
             SplitView.preferredHeight: 25
         }
+
     }
 
 

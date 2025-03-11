@@ -2,8 +2,8 @@ import QtQuick
 
 Item {
 
-    property var server_port_base: 5010
-    property int server_port_count:10
+    property var server_port_base: coreSetting.server_port
+    property int server_port_count:coreSetting.server_port_count
 
     property int porintCount:0
 
@@ -31,10 +31,11 @@ Item {
             key=eqMap[key]
         }
         if (key in port_assignments){
-            return server_port_base+ Math.min(port_assignments[key],server_port_count-1)
+            return server_port_base + Math.min(port_assignments[key], server_port_count-1)
         }
+
         let hash_key = stringToHash(key)
-        port_assignments[key] = Math.abs(parseInt(hash_key%server_port_count))
+        port_assignments[key] = Math.abs(parseInt(hash_key % server_port_count))
         // _pre_port_value_+=1
         // if (_pre_port_value_>=server_port_count){
         //     _pre_port_value_=0
@@ -43,9 +44,9 @@ Item {
     }
 
     function getAutoUrl(key){
-        return protocol+hostname+":"+get_key_port(key)
+        return protocol + hostname + ":" + get_key_port(key)
     }
     function getAutoWsUrl(key){
-        return ws_protocol+hostname+":"+server_port_base
+        return ws_protocol + hostname+ ":" + server_port_base
     }
 }

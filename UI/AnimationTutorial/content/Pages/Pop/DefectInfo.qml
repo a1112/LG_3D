@@ -11,7 +11,6 @@ Item {
     property var defectsData:coilModel.defectsData
     onDefectsDataChanged:{
         defectModel.clear()
-
         tool.for_list_model(defectsData,(defect)=>{
                     defectModel.append(defect)
                             })

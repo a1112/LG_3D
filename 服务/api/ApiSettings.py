@@ -3,6 +3,8 @@ import json
 from queue import Queue
 from threading import Thread
 
+from CoilDataBase.Coil import get_coil_status_by_coil_id
+
 from fastapi import APIRouter
 from fastapi import WebSocket
 

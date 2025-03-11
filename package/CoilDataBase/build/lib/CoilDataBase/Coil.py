@@ -195,7 +195,6 @@ def delete_coil(id_):
 def get_coil_list(num, coil_id=None, by_coil=True):
     with (Session() as session):
         query = get_join_query(session, by_coil=by_coil)
-
         if coil_id:
             query = query.filter(SecondaryCoil.Id > coil_id)
         return query.order_by(SecondaryCoil.Id.desc())[:num]
@@ -325,6 +324,11 @@ def get_line_data(coil_id, surface_key=None):
         if surface_key:
             que = que.filter(LineData.surface == surface_key)
         return que.all()
+
+def get_coil_status_by_coil_id(coil_id):
+    with Session() as session:
+        que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
+        return que.first()
 
 list_data_keys={
     "二级内径":SecondaryCoil.CoilInside,
