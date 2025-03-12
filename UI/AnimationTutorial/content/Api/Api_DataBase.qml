@@ -71,7 +71,6 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects",coilId,key),success,failure)
     }
     function getDefectDict(success,failure){
-        console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"))
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"),success,failure)
     }
     function setDefecctClassConfig(data,success,failure){
@@ -150,13 +149,13 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coil_list_value_change_keys"),success,failure)
     }
 
-    function getCoilStatus(coil_id){
-        return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"get_coil_status",coil_id),success,failure)
+    function getCoilStatus(coil_id,success,failure){
+        return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"check","get_coil_status",coil_id),success,failure)
     }
 
-    function setCoilStatus(coil_id, status, msg)
+    function setCoilStatus(coil_id, status, msg,success,failure)
     {
-         return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"set_coil_status",coil_id, msg),success,failure)
+         return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"check","set_coil_status",coil_id,status, msg),success,failure)
     }
 
 }

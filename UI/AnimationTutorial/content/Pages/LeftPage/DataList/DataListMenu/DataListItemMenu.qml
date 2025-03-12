@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import "../../../../Model"
+import "../../../../Controls/Menu"
 Menu{
     id:lefeListMemu
     property CoilModel coilModel
@@ -88,12 +89,29 @@ Menu{
         // }
 
     }
-    MenuItem{
-        text: "查看原始返回数据"
-        onClicked:{
-            Qt.openUrlExternally(api.getSearchByCoilIdUrl(coilModel.coilId))
+
+    Menu{
+        title:qsTr("判断")
+
+        SelectMenuItem{
+
+                text: qsTr("返修")
+                selectdColor:Material.color(Material.Red)
+                selectd:coilModel.coilCheck.status == 2
+
+        }
+        SelectMenuItem{
+                text: qsTr("未确认")
+                selectdColor:Material.color(Material.Yellow)
+                selectd:coilModel.coilCheck.status == 0
+        }
+        SelectMenuItem{
+                    text: qsTr("通过")
+                    selectdColor:Material.color(Material.Green)
+                    selectd:coilModel.coilCheck.status == 1
         }
     }
+
     Menu{
         title:qsTr("工具")
         Menu{
@@ -115,6 +133,12 @@ Menu{
         }
         MenuItem{
             text: "重新检测该卷"
+        }
+        MenuItem{
+            text: "查看原始返回数据"
+            onClicked:{
+                Qt.openUrlExternally(api.getSearchByCoilIdUrl(coilModel.coilId))
+            }
         }
     }
 

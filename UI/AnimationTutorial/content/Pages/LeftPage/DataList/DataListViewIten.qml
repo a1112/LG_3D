@@ -32,8 +32,17 @@ DataListViewItenBase {
                     }
                     Label{
                         text:root.coilModel.coilNo
+
                         font.bold: true
                         font.pointSize: 12
+
+                        Rectangle{
+                            width:parent.width
+                            height:2
+                            anchors.top:parent.bottom
+                            color:coilModel.coilCheck.statusColor
+                        }
+
                     }
 
                     StateWrapper{

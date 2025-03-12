@@ -37,7 +37,7 @@ Item {
         //     Layout.fillWidth: true
         // }
         AlarmCheckInfoView{
-            max_height: 70
+
             visible: true
             width: parent.width
         }
