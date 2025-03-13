@@ -56,7 +56,7 @@ Item {
 
         }
 
-        DataListView{
+        DataListView{   // 左侧列表
             SplitView.fillWidth: true
             SplitView.fillHeight: true
             id:dataList

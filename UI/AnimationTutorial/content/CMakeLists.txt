@@ -42,5 +42,4 @@ qt6_add_qml_module(content
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
 
-
     )

@@ -2,6 +2,13 @@ import QtQuick
 import "../Model"
 
 Item {
+
+
+    property int userErrCoilCount:0
+    property int userUnowCoilCount:0
+    property int userOkCoilCount:0
+
+
     property int hovedCoilId: 0
     property bool searchViewShow: true
 

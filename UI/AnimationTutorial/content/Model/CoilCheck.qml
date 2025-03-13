@@ -4,7 +4,7 @@ Item {
     property var coilCheck
     property int coilId: 0  // 二级ID
     property color statusColor:
-                status==0?"yellow":status==2?"red":"green"
+                status==0?"#00000000":status==2?"red":"green"
     property int status:0
             /*
                 0：   未标注

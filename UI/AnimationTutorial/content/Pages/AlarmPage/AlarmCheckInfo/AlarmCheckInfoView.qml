@@ -60,7 +60,6 @@ CardBase {
     // title_vis:false
     content_body: ColumnLayout{
         width :root.width
-
         RowLayout{
             //width :root.width
             Layout.fillWidth:true
@@ -121,5 +120,10 @@ CardBase {
             // width :root.width
             // height:20
         }
+    }
+
+    CheckLabel{
+        anchors.right:parent.right
+
     }
 }

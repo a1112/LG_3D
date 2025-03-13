@@ -37,8 +37,9 @@ DataListViewItenBase {
                         font.pointSize: 12
 
                         Rectangle{
-                            width:parent.width
-                            height:2
+                            width:parent.width/3
+                            anchors.horizontalCenter:parent.horizontalCenter
+                            height:3
                             anchors.top:parent.bottom
                             color:coilModel.coilCheck.statusColor
                         }

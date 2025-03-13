@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from ._base_ import Base
 
+
 class CoilCheck(Base):
     __tablename__ = 'CoilCheck'
     Id = Column(Integer, primary_key=True, autoincrement=True)
