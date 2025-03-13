@@ -11,27 +11,29 @@ Row {
         font.bold:true
         font.family:"Microsoft YaHei"
     }
+
     Label{
-        visible:!listItemCoil.hasAlarmData
+        visible: !listItemCoil.hasAlarmData
         text: listItemCoil.nullAlarmString
-        color:Material.color(Material.Lime)
-        font.bold:true
-        font.family:"Microsoft YaHei"
+        color: Material.color(Material.Lime)
+        font.bold: true
+        font.family: "Microsoft YaHei"
     }
+
     Row{
             spacing:10
             visible:listItemCoil.hasCoilData && listItemCoil.hasAlarmData
 
             Label{
                 text: coilModel.maxDefect.defectName
-                font.pointSize:9
+                width:60
+                font.pointSize: 9
                 color:  coilModel.defectErrorColor  //Material.color(Material.Green)
-                font.bold:true
-                font.family:"Microsoft YaHei"
+                font.bold: true
+                font.family: "Microsoft YaHei"
             }
         AlarmRectangleItem{
             anchors.verticalCenter:parent.verticalCenter
-
             level:Math.max(
                       listItemCoil.flatRollGrad,
                       listItemCoil.taperShapeGrad,

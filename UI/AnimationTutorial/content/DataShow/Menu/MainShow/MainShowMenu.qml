@@ -5,6 +5,7 @@ Menu {
     MenuItem{
         text:"打开URL..."
         onClicked:{
+            console.log(dataShowCore.source)
             Qt.openUrlExternally(dataShowCore.source)
         }
     }

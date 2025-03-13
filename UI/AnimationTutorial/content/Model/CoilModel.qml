@@ -31,6 +31,7 @@ QtObject {
 
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
+
     property CoilCheck coilCheck: CoilCheck{
 
     }

@@ -10,7 +10,14 @@ Item {
     visible:leftCore.fliterEnable? coilModel.checkDefectShow(leftCore.fliterDict) :true
 
     property bool isCurrentIndex: index == core.coilIndex
+    onIsCurrentIndexChanged:{
+        if (isCurrentIndex){
+        core.currentCoilModel = coilModel
+            }
+    }
+
     property  CoilModel coilModel: CoilModel{}  // 数据
+
     Component.onCompleted:{
         coilModel.init(model)
     }

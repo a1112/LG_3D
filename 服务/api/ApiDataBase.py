@@ -9,7 +9,7 @@ import Globs
 from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
-from CoilDataBase.Coil import get_coil_status_by_coil_id
+from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect
 from property.ServerConfigProperty import ServerConfigProperty
 from utils import Hardware, Backup, export
@@ -60,7 +60,7 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
         for childrenAlarmInfo in secondary_coil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
             c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
-        c_data["defects"] =defaultdict(list)
+        c_data["defects"] = defaultdict(list)
         for childrenCoilDefect in secondary_coil.childrenCoilDefect:
             childrenCoilDefect: CoilDefect
             c_data["defects"][childrenCoilDefect.surface] .append(childrenCoilDefect)
@@ -258,11 +258,16 @@ async def get_line_data(coil_id: int, surface_key: str):
 
 @router.get("/check/get_coil_status/{coil_id:int}")
 async def get_coil_status(coil_id):
-    return tool.to_dict( get_coil_status_by_coil_id(coil_id))
+    item = tool.to_dict(get_coil_status_by_coil_id(coil_id))
+    if not item:
+        item = {"status":0,"msg":"","secondaryCoilId":coil_id,"Id":-1}
+    return item
 
-@router.get("/check/set_coil_status/{coil_id:int}/{status:int}/{}")
-async def get_coil_status(coil_id):
-    return tool.to_dict( get_coil_status_by_coil_id(coil_id))
+
+@router.get("/check/set_coil_status/{coil_id:int}/{status:int}/{msg:str}")
+@router.get("/check/set_coil_status/{coil_id:int}/{status:int}")
+async def set_coil_status(coil_id, status, msg=""):
+    set_coil_status_by_data(coil_id, status, msg)
 
 
 app.include_router(router)

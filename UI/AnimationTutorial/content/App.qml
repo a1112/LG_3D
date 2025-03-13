@@ -45,6 +45,10 @@ AppBase {
     property CoreSignal coreSignal :CoreSignal{}
     property CoreState coreState: CoreState{}
     readonly property AdaptiveViewBase adaptive:coreStyle.currentAdaptive
+
+    property CoreControl coreControl: CoreControl{
+
+    }
 }
 
 

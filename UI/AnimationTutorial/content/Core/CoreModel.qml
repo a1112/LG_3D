@@ -16,6 +16,7 @@ CoreModel_ {
     function listToRealModel(){
         currentCoilListIndex=0
     }
+
     function listToHistoryModel(){
         currentCoilListIndex=1
     }

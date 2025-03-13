@@ -30,8 +30,6 @@ Item {
     property string nullAlarmString: "未识别"
     property string detectionStatuColor:
         !hasCoilData?
-
-
             Material.color(Material.Grey)
 
 
