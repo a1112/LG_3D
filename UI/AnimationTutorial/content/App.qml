@@ -49,6 +49,7 @@ AppBase {
     property CoreControl coreControl: CoreControl{
 
     }
+    property Script autoScript:Script{}
 }
 
 

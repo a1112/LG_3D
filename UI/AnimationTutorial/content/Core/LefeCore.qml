@@ -3,7 +3,7 @@ import "../Model"
 
 Item {
 
-
+    // 数据统计
     property int userErrCoilCount:0
     property int userUnowCoilCount:0
     property int userOkCoilCount:0
@@ -12,10 +12,10 @@ Item {
     property int hovedCoilId: 0
     property bool searchViewShow: true
 
-    property string leftMsg:""
+    property string leftMsg: ""
 
-    property bool fliterEnable:false    // 对 list 界面 进行 筛选
-    onFliterEnableChanged:{
+    property bool fliterEnable: false    // 对 list 界面 进行 筛选
+    onFliterEnableChanged: {
         flushFliter()
     }
 
