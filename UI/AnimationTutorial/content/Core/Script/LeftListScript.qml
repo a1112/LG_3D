@@ -16,7 +16,7 @@ Item {
         tool.for_list_model(listModel,
                             (item)=>{
                                 let childrenCoilCheck = item["childrenCoilCheck"]
-                                if (childrenCoilCheck.count<0){
+                                if (childrenCoilCheck.count<1){
                                     leftCore.userUnowCoilCount+=1
                                 }
 
@@ -34,7 +34,6 @@ Item {
                                                             leftCore.userErrCoilCount+=1
                                                         }
                                                     }
-
                                                     )
                             })
 

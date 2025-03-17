@@ -6,11 +6,9 @@ Column {
     Row{
         spacing:2
         BaseLabel{
-
             text:leftCore.userErrCoilCount
             color:"red"
             ToolTip.text:"返修"
-
         }
         BaseLabel{
             text:leftCore.userUnowCoilCount
