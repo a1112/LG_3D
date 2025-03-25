@@ -20,4 +20,5 @@ class DefectCheck(Base):
     msg = Column(Text)
 
 
-    # parent = relationship("SecondaryCoil", back_populates="childrenDefectCheck")
+    parent = relationship("SecondaryCoil", back_populates="childrenDefectCheck")
+    parent_defect = relationship("CoilDefect", back_populates="childrenDefectCheck")

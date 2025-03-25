@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "DataShowItem"
 Loader{
+    // 头部信息显示
     asynchronous: true
     sourceComponent:RowLayout{
         Layout.fillWidth: true
