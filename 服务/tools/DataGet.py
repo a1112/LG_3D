@@ -41,6 +41,7 @@ class DataGet:
         self.coil_id = coil_id
         self.type_ = type_
         self.mask = mask
+        self.url = self.get_source()
 
     def get_source(self):
         if self.sourceType == "preview":

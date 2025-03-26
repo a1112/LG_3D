@@ -37,8 +37,11 @@ class SurfaceConfigProperty:
 
     def get_classifier_image(self,coil_id,class_name,x,y,w,h):
         base_path = f"{self.saveFolder}/{coil_id}/classifier/{class_name}"
-        return str(Path(base_path).glob(f"{coil_id}_{x}_{y}_*" + ".png").__next__())
-
+        try:
+            return str(Path(base_path).glob(f"{coil_id}_{x}_{y}_*" + ".png").__next__())
+        except StopIteration :
+            logging.error(f"{base_path} 没有找到 {coil_id}_{x}_{y}_*" + ".png")
+            raise StopIteration
 
     def get_mask_file(self, coil_id, type_):
         return f"{self.saveFolder}/{coil_id}/mask/{type_}" + ".png"
