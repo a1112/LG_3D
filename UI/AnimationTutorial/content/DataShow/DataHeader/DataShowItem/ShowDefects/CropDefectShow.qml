@@ -73,6 +73,7 @@ ItemDelegate {
                                               )
 
                     }
+
                 }
                 Rectangle{
                     border.width:1
@@ -82,24 +83,26 @@ ItemDelegate {
                     width:px_width*defectW
                     height:px_width*defectH
                 }
+
+                MouseArea{
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    anchors.fill:parent
+                    onClicked:{
+                        if (mouse.button == Qt.LeftButton){
+                            dataShowCore.view2DTool.setDefectShowView(defect)
+                        }
+                        if (mouse.button == Qt.RightButton)
+                        {
+                            dataShowCore.setToMinScale()
+                        }
+                    }
+
+                }
             }
             DefectInfos{
             }
         }
     }
-    MouseArea{
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        anchors.fill:parent
-        onClicked:{
-            if (mouse.button == Qt.LeftButton){
-                dataShowCore.view2DTool.setDefectShowView(defect)
-            }
-            if (mouse.button == Qt.RightButton)
-            {
-                dataShowCore.setToMinScale()
-            }
-        }
 
-    }
 }
 
