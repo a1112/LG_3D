@@ -21,4 +21,4 @@ class DefectCheck(Base):
 
 
     parent = relationship("SecondaryCoil", back_populates="childrenDefectCheck")
-    parent_defect = relationship("CoilDefect", back_populates="childrenDefectCheck")
+    parent_defect = relationship("CoilDefect", back_populates="children_defect_check")

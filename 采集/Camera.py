@@ -75,7 +75,7 @@ class SickCamera:
         # 清理资源，例如关闭相机
         self.release()
 
-class DaHengCamera(Process):
+class DaHengCamera(Thread): # Process
     def __init__(self, yaml_config):
         super().__init__()
         self.yaml_config = yaml_config
@@ -88,7 +88,7 @@ class DaHengCamera(Process):
         return self.frame_queue.get()
 
     def run(self):
-        print(self.yaml_config)
+        # print(self.yaml_config)
         self.capter = crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
 
         while True:

@@ -51,6 +51,8 @@ class CameraConfig(object):
         self.key=config["key"]
         self.serverIp=config["serverIp"]
         self.serverPort=config["serverPort"]
+
+
         self.yaml_config = get_item_config(config,"yaml_config",None)  # 2D 图像 采集的 参数
 
 
