@@ -29,7 +29,6 @@ if __name__ == '__main__':
     manager = multiprocessing.Manager()
     managerQueue = manager.Queue()
     from SplicingService.ImageMosaicThread import ImageMosaicThread
-    print("manager")
 
     loggerProcess = LoggerProcess(log_file="logs/app.log")
     loggerProcess.start()

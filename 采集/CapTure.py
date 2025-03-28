@@ -114,6 +114,8 @@ class CapTure(Thread):
 
     def set_camera_2d(self):
         if self.cameraInfo.cap2D:
+            # if self.cameraInfo.key not in ["Cap_L_D","Cap_L_U","Cap_L_M"]:
+            #     return None
             yaml_config = self.cameraInfo.yaml_config
             camera = DaHengCamera(yaml_config)
             return camera

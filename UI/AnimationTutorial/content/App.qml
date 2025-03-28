@@ -50,6 +50,9 @@ AppBase {
 
     }
     property Script autoScript:Script{}
+
+    Junp{
+    }
 }
 
 

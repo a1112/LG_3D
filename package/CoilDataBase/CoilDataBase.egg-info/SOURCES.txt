@@ -27,6 +27,7 @@ CoilDataBase/models/CoilDefect.py
 CoilDataBase/models/CoilState.py
 CoilDataBase/models/DataEllipse.py
 CoilDataBase/models/DeepPoint.py
+CoilDataBase/models/DefectCheck.py
 CoilDataBase/models/DefectClassDict.py
 CoilDataBase/models/DefectStatistics.py
 CoilDataBase/models/DetectionSpeed.py

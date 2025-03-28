@@ -12,16 +12,23 @@ Item{
             Layout.alignment:Qt.AlignHCenter
 
             CheckButtonOk{
-
+                visible:hovrHanller.hovered
             }
 
             Label{
                 text:defect.defect_name
                 font.pointSize: 20
+                MouseArea{
+                    anchors.fill:parent
+                    acceptedButtons:Qt.RightButton
+                    onClicked:{
+                        defectMenu.popup()
+                    }
+                }
             }
 
             CheckButtonNo{
-
+                visible:hovrHanller.hovered
             }
         }
         Item{
@@ -38,7 +45,6 @@ Item{
                     id:msgModel
                 }
                 delegate:RowItemView{
-
                 }
                 Component.onCompleted: {
                     msgModel.clear()
@@ -68,6 +74,17 @@ Item{
                                     })
                 }
             }
+        }
+    }
+
+    HoverHandler{
+        id : hovrHanller
+    }
+    Menu{
+        id: defectMenu
+        Repeater{
+            model : ""
+
         }
     }
 }

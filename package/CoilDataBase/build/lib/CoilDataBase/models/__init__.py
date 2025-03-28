@@ -1,5 +1,5 @@
-from ._base_ import Base
-from .AlarmFlatRoll import AlarmFlatRoll
+from ._base_ import Base                            # 基础包含
+from .AlarmFlatRoll import AlarmFlatRoll            #
 from .AlarmFlatRollData import AlarmFlatRollData
 from .AlarmInfo import AlarmInfo
 from .AlarmLooseCoil import AlarmLooseCoil
@@ -23,3 +23,4 @@ from .ServerDetectionError import ServerDetectionError
 from .TaperShapePoint import TaperShapePoint
 from .ImageJoinLog import ImageJoinLog
 from .CoilCheck import CoilCheck
+from .DefectCheck import DefectCheck

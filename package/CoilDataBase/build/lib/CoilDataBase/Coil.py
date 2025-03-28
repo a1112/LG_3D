@@ -30,7 +30,7 @@ def get_all_join_query(session: Session):
     )
 
 
-def get_all_join_data_by_id(start_id,end_id):
+def get_all_join_data_by_id(start_id, end_id):
     with Session() as session:
         return get_all_join_query(session).filter(SecondaryCoil.Id >= start_id,
                                                   SecondaryCoil.Id <= end_id).order_by(SecondaryCoil.Id.desc()).all()
@@ -39,7 +39,8 @@ def get_all_join_data_by_id(start_id,end_id):
 def get_all_join_data_by_num(num, maxsize=None):
     with Session() as session:
         if maxsize:
-            return get_all_join_query(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[:num]
+            return get_all_join_query(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[
+                   :num]
         return get_all_join_query(session).order_by(SecondaryCoil.Id.desc())[:num]
 
 
@@ -50,16 +51,17 @@ def get_all_join_data_by_time(start_time, end_time):
             SecondaryCoil.Id.desc()).all()
 
 
-def get_join_query(session: Session, by_coil = True):
+def get_join_query(session: Session, by_coil=True):
     """
         查询的返回数据
     Args:
         session: Session
         by_coil:
     """
-    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo), # 塔形报警
-                                                 subqueryload(SecondaryCoil.childrenCoil),       # 二级数据
-                                                 subqueryload(SecondaryCoil.childrenCoilDefect)  # 缺陷数据
+    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo),  # 塔形报警
+                                                 subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
+                                                 subqueryload(SecondaryCoil.childrenCoilDefect),  # 缺陷数据
+                                                 subqueryload(SecondaryCoil.childrenCoilCheck)  # 检测
                                                  )
     if by_coil:
         last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
@@ -212,7 +214,7 @@ def get_idlist_by_coil_no(coil_no, end_coil_no):
                                                       SecondaryCoil.CoilNo <= end_coil_no).all()
 
 
-def searchByCoilId(coil_id, end_coil_id = None):
+def searchByCoilId(coil_id, end_coil_id=None):
     with Session() as session:
         query = get_join_query(session)
         if end_coil_id:
@@ -241,9 +243,11 @@ def get_plc_data(coil_id):
     with Session() as session:
         return session.query(PlcData).filter(PlcData.secondaryCoilId == coil_id).order_by(PlcData.Id.desc()).first()
 
+
 def get_all_defects(coil_id):
     with Session() as session:
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id).all()
+
 
 def get_defects(coil_id, direction):
     with Session() as session:
@@ -325,19 +329,39 @@ def get_line_data(coil_id, surface_key=None):
             que = que.filter(LineData.surface == surface_key)
         return que.all()
 
+
 def get_coil_status_by_coil_id(coil_id):
     with Session() as session:
         que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
         return que.first()
 
-list_data_keys={
-    "二级内径":SecondaryCoil.CoilInside,
-    "二级卷径":SecondaryCoil.CoilDia,
-    "二级厚度":SecondaryCoil.Thickness,
+
+def set_coil_status_by_data(coil_id, status, msg):
+    with Session() as session:
+        que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
+        coil_check = que.all()
+        if coil_check:
+            coil_check = coil_check[0]
+            coil_check.status = status
+            coil_check.msg = msg
+        else:
+            session.add(CoilCheck(
+                secondaryCoilId=coil_id,
+                status=status,
+                msg=msg
+            ))
+
+        session.commit()
+
+
+list_data_keys = {
+    "二级内径": SecondaryCoil.CoilInside,
+    "二级卷径": SecondaryCoil.CoilDia,
+    "二级厚度": SecondaryCoil.Thickness,
     "宽度": SecondaryCoil.Width,
     "PLC位置信息": PlcData,
-    "缺陷":CoilDefect,
-    "距离平均":"",
-    "识别速度":"",
-    "生产间隔":""
+    "缺陷": CoilDefect,
+    "距离平均": "",
+    "识别速度": "",
+    "生产间隔": ""
 }

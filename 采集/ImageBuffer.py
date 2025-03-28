@@ -68,3 +68,9 @@ class DaHengBuffer(BufferBase):
         self.save_index = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
 
+    def if_save_index(self):
+        if self.save_index < 10:
+            return False
+        if self.save_index % 2:
+            return False
+        return True

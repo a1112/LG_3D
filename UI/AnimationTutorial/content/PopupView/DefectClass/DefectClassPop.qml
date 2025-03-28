@@ -17,8 +17,8 @@ PopupBase {
         // global.defectClassProperty.defectDictModel.set(index,list_item)
         // console.log("set_defect_dict_property",index,key,value)
         let name_ = global.defectClassProperty.defectDictModel.get(index)["name"]
-        console.log(global.defectClassProperty.defectDictModel.get(index)["color"])
-        console.log("name_ ",name_)
+        // console.log(global.defectClassProperty.defectDictModel.get(index)["color"])
+        // console.log("name_ ",name_)
         global.defectClassProperty.defectDictData[name_][key] = ""+value
         global.defectClassProperty.upDefectDictModelByDefectDictData()
     }
