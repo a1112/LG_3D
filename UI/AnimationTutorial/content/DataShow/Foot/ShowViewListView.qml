@@ -25,7 +25,7 @@ Item {
             sourceSize.height: parent.height
         }
         onClicked: {
-                surfaceData.rootViewIndex=0
+                surfaceData.rootViewIndex = 0
                 surfaceData.setViewSource(key)
         }
         onDoubleClicked: {

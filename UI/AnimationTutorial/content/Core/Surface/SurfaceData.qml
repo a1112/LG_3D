@@ -3,17 +3,18 @@ import "../../Model"
 Item {
     id:root
     property int rootViewIndex: 0
-    readonly property bool is2DrootView:rootViewIndex==0
-    readonly property bool is3DrootView:rootViewIndex==1
+    readonly property bool is2DrootView : rootViewIndex == 0
+    readonly property bool is3DrootView : rootViewIndex == 1
+    readonly property bool isAreaRootView : rootViewIndex == 2
 
     property  PointTool pointTool  : PointTool{}     //  处理数据点
     property CircleTool circleTool : CircleTool{}   //  处理 圆相关数据
     function rootViewto2D(){
-        rootViewIndex=0
+        rootViewIndex = 0
     }
 
     function rootViewto3D(){
-        rootViewIndex=1
+        rootViewIndex = 1
     }
 
     readonly property real scan3dScaleZ: 0.016229506582021713
@@ -24,8 +25,8 @@ Item {
 
 
     readonly property int mm_pointValueShowType: 0
-    readonly property int int_pointValueShowType:1
-    readonly property int mm_int_pointValueShowType:2
+    readonly property int int_pointValueShowType: 1
+    readonly property int mm_int_pointValueShowType: 2
 
     property int currentPointValueShowType:mm_pointValueShowType
 
