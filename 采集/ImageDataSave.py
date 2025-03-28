@@ -77,10 +77,10 @@ class ImageDataSave(Thread):
 
     def save_area_2d(self, buffer):
         buffer: DaHengBuffer
-        save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.jpg"
-        print(save_file)
-        save_file.parent.mkdir(parents=True, exist_ok=True)
-        Image.fromarray(buffer.data2D).save(str(save_file))
+        if buffer.if_save_index():
+                save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.jpg"
+                save_file.parent.mkdir(parents=True, exist_ok=True)
+                Image.fromarray(buffer.data2D).save(str(save_file))
 
     def save2_d(self, buffer):
         save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.bmp"
