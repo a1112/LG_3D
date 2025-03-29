@@ -7,6 +7,7 @@ import "../Foot"
 
 import "../Core"
 HeaderBase {
+    // 数据显示标签
     id:root
     height: 27
 
@@ -52,6 +53,16 @@ HeaderBase {
         //     }
         // }
         Row{
+        ItemDelegateItem {
+            height: 20
+            text: "2D"
+            selected:surfaceData.rootViewIndex==2
+            onClicked: {
+                surfaceData.rootViewIndex = 2
+            }
+
+        }
+
         ItemDelegateItem {
             height: 20
             text: surfaceData.currentViewKey

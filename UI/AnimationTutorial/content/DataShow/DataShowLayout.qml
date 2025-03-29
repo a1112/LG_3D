@@ -6,10 +6,10 @@ DataShowBackground {
     id: root
 
     property Binds binds_base:binds_s
-    property Binds binds_s:Binds{
+    property Binds binds_s : Binds{
     surfaceData:coreModel.surfaceS
     }
-    property Binds binds_l:Binds{
+    property Binds binds_l : Binds{
     surfaceData:coreModel.surfaceL
     }
 

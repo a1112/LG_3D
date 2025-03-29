@@ -6,6 +6,9 @@ Item{
     StackLayout{
         anchors.fill: parent
         currentIndex:root.surfaceData.rootViewIndex
+        DataAreaLayout{
+        }
+
         Data2DLayout{
         }
 
