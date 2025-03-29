@@ -15,10 +15,13 @@ Loader{
             currentIndex: dataShowCore.topDataManage.currentShowModel
             DataShowItemDefects{  // 缺陷显示 界面
             }
+
             DataShowItemInfos{      // 数据信息
             }
+
             DataShowItemCharts{  //  charts
             }
+
         }
     }
 }

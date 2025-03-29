@@ -56,7 +56,7 @@ HeaderBase {
         ItemDelegateItem {
             height: 20
             text: "2D"
-            selected:surfaceData.rootViewIndex==2
+            selected:surfaceData.rootViewIndex  == 2
             onClicked: {
                 surfaceData.rootViewIndex = 2
             }
