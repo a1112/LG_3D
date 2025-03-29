@@ -14,6 +14,7 @@ def horizontal_concat(images):
     :param images: 图像路径列表或Image对象列表
     :return: 拼接后的图像
     """
+    
     for i in range(len(images)):
         w, h = images[i].size
         images[i] = images[i].crop([1200, 0, w-1200, h])
