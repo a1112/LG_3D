@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import AnimationTutorial
+import QtQuick
+import QtQuick.Controls
+
 Label {
     color: "#FFF"
     font.pixelSize: 30

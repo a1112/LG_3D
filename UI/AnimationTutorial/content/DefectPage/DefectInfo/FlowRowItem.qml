@@ -2,13 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import "../../../Base"
-import "../../../btns"
+import "../../Base"
+import "../../btns"
 Item{
     Frame{
         anchors.fill: parent
     }
-    width:root.width/3*2
+    width:root.width/2-1
     height:30
     property string title:"塔形"
     property string value:"100mm"

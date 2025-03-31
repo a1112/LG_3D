@@ -20,4 +20,11 @@ Item {
     property var defect_h_mm:p_t_h_m(defect_h)
 
     property var defect_name:defectName
+
+    function setCheckDefectName(check_defect_name){
+        // 设置新的名称
+        defect_name = check_defect_name
+        api.set_check_defect_name(check_defect_name)
+    }
+
 }

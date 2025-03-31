@@ -12,6 +12,7 @@ import "../SettingPage"
 import "../Style"
 import "ServerMange"
 import "ListValueChange"
+import "HelpPop"
 import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
 
@@ -46,5 +47,6 @@ Item {
     function popupDataListItemMenu(coilModel){
          lefeListMemu.coilModel = coilModel
         lefeListMemu.popup()}
-
+    HelpPopView{id:helpMenu}
+    function popupHelpView(){helpMenu.popup()}
 }

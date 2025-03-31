@@ -1,6 +1,5 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import AnimationTutorial 1.0
+import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import "../../Base"
 Item{

@@ -7,13 +7,14 @@ Row {
         interval: 1000; running: true; repeat: true
         onTriggered: {
             var currentDate = new Date()
-            label.text = currentDate.getFullYear() + "年" + (currentDate.getMonth() + 1) + "月" + currentDate.getDate() + "日 " + currentDate.toLocaleTimeString()
+            label.text = currentDate.getFullYear() + "-" + (currentDate.getMonth() + 1) + "-" + currentDate.getDate() + " " + currentDate.toLocaleTimeString()
         }
     }
 
-    Text {
+    Label {
+        font.family: fonts.timeFamioly//"DS-DIGIT"
         id: label
         font.pixelSize: 24
-        color: "#FFF"
+
     }
 }

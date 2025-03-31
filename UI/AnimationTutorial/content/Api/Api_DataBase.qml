@@ -159,4 +159,8 @@ Api_Base {
          return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"check","set_coil_status",coil_id,status, msg),success,failure)
     }
 
+
+    function set_check_defect_name(defect_name){
+        // 设置新的
+    }
 }

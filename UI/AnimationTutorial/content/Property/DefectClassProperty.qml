@@ -4,7 +4,7 @@ import "../Base"
 Item {
     id:root
     property var defectDictData:{return {}}
-    property ListModel defectDictModel:ListModel{
+    property ListModel defectDictModel : ListModel{
         // 全部的缺陷类别数据
     }
 
@@ -69,6 +69,20 @@ Item {
         }
         return defectDictData[name]["color"]
     }
+
+    function getColorByLevel(level){
+        if (level>=3){
+            return "red"
+        }
+        if (level>=2){
+            return "yellow"
+        }
+        if (level>=1){
+            return "gray"
+        }
+        return "#00000000"
+    }
+
     property bool defeftDrawShowLasbel:true
 
 
