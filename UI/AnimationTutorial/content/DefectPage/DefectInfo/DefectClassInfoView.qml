@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import "../../Base"
 import "../../Comp/Card"
 CardBase {
+    clip: true
     id:root
     Layout.fillWidth : true
     max_height : 200
@@ -16,16 +17,36 @@ CardBase {
         Layout.fillWidth : true
         Layout.fillHeight : true
         visible: root.isShow
-        Flow{
-            anchors.fill: parent
-            Layout.fillWidth: true
-            Layout.fillHeight: true
 
+        Flow{
+            id: flow
+            width: parent.width
             Repeater{
-                model: 10
-            DefectFlowRowItem{
-                title:"卷数"
-                value:core.currentCoilModel.nextInfo
+                model: global.defectClassProperty.defectDictModel
+                DefectFlowRowItem{
+                }
+            }
+
+
+
+            RowLayout{
+            width:flow.width
+            spacing:5
+            CheckDelegate{
+                checked: defectViewCore.filterCore.fliterShowBgDefect
+                text: qsTr("包括背景")
+            }
+            Item{
+                Layout.fillWidth:true
+                height:25
+            }
+            Button{
+                implicitHeight:35
+                text:"全选"
+            }
+            Button{
+                implicitHeight:35
+                text:"取消"
             }
             }
         }

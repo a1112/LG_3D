@@ -17,7 +17,7 @@ Item{
         LabelBase{
             opacity:0.7
             text:title+":"
-            anchors.verticalCenter: parent.verticalCenter
+            Layout.alignment:Qt.AlignVCenter
         }
         LabelBase{
             Layout.fillWidth: true

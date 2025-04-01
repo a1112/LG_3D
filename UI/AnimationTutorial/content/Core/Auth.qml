@@ -52,7 +52,7 @@ Item {
 
     function getItemByKey(key){
         for (var i = 0; i < userModels.count; i++){
-            if (userModels.get(i).key == key){
+            if (userModels.get(i).key === key){
                 return userModels.get(i)
             }
         }

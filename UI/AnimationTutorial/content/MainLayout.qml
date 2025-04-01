@@ -17,7 +17,7 @@ Item {
             implicitHeight: coreStyle.topHeight
         }
         StackLayout{
-            currentIndex:app_core.appIndex
+            currentIndex : app_core.appIndex
             Layout.fillWidth: true
             Layout.fillHeight: true
         DataShowRoot{}  // 主 界面
@@ -25,7 +25,10 @@ Item {
         DefectShowRoot{} // 缺陷 界面
 
         }
-        LeftPrePop{     //   弹出 窗口
-        }
+
+    }
+
+    LeftPrePop{     //   弹出 窗口
+        id:lp
     }
 }

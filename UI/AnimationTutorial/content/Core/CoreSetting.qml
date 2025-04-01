@@ -51,6 +51,6 @@ Item {
         property alias headDateShowModel:root.headDateShowModel
         property alias dataHeaderHeight:root.dataHeaderHeight
         category: "AppSettings"
-        fileName: "settings.ini"
+        location: "settings.ini"
     }
 }

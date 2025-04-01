@@ -1,3 +1,4 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 
@@ -20,7 +21,13 @@ AppBase {
     title: "LG3D "
     Material.accent: coreStyle.accentColor
     CoreAction{}
-
+    // Settings {
+    //     category: "OutputPanel"
+    //          property alias x: app.x
+    //          property alias y: app.y
+    //          property alias width: app.width
+    //          property alias height: app.height
+    //      }
     property CppInterFace cpp:CppInterFace{}
 
     MainLayout{ //          入口 <-
@@ -53,6 +60,8 @@ AppBase {
 
     Junp{}
     property AppCore app_core : AppCore{}
+
+
 }
 
 

@@ -4,7 +4,8 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 Item{
-    height: 30
+    id:root
+    height: 45
     Layout.fillWidth: true
     Pane{
         anchors.fill: parent
@@ -12,10 +13,10 @@ Item{
     }
     RowLayout{
         anchors.fill: parent
-        Row{
-            y:-4
+        spacing: 10
+
             TabBar{
-                height: 35
+
                 Repeater{
                     id: list_view
                     model: ListModel{
@@ -25,17 +26,14 @@ Item{
                     }
                     TabButton{
                         text: label
-                        height: 35
-                        width: 100
                         font.bold: true
-
                         onClicked: {
                             core.globalViewIndex = index
                         }
                     }
                 }
             }
-        }
+
 
         Item{
             Layout.fillWidth: true
@@ -44,11 +42,29 @@ Item{
 
         TitleText{
             font.pixelSize: 20
+            text: "缺陷数据分析"
+
         }
         Item{
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+
+        CheckDelegate{
+            text: qsTr("显示报警类别")
+             implicitHeight: root.height-5
+
+        }
+        Button{
+            icon.source: "../../icons/Flush_Dark.png"
+            text: "刷新"
+            implicitHeight: root.height-5
+        }
+        Item{
+            width: 5
+            Layout.fillHeight: true
+        }
+
     }
 
 }
