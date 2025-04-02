@@ -22,31 +22,43 @@ CardBase {
             id: flow
             width: parent.width
             Repeater{
-                model: global.defectClassProperty.defectDictModel
+                model:defectViewCore.defectCoreModel.defectDictModel   // global.defectClassProperty.defectDictModel
                 DefectFlowRowItem{
                 }
             }
-
-
 
             RowLayout{
             width:flow.width
             spacing:5
             CheckDelegate{
                 checked: defectViewCore.filterCore.fliterShowBgDefect
+                onCheckedChanged: {
+                defectViewCore.filterCore.setFliterShowBgDefect(checked)
+                }
                 text: qsTr("包括背景")
             }
             Item{
                 Layout.fillWidth:true
                 height:25
             }
-            Button{
-                implicitHeight:35
-                text:"全选"
+
+            SelectButtonBase{
+                text:qsTr("重置")
+                onClicked: {
+                    defectViewCore.filterCore.reset()
+                }
             }
-            Button{
-                implicitHeight:35
-                text:"取消"
+            SelectButtonBase{
+                text:qsTr("全选")
+                onClicked: {
+                    defectViewCore.filterCore.showAll(true)
+                }
+            }
+            SelectButtonBase{
+                text:qsTr("取消")
+                onClicked: {
+                    defectViewCore.filterCore.showAll(false)
+                }
             }
             }
         }

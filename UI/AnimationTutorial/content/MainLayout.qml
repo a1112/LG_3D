@@ -23,7 +23,6 @@ Item {
         DataShowRoot{}  // 主 界面
 
         DefectShowRoot{} // 缺陷 界面
-
         }
 
     }

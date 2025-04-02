@@ -8,7 +8,7 @@ Item {
         // 全部的缺陷类别数据
     }
 
-    property string unDefectClassItemName:"无缺陷"
+    property string unDefectClassItemName:qsTr("无缺陷")
 
     property DefectClassItemModel defaultDefectClass:DefectClassItemModel{}   //  默认的缺陷列表
     property DefectClassItemModel unDefectClassItemModel:DefectClassItemModel{

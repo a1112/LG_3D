@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Controls.Material
 import "../../Base/IconButtons"
 //  功能区域
 Item {
@@ -10,6 +11,7 @@ Item {
 
     Pane{
         anchors.fill: parent
+        Material.elevation: 7
     }
 
     RowLayout{
@@ -24,11 +26,7 @@ Item {
             FullScreen{
                 height: root.height
                 onClicked:{
-
-
-
                 }
-
             }
         }
         Item {

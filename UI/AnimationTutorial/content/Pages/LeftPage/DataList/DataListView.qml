@@ -6,7 +6,7 @@ import QtQuick.Controls.Material
 import "../../../animation"
 Item{
     id:root
-
+    property bool showFilterIcon:true
     ColumnLayout {
         anchors.fill: parent
         HeadView{

@@ -10,10 +10,9 @@ CheckDelegate {
     property DefectClassItemModel defectClass:DefectClassItemModel{}
     text:defectClass.defectName
     Material.accent:defectClass.defectColor
-    visible:defectClass.defectShow
-    checked:defectClass.defectShow
-    onCheckedChanged:{
-        leftCore.setLiewViewFilterClass(defectClass.defectName,checked)
-    }
-
+    visible:defectClass.defectShow ||  (!defectClass.defectShow && defectViewCore.filterCore.fliterShowBgDefect)
+    checked:defectClass.filterShow
+    // onCheckedChanged:{
+    //     leftCore.setLiewViewFilterClass(defectClass.defectName,checked)
+    // }
 }
