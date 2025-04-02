@@ -5,4 +5,6 @@ Item {
 
     property FilterCore filterCore:FilterCore{}
 
+    property DefectCoreModel defectCoreModelL:DefectCoreModel{}
+     property DefectCoreModel defectCoreModelR:DefectCoreModel{}
 }

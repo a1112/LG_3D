@@ -15,9 +15,16 @@ Item {
         //     height: 80
         //     Layout.fillWidth: true
         // }
-        DefectPageView{
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+
+            SplitView{
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                LeftDataView{
+                }
+                RightViewList{
+                }
+            }
+
+
     }
 }

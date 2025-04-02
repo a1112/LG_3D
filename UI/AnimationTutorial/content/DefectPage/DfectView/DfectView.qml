@@ -3,15 +3,20 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../CardBase"
 
-RowLayout{
+SplitView{
+
     CardBaseView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+
+            SplitView.fillWidth: true
+            SplitView.fillHeight: true
             card_id:"defectViewL"
         }
+
     CardBaseView {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+
+        SplitView.fillWidth: true
+        SplitView.fillHeight: true
         card_id:"defectViewR"
     }
+
 }

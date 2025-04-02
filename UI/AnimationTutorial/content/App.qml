@@ -58,9 +58,8 @@ AppBase {
     }
     property Script autoScript:Script{}
 
-    Junp{}
+    // Junp{}
     property AppCore app_core : AppCore{}
-
 
 }
 
