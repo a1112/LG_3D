@@ -9,4 +9,6 @@ Item {
     property DefectCoreModel defectCoreModel : DefectCoreModel{}  //  模型数据
 
     property ControlCore controlCore : ControlCore{}
+
+
 }
