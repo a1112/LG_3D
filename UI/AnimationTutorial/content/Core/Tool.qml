@@ -23,8 +23,8 @@ Item {
         }
     }
 
-    function for_list(list,func){
-        return list.forEach(
+    function for_list(list_,func){
+        return list_.forEach(
                     func
                     )
     }

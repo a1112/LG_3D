@@ -8,7 +8,7 @@ import "../Core"
 Item {
     id:root
     property string card_id: ""
-    property DefectCoreModel defectCoreModel
+    property DefectCoreModel defectCoreModel:defectViewCore.defectCoreModel
     ColumnLayout{
         anchors.fill: parent
         spacing: 2

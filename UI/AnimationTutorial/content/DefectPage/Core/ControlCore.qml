@@ -7,6 +7,7 @@ Item {
     property ListModel  currentListModel:  defectCoreModel.currentListModel
 
     function flush_defects(){
+        console.log("flush_defects")
         api.getDefectsByCoilId(
                     defectCoreModel.currentListStartIndex,
                     defectCoreModel.currentListEndIndex,
@@ -19,7 +20,9 @@ Item {
                             "defectTime":{"year":2024,"month":12,"weekday":0,"day":30,"hour":18,"minute":12,"second":21},"
                             defectY":5231,"defectH":99,"defectData":""}
                         ]
+
                         defectCoreModel.defectText = text
+                        defectCoreModel.defectJson = JSON.parse(text)
                     },
                     (err)=>{
                         console.log("")

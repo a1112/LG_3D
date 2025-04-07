@@ -16,6 +16,19 @@ Item {
 
     RowLayout{
         anchors.fill: parent
+        Label{
+            text:"" + defectCoreModel.currentListStartIndex
+
+        }
+        Label{
+            text:" — " + defectCoreModel.currentListEndIndex
+
+        }
+        Label{
+            text: "  NUM: "+defectCoreModel.defectsModel.count
+
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true

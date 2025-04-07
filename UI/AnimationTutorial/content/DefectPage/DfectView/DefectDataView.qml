@@ -12,8 +12,9 @@ Item {
         ScrollBar.vertical: ScrollBar{}
         Flow{
             width: parent.width
+            // flow:Flow.TopToBottom
             id:flow
-            spacing: 5
+            spacing: 2
             Repeater{
                 model: defectCoreModel.defectsModel
                 DefectItemShow{}

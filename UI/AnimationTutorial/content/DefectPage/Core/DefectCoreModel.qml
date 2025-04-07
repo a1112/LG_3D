@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-
+    id:root
     property ListModel globDefectDictModel: global.defectClassProperty.defectDictModel
     property int globDefectDictModelCount:globDefectDictModel.count
     onGlobDefectDictModelCountChanged: {
@@ -21,30 +21,33 @@ Item {
 
     property ListModel  currentListModel: coreModel.currentCoilListModel
 
-    readonly property int top_ : currentListModel.count? currentListModel.get(0).coilId:0
-    readonly property int end_ : currentListModel.count? currentListModel.get(currentListModel.count-1).coilId:0
+    readonly property int top_ : currentListModel.count? currentListModel.get(0).Id:0
+    readonly property int end_ : currentListModel.count? currentListModel.get(currentListModel.count-1).Id:0
 
-    property int currentListStartIndex: min(top_, end_)
-    property int currentListEndIndex: max(top_, end_)
+    property int currentListStartIndex: Math.min(top_, end_)
+    property int currentListEndIndex: Math.max(top_, end_)
 
     // 缺陷列表
-    property ListModel defectsModel: ListModel{
+    property var defectsModel: ListModel{
+        dynamicRoles:true
         // 全部缺陷
     }
 
     function flushModel(){
-        defectsModel.clear()
-        tool.for_list(
-                    defectJson,
-                    (value,index)=>{
-                        defectsModel.append(value)
+         defectsModel.clear()
+
+        defectJson.forEach(
+                    (value)=>{
+
+                        root.defectsModel.append(value)
                     }
                     )
     }
 
-    property string defectText: "{}"
-    readonly property var defectJson: JSON.parse(defectText)
+    property string defectText: ""
+    property var defectJson: JSON.parse(defectText)
     onDefectJsonChanged: {
+
         flushModel()
     }
 }
