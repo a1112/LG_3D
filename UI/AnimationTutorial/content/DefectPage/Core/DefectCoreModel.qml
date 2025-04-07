@@ -14,9 +14,9 @@ Item {
         defectDictModel.clear()
         tool.for_list_model(
                     globDefectDictModel,(item)=>{
-                                let  it =  globalDefectClassItemModel.itemTodict(item)
-                                defectDictModel.append(it)
-                            })
+                        let  it =  globalDefectClassItemModel.itemTodict(item)
+                        defectDictModel.append(it)
+                    })
     }
 
     property ListModel  currentListModel: coreModel.currentCoilListModel
@@ -32,4 +32,19 @@ Item {
         // 全部缺陷
     }
 
+    function flushModel(){
+        defectsModel.clear()
+        tool.for_list(
+                    defectJson,
+                    (value,index)=>{
+                        defectsModel.append(value)
+                    }
+                    )
+    }
+
+    property string defectText: "{}"
+    readonly property var defectJson: JSON.parse(defectText)
+    onDefectJsonChanged: {
+        flushModel()
+    }
 }

@@ -23,6 +23,13 @@ Item {
         }
     }
 
+    function for_list(list,func){
+        return list.forEach(
+                    func
+                    )
+    }
+
+
     function list_model_to_json(list_model){
         print("list_model_to_json",list_model )
         let res=[]

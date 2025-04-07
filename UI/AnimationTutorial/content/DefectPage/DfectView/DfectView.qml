@@ -9,9 +9,4 @@ RowLayout{
             Layout.fillHeight: true
 
         }
-
-    CardBaseView {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-    }
 }

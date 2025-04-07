@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 // 单个缺陷显示
 
-Item {
+Rectangle {
     width: 200
     height: 200
 }
