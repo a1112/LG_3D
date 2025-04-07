@@ -7,7 +7,7 @@ Item {
     property ListModel  currentListModel:  defectCoreModel.currentListModel
 
     function flush_defects(){
-
+        api.getDefectsByCoilId()
 
     }
 }

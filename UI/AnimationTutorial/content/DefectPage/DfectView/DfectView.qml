@@ -1,20 +1,17 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../"
 
-SplitView{
-    id:root
-    // CardBaseView {
-    //         SplitView.fillHeight: true
-    //         SplitView.preferredWidth: root.width/2-2
-    //         card_id:"defectViewL"
-    //     }
+RowLayout{
+    CardBaseView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+        }
 
     CardBaseView {
-        defectCoreModel:defectViewCore.defectCoreModel
-        SplitView.fillWidth: true
-        SplitView.fillHeight: true
-        card_id:"defectViewR"
+        Layout.fillWidth: true
+        Layout.fillHeight: true
     }
-
 }

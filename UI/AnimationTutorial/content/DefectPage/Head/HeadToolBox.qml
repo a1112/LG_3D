@@ -42,8 +42,7 @@ Item{
 
         TitleText{
             font.pixelSize: 20
-            text: "缺陷数据分析"
-
+            text: qsTr("缺陷数据分析")
         }
         Item{
             Layout.fillWidth: true
@@ -57,7 +56,7 @@ Item{
         }
         Button{
             icon.source: "../../icons/Flush_Dark.png"
-            text: "刷新"
+            text: qsTr("刷新")
             implicitHeight: root.height-5
         }
         Item{
