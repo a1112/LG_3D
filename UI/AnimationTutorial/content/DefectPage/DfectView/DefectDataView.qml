@@ -5,21 +5,25 @@ import Qt.labs.qmlmodels
 Item {
     id:root
     clip: true
-    Flickable{
-        anchors.fill: parent
-        contentWidth: root.width
-        contentHeight: flow.implicitHeight + 20
-        ScrollBar.vertical: ScrollBar{}
-        Flow{
-            width: parent.width
+
+        GridView {
+            anchors.fill: parent
+            id : grid
             // flow:Flow.TopToBottom
-            id:flow
-            spacing: 2
-            Repeater{
-                model: defectCoreModel.defectsModel
-                DefectItemShow{}
+            cellHeight: 200
+            cellWidth: 200
+            model: defectCoreModel.defectsModel
+
+            highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
+
+            delegate:Loader{
+                height: 200
+                width: height
+                asynchronous: true
+                sourceComponent: DefectItemShow{}
             }
+
 
         }
     }
-}
+

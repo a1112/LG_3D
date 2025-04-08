@@ -22,4 +22,7 @@ Item {
             Layout.fillHeight: true
         }
     }
+        DefectDataViewMenu{
+        id:defectDataViewMenu
+    }
 }

@@ -17,6 +17,7 @@ Item {
                         let  it =  globalDefectClassItemModel.itemTodict(item)
                         defectDictModel.append(it)
                     })
+        filterCore.resetFilterDict()
     }
 
     property ListModel  currentListModel: coreModel.currentCoilListModel
@@ -28,26 +29,53 @@ Item {
     property int currentListEndIndex: Math.max(top_, end_)
 
     // 缺陷列表
-    property var defectsModel: ListModel{
+    property var defectsModelAll: ListModel{
         dynamicRoles:true
         // 全部缺陷
     }
 
+    property var defectsModel: ListModel{
+        dynamicRoles:true
+        // 全部缺陷
+    }
     function flushModel(){
-         defectsModel.clear()
+
+        let scanIndex = 0
+        defectsModel.clear()
+        tool.for_list_model(defectsModelAll, (item)=>{
+                                // for(scanIndex;scanIndex<defectsModel.count;scanIndex){
+                                //     let it = defectsModel.get(scanIndex)
+                                //     if(filterCore.itemIsShow(it)){
+                                //         scanIndex++
+                                //     }
+                                // }
+                                // if(scanIndex >= defectsModel.count){
+                                //     if(1){
+                                //     }
+                                // }
+                                if (filterCore.itemIsShow(item)){
+                                        defectsModel.append(item)
+                                    }
+
+                            })
+    }
+
+
+    function flushModelAll(){
+         defectsModelAll.clear()
 
         defectJson.forEach(
                     (value)=>{
-
-                        root.defectsModel.append(value)
+                        root.defectsModelAll.append(value)
                     }
                     )
+        flushModel()
     }
 
     property string defectText: ""
     property var defectJson: JSON.parse(defectText)
     onDefectJsonChanged: {
 
-        flushModel()
+        flushModelAll()
     }
 }
