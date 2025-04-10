@@ -6,7 +6,7 @@ to_folder = Path("E:\AreaCopy")
 folder_list = ["G:\Cap_S_U","G:\Cap_S_M","G:\Cap_S_D","F:\Cap_L_D","F:\Cap_L_M","F:\Cap_L_U"]
 for folder in folder_list:
     for f in Path(folder).iterdir():
-        if int(f.name)>
+        if (f.name)
         if f.is_dir():
             shutil.rmtree(f)
 

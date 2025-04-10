@@ -1,0 +1,26 @@
+{
+    "surfaces": {
+    "S":{
+        "cameras": [
+            {
+                "folder" : "G:\\Cap_S_U"
+            },{
+                "folder": "G:\\Cap_S_M"
+            },{
+                "folder": "G:\\Cap_S_D"
+            }
+        ]
+    },
+    "L":{
+        "cameras": [
+            {
+                "folder" : "F:\\Cap_L_U"
+            },{
+                "folder": "F:\\Cap_L_M"
+            },{
+                "folder": "F:\\Cap_L_D"
+            }
+        ]
+    }
+        }
+}

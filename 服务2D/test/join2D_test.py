@@ -1,7 +1,7 @@
 from pathlib import Path
 from PIL import Image
 
-testFolder = Path(fr"G:\Cap_S_U\62299\area")
+testFolder = Path(fr"G:\Cap_S_U\62302\area")
 image_url_list = list(testFolder.glob("*.jpg"))
 image_url_list.sort(key=lambda i : int(Path(i).stem))
 image_url_list = image_url_list[:][::-1]
@@ -14,7 +14,7 @@ def horizontal_concat(images):
     :param images: 图像路径列表或Image对象列表
     :return: 拼接后的图像
     """
-    
+
     for i in range(len(images)):
         w, h = images[i].size
         images[i] = images[i].crop([1200, 0, w-1200, h])
@@ -39,5 +39,6 @@ def horizontal_concat(images):
 
 newImage = horizontal_concat(image_list)
 size = newImage.size
-newImage = newImage.resize((int(size[0]*0.2),int(size[1]*0.2)))
-newImage.show()
+newImage.save("test.jpg")
+# newImage = newImage.resize((int(size[0]*0.2),int(size[1]*0.2)))
+# newImage.show()
