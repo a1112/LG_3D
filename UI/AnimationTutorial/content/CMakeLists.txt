@@ -39,8 +39,8 @@ qt6_add_qml_module(content
     RESOURCE_PREFIX "/qt/qml"
     RESOURCES
         fonts/fonts.txt
+        fonts/DS-DIGIT.TTF
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
-
 
     )

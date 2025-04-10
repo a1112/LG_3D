@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import "../../btns"
 // import "../../DataShow/Foot"
 import "../../GlobalView"
+import "../../Base"
 Item {
     id:root
     width: 1080
@@ -54,6 +55,9 @@ Item {
         TitleLabel{}
         FillLayout{}
         GlobalServerMsg{}
+        TimeText{
+            visible: !auth.isAdmin || !global.screenConfig.isMinScreen
+        }
         FillLayout{}
         TopCoilTools{}
         Item{
@@ -62,6 +66,9 @@ Item {
         }
         Row{
             spacing:10
+            HelpButton{
+                visible: !auth.isAdmin
+            }
             TopToolsButton{}
             TopWindowModelChangeButton {}
         }

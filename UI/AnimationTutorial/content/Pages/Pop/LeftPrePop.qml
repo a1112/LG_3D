@@ -5,9 +5,15 @@ import QtQuick.Layouts
 import "../../Labels"
 import "../../Model"
 Menu {
+    property  bool isHoved: leftCore.isHoved
+    onIsHovedChanged: {
+            if  (isHoved){
+                popup()
+            }
+    }
     visible: leftCore.isHoved
     id:root
-    x: left.width+20
+    x: left.width+10
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
     width:620 //col.width+20
     height:col.height+30
@@ -16,7 +22,7 @@ Menu {
 
     onClosed:{
         if (leftCore.isHoved)
-            open()
+            popup()
     }
 
     Label{    // title

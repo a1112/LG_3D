@@ -9,7 +9,7 @@ ItemDelegate {
             scale:0.7
             anchors.centerIn: parent
             asynchronous: true
-            source: "../../icons/imageError.jpg"
+            source: "../../icons/imageError.png"
             width: parent.width
             height: parent.height
             fillMode: Image.PreserveAspectFit
@@ -31,7 +31,7 @@ ItemDelegate {
             sourceSize.width : parent.width
             sourceSize.height : parent.height
             onStateChanged : {
-                if (state == Image.Loaded) {
+                if (state === Image.Loaded) {
                 err.visible = true
                 }
                 else

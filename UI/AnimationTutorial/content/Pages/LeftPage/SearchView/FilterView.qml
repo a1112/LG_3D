@@ -12,7 +12,7 @@ Popup {
                 spacing:5
             TitleLabel{
                 Layout.alignment:Qt.AlignHCenter
-                text: "查询条件"
+                text: qsTr("查询条件")
                 color: app.coreStyle.cardBorderColor
             }
             Item{

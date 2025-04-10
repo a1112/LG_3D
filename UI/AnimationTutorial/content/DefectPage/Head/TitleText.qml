@@ -1,9 +1,11 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import AnimationTutorial
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+
 Label {
-    color: "#FFF"
-    font.pixelSize: 30
-    text: Constants.app_title
+
+    font.pixelSize: 25
     // font.family: "30"
+    color: Material.color(Material.Blue)
+    font.bold: true
 }

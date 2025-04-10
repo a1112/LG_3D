@@ -11,17 +11,13 @@ LabelBase {
 
     SequentialAnimation on color{
          loops: Animation.Infinite
-
          running:root.running
     ColorAnimation {
-
-        running:true
         from: root.baseColor
         to: root.errorColor
         duration: 500
     }
     ColorAnimation {
-        running:true
         from:   root.errorColor
         to:     root.baseColor
         duration: 500

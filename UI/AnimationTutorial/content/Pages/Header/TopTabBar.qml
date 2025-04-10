@@ -4,6 +4,8 @@ TabBar{
     y:-6
     height: 35
     id:root
+    currentIndex:app_core.appIndex
+    onCurrentIndexChanged:app_core.appIndex = currentIndex
     background: Rectangle {
         color: "#00000000"
     }

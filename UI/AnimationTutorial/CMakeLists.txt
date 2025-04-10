@@ -8,7 +8,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 
-
 find_package(QT NAMES Qt6 COMPONENTS Charts Core Gui Quick Qml Graphs REQUIRED)
 
 find_package(Qt6 REQUIRED COMPONENTS Charts)

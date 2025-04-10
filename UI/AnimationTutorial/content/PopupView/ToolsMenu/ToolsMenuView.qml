@@ -7,24 +7,24 @@ Menu {
     Menu{
         title:qsTr("维护")
         MenuItem{
-            text:"远程到服务器"
+            text:qsTr("远程到服务器")
             onClicked:{
                 ScriptLauncher.launchScript("/c start /wait mstsc /v "+api.apiConfig.hostname)
             }
         }
         MenuItem{
-            text:"Ping 服务器"
+            text:qsTr("Ping 服务器")
             onClicked:{
                 ScriptLauncher.launchScript("/c start /wait ping "+api.apiConfig.hostname+" -t")
             }
         }
         MenuItem{
-            text:"一键恢复"
+            text:qsTr("一键恢复")
             onClicked:{}
         }
 
         MenuItem{
-            text:"重启全部服务"
+            text:qsTr("重启全部服务")
             onClicked:{
             }
         }

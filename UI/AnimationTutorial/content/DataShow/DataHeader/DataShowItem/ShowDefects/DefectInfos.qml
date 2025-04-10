@@ -80,11 +80,8 @@ Item{
     HoverHandler{
         id : hovrHanller
     }
-    Menu{
-        id: defectMenu
-        Repeater{
-            model : ""
-
-        }
+    DefectSelectMenu{
+        id : defectMenu
     }
+
 }

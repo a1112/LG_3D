@@ -13,3 +13,6 @@
 /服务/log/stdout/
 /scripts/train/output/
 
+/UI/AnimationTutorial/.idea/
+/UI/AnimationTutorial/cmake-build-debug/
+/UI/AnimationTutorial/cmake-build-release/

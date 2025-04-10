@@ -27,9 +27,6 @@ Api_DataBase {
         }
         return apiConfig.url(apiConfig.serverUrlImage,"image/source/"+_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
-
-
-
     //全局下载器
     function downloadFile(url,save_path,success,failure){
         return cpp.fileDownloader.downloadFile(url, save_path)

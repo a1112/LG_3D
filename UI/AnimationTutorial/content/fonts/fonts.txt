@@ -1,1 +1,1 @@
-Fonts in this folder are loaded automatically.
+DS-DIGIT.TTF

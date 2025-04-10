@@ -12,10 +12,9 @@ import "../SettingPage"
 import "../Style"
 import "ServerMange"
 import "ListValueChange"
+import "HelpPop"
 import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
-
-
     ConnectDialog{ id:connectDialog }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
     ExportView{id:exportView}   //导出菜单
@@ -44,7 +43,8 @@ Item {
     function popupListValueChangeView(){listValueChangeView.popup()}
     DataListItemMenu{id:lefeListMemu} // 左侧列表
     function popupDataListItemMenu(coilModel){
-         lefeListMemu.coilModel = coilModel
+        lefeListMemu.coilModel = coilModel
         lefeListMemu.popup()}
-
+    HelpPopView{id:helpMenu}
+    function popupHelpView(){helpMenu.popup()}
 }

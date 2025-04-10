@@ -10,6 +10,8 @@ QtObject {
     // 获取屏幕的可用宽度（不包括任务栏等系统保留区域）
     property int desktopAvailableWidth: Screen.desktopAvailableWidth
 
+    property bool isMinScreen : desktopAvailableWidth < 2100
+
     // 获取屏幕的可用高度（不包括任务栏等系统保留区域）
     property int desktopAvailableHeight: Screen.desktopAvailableHeight
 

@@ -4,11 +4,11 @@ import "../Base"
 Item {
     id:root
     property var defectDictData:{return {}}
-    property ListModel defectDictModel:ListModel{
+    property ListModel defectDictModel : ListModel{
         // 全部的缺陷类别数据
     }
 
-    property string unDefectClassItemName:"无缺陷"
+    property string unDefectClassItemName:qsTr("无缺陷")
 
     property DefectClassItemModel defaultDefectClass:DefectClassItemModel{}   //  默认的缺陷列表
     property DefectClassItemModel unDefectClassItemModel:DefectClassItemModel{
@@ -69,6 +69,20 @@ Item {
         }
         return defectDictData[name]["color"]
     }
+
+    function getColorByLevel(level){
+        if (level>=3){
+            return "red"
+        }
+        if (level>=2){
+            return "yellow"
+        }
+        if (level>=1){
+            return "gray"
+        }
+        return "#00000000"
+    }
+
     property bool defeftDrawShowLasbel:true
 
 

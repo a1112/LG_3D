@@ -137,8 +137,8 @@ Item {
         }
 
         Label{
-            x:ellipse.center.x+ellipse.axes.major_axis*(2/3)
-            y:ellipse.center.y+5
+            x:ellipse["center"].x+ellipse.axes.major_axis*(2/3)
+            y:ellipse["center"].y+5
             text:surfaceData.ix_to_mm( inner_ellipse[1][0])
             color: "green"
             font.bold: true

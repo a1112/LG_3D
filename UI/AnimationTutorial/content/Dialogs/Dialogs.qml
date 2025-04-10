@@ -5,10 +5,10 @@ Item {
 
     property SaveFileDuialog saveFileDuialog: SaveFileDuialog{}
 
-SelectColorDialog{
-    id:selectColorDialog
+    SelectColorDialog{
+        id:selectColorDialog
 
-}
+    }
 
 
     function save_sql(func){

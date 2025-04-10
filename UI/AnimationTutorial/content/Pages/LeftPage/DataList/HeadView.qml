@@ -77,7 +77,7 @@ Item {
         }
 
         FliterBtn{  // 筛选
-
+            visible: showFilterIcon
         }
 
         // Item{

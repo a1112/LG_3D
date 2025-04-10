@@ -52,6 +52,8 @@ std::string getComputerName() {
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setOrganizationName("北京科技大学设计研究院有限公司");
+    QCoreApplication::setOrganizationDomain("1");
     set_qt_environment();
 
     QApplication app(argc, argv);

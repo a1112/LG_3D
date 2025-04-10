@@ -50,7 +50,7 @@ Item {
 
     SettingsBase{
         property alias isDark: root.isDark
-         fileName: "style.ini"
+         location: "style.ini"
          property alias accentColor: root.accentColor
          property alias cardBorderColor: root.cardBorderColor
          property alias titleColor: root.titleColor

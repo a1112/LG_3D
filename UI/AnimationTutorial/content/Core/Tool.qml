@@ -17,11 +17,18 @@ Item {
     }
 
     function for_list_model(list_model,func){
-        //    for 循环
+        //    for 循环 ListModel
         for (let i=0;i<list_model.count;i++){
             if (func(list_model.get(i),i) === true)return
         }
     }
+
+    function for_list(list_,func){
+        return list_.forEach(
+                    func
+                    )
+    }
+
 
     function list_model_to_json(list_model){
         print("list_model_to_json",list_model )
