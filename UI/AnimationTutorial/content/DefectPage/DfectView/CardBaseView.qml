@@ -16,7 +16,6 @@ Item {
             Layout.fillWidth: true
             height: 20
         }
-
         DefectDataView{
             Layout.fillWidth: true
             Layout.fillHeight: true

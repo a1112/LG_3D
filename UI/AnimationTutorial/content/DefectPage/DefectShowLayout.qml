@@ -19,9 +19,11 @@ Item {
             SplitView{
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                LeftDataView{
+                LeftDataView{   // 主要界面
+
                 }
                 RightViewList{
+
                 }
             }
 

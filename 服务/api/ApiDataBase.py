@@ -139,7 +139,7 @@ async def get_defects(coil_id: int, direction: str):
 
 @router.get("/search/getDefectAll/{start_coil_id:int}/{end_coil_id:int}")
 async def get_defect_all(start_coil_id, end_coil_id):
-    return  tool.to_dict(Coil.get_defects_all(start_coil_id, end_coil_id))
+    return tool.to_dict(Coil.get_defects_all(start_coil_id, end_coil_id))
 
 
 @router.get("/defectDict")

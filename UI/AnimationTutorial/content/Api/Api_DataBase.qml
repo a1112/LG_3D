@@ -76,10 +76,8 @@ Api_Base {
         // 获取缺陷数据
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","getDefectAll",fromCoilId,toCoilId),success,failure)
     }
-
     function getDefectAll(startCoilId,endCoilId, success, failure){
-        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects_by_coil", startCoilId, endCoilId), success, failure)
-
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","getDefectAll", startCoilId, endCoilId), success, failure)
     }
     function getDefectDict(success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"defectDict"),success,failure)

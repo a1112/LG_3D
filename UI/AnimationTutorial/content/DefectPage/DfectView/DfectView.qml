@@ -7,6 +7,5 @@ RowLayout{
     CardBaseView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
         }
 }
