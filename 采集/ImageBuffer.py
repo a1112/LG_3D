@@ -67,7 +67,7 @@ class DaHengBuffer(BufferBase):
         self.coilId = None
         self.save_index = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
-        self.save_all = False
+        self.save_all = True
 
     def if_save_index(self):
         if self.save_all:
