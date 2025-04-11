@@ -10,12 +10,12 @@ class JoinWork(WorkBase):
     """
     def __init__(self, config):
         super().__init__(config)
-        self.start()
+
         self.config:JoinConfig
 
         self.surface_dict = {}
         self._run_ = True
-        self.queue_in.put()
+        self.queue_in.put(65447)
         self.start()
 
     def run(self):

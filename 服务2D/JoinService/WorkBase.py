@@ -1,5 +1,5 @@
 from queue import Queue
-import CONFIG
+from  configs import CONFIG
 
 class WorkBase(CONFIG.WorkClass):
     def __init__(self,config):

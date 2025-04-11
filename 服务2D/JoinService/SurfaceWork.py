@@ -16,7 +16,11 @@ class SurfaceWork(WorkBase):
 
     def run(self):
         print(fr" SurfaceWork run {self.key}")
-        self.cameras_wolk = CameraWork()
+        self.cameras_wolk = [CameraWork(config) for config in self.config.camera_configs]
 
         while self._run_:
             coil_id = self.queue_in.get()
+            for camera_wolk in self.cameras_wolk:
+                camera_wolk.add_work(coil_id)
+            for camera_wolk in self.cameras_wolk:
+                camera_wolk.get()

@@ -13,7 +13,7 @@ Item {
     Behavior on scale {NumberAnimation{duration: 450}}
     property DefectItemModel defectItem:DefectItemModel{}
 
-    visible: index>50//defectViewCore.controlCore.getShowName(defectItem.defectName)
+    //visible: index>50//defectViewCore.controlCore.getShowName(defectItem.defectName)
     Item{
         anchors.centerIn: parent
         width: parent.width*0.9

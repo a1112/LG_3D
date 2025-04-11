@@ -1,5 +1,5 @@
 import json
-import CONFIG
+from configs import CONFIG
 from .BaseConfig import BaseConfig
 from .SurfaceConfig import SurfaceConfig
 
