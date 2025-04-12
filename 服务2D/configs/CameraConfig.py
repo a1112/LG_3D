@@ -12,14 +12,19 @@ class CameraConfig(BaseConfig):
         self.folder = Path(self.config["folder"])
         self.key = Path(self.folder.as_uri()).name
         self.loss_num = self.get_value("loss_num",0)
+
     def get_folder(self,coil_id):
         return self.folder/str(coil_id)/"area"
 
     def is_run(self):
+        return True
         return self.key in ["Cap_S_M"]
 
     def get_url_list(self,url_list:List[WindowsPath]):
-        return url_list[self.loss_num:]
+        url_list = url_list[self.loss_num:]
+        if "S" in self.key:
+            url_list = url_list[::-1]
+        return url_list
 
     # Cap_S_U
     # Cap_S_M

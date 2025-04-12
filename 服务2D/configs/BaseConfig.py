@@ -4,7 +4,7 @@ from pathlib import Path,WindowsPath
 class BaseConfig:
     def __init__(self,f_):
         if isinstance(f_,(str,WindowsPath)):
-            self.config = json.load(open(f_,"r",encoding="utf-8"))
+            self.config = json.load(open(f_, "r", encoding = "utf-8"))
         else:
             self.config = f_
 

@@ -3,24 +3,32 @@
     "S":{
         "cameras": [
             {
-                "folder" : "G:\\Cap_S_U"
+                "folder" : "G:\\Cap_S_U",
+                "loss_num": 3
             },{
-                "folder": "G:\\Cap_S_M"
+                "folder": "G:\\Cap_S_M",
+                "loss_num": 3
             },{
-                "folder": "G:\\Cap_S_D"
+                "folder": "G:\\Cap_S_D",
+                "loss_num": 3
             }
-        ]
+        ],
+        "save_folder": "D:\\Save_S"
     },
     "L":{
         "cameras": [
             {
-                "folder" : "F:\\Cap_L_U"
+                "folder" : "F:\\Cap_L_U",
+                "loss_num": 3
             },{
-                "folder": "F:\\Cap_L_M"
+                "folder": "F:\\Cap_L_M",
+                "loss_num": 3
             },{
-                "folder": "F:\\Cap_L_D"
+                "folder": "F:\\Cap_L_D",
+                "loss_num": 3
             }
-        ]
+        ],
+        "save_folder": "E:\\Save_L"
     }
         }
 }

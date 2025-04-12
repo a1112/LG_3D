@@ -20,10 +20,8 @@ log_dir_base.mkdir(parents=True, exist_ok=True)
 filename = str(log_dir)
 handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
 handler.suffix = "%Y-%m-%d.log"
-
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
-
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)

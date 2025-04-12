@@ -15,7 +15,7 @@ class JoinWork(WorkBase):
 
         self.surface_dict = {}
         self._run_ = True
-        self.queue_in.put(65447)
+        self.queue_in.put(65509)
         self.start()
 
     def run(self):

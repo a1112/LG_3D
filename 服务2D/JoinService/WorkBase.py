@@ -14,3 +14,6 @@ class WorkBase(CONFIG.WorkClass):
 
     def get(self):
         return self.queue_out.get()
+
+    def set(self,data):
+        return self.queue_out.put(data)
