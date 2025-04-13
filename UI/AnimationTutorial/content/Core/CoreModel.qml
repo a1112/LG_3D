@@ -152,7 +152,7 @@ CoreModel_ {
     function searchByCoilDateTime(start,end){
         api.searchByTime(start,end,
                            (result)=>{
-                                     console.log(result)
+                                     // console.log(result)
                                      setSearch(JSON.parse(result))
                                  },
                            (error)=>{}

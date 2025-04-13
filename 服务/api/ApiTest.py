@@ -8,6 +8,7 @@ from .api_core import app
 
 router = APIRouter(tags=["测试服务"])
 
+
 @router.get("/download_test")
 async def download_file():
     file_path = "./test/zipdir.zip"
@@ -15,8 +16,6 @@ async def download_file():
         return FileResponse(path=file_path, filename="downloaded_file.zip", media_type='application/octet-stream')
     else:
         return {"error": "File not found"}
-
-
 
 
 # 测试下载速度的接口
@@ -36,6 +35,7 @@ async def download_test(size_in_mb: int = 10):
             yield data
 
     return StreamingResponse(generate_data(), media_type="application/octet-stream")
+
 
 # 测试上传速度的接口
 @router.post("/speedtest/upload")

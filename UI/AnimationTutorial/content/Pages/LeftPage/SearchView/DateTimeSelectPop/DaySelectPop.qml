@@ -48,7 +48,6 @@ BaseSelectPop{
                 currentIndex:root.dateTime.fullYear-dateTime.nowFullYear+7
                 onCurrentTextChanged:
                 {
-                console.log(currentText)
                 root.dateTime.fullYear=parseInt(currentText)
                 }
 

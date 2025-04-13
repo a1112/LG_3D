@@ -54,7 +54,7 @@ Item {
     }
 
     function itemIsShow(item){
-        console.log(JSON.stringify(filterDict))
+        // console.log(JSON.stringify(filterDict))
         return nameIsShow(item["defectName"])
     }
 

@@ -27,28 +27,6 @@ Item {
                         // dataShowCore.telescopedJointView =! dataShowCore.telescopedJointView
                     }
                 }
-
-                // ItemDelegateItem {
-                //     height: 20
-                //     text: "塔形"
-                //     selected: dataShowCore.telescopedJointView
-                //     onClicked: {
-                //         dataShowCore.telescopedJointView =! dataShowCore.telescopedJointView
-                //     }
-                // }
-                // Rectangle{
-                //     width: row.width
-                //     height: 1
-                //     color: "#0090E0"
-                // }
-                // ItemDelegateItem {
-                //     height: 20
-                //     text: "数据"
-                //     selected: dataShowCore.viewDefectListView
-                //     onClicked: {
-                //         dataShowCore.viewDefectListView=! dataShowCore.viewDefectListView
-                //     }
-                // }
             }
         }
     }

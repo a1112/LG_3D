@@ -21,6 +21,7 @@ class ImageCache:
             if image_byte is None:
                 return None
             return Image.open(io.BytesIO(image_byte))
+
         return _load_image_npy
 
     def _cache_image_byte(self):
@@ -30,11 +31,12 @@ class ImageCache:
                 return None
             with open(path, 'rb') as f:
                 return f.read()
+
         return _load_image_byte
 
     def _mask_cache_image_byte(self):
         @lru_cache(maxsize=self.cache_size)
-        def _load_image_byte(path,mask_path):
+        def _load_image_byte(path, mask_path):
             binary_data = self._cache_image_byte(path)
             image = Image.open(io.BytesIO(binary_data))
 
@@ -68,11 +70,14 @@ class ImageCache:
             image.save(img_byte_arr, format='jpeg')
             img_byte_arr.seek(0)
             return img_byte_arr.getvalue()
+
         return _load_image
 
-    def get_image(self, path,pil=False):
+    def get_image(self, path, pil=False):
         try:
             print(path)
+            if "AREA" in path:
+                path = fr"D:\S.jpg"
             if pil:
                 return self._cache_image_pil(path)
             return self._cache_image_byte(path)
@@ -102,6 +107,7 @@ class Data3dCache:
             if ".npy" in str(path):
                 return np.load(path).astype(int)
             return np.load(path)["array"]
+
         return _load_3d_data
 
     def get_data(self, path):
@@ -119,8 +125,3 @@ previewCache = ImageCache(512)
 imageCache = ImageCache(256)
 d3DataCache = Data3dCache(32)
 classifierCache = ImageCache(200)
-
-
-
-
-

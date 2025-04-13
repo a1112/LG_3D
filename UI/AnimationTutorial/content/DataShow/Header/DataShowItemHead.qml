@@ -53,15 +53,16 @@ HeaderBase {
         //     }
         // }
         Row{
-        ItemDelegateItem {
-            height: 20
-            text: "2D"
-            selected:surfaceData.rootViewIndex  == 2
-            onClicked: {
-                surfaceData.rootViewIndex = 2
-            }
+        // ItemDelegateItem {
+        //     height: 20
+        //     text: "2D"
+        //     selected:surfaceData.currentViewKey=="AREA"//surfaceData.rootViewIndex  == 2
+        //     onClicked: {
+        //         surfaceData.rootViewIndex = 0  // 2
+        //         surfaceData.currentViewKey = "AREA"
+        //     }
 
-        }
+        // }
 
         ItemDelegateItem {
             height: 20

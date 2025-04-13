@@ -17,12 +17,13 @@ router = APIRouter(tags=["备份服务"])
 
 @router.get("/save_to_sql/{sql_file:path}")
 def save_to_sql(sql_file: str):
-    state=False
+    state = False
     if ".sql" in sql_file.lower():
         state = backup.backup_to_sql(sql_file, mysqldump_exe=serverConfigProperty.mysqldump_exe)
     if ".db" in sql_file.lower():
         state = backup.backup_to_sqlite(sql_file)
     return {"state": state}
+
 
 @router.websocket("/ws/backupImageTask")
 async def ws_backup_image_task(websocket: WebSocket):
@@ -48,11 +49,9 @@ async def ws_backup_image_task(websocket: WebSocket):
             break
 
 
-
-
 @router.get("/exportXlsxById/{start:int}/{end:int}")
-async def export_xlsx_by_id(start, end,export_type = "3D", export_config = None ):
-    output, file_size = export.export_data_by_coil_id(start, end,export_type=export_type, export_config=export_config)
+async def export_xlsx_by_id(start, end, export_type="3D", export_config=None):
+    output, file_size = export.export_data_by_coil_id(start, end, export_type=export_type, export_config=export_config)
     headers = {
         "Content-Disposition": f"attachment; filename=example.xlsx",
         "Content-Length": str(file_size)  # 设置文件大小
@@ -65,9 +64,8 @@ async def export_xlsx_by_id(start, end,export_type = "3D", export_config = None 
     return response
 
 
-
 @router.get("/exportXlsxByDateTime/{start:str}/{end:str}")
-async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config = None ):
+async def export_xlsx_by_datetime(start, end, export_type="3D", export_config=None):
     """
     根据时间导出数据 %Y%m%d%H%M : 202401100100
     :param start: 开始时间
@@ -79,7 +77,7 @@ async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config =
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     output, file_size = export.export_data_by_time(
-        start, end,export_type=export_type,export_config = export_config
+        start, end, export_type=export_type, export_config=export_config
     )
 
     headers = {
@@ -95,7 +93,7 @@ async def export_xlsx_by_datetime(start, end,export_type = "3D", export_config =
 
 
 @router.post("/export_xlsx")
-async def export_xlsx_post(export_xlsx_config:ExportXlsxConfigModel ):
+async def export_xlsx_post(export_xlsx_config: ExportXlsxConfigModel):
     print(export_xlsx_config)
     # config = ExportXlsxConfigModel(data)
     # {'export_type': 'xlsx', 'detection_3d_info': True, 'defect_info': True, 'defect_show_info': True,
@@ -116,5 +114,6 @@ async def export_xlsx_post(export_xlsx_config:ExportXlsxConfigModel ):
                                  media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     return response
+
 
 app.include_router(router)
