@@ -20,7 +20,7 @@ class CameraConfig(BaseConfig):
         return True
         return self.key in ["Cap_S_M"]
 
-    def get_url_list(self,url_list:List[WindowsPath]):
+    def get_url_list(self, url_list:List[WindowsPath]):
         url_list = url_list[self.loss_num:]
         if "S" in self.key:
             url_list = url_list[::-1]

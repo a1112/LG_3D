@@ -36,5 +36,9 @@ class SurfaceWork(WorkBase):
                 camera_wolk.add_work(coil_id)
             for camera_wolk in self.cameras_wolk:
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
-            max_image = self.join_images(image_dict)
-            self.save_wolk.add_work([coil_id,max_image])
+            try:
+                max_image = self.join_images(image_dict)
+                self.save_wolk.add_work([coil_id, max_image])
+            except AttributeError:
+                pass
+            self.set(None)

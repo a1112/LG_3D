@@ -11,9 +11,7 @@ class JoinWork(WorkBase):
 
     def __init__(self, config):
         super().__init__(config)
-
         self.config: JoinConfig
-
         self.surface_dict = {}
         self._run_ = True
         self.start()
@@ -29,3 +27,4 @@ class JoinWork(WorkBase):
                 surface.add_work(coil_id)
             for key, surface in self.surface_dict.items():
                 surface.get()
+            self.set(None)

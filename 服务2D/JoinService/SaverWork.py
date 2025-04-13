@@ -10,8 +10,7 @@ class SaverWork(WorkBase):
 
     def run(self):
         while self._run_:
-            save_base_folder=self.config.save_folder
             coil_id,image = self.queue_in.get()
-            save_folder = save_base_folder/str(coil_id)/"jpg"
-            save_folder.mkdir(parents=True, exist_ok=True)
-            image.save(str(save_folder/f"{coil_id}.jpg"))
+            save_f=self.config.get_area_url(coil_id)
+            save_f.parent.mkdir(parents=True, exist_ok=True)
+            image.save(save_f)

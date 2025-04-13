@@ -29,10 +29,14 @@ class CameraWork(WorkBase):
                 return
             folder = self.config.get_folder(coil_id)
             images = self.get_images(folder)
-            max_image=self.horizontal_concat(images)
-            # print(max_image)
-            # max_image.save(fr"test_{self.config.key}.jpg")
-            self.set(max_image)
+            try:
+                max_image = self.horizontal_concat(images)
+                # print(max_image)
+                # max_image.save(fr"test_{self.config.key}.jpg")
+                self.set(max_image)
+            except ValueError:
+                self.set(None)
+
 
     def horizontal_concat(self,images):
         for i in range(len(images)):
