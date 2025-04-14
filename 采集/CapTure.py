@@ -39,8 +39,8 @@ class CapTure2D(CapTureBase):
                     print(f"coil 为空: ",self.parent.coil)
                     time.sleep(0.1)
                     coil = 1
-                area_cap = self.camera.get_last_frame()
-                bf = DaHengBuffer(area_cap)
+                area_cap,last_time = self.camera.get_last_frame()
+                bf = DaHengBuffer(area_cap,last_time)
                 # bf.setBDconfig(cap.getBDconfig())
                 bf.setCoil(coil)
                 self.dataSave.put(bf)

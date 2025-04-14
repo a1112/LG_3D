@@ -1,18 +1,7 @@
 import QtQuick
-import "../../Model"
 
-import "_base_"
-DataShowCore_ {
-    // OBJ
-    id:root
-
-    property DataShowControl controls:  DataShowControl{
-        hoverPoint:root.hoverPoint
-    }
-    property DataShowControl3D controls3D:  DataShowControl3D{
-    }
-    property DataShowAreaCore dataShowAreaCore: DataShowAreaCore{
-    }
+Item {
+        property var key: "AREA"
 
     function flush(){
         surfaceData.error_visible=false
@@ -24,7 +13,6 @@ DataShowCore_ {
 
 
     readonly property int coilId: surfaceData.coilId
-    readonly property string key:surfaceData.key
     readonly property string currentViewKey:surfaceData.currentViewKey
     onCoilIdChanged: {
         flush()
@@ -32,9 +20,7 @@ DataShowCore_ {
 
     property Flickable flick
 
-    property CoilModel currentCoilModel: surfaceData.currentCoilModel
-
-    property string source: surfaceData.source
+    property string source: "http://127.0.0.1:5012/image/source/S/66252/AREA?mask=false"//surfaceData.area_source
 
     // 画布数据
     property real canvasScale: minScale // 画布缩放比例
@@ -208,5 +194,4 @@ DataShowCore_ {
                                                            )
         surfaceData.error_visible=true
     }
-
 }

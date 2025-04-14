@@ -8,10 +8,13 @@ Item{
         currentIndex:root.surfaceData.rootViewIndex
         Data2DLayout{
         }
+
         Data3DLayout{
         }
-        DataAreaLayout{
+
+        DataAreaLayout{    // 2D 图像的显示
         }
+
     }
     MaskTool{  // 遮挡
     }

@@ -9,6 +9,7 @@ Item{
     property SurfaceData surfaceData
     property DataShowCore dataShowCore
 
+
     readonly property DataShowControl controls:dataShowCore.controls
 
     visible: dataShowCore.show_visible

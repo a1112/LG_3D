@@ -60,8 +60,9 @@ class SickBuffer(BufferBase):
 
 
 class DaHengBuffer(BufferBase):
-    def __init__(self, buffer):
+    def __init__(self, buffer,last_time):
         super().__init__()
+        self.last_time = last_time
         self.buffer  = buffer
         self.data2D = buffer
         self.coilId = None

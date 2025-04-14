@@ -13,4 +13,7 @@ class SaverWork(WorkBase):
             coil_id,image = self.queue_in.get()
             save_f=self.config.get_area_url(coil_id)
             save_f.parent.mkdir(parents=True, exist_ok=True)
-            image.save(save_f)
+            try:
+                image.save(save_f)
+            except BaseException as e:
+                print(e)

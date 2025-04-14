@@ -97,11 +97,10 @@ class DaHengCamera(Thread): # Process
                     while True:
                         frame = cap.getFrame()
                         if frame is None:
-                            time.sleep(0.1)
                             continue
                         # while self.frame_queue.qsize() > 0:
                         #     self.frame_queue.get()
-                        self.frame_queue.put(frame)
+                        self.frame_queue.put([frame,time.time()])
                         time.sleep(0.01)
             except BaseException as e:
                 time.sleep(5)

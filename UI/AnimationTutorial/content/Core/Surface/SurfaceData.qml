@@ -176,11 +176,13 @@ Item {
 
     readonly property bool imageMask: coreModel.imageMaskChecked
     onImageMaskChanged: {
-        source=getSource(coilId,currentViewKey)
+        source = getSource(coilId,currentViewKey)
+        area_source = getSource(coilId,"AREA")
     }
 
-    property string default_key:"GRAY"
+    property string default_key: "GRAY"
     property string source: ""
+    property string area_source: ""
     property string error_source: ""
     property bool error_visible: true
     property bool error_auto: true
@@ -195,6 +197,7 @@ Item {
         default_key=_viewKey_
         currentViewKey = _viewKey_
         source = getSouceByKey(_viewKey_)
+        area_source = getSouceByKey("AREA")
     }
 
     property CoilModel currentCoilModel
@@ -204,6 +207,7 @@ Item {
         let type_= default_key
         coilId = coilId_
         source = getSource(coilId_,type_,false)
+        area_source = getSource(coilId_,"AREA",false)
         viewDataModel.clear()
         coreModel.allViewKeys.forEach(function(viewKey){
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})

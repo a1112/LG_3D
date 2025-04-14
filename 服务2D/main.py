@@ -10,10 +10,11 @@ from JoinService.JoinWork import JoinWork
 def main():
     jw = JoinWork(join_config)
 
-    start_coil = join_config.get_last_coil()
-    print(start_coil)
-    # start_coil = 60000
+    # start_coil = join_config.get_last_coil()
+    start_coil = 66000
     # start_coil = int(start_coil)
+    print(start_coil)
+
     while True:
         can = join_config.can_(start_coil)
         if not can:

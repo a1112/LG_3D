@@ -16,7 +16,6 @@ class SurfaceWork(WorkBase):
         self.cameras_wolk = []
         self.start()
 
-
     def join_images(self,image_dict):
         """
         拼接图像

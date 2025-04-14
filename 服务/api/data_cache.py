@@ -76,8 +76,6 @@ class ImageCache:
     def get_image(self, path, pil=False):
         try:
             print(path)
-            if "AREA" in path:
-                path = fr"D:\S.jpg"
             if pil:
                 return self._cache_image_pil(path)
             return self._cache_image_byte(path)

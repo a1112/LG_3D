@@ -31,6 +31,7 @@ class JoinConfig(BaseConfig):
         return folders[-1].stem
 
     def can_(self,coil_id):
+        coil_id=int(coil_id)
         surface = list(self.surfaces.values())[0]
         if  surface.get_area_url(coil_id).parent.parent.exists() and \
              surface.get_area_url(coil_id+1).parent.parent.exists():

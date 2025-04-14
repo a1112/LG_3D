@@ -83,6 +83,6 @@ Item {
             level: 1
         }
     }
-    property var allViewKeys: ["GRAY","JET","AREA"]
+    property var allViewKeys: ["GRAY","JET"]
 
 }

@@ -31,10 +31,14 @@ class CameraWork(WorkBase):
             images = self.get_images(folder)
             try:
                 max_image = self.horizontal_concat(images)
+                print(max_image)
                 # print(max_image)
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(max_image)
-            except ValueError:
+            except ValueError as e:
+                raise e
+                print(e)
+                print(images)
                 self.set(None)
 
 
