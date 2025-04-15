@@ -9,6 +9,7 @@ Row {
     }
     Label{
         font.bold: true
-        text:surfaceData.is2DrootView?surfaceData.currentViewKey: "3D"
+        text:surfaceData.is2DrootView?surfaceData.currentViewKey:
+                    surfaceData.isAreaRootView? "2D相机":                   "3D"
     }
 }

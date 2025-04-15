@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 Item {
     Column{
 
@@ -71,7 +71,7 @@ Item {
 
         Row{
             Label{
-                text: dataShowCore.sourceWidth
+                text: dataAreaShowCore.sourceWidth
                 background: Rectangle{
                     color: "#772e2e2e"
                 }
@@ -81,7 +81,7 @@ Item {
                 color: "#747474"
             }
             Label{
-                text: dataShowCore.sourceHeight
+                text: dataAreaShowCore.sourceHeight
                 background: Rectangle{
                     color: "#772e2e2e"
                 }

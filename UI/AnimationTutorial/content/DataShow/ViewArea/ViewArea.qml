@@ -4,7 +4,7 @@ import "../Aerial"
 import "Draw"
 import "../Comps"
 import "ViewTool"
-Rectangle {
+Item {
     id:root
     anchors.fill: parent
     property View2DTool view2DTool: View2DTool{}
@@ -53,12 +53,5 @@ Rectangle {
         y:root.height - height-scrollBarH.height
     }
 
-    Image{
-        id: image
-        source: dataAreaShowCore.source
-        width: parent.width
-        height: parent.height
-        asynchronous :true
 
-    }
 }

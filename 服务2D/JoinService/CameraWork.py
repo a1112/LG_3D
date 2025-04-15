@@ -36,7 +36,6 @@ class CameraWork(WorkBase):
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(max_image)
             except ValueError as e:
-                raise e
                 print(e)
                 print(images)
                 self.set(None)

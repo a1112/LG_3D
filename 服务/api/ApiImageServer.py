@@ -41,8 +41,35 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     # image = DataGet(source_type, surface_key, coil_id, type_, mask).get_image()
     # if image is None:
     #     return Response(content=noFindImageByte, media_type="image/jpeg")
-    return Response(image_bytes, media_type="image/png")
+    return Response(image_bytes, media_type="image/jpeg")
 
+@router.get("/image/area/{surface_key:str}/{coil_id:str}")
+async def get_area_tiled(surface_key, coil_id: str,row=0, col=0, count=0):
+    """
+    当 row == -1 返回完整图像
+    当 count == 0 返回宽高
+    按照 count 分割返回图像
+    """
+    row=int(row)
+    col=int(col)
+    count=int(count)
+    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+    if row==-1:
+        return Response(data_get.get_image(), media_type="image/jpeg")
+    image = data_get.get_image(pil=True)
+    w,h = image.size
+    if count==0:
+        return {
+            "width":w,
+            "height":h
+        }
+    w_width = w // count
+    h_height = h // count
+    crop_image = image.crop((row*w_width, col*h_height,(row+1)*w_width, (col+1)*h_height))
+    img_byte_arr = io.BytesIO()
+    crop_image.save(img_byte_arr, format='jpeg')
+    img_byte_arr.seek(0)
+    return StreamingResponse( img_byte_arr, media_type="image/png")
 
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
 async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str, w: str, h: str):
@@ -109,6 +136,7 @@ async def get_classifier_image(coil_id, surface_key, class_name, x, y, w, h):
     except StopIteration:
         data_get = DataGet("image", surface_key, coil_id, ImageType.GRAY, False)
         image = data_get.get_image(pil=True)
+
         if image is None:
             return Response(content=noFindImageByte, media_type="image/jpg")
         sub_image = image.crop((x, y, x + w, y + h))

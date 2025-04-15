@@ -17,9 +17,13 @@ HeaderBase {
         Row{
             spacing: 5
             ScaleBtn{}
-            GammaBtn{}
+            GammaBtn{
+             visible: surfaceData.is2DrootView
+            }
         }
-            ToolBtns{}
+            ToolBtns{
+                visible: ! surfaceData.is3DrootView
+            }
         Item{
             Layout.fillWidth: true
             implicitHeight: 1

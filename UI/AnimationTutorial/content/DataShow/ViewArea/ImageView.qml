@@ -1,25 +1,35 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
 import "../../Base"
-Item {
-        anchors.fill: parent
-    Image {
-        width: parent.width
-        height: parent.height
-        // fillMode: Image.PreserveAspectFit
-        id: image
-        asynchronous: true
-        source:dataAreaShowCore.source
-        onStatusChanged: {
-            if (status === Image.Ready) {
-                dataAreaShowCore.sourceWidth = image.sourceSize.width
-                dataAreaShowCore.sourceHeight = image.sourceSize.height
-            }
-        }
-        Component.onCompleted: {
-            dataAreaShowCore.imageItem = this
-        }
-    }
+import "../../Controls/TiledImageView"
+
+TiledImageView{
+    anchors.fill: parent
+    imageUrl : dataAreaShowCore.source
+}
+
+// Item {
+//         anchors.fill: parent
+
+
+
+    // Image {
+    //     width: parent.width
+    //     height: parent.height
+    //     // fillMode: Image.PreserveAspectFit
+    //     id: image
+    //     asynchronous: true
+    //     source:dataAreaShowCore.source
+    //     onStatusChanged: {
+    //         if (status === Image.Ready) {
+    //             dataAreaShowCore.sourceWidth = image.sourceSize.width
+    //             dataAreaShowCore.sourceHeight = image.sourceSize.height
+    //         }
+    //     }
+    //     Component.onCompleted: {
+    //         dataAreaShowCore.imageItem = this
+    //     }
+    // }
     // Image {
     //     cache: true
     //     id: image2
@@ -35,4 +45,4 @@ Item {
     //          enabled:visible
     //          visible: dataShowCore.adjustConfig.image_gamma_enable
     //      }
-}
+// }

@@ -8,7 +8,7 @@ Item{
     id:root
     property SurfaceData surfaceData
     property DataShowCore dataShowCore
-
+    property var dataShowCore_: surfaceData.isAreaRootView ? dataShowCore.dataShowAreaCore:dataShowCore
 
     readonly property DataShowControl controls:dataShowCore.controls
 

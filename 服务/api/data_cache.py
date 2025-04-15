@@ -1,6 +1,8 @@
+
 import io
 import os
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -27,7 +29,7 @@ class ImageCache:
     def _cache_image_byte(self):
         @lru_cache(maxsize=self.cache_size)
         def _load_image_byte(path):
-            if not os.path.exists(path):
+            if not Path(path).exists():
                 return None
             with open(path, 'rb') as f:
                 return f.read()
