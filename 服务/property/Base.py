@@ -136,7 +136,10 @@ class DataIntegration:
 
     @property
     def next_code(self):
-        return str(chr(int(self.currentSecondaryCoil.Weight)))
+        try:
+            return str(chr(int(self.currentSecondaryCoil.Weight)))
+        except:
+            return 49
 
     @property
     def save_folder(self):

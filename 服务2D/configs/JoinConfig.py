@@ -19,6 +19,9 @@ class JoinConfig(BaseConfig):
 
 
     def get_last_coil(self):
+        if CONFIG.DEBUG:
+            return 66000
+
         surface = list(self.surfaces.values())[0]
         save_folder1 = Path(surface.save_folder)
         folders = list(save_folder1.iterdir())
