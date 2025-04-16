@@ -25,6 +25,8 @@ Item {
             return
         }
         currentCoilModel.init(c_data)
+
+        coreControl.init_data_has()
         if (currentCoilModel.coilStatus_L>=0) {
             coreModel.surfaceL.hasData = true
         }
