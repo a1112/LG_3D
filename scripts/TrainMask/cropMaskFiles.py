@@ -13,7 +13,7 @@ imageSaveFolder.mkdir(parents=True, exist_ok=True)
 
 for imageFile in rootFolder.glob("*/*_GRAY.png"):
     image = Image.open(imageFile)
-    maskFile = Image.open(imageFile.parent/(imageFile.name.replace("GRAY","MASK")))
+    maskFile = Image.open(imageFile.parent/(imageFile.name.replace("GRAY", "MASK")))
     w,h = image.size
     mask = np.array(maskFile)
     image = np.array(image)
@@ -33,8 +33,8 @@ for imageFile in rootFolder.glob("*/*_GRAY.png"):
         cropped_image = image[start_y:end_y, :]
         cropped_mask = mask[start_y:end_y, :]
         cropped_image = Image.fromarray(cropped_image)
-        cropped_image = cropped_image.resize((640,640))
+        cropped_image = cropped_image.resize((640, 640))
         cropped_mask = Image.fromarray(cropped_mask)
-        cropped_mask = cropped_mask.resize((640,640))
+        cropped_mask = cropped_mask.resize((640, 640))
         cropped_image.save(imageSaveFolder / (imageFile.name.replace(".png", f"_{i}.png")))
         cropped_mask.save(maskSaveFolder / (imageFile.name.replace(".png", f"_{i}.png")))
