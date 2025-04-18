@@ -37,12 +37,11 @@ def classifiers_folder(from_folder, out_folder, file_func):
         files = list(file_folder.glob("*.*"))
         file_len = len(files)
         count_len = 640
-        for i in range(file_len//count_len):
+        for i in range(file_len//count_len +1):
             print(i)
             files_c = files[i*count_len:(i+1)*count_len]
             res_index, res_source, names = ccm.predict_image(files_c)
             do_files(files_c, class_name, names, out_folder, file_func)
-
 
 from_ = Path(fr"I:\detection_save6\classifier")
 out_ = from_.parent / "classifier_out"
@@ -50,4 +49,9 @@ func = shutil.move
 if socket.gethostname() == "lcx_ace":
     from_ = Path(fr"I:\detection_save6\classifier")
     out_ = from_.parent / "classifier_out"
+
+if socket.gethostname() == "DESKTOP-V9D92AP":
+    from_ = Path(fr"G:\数据优化\SaveDefect\SaveDefect")
+    out_ = from_.parent / "classifier_out"
+
 classifiers_folder(from_folder=from_, out_folder=out_, file_func=func)
