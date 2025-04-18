@@ -1,6 +1,7 @@
 from multiprocessing import freeze_support
 
 import AlarmDetection
+import AlarmDetection.detection
 from property.Base import DataIntegrationList
 from utils.LoggerProcess import LoggerProcess
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
             mosaic.set_coil_id(i)
             dataIntegration = mosaic.get_data()
             dataIntegrationList.append(dataIntegration)  # 检测
-        AlarmDetection.detection_all(dataIntegrationList)
+        AlarmDetection.detection.detection_all(dataIntegrationList)
         # cv_detection.detectionAll(dataIntegrationList)
     # mosaic.maskImage.show()
     # mosaic.maskImage.show()

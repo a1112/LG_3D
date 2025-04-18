@@ -1,6 +1,8 @@
-class TaperShapeConfig:
+from .ConfigBase import ConfigBase
+
+class TaperShapeConfig(ConfigBase):
     def __init__(self, config):
-        self.config = config
+        super().__init__(config)
         self.name = config["name"]
         self.height = config["height"]
         self.inner = config["inner"]

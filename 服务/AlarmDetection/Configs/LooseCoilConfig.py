@@ -1,6 +1,8 @@
-class LooseCoilConfig:
+from .ConfigBase import ConfigBase
+
+class LooseCoilConfig(ConfigBase):
     def __init__(self, config):
-        self.config = config
+        super().__init__(config)
         self.name = config["name"]
         self.width = config["width"]
         self.info = config["info"]

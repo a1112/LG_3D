@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from AlarmDetection.Configs.AlarmFlatRollConfig import AlarmFlatRollConfig
-from AlarmDetection.Configs.LooseCoilConfig import LooseCoilConfig
-from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
+from .FlatRollConfig import FlatRollConfig
+from .LooseCoilConfig import LooseCoilConfig
+from .TaperShapeConfig import TaperShapeConfig
+from .DefectConfig import DefectConfig
 from property.BaseConfigProperty import BaseConfigProperty
 
 
@@ -17,14 +18,17 @@ class AlarmConfigProperty(BaseConfigProperty):
     def __init__(self,file_path: Path):
         super().__init__(file_path)
 
-    def get_alarm_flat_roll_config(self, next_code):
-        return AlarmFlatRollConfig(self.config["FlatRoll"][getattr(self.config["FlatRoll"], next_code, "Base")])
+    def get_alarm_flat_roll_config(self):
+        return FlatRollConfig(self.config["FlatRoll"])
 
-    def get_taper_shape_config(self, next_code):
-        return TaperShapeConfig(self.config["TaperShape"][getattr(self.config["TaperShape"], next_code, "Base")])
+    def get_taper_shape_config(self):
+        return TaperShapeConfig(self.config["TaperShape"])
 
-    def get_loose_coil_config(self, next_code):
-        return LooseCoilConfig(self.config["LooseCoil"][getattr(self.config["LooseCoil"], next_code, "Base")])
+    def get_loose_coil_config(self):
+        return LooseCoilConfig(self.config["LooseCoil"])
+
+    def get_defect_config(self):
+        return DefectConfig(self.config["Defect"])
 
     def get_info_json(self):
         pass

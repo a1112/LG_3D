@@ -7,6 +7,7 @@ from queue import Queue
 import logging
 
 import AlarmDetection
+import AlarmDetection.detection
 from CONFIG import isLoc, serverConfigProperty
 from Init import ErrorMap
 from property.Base import DataIntegrationList
@@ -107,7 +108,7 @@ class ImageMosaicThread(Thread):
                     defection_time3 = time.time()
                     cv_detection.detection_all(data_integration_list)
                     defection_time4 = time.time()
-                    AlarmDetection.detection_all(data_integration_list) # 判级
+                    AlarmDetection.detection.detection_all(data_integration_list) # 判级
 
                     logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
                     logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
