@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import os
 
-from property.AlarmConfigProperty import AlarmConfigProperty
+from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 from property.ControlConfigProperty import ControlConfigProperty
 from property.DefectClassesProperty import DefectClassesProperty
 from property.InfoConfigProperty import InfoConfigProperty

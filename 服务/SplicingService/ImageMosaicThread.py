@@ -104,10 +104,11 @@ class ImageMosaicThread(Thread):
                             status[imageMosaic.key] = ErrorMap["ImageError"]
                             continue
                     defection_time2 = time.time()
-                    AlarmDetection.detection_all(data_integration_list)
                     defection_time3 = time.time()
                     cv_detection.detection_all(data_integration_list)
                     defection_time4 = time.time()
+                    AlarmDetection.detection_all(data_integration_list) # 判级
+
                     logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
                     logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
                     logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")

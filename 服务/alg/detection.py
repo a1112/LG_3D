@@ -293,6 +293,8 @@ def detection(data_integration: DataIntegration):
             # x, y, w, h = clip_info
             x,y = 0, 0
             defect_dict[name].append((x + xmin, y + ymin, x + xmax, y + ymax, label_index, source))
+
+    data_integration.set_defect_dict(defect_dict)
     commit_defects(defect_dict, data_integration)
 
 

@@ -1,11 +1,43 @@
-from CoilDataBase import Coil, Alarm, tool
+import asyncio
+import json
+from queue import Queue
+from threading import Thread
+
+from CoilDataBase import Alarm, tool
+
+from CoilDataBase.Coil import get_coil_status_by_coil_id
+
+from fastapi import APIRouter
+from fastapi import WebSocket
+
+import CONFIG
+import Globs
 from CoilDataBase.models import AlarmFlatRoll
+from api.api_core import app
+from CONFIG import alarmConfigProperty
 
 
-def get_coil_alarm(coil_id: int):
+router = APIRouter(tags=["报警、判级"])
+
+@router.get("/coilAlarm/get_info")
+async def get_info():
     """
-    获取报警数据 （分别查询）
+    获取报警信息
+    Returns:
     """
+    return alarmConfigProperty.get_info_json()
+
+
+@router.get("/coilAlarm/{coil_id:int}")
+async def get_coil_alarm(coil_id: int):
+    """
+    返回全部的警告数据
+    Args:
+        coil_id:
+
+    Returns:
+    """
+
     flat_roll_info = {}
     alarm_flat_roll_list = Alarm.getAlarmFlatRoll(coil_id)
     for alarmItem in alarm_flat_roll_list[::-1]:
@@ -15,7 +47,6 @@ def get_coil_alarm(coil_id: int):
     taper_shape_info = {
         "S": [],
         "L": []
-
     }
 
     alarm_taper_shape_list = Alarm.getAlarmTaperShape(coil_id)
@@ -34,3 +65,5 @@ def get_coil_alarm(coil_id: int):
         "TaperShape": taper_shape_info,
         "LooseCoil": LooseCoil
     }
+
+app.include_router(router)

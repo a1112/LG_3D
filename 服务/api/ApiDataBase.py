@@ -6,7 +6,6 @@ from fastapi import APIRouter
 
 import CONFIG
 import Globs
-from AlarmDetection import AlarmCoilManagement
 from CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
@@ -224,19 +223,6 @@ async def get_camera_data(coil_id: int, camera_key: str):
             return camera_config
 
     return serverConfigProperty.getCameraData(coil_id, camera_key)
-
-
-@router.get("/coilAlarm/{coil_id:int}")
-async def get_coil_alarm(coil_id: int):
-    """
-    返回全部的警告数据
-    Args:
-        coil_id:
-
-    Returns:
-
-    """
-    return AlarmCoilManagement.get_coil_alarm(coil_id)
 
 
 @router.get("/backupImageTask/{from_id:int}/{to_id:int}/{save_folder:path}")

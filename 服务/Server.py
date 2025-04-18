@@ -43,6 +43,7 @@ from api import ApiSettings
 
 # from api import ApiDocs
 
+from AlarmDetection.Server import ApiAlarmInfo
 
 class ServerProcess(Thread):
     def __init__(self, port):
