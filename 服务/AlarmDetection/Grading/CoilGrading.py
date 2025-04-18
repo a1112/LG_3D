@@ -3,15 +3,18 @@ from typing import List
 from CoilDataBase.models import AlarmFlatRoll
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmInfo
-from CoilDataBase.Coil import add_obj
 from CONFIG import alarmConfigProperty, infoConfigProperty
-from property.AlarmConfigProperty import AlarmFlatRollConfig, AlarmGradResult, TaperShapeConfig, LooseCoilConfig
+from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
+from AlarmDetection.Configs.LooseCoilConfig import LooseCoilConfig
+from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
+from AlarmDetection.Configs.FlatRollConfig import FlatRollConfig
 from property.Base import CoilLineData, DataIntegration, DataIntegrationList
 from property.Data3D import LineData
 from property.detection3D import FlatRollData
+from AlarmDetection.Configs.CoilInfo import CoilInfo
 
 
-def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config: AlarmFlatRollConfig):
+def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config: FlatRollConfig):
     """
     判断松卷的直接逻辑
     Args:
@@ -74,7 +77,7 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
     flat_roll_data = data_integration.flatRollData
     inner_circle_width = data_integration.x_to_mm(flat_roll_data.inner_circle_width)
     flat_roll_data: FlatRollData
-    alarmFlatRollConfig: AlarmFlatRollConfig
+    alarmFlatRollConfig: FlatRollConfig
     name, config_max, config_min, config_msg = alarm_flat_roll_config.get_config()
     error_msg = "正常"
     grad = 1
@@ -169,7 +172,6 @@ def grading(data_integration: DataIntegration):
         数据库提交判断级别
     Args:
         data_integration:
-
     Returns:
 
     """
@@ -183,12 +185,6 @@ def grading(data_integration: DataIntegration):
     flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
     taper_shape_grad_info = grading_alarm_taper_shape(data_integration)
     alarm_loose_coil_info = grading_alarm_loose_coil(data_integration)
-    # flat_roll_grad_info = gradingAlarmFlatRoll(data_integration.alarmFlat_Roll,
-    #                                            alarmConfigProperty.getAlarmFlatRollConfig(next_code))
-    # taper_shape_grad_info = gradingAlarmTaperShape(data_integration.alarmTaperShapeList,
-    #                                                alarmConfigProperty.getTaperShapeConfig(next_code))
-    # alarm_loose_coil_info = gradingAlarmLooseCoil(data_integration.detectionLineData,
-    #                                               alarmConfigProperty.getLooseCoilConfig(next_code))
 
     alarm_info = AlarmInfo(
         secondaryCoilId=data_integration.coilId,
@@ -205,9 +201,14 @@ def grading(data_integration: DataIntegration):
         defectMsg="",
         grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad, flat_roll_grad_info.grad)
     )
+    from CoilDataBase.Coil import add_obj
     add_obj(alarm_info)
 
 
 def grading_all(data_integration_list: DataIntegrationList):
+    """
+    级别判断系统
+
+    """
     for dataIntegration in data_integration_list:
         grading(dataIntegration)

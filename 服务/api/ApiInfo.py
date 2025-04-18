@@ -1,3 +1,4 @@
+from pathlib import Path
 
 from fastapi import APIRouter
 
@@ -47,10 +48,24 @@ async def database_info():
         "coil_last":coil_last
     }
 
+
 @router.get("/coil_list_value_change_keys")
 async def coil_list_value_change_keys():
 
     return list(list_data_keys.keys())
 
+def file_has(f_):
+    print(f_)
+    return Path(f_).exists()
 
+@router.get("/data_has/{coil_id:int}")
+async def get_daa_has(coil_id):
+    return {
+        key:{
+            "3D" : file_has(surface_config.get_3d_file(coil_id)),
+            "MESH" : file_has(surface_config.get_mesh_file(coil_id)),
+            "JPG" : file_has(surface_config.get_file(coil_id,"GRAY")),
+            "2D" : file_has(surface_config.get_file(coil_id, "AREA"))
+            } for key, surface_config in serverConfigProperty.surfaceConfigPropertyDict.items()
+    }
 app.include_router(router)

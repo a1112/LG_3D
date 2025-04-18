@@ -9,3 +9,5 @@ else:
 JOIN_CONFIG_FILE = CONFIG_FOLDER / "area_join.json"
 
 WorkClass = Thread
+
+DEBUG = True

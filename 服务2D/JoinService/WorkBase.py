@@ -9,8 +9,8 @@ class WorkBase(CONFIG.WorkClass):
         self.queue_out = Queue()
         self._run_ = True
 
-    def add_work(self, coil_id):
-        self.queue_in.put(coil_id)
+    def add_work(self, data):
+        self.queue_in.put(data)
 
     def get(self):
         return self.queue_out.get()

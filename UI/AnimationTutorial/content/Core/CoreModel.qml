@@ -163,4 +163,7 @@ CoreModel_ {
     function getExportKeyByName(name){
         return ["3D","2D","ALL"][exportTypeList.indexOf(name)]
     }
+
+    property var has_data // 是否数据存在
+
 }

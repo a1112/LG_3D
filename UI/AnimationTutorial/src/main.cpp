@@ -38,8 +38,18 @@
 #include "import_qml_plugins.h"
 #include "filedownloader.h"
 #include "consolecontroller.h"
+#include <QSurfaceFormat>
 
 std::string getComputerName() {
+    QSurfaceFormat format;
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
+    // 尝试设置更大的纹理尺寸限制
+    format.setOption(QSurfaceFormat::ResetNotification);
+    format.setVersion(4, 1); // 使用较新的OpenGL版本
+
+    QSurfaceFormat::setDefaultFormat(format);
+
     char computerName[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = sizeof(computerName) / sizeof(computerName[0]);
 
@@ -52,6 +62,7 @@ std::string getComputerName() {
 
 int main(int argc, char *argv[])
 {
+
     QCoreApplication::setOrganizationName("北京科技大学设计研究院有限公司");
     QCoreApplication::setOrganizationDomain("1");
     set_qt_environment();

@@ -80,6 +80,7 @@ class DataIntegration:
     """
 
     def __init__(self, coil_id, save_folder, direction, key):
+        self.defect_dict = None  # 缺陷字典
         self.angleData = None
         self.annulus_mask = None
         self._circleConfig_ = None
@@ -136,7 +137,10 @@ class DataIntegration:
 
     @property
     def next_code(self):
-        return str(chr(int(self.currentSecondaryCoil.Weight)))
+        try:
+            return str(chr(int(self.currentSecondaryCoil.Weight)))
+        except:
+            return 49
 
     @property
     def save_folder(self):
@@ -378,6 +382,8 @@ class DataIntegration:
         # return tool.rotate_around_x_axis(self.__npyData__,r_z)
         return r_z
 
+    def set_defect_dict(self, defect_dict):
+        self.defect_dict = defect_dict
 
 class DataIntegrationList:
     """
@@ -404,3 +410,4 @@ class DataIntegrationList:
         else:
             self.index = 0
             raise StopIteration
+

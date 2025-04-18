@@ -20,6 +20,7 @@ Item {
         width: root.width
         height: root.height
     }
+
     ViewChangView{  // 右侧的数据切换
         height:root.height
         x:root.width- width -70

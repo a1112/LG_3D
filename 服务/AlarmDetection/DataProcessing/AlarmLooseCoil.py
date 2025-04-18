@@ -58,7 +58,6 @@ class AlarmLooseData:
 
 
 def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
-    print("_detectionAlarmLooseCoil_")
     for d in data_integration.detectionLineData:
         d.dataIntegration = data_integration
         d.detection()
@@ -66,7 +65,6 @@ def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
 
 
 def _detectionAlarmLooseCoilAll_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
-    print("_detectionAlarmLooseCoilAll_")
     """
     获取 LineData 数据假设同角度检测
     """

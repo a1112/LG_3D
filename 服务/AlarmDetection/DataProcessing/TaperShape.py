@@ -2,7 +2,6 @@ import math
 from typing import Union
 
 import cv2
-import numpy as np
 
 import Globs
 from property.Base import DataIntegrationList
@@ -12,8 +11,7 @@ from CoilDataBase import Alarm
 from tools.data3dTool import getP2ByRotate
 from utils.Log import logger
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from .TaperShapeLine import *
-from CONFIG import alarmConfigFile
+from AlarmDetection.DataProcessing.TaperShapeLine import *
 
 
 def addAlarmTaperShape(dataIntegration: DataIntegration, alarmTaperShape: AlarmTaperShape):

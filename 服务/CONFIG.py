@@ -4,11 +4,11 @@ from pathlib import Path
 import json
 import os
 
-from property.AlarmConfigProperty import AlarmConfigProperty
 from property.ControlConfigProperty import ControlConfigProperty
 from property.DefectClassesProperty import DefectClassesProperty
 from property.InfoConfigProperty import InfoConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
+from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')

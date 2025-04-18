@@ -55,6 +55,12 @@ Item{
 
         }
         Button{
+            icon.source: "../../icons/uploading.png"
+            text: qsTr("导出")
+            implicitHeight: root.height-5
+        }
+
+        Button{
             icon.source: "../../icons/Flush_Dark.png"
             text: qsTr("刷新")
             implicitHeight: root.height-5

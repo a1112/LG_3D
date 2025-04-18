@@ -1,10 +1,12 @@
 from queue import Queue
 from pathlib import Path
 from PIL import Image
+
+from .SaverWork import DebugSaveWork
 from .WorkBase import WorkBase
 from configs.CameraConfig import CameraConfig
 from . import tool
-
+from configs import CONFIG
 
 class CameraWork(WorkBase):
 
@@ -13,12 +15,22 @@ class CameraWork(WorkBase):
         self.scale=1
         self.start()
         self.config:CameraConfig
+        self.debug_work = None
+        if CONFIG.DEBUG:
+            self.debug_work = DebugSaveWork(self.config)
 
-    def get_images(self,folder):
+    def get_images(self, folder,coil_id):
         image_url_list = list(folder.glob("*.jpg"))
         image_url_list.sort(key=lambda i: int(Path(i).stem))
         image_url_list = self.config.get_url_list(image_url_list)
         image_list = [Image.open(u) for u in image_url_list]
+
+        if self.debug_work is not None:
+            for url_,image_ in zip(image_url_list,image_list):
+                index = Path(url_).stem
+                self.debug_work.add_work([coil_id, self.config.key, index, image_.copy()])
+
+
         return image_list
 
     def run(self):
@@ -28,7 +40,7 @@ class CameraWork(WorkBase):
             if not self.config.is_run():
                 return
             folder = self.config.get_folder(coil_id)
-            images = self.get_images(folder)
+            images = self.get_images(folder,coil_id)
             try:
                 max_image = self.horizontal_concat(images)
                 print(max_image)
@@ -36,7 +48,6 @@ class CameraWork(WorkBase):
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(max_image)
             except ValueError as e:
-                raise e
                 print(e)
                 print(images)
                 self.set(None)

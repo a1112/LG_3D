@@ -17,9 +17,13 @@ HeaderBase {
         Row{
             spacing: 5
             ScaleBtn{}
-            GammaBtn{}
+            GammaBtn{
+             visible: surfaceData.is2DrootView
+            }
         }
-            ToolBtns{}
+            ToolBtns{
+                visible: ! surfaceData.is3DrootView
+            }
         Item{
             Layout.fillWidth: true
             implicitHeight: 1
@@ -53,9 +57,10 @@ HeaderBase {
         //     }
         // }
         Row{
-        ItemDelegateItem {
+        ItemDelegateItemLabel {
             height: 20
             text: "2D"
+            key:"2D"
             selected:surfaceData.rootViewIndex  == 2
             onClicked: {
                 surfaceData.rootViewIndex = 2  // 2
@@ -64,7 +69,8 @@ HeaderBase {
 
         }
 
-        ItemDelegateItem {
+        ItemDelegateItemLabel {
+            key:"JPG"
             height: 20
             text: surfaceData.currentViewKey
             selected:surfaceData.rootViewIndex==0
@@ -76,8 +82,9 @@ HeaderBase {
                 id:hoverHandler2D
             }
         }
-        ItemDelegateItem {
+        ItemDelegateItemLabel {
             height: 20
+            key:"MESH"
             text: qsTr("3D")
             selected:surfaceData.rootViewIndex==1
             onClicked: surfaceData.rootViewIndex = 1

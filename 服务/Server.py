@@ -2,6 +2,11 @@
 LG_3D
 完整的服务
 """
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+
 from multiprocessing import Process, freeze_support
 from threading import Thread
 import uvicorn
@@ -38,6 +43,7 @@ from api import ApiSettings
 
 # from api import ApiDocs
 
+from AlarmDetection.Server import ApiAlarmInfo
 
 class ServerProcess(Thread):
     def __init__(self, port):

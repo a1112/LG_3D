@@ -208,6 +208,7 @@ Item {
         coilId = coilId_
         source = getSource(coilId_,type_,false)
         area_source = getSource(coilId_,"AREA",false)
+
         viewDataModel.clear()
         coreModel.allViewKeys.forEach(function(viewKey){
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})

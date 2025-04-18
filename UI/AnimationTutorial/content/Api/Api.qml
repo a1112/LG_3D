@@ -25,6 +25,10 @@ Api_DataBase {
         if(preView){
                 return apiConfig.url(apiConfig.serverUrlImage,"image/preview/"+_key_,_coilId_,_viewKey_)
         }
+        if (_viewKey_ === "AREA"){
+
+            return apiConfig.url(apiConfig.serverUrlImage,"image/area",_key_,_coilId_)
+        }
         return apiConfig.url(apiConfig.serverUrlImage,"image/source/"+_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
     //全局下载器
@@ -49,6 +53,8 @@ Api_DataBase {
         // E:\Save_L\53501\classifier\背景\53501_1148_5058_1177_5080.png
     }
 
-
+    function has_data(coil_id, success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlData, "data_has", coil_id), success, failure)
+    }
 
 }

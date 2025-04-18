@@ -24,16 +24,16 @@ class SurfaceConfigProperty:
         self.MaskType = "MASK"
 
     def get_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/{self.get_file_type.folder}/{type_}" + self.saveImageType
+        return str(Path(self.saveFolder)/str(coil_id)/self.get_file_type.folder/(type_ + self.saveImageType))
 
     def get_3d_file(self, coil_id):
-        return f"{self.saveFolder}/{coil_id}/3D.npy"
+        return str(Path(self.saveFolder)/str(coil_id)/"3D.npy")
 
     def get_mesh_file(self, coil_id):
-        return f"{self.saveFolder}/{coil_id}/meshes/defaultobject_mesh.mesh"
+        return str(Path(self.saveFolder) / str(coil_id) / "meshes"/"defaultobject_mesh.mesh")
 
     def get_preview_file(self, coil_id, type_):
-        return f"{self.saveFolder}/{coil_id}/preview/{type_}" + ".png"
+        return str(Path(self.saveFolder) / str(coil_id) / "preview" /f"{type_}.png")
 
     def get_classifier_image(self,coil_id,class_name,x,y,w,h):
         base_path = f"{self.saveFolder}/{coil_id}/classifier/{class_name}"

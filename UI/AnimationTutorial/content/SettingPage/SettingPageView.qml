@@ -5,6 +5,11 @@ import QtQuick.Layouts
 
 
 */
+import "BaseSetting"
+import "OtherSetting"
+import "D3Setting"
+import "GeneralSetting"
+import "AlarmSetting"
 Popup {
     anchors.centerIn: parent
     width: 1000
@@ -20,27 +25,39 @@ Popup {
         TabBar{
             id:tabBar
             Layout.fillWidth: true
+
             TabButton{
-                text:"常规设置"
+                text:qsTr("常规设置")
             }
             TabButton{
-                text:"报警设置"
+                text:qsTr("报警设置")
             }
             TabButton{
-                text:"3D渲染设置"
+                text:qsTr("3D渲染设置")
             }
             TabButton{
-                text:"其他"
+                text:qsTr("其他")
             }
         }
-        Item{
-            Layout.fillHeight: true
-            Layout.fillWidth: true
+
             StackLayout{
 
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                currentIndex: tabBar.currentIndex
+                GeneralSetting{
+                }
 
+                AlarmSetting{
+                }
+
+                D3Setting{
+                }
+
+                OtherSetting{
+                }
 
             }
-        }
+
     }
 }
