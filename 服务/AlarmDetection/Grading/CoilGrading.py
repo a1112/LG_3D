@@ -91,6 +91,8 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
 
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
+    from Coil import add_obj
+
     next_code = data_integration.next_code
     taper_shape_config = alarmConfigProperty.get_taper_shape_config(next_code)  # 判及 参数
     name, height_limit_list, inner, out, info = taper_shape_config.get_config()
@@ -166,6 +168,8 @@ def grading_alarm_loose_coil(data_integration: DataIntegration):
             grad = 3
     return AlarmGradResult(grad, grad_msg, loose_coil_config)
 
+def grading_alarm_defects(data_integration: DataIntegration):
+    pass
 
 def grading(data_integration: DataIntegration):
     """
@@ -185,6 +189,7 @@ def grading(data_integration: DataIntegration):
     flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
     taper_shape_grad_info = grading_alarm_taper_shape(data_integration)
     alarm_loose_coil_info = grading_alarm_loose_coil(data_integration)
+
 
     alarm_info = AlarmInfo(
         secondaryCoilId=data_integration.coilId,

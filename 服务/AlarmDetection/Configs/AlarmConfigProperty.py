@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from property.Base import DataIntegration
 from .FlatRollConfig import FlatRollConfig
 from .LooseCoilConfig import LooseCoilConfig
 from .TaperShapeConfig import TaperShapeConfig
@@ -18,17 +19,17 @@ class AlarmConfigProperty(BaseConfigProperty):
     def __init__(self,file_path: Path):
         super().__init__(file_path)
 
-    def get_alarm_flat_roll_config(self):
-        return FlatRollConfig(self.config["FlatRoll"])
+    def get_alarm_flat_roll_config(self,data_integration: DataIntegration):
+        return FlatRollConfig(self.config["FlatRoll"],data_integration)
 
-    def get_taper_shape_config(self):
-        return TaperShapeConfig(self.config["TaperShape"])
+    def get_taper_shape_config(self,data_integration: DataIntegration):
+        return TaperShapeConfig(self.config["TaperShape"],data_integration)
 
-    def get_loose_coil_config(self):
-        return LooseCoilConfig(self.config["LooseCoil"])
+    def get_loose_coil_config(self,data_integration: DataIntegration):
+        return LooseCoilConfig(self.config["LooseCoil"],data_integration)
 
-    def get_defect_config(self):
-        return DefectConfig(self.config["Defect"])
+    def get_defect_config(self,data_integration: DataIntegration):
+        return DefectConfig(self.config["Defect"],data_integration)
 
     def get_info_json(self):
         pass
