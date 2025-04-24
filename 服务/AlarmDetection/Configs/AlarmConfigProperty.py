@@ -8,13 +8,6 @@ from .DefectConfig import DefectConfig
 from property.BaseConfigProperty import BaseConfigProperty
 
 
-class AlarmGradResult:
-    def __init__(self, grad, error_msg, config_msg):
-        self.grad = grad
-        self.errorMsg = error_msg
-        self.configMsg = config_msg
-
-
 class AlarmConfigProperty(BaseConfigProperty):
     def __init__(self,file_path: Path):
         super().__init__(file_path)

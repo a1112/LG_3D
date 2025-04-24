@@ -14,6 +14,7 @@ from CoilDataBase.models import AlarmLooseCoil
 from CoilDataBase.models import ServerDetectionError
 
 from AlarmDetection.Result.AlarmData import AlarmData
+from CONFIG import infoConfigProperty
 from Globs import control
 from property.Types import BdData, LevelingType
 from tools import tool, FlattenSurface
@@ -144,6 +145,7 @@ class DataIntegration:
 
     @property
     def next_name(self):
+        return infoConfigProperty.get_next(self.next_code)
 
     @property
     def save_folder(self):

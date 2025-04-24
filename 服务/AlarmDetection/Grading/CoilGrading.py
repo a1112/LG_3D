@@ -7,8 +7,7 @@ from CoilDataBase.models import AlarmInfo
 from AlarmDetection.Grading.alarm_flat_roll import grading_alarm_flat_roll
 from AlarmDetection.Grading.alarm_loose_coil import grading_alarm_loose_coil
 from AlarmDetection.Grading.alarm_taper_shape import grading_alarm_taper_shape
-from CONFIG import infoConfigProperty
-from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
+from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.Configs.LooseCoilConfig import LooseCoilConfig
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
 from AlarmDetection.Configs.FlatRollConfig import FlatRollConfig
@@ -72,7 +71,7 @@ def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_co
     return AlarmGradResult(grad, grad_msg, loose_coil_config)
 
 
-   def grading(data_integration: DataIntegration):
+def grading(data_integration: DataIntegration):
     """
         数据库提交判断级别
     Args:
@@ -81,7 +80,7 @@ def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_co
 
     """
     # 获取去向
-    next_name = infoConfigProperty.get_next(next_code)
+
 
     flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
     taper_shape_grad_info = grading_alarm_taper_shape(data_integration)
@@ -91,8 +90,8 @@ def gradingAlarmLooseCoil(detection_line_data: List[CoilLineData], loose_coil_co
     alarm_info = AlarmInfo(
         secondaryCoilId=data_integration.coilId,
         surface=data_integration.key,
-        nextCode=next_code,
-        nextName=next_name,
+        nextCode=data_integration.next_code,
+        nextName=data_integration.next_name,
         taperShapeGrad=taper_shape_grad_info.grad,
         taperShapeMsg=taper_shape_grad_info.errorMsg,
         looseCoilGrad=alarm_loose_coil_info.grad,

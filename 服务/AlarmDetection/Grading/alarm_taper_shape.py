@@ -1,7 +1,7 @@
 from CoilDataBase.Coil import add_obj
 from CoilDataBase.models import AlarmTaperShape
 
-from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
+from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.property import alarmConfigProperty
 from property.Base import DataIntegration
 from property.Data3D import LineData

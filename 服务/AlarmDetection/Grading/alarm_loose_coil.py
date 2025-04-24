@@ -1,4 +1,4 @@
-from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
+from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.property import alarmConfigProperty
 from property.Base import DataIntegration
 

@@ -1,4 +1,4 @@
-from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
+from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.Configs.FlatRollConfig import FlatRollConfig
 from AlarmDetection.Result.FlatRollData import FlatRollData
 from AlarmDetection.property import alarmConfigProperty
