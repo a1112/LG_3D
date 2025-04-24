@@ -3,7 +3,9 @@ from typing import List
 from CoilDataBase.models import AlarmFlatRoll
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmInfo
-from CONFIG import alarmConfigProperty, infoConfigProperty
+
+from AlarmDetection.property import alarmConfigProperty
+from CONFIG import infoConfigProperty
 from AlarmDetection.Configs.AlarmConfigProperty import AlarmGradResult
 from AlarmDetection.Configs.LooseCoilConfig import LooseCoilConfig
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
@@ -12,6 +14,7 @@ from property.Base import CoilLineData, DataIntegration, DataIntegrationList
 from property.Data3D import LineData
 from property.detection3D import FlatRollData
 from AlarmDetection.Configs.CoilInfo import CoilInfo
+from CoilDataBase.Coil import add_obj
 
 
 def gradingAlarmFlatRoll(alarm_flat_roll: AlarmFlatRoll, alarm_flat_roll_config: FlatRollConfig):
@@ -91,7 +94,6 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
 
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
-    from Coil import add_obj
 
     next_code = data_integration.next_code
     taper_shape_config = alarmConfigProperty.get_taper_shape_config(next_code)  # 判及 参数
