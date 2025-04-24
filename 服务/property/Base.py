@@ -12,9 +12,10 @@ from CoilDataBase.models import SecondaryCoil
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase.models import AlarmLooseCoil
 from CoilDataBase.models import ServerDetectionError
+
+from AlarmDetection.Result.AlarmData import AlarmData
 from Globs import control
 from property.Types import BdData, LevelingType
-from property.detection3D import FlatRollData
 from tools import tool, FlattenSurface
 
 
@@ -106,7 +107,6 @@ class DataIntegration:
         self.scan3dCoordinateScaleY = None
         self.scan3dCoordinateScaleZ = None
 
-        self.lineDataDict = {}
         self._npyData_: np.array = None
         self.__npyData__: np.array = None
         # self._image_ = None
@@ -121,7 +121,7 @@ class DataIntegration:
         self.datas = None
         self.configDatas = None
 
-        self.flatRollData: Optional[FlatRollData] = None
+        self.alarmData = AlarmData(self)
         self.detectionLineData = []
         self.alarmTaperShapeList: List[AlarmTaperShape] = []
         self.json_data: dict = {}
@@ -141,6 +141,9 @@ class DataIntegration:
             return str(chr(int(self.currentSecondaryCoil.Weight)))
         except:
             return 49
+
+    @property
+    def next_name(self):
 
     @property
     def save_folder(self):

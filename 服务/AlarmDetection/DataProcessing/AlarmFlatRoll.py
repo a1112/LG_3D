@@ -5,7 +5,8 @@ from PIL import Image
 import cv2
 import numpy as np
 from property.Base import DataIntegration, DataIntegrationList
-from property.detection3D.FlatRollData import FlatRollData, CircleDataItem
+from property.detection3D.FlatRollData import CircleDataItem
+from AlarmDetection.Result.FlatRollData import FlatRollData
 
 
 def contour_to_data(contour, key):
@@ -61,12 +62,12 @@ def _detectionAlarmFlatRoll_(data_integration: DataIntegration):
     mask = data_integration.npy_mask
     circle_data_out, circle_data_in = get_data(mask)
     flat_roll_data = FlatRollData(data_integration, circle_data_in, circle_data_out)
-    data_integration.flatRollData = flat_roll_data
+    data_integration.alarmData.set_flat_roll_data(flat_roll_data)
     return flat_roll_data
 
 
 def commitData(data_integration: DataIntegration, flat_roll_data):
-    Alarm.addObj(flat_roll_data.getAlarmFlatRoll(data_integration))
+    Alarm.addObj(flat_roll_data.get_alarm_flat_roll(data_integration))
 
 
 def _detectionAlarmFlatRollAll_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
@@ -75,8 +76,7 @@ def _detectionAlarmFlatRollAll_(data_integration_list: Union[DataIntegrationList
     """
     print("AlarmFlatRollAll")
     for dataIntegration in data_integration_list:
-        flat_roll_data = _detectionAlarmFlatRoll_(dataIntegration)
-        flat_roll_data.commit()
+        _detectionAlarmFlatRoll_(dataIntegration)
 
 
 if __name__ == "__main__":
