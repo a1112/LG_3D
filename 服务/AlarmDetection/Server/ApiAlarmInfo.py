@@ -13,8 +13,9 @@ from fastapi import WebSocket
 import CONFIG
 import Globs
 from CoilDataBase.models import AlarmFlatRoll
+
+from AlarmDetection.property import alarmConfigProperty
 from api.api_core import app
-from CONFIG import alarmConfigProperty
 
 
 router = APIRouter(tags=["报警、判级"])
