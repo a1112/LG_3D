@@ -11,7 +11,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
 
     next_code = data_integration.next_code
     taper_shape_config = alarmConfigProperty.get_taper_shape_config(next_code)  # 判及 参数
-    name, height_limit_list, inner, out, info = taper_shape_config.get_config()
+    name, height_limit_list, inner, out, info = taper_shape_config.get_config().get_config()
     error_msg = "正常"
     grad = 1
 
@@ -38,15 +38,9 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         if out_taper_max_value >= height_limit:
             error_msg += f"外塔最高值 {out_taper_max_value} >= {height_limit} 检测角度{max_outer_line_data.rotation_angle} \n"
             grad = grading_level
-        # if abs(out_taper_min_value) >= height_limit:
-        #     error_msg += f"外径最低值 abs({out_taper_max_value}) >= {height_limit} 检测角度{rotation_angle} \n"
-        #     grad = grading_level
         if in_taper_max_value >= height_limit:
             error_msg += f"内塔最高值 {in_taper_max_value} >= {height_limit} 检测角度{max_inner_line_data.rotation_angle} \n"
             grad = grading_level
-        # if in_taper_min_value >= height_limit:
-        #     error_msg += f"内径最低值 abs({in_taper_min_value}) >= {height_limit} 检测角度{rotation_angle} \n"
-        #     grad = grading_level
 
     add_obj(AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,

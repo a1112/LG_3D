@@ -1,3 +1,5 @@
+from CoilDataBase.models import AlarmFlatRoll
+
 from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.Configs.FlatRollConfig import FlatRollConfig
 from AlarmDetection.Result.FlatRollData import FlatRollData
@@ -21,3 +23,4 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
         error_msg = f"{name} 内径 {inner_circle_width} >= {config_max}"
         grad = 3
     return AlarmGradResult(grad, error_msg, config_msg)
+

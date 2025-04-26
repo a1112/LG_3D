@@ -6,7 +6,7 @@ from property.Base import DataIntegration
 def grading_alarm_loose_coil(data_integration: DataIntegration):
     next_code = data_integration.next_code
     loose_coil_config = alarmConfigProperty.get_loose_coil_config(next_code)  # 判及 参数
-    name, width, info = loose_coil_config.get_config()
+    name, width, info = loose_coil_config.get_config().get_config()
     grad_msg = ""
     grad = 1
     for lineData in data_integration.alarmData.lineDataDict.values():

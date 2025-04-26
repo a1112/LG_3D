@@ -31,18 +31,26 @@ class FlatRollConfig(ConfigBase):
             #     "max": 780,
             #     "info": "冷轧去向如有松卷(12点方向两层之间超过6mm认定为松卷)，不计最内圈应大于715mm，包含最内圈需不低于700mm"
             # }
-            "msg":"塔形检测",
+            "msg":"松卷检测",
+            "base":{
+                "filter": {
+                    "type": "base"
+                },
+                "max": 780,
+                "min": 600,
+                "info": "不计最内圈应大于780mm，包含最内圈需不低于600mm"
+
+            },
             "configs":[
                 {
-                    "filter":{
-                        "type":"base"
-                    }
-
-
-
+                    "filter": {
+                        "type": "out_name",
+                        "name": "VAMA"
+                    },
+                    "max": 780,
+                    "min": 705,
+                    "info": "不计最内圈应大于715mm，包含最内圈需不低于700mm"
                 }
-
-
             ]
         }
         config = test
@@ -54,5 +62,6 @@ class FlatRollConfig(ConfigBase):
         # self.min_width = config["min"]
         # self.msg = config["info"]
 
-    # def get_config(self):
-    #     return self.name, self.max_width, self.min_width, self.msg
+    def get_config(self):
+        # for item_config in self.config["configs"]:
+        return FlatRollConfigItem(self.config["base"])
