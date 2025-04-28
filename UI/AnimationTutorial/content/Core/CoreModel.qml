@@ -9,6 +9,10 @@ CoreModel_ {
     property int maxCoilListModelLen: 300
 
     property int currentCoilListIndex: 0
+    onCurrentCoilListIndexChanged:{
+    core.flushListItem()
+    }
+
 
     readonly property bool isListRealModel:currentCoilListIndex===0
     readonly property bool isListHistoryModel:currentCoilListIndex===1
@@ -143,6 +147,7 @@ CoreModel_ {
         api.searchByCoilId(coilId,
                            (result)=>{
                                setSearch(JSON.parse(result))
+
                            },
                            (error)=>{}
 

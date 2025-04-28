@@ -1,8 +1,14 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 Item {
     Column{
-
+        Label{
+            text:dataShowCore.coilId
+            color:"green"
+            background: Rectangle{
+                color: "#772e2e2e"
+            }
+        }
         Row{
                 spacing:10
         Row{
@@ -91,5 +97,7 @@ Item {
                 color: "#747474"
             }
         }
+
+
 }
 }

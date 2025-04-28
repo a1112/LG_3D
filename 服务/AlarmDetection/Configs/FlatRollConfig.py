@@ -4,8 +4,14 @@ from property.Base import DataIntegration
 class  FlatRollConfigItem(ConfigBase):
     def __init__(self, config):
         super().__init__(config)
+        self.name=config["name"]
+        self.filter=config["filter"]
+        self.max=config["max"]
+        self.min=config["min"]
+        self.msg=config["msg"]
 
-
+    def get_config(self):
+        return self.name,self.max,self.min,self.msg
 
 class FlatRollConfig(ConfigBase):
     """
@@ -33,12 +39,14 @@ class FlatRollConfig(ConfigBase):
             # }
             "msg":"松卷检测",
             "base":{
+                "name":"test",
                 "filter": {
                     "type": "base"
                 },
+
                 "max": 780,
                 "min": 600,
-                "info": "不计最内圈应大于780mm，包含最内圈需不低于600mm"
+                "msg": "不计最内圈应大于780mm，包含最内圈需不低于600mm"
 
             },
             "configs":[

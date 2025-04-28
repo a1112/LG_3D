@@ -13,7 +13,7 @@ def grading_alarm_flat_roll(data_integration: DataIntegration):
     inner_circle_width = data_integration.x_to_mm(flat_roll_data.inner_circle_width)
     flat_roll_data: FlatRollData
     alarmFlatRollConfig: FlatRollConfig
-    name, config_max, config_min, config_msg = alarm_flat_roll_config.get_config()
+    name, config_max, config_min, config_msg = alarm_flat_roll_config.get_config().get_config()
     error_msg = "正常"
     grad = 1
     if inner_circle_width <= config_min:

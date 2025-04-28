@@ -5,8 +5,6 @@ from configs.JoinConfig import join_config
 from JoinService.JoinWork import JoinWork
 
 
-
-
 def main():
     jw = JoinWork(join_config)
 

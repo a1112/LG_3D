@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import "ViewChang"
 import "2dShow"
 import "Menu/MainShow"
@@ -32,4 +33,5 @@ Item {
 
 
     }
+
 }

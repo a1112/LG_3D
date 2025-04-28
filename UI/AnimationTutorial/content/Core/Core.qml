@@ -19,13 +19,19 @@ Item {
     readonly property bool isLast:coilIndex==0
     property int coilIndex: 0
     onCoilIndexChanged: {
+        flushListItem()
+    }
+
+    property CoilModel currentCoilModel: CoilModel {
+    }
+
+    function flushListItem(){
         let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
 
         if (c_data.SecondaryCoilId===currentCoilModel.coilId) {
             return
         }
         currentCoilModel.init(c_data)
-
         coreControl.init_data_has()
         if (currentCoilModel.coilStatus_L>=0) {
             coreModel.surfaceL.hasData = true
@@ -41,11 +47,7 @@ Item {
         }
         coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
         coreModel.surfaceL.setCoilId(currentCoilModel.coilId)
-        coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
 
-    }
-
-    property CoilModel currentCoilModel: CoilModel {
     }
 
     function flushList() {
