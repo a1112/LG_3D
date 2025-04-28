@@ -8,7 +8,6 @@ from property.ControlConfigProperty import ControlConfigProperty
 from property.DefectClassesProperty import DefectClassesProperty
 from property.InfoConfigProperty import InfoConfigProperty
 from property.ServerConfigProperty import ServerConfigProperty
-from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default=None, help='3D服务配置文件')
@@ -83,11 +82,12 @@ data_base_api_port = 6011
 server_api_port = 6010
 image_api_port = 6012
 serverConfigProperty = ServerConfigProperty(configFile)
-alarmConfigProperty = AlarmConfigProperty(alarmConfigFile)
 infoConfigProperty = InfoConfigProperty(infoConfigFile)
 defectClassesProperty = DefectClassesProperty(defectClassesConfigFile)
 controlConfigProperty = ControlConfigProperty(controlConfigFile)
 
+if socket.gethostname() == "DESKTOP-94ADH1G":
+    serverConfigProperty.balsam_exe = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
 
 def getAllKey():
     return "2D", "MASK", "3D"

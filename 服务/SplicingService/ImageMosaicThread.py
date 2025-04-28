@@ -71,7 +71,6 @@ class ImageMosaicThread(Thread):
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
                 #     lastCoilSecondaryCoilId = 0
-                list_data = [68331]
                 for secondaryCoilIndex in range(len(list_data)):
                     defection_time1 = time.time()
                     secondary_coil = list_data[secondaryCoilIndex]

@@ -70,7 +70,7 @@ def _detectionAlarmLooseCoilAll_(data_integration_list: Union[DataIntegrationLis
     """
     line_datas = []
     for dataIntegration in data_integration_list:
-        line_datas.append([dataIntegration, dataIntegration.lineDataDict])
+        line_datas.append([dataIntegration, dataIntegration.alarmData.lineDataDict])
         addAlarmLooseCoil(AlarmLooseCoil(
             secondaryCoilId = dataIntegration.coilId,
             surface=dataIntegration.surface,
