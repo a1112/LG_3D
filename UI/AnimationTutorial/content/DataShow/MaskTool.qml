@@ -30,8 +30,6 @@ Item {
 
     MainShowMenu{
         id: mainShowMenu
-
-
     }
 
 }

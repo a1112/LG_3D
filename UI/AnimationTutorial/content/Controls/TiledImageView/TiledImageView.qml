@@ -24,7 +24,6 @@ Rectangle {
     }
 
     onImageUrlChanged: {
-        console.log("onImageUrlChanged")
         count_= 1
         api.ajax.get(imageUrl,(text)=>{
                          console.log(text)

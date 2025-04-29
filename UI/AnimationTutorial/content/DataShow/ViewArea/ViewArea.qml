@@ -31,9 +31,7 @@ Item {
             width: dataAreaShowCore.canvasContentWidth
             height: dataAreaShowCore.canvasContentHeight
 
-            ImageView{
-
-            }
+            ImageView{}
 
             // ShowDefects{ // 缺陷绘制
             // }

@@ -44,6 +44,7 @@ Item {
     property string labelColor: isDark ? "#FFF" : "#000"
     property color textColor: isDark ? "#FFF" : "#000"
 
+    property color itemDbackColor:isDark?"#AA2f2f2f":"#AAe2e2e2"
 
     property int leftWidth: 400
     property int topHeight: 45
