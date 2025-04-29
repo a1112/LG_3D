@@ -8,10 +8,11 @@ Menu {
     property  bool isHoved: leftCore.isHoved
     onIsHovedChanged: {
             if  (isHoved){
-                popup()
+                 popup()
+
             }
     }
-    visible: leftCore.isHoved
+    visible: isHoved
     id:root
     x: left.width+10
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
@@ -20,10 +21,10 @@ Menu {
     property int body_width:width-20
     property CoilModel coilModel:leftCore.hovedCoilModel
 
-    onClosed:{
-        if (leftCore.isHoved)
-            popup()
-    }
+    // onClosed:{
+    //     leftCore.isHoved = false
+    //     leftCore.isHoved = true
+    // }
 
     Label{    // title
         text:qsTr("数据摘要")
