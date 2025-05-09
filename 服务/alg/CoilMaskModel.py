@@ -8,7 +8,6 @@ from property.Types import DetectionType
 
 class CoilAreaModel:
     def __init__(self):
-        from ultralytics import YOLO
         self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilArea.pt"))   # load a custom model
 
     def predict(self, image):

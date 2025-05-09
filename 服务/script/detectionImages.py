@@ -7,9 +7,9 @@ from alg import detection
 from alg.CoilMaskModel import CoilDetectionModel
 from PIL import Image
 
-cdm = CoilDetectionModel(base_name="CoilDetection_JC.pt")
+cdm = CoilDetectionModel()
 
-images_folder = Path(fr"F:\subImage\detection_sub_image\detection_sub_image")
+images_folder = Path(fr"D:\标志\标记06")
 if "DESKTOP-V9D92AP" == socket.gethostname():
     save_base_folder = Path(fr"E:\detection_save")
 
