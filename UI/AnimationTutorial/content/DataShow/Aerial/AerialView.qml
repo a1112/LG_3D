@@ -3,9 +3,9 @@ import QtQuick.Controls
 Item {
     id:root
     width: 100
-    height: width/dataShowCore.aspectRatio
+    height: width/dataShowCore_.aspectRatio
 
-    property real zoom: width/dataShowCore.aspectRatio
+    property real zoom: width/dataShowCore_.aspectRatio
 
     property real opacity_image: 0.4
     property alias source: image.source
@@ -27,10 +27,10 @@ Item {
     }
     Rectangle{
         id:rec
-    x:dataShowCore.canvasContentXaspectRatio*parent.width
-    y:dataShowCore.canvasContentYaspectRatio*parent.height
-     width: image.sourceSize.width* dataShowCore.canvasWidthAspectRatio
-     height: image.sourceSize.height* dataShowCore.canvasHeightAspectRatio
+    x:dataShowCore_.canvasContentXaspectRatio*parent.width
+    y:dataShowCore_.canvasContentYaspectRatio*parent.height
+     width: image.sourceSize.width* dataShowCore_.canvasWidthAspectRatio
+     height: image.sourceSize.height* dataShowCore_.canvasHeightAspectRatio
      color:"#00000000"
      border.color: "blue"
      border.width: 1
@@ -51,10 +51,10 @@ Item {
             cursorShape: Qt.PointingHandCursor
 
             onPressed: {
-                let contentX=(mouseX-rec.height/2)/parent.width * dataShowCore.canvasContentWidth
-                let contentY=(mouseY-rec.height/2)/parent.height * dataShowCore.canvasContentHeight
-                dataShowCore.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore.canvasContentWidth-dataShowCore.canvasWidth)
-                dataShowCore.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore.canvasContentHeight-dataShowCore.canvasHeight)
+                let contentX=(mouseX-rec.height/2)/parent.width * dataShowCore_.canvasContentWidth
+                let contentY=(mouseY-rec.height/2)/parent.height * dataShowCore_.canvasContentHeight
+                dataShowCore_.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore_.canvasContentWidth-dataShowCore_.canvasWidth)
+                dataShowCore_.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore_.canvasContentHeight-dataShowCore_.canvasHeight)
                 // dataShowCore.canvasWidth=rec.width/parent.width * dataShowCore.canvasContentWidth
                 // dataShowCore.canvasHeight=rec.height/parent.height * dataShowCore.canvasContentHeight
             }
@@ -62,8 +62,8 @@ Item {
             onPositionChanged: {
                 let contentX=(mouseX-rec.height/2)/parent.width * dataShowCore.canvasContentWidth
                 let contentY=(mouseY-rec.height/2)/parent.height * dataShowCore.canvasContentHeight
-                dataShowCore.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore.canvasContentWidth-dataShowCore.canvasWidth)
-                dataShowCore.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore.canvasContentHeight-dataShowCore.canvasHeight)
+                dataShowCore_.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore_.canvasContentWidth-dataShowCore_.canvasWidth)
+                dataShowCore_.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore_.canvasContentHeight-dataShowCore_.canvasHeight)
                 // dataShowCore.canvasWidth=rec.width/parent.width * dataShowCore.canvasContentWidth
                 // dataShowCore.canvasHeight=rec.height/parent.height * dataShowCore.canvasContentHeight
             }

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "ViewArea"
 import "Core"
+import "2dShow/MaskTool"
 
 Loader{
     active: surfaceData.isAreaRootView
@@ -15,6 +16,7 @@ property DataShowAreaCore dataAreaShowCore:dataShowCore.dataShowAreaCore
         ViewArea{}
         // Show2dView{}    // 2D 显示
         // MaskToolView{}// 功能菜单
+            MaskToolView{}// 功能菜单
     }
 
 }

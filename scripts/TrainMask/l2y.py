@@ -1,3 +1,5 @@
+#  seg 模式
+
 from labelme2yolov8.l2y import Labelme2YOLOv8
 
 

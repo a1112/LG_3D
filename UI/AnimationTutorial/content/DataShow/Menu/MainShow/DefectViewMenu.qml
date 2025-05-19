@@ -1,8 +1,8 @@
 import QtQuick.Controls.Material
 Menu {
-    title:"缺陷显示"
+    title:qsTr("缺陷显示")
     MenuItem{
-        text:"显示组别"
+        text:qsTr("显示组别")
     }
 
 }
