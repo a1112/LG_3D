@@ -2,11 +2,12 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+import CONFIG
 import Init
 from CONFIG import serverConfigProperty, defectClassesProperty
 from .api_core import app
 from CoilDataBase.core import engine
-from CoilDataBase.Coil import get_coil, list_data_keys
+from CoilDataBase.Coil import get_coil, list_data_keys, get_coil_list, get_grad_list
 from CoilDataBase.tool import to_dict
 
 
@@ -24,6 +25,22 @@ async def info():
     }
     info_.update(serverConfigProperty.to_dict())
     return info_
+
+def _get_grader_list_(num):
+    data = to_dict(get_grad_list(num))
+    for d in data:
+        sc = d["childrenCoil"]
+        if sc:
+            d.update(sc[0])
+            del d["childrenCoil"]
+        d["Next"] = CONFIG.infoConfigProperty.get_next(d["Weight"])
+
+    return  data
+
+@router.get("/grader_list")
+async def grader_list(count = 100):
+    return _get_grader_list_(count)
+
 
 # @router.get("/defectClasses")
 # async def get_defect_classes():

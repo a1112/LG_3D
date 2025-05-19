@@ -175,7 +175,7 @@ def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_
                 executor.submit(save_detection_item, res, clip_image, save_url)
 
 
-def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.1):
+def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.02):
     if clip_num is None:
         clip_num = serverConfigProperty.clip_num
 
