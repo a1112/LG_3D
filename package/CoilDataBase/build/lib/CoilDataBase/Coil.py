@@ -68,6 +68,11 @@ def get_join_query(session: Session, by_coil=True):
         query = query.filter(SecondaryCoil.Id <= last_coil.SecondaryCoilId)
     return query
 
+def get_grad_query(session):
+    query = session.query(SecondaryCoil).options(
+                                                 subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
+                                                 ).order_by(SecondaryCoil.Id.desc())
+    return query
 
 def add_secondary_coil(coil: SecondaryCoil):
     """
@@ -195,12 +200,18 @@ def delete_coil(id_):
 
 
 def get_coil_list(num, coil_id=None, by_coil=True):
-    with (Session() as session):
+    with Session() as session:
         query = get_join_query(session, by_coil=by_coil)
         if coil_id:
             query = query.filter(SecondaryCoil.Id > coil_id)
         return query.order_by(SecondaryCoil.Id.desc())[:num]
 
+
+def get_grad_list(num):
+    with Session() as session:
+        query = get_grad_query(session)
+        print(query.count())
+        return query[:num]
 
 def search_by_coil_no(coil_no):
     with Session() as session:

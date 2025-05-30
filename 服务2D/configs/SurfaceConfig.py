@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-import CONFIG
+
 from .BaseConfig import BaseConfig
 from .CameraConfig import CameraConfig
 
