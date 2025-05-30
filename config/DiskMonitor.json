@@ -1,0 +1,86 @@
+{
+    "D:\\": {
+        "threshold": 90,
+        "monitor": [
+            {
+                "source": "D:/Save_S",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            }
+        ]
+    },
+    "E:\\": {
+        "threshold": 90,
+        "monitor": [
+            {
+                "source": "E:/Save_L",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            }
+        ]
+    },
+    "F:\\": {
+        "threshold": 90,
+        "monitor": [
+            {
+                "source": "F:/Cap_L_D",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            },
+            {
+                "source": "F:/Cap_L_M",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            },
+            {
+                "source": "F:/Cap_L_U",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            }
+        ]
+    },
+    "G:\\": {
+        "threshold": 90,
+        "monitor": [
+            {
+                "source": "G:/Cap_S_U",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            },
+            {
+                "source": "G:/Cap_S_M",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            },
+            {
+                "source": "G:/Cap_S_D",
+                "sort_type": "time",
+                "delete_type": "%",
+                "delete_size": 10,
+                "minCount": 0,
+                "monitorAble": true
+            }
+        ]
+    }
+}

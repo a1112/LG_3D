@@ -23,6 +23,10 @@ class MonitorBase(QObject, Thread):
 
         self.log.info(f"--------------------------开始运行--------------------------")
 
+        if not os.path.exists(self.configFile):
+            self.log.info(f"配置文件不存在,创建配置文件")
+            json.dump({}, open(self.configFile, "w", encoding='utf-8'), ensure_ascii=False, indent=4)
+
         self.monitorData = json.load(open(self.configFile, "r", encoding='utf-8'))
         self.monitorData_old = copy.deepcopy(self.monitorData)
         self.stateDict = {}

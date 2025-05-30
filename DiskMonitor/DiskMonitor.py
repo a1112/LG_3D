@@ -146,6 +146,8 @@ class DiskMonitor(MonitorBase):
 
     @Slot(str, result=dict)
     def getDefault(self, path):
+
+
         path = path.replace("file:///", "")
         return {
             "source": path,
@@ -164,10 +166,10 @@ class DiskMonitor(MonitorBase):
         drive = Path(app["source"]).drive + "\\"
         # self.monitorData.append(app)
         if drive in self.monitorData:
-            self.monitorData[drive]["monitor"].append(self.getDefault(app))
+            self.monitorData[drive]["monitor"].append(self.getDefault(app["source"]))
         else:
             self.monitorData[drive] = {
                 "threshold": 90,
-                "monitor": [self.getDefault(app)]
+                "monitor": [self.getDefault(app["source"])]
             }
         self.set_config_change(True)
