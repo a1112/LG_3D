@@ -17,8 +17,8 @@ Logger("算法")
 # if offline_mode:
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23100)
-# from CoilDataBase.Coil import deleteCoil
-# deleteCoil(42000)
+# from CoilDataBase.Coil import delete_coil
+# deleteCoil(77146)
 # from CoilDataBase.Coil import deleteCoil
 # deleteCoil(1700)
 # if isLoc:
