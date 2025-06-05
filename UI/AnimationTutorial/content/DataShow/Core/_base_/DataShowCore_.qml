@@ -100,6 +100,8 @@ Item {
     property var defectsData: []
 
     onDefectsDataChanged: {
+        defectAllModel.clear()
+        defecClassListModel.clear()
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
                                     let defectName = item.defectName

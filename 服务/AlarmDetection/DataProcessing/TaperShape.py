@@ -384,24 +384,7 @@ def count_taper2(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
 
 
-def commit_line_data(data_integration: DataIntegration):
-    """
-    添加检测数据
-    Args:
-        data_integration:
 
-    Returns:
-
-    """
-    line_data_dict = data_integration.lineDataDict
-    model_list = []
-    for lineData in line_data_dict.values():
-        try:
-            model_list.append(lineData.line_data_model(data_integration))
-            model_list.extend(lineData.all_point_data_model(data_integration))
-        except AttributeError as e:
-            print(e)
-    Alarm.addObj(model_list)
 
 
 def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
@@ -412,8 +395,8 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     for dataIntegration in data_integration_list:
         if DetectionTaperShapeType.WK_TYPE in Globs.control.taper_shape_type:
             _detectionTaperShapeA_(dataIntegration)
-            dataIntegration.lineDataDict={}
+            dataIntegration.alarmData.set_line_data_dict({})
         if DetectionTaperShapeType.LINE_TYPE in Globs.control.taper_shape_type:
-            dataIntegration.lineDataDict = _detection_taper_shape_(dataIntegration)
+            dataIntegration.alarmData.set_line_data_dict( _detection_taper_shape_(dataIntegration))
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
-        commit_line_data(dataIntegration)
+

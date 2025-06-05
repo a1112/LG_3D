@@ -5,15 +5,14 @@ Menu {
     MenuItem{
         text:"打开URL..."
         onClicked:{
-            console.log(dataShowCore.source)
-            Qt.openUrlExternally(dataShowCore.source)
+            Qt.openUrlExternally(dataShowCore_.source)
         }
     }
 
     MenuItem{
         text:"重置"
         onClicked:{
-            dataShowCore.resetView()
+            dataShowCore_.resetView()
         }
     }
 

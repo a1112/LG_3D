@@ -29,8 +29,11 @@ class CoilClsModel:
 
         self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=None, in_chans=self.in_chans)
         self.model.eval()
-        self.device = 'cuda:0'
-        self.model = self.model.cuda()
+
+        self.device = 'cpu'
+        if torch.cuda.is_available():
+            self.device = 'cuda:0'
+            self.model = self.model.cuda()
         self.config = resolve_data_config({
         }, model=self.model)
         if self.in_chans==1:

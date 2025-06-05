@@ -3,7 +3,6 @@ import json
 from typing import List
 from pathlib import WindowsPath
 
-import CONFIG
 from .BaseConfig import BaseConfig
 
 class CameraConfig(BaseConfig):

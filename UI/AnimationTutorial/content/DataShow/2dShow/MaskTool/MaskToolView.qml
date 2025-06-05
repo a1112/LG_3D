@@ -7,7 +7,7 @@ Item {
  anchors.fill: parent
 
     Rectangle{
-        color: "#722f2f2f"
+        color: coreStyle.itemDbackColor
         width: rowr.width
         height: rowr.height
         id:rect_id
@@ -15,7 +15,6 @@ Item {
         RowLayout{
             id:rowr
             Column{
-
                 id:row
                 ItemDelegateItem {
                     height: 20
@@ -23,7 +22,7 @@ Item {
                     selected: false
                     font.bold:true
                     onClicked: {
-                        dataShowCore.resetView()
+                        dataShowCore_.resetView()
                         // dataShowCore.telescopedJointView =! dataShowCore.telescopedJointView
                     }
                 }
