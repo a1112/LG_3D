@@ -24,6 +24,7 @@ endif()
 # set(CMAKE_WIN32_EXECUTABLE OFF)
 
 
+
 if(WIN32)
     set(RCSOURCES ${RCSOURCES} resources.rc)
 endif()
