@@ -27,9 +27,9 @@ Api_DataBase {
         }
         if (_viewKey_ === "AREA"){
 
-            return apiConfig.url(apiConfig.serverUrlImage,"image/area",_key_,_coilId_)
+            return apiConfig.url(apiConfig.serverUrlImage,"image/area/"+_key_,_coilId_)
         }
-        return apiConfig.url(apiConfig.serverUrlImage,"image/source/"+_key_,_coilId_,_viewKey_)+`?mask=${mask}`
+        return apiConfig.url(apiConfig.serverUrlImage,"image", "source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
     //全局下载器
     function downloadFile(url,save_path,success,failure){

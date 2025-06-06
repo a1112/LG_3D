@@ -27,6 +27,7 @@ Item {
     }
 
     function get_key_port(key){
+       // console.log("get_key_port ", key)
         if (key in eqMap){
             key=eqMap[key]
         }
