@@ -1,3 +1,5 @@
+import socket
+
 from CONFIG import controlConfigFile, controlConfigProperty
 from property.ControlProperty import ControlProperty
 from property.Types import DetectionTaperShapeType, LevelingType, DetectionType, GetFileTypeJpg
@@ -17,11 +19,11 @@ class ControlManagement(ThreadClass):
         self.configFile = controlConfigFile
         self.ImageSaverWorkNum = 3
         self.minMaskDetectErrorSize = 2000  # mask 检测最小报警值
-        self.median_filter_size = 3
+        self.median_filter_size = 5
         self.downsampleSize = 3  # 如果下采样 1，数据将会非常庞大
         self.BaseImageMosaic = ThreadClass
         self.ImageSaverThreadType = "multiprocessing"
-        self.D3SaverWorkNum = 10
+        self.D3SaverWorkNum = 5
         self.D3SaverThreadType = "multiprocessing"
         self.D3SaverThreadMaxsize = 5
         self.ImageSaverQueueSize = 20
@@ -49,7 +51,16 @@ class ControlManagement(ThreadClass):
         self.get_file_type = GetFileTypeJpg
 
         self.out_side_px = 0 #  拓展 像素
-
+        self.loc_sleep_time = 10
+        hostname = socket.gethostname()
+        print(f"hostname: {hostname}")
+        if hostname=="DESKTOP-94ADH1G":
+            self.ImageSaverWorkNum = 1
+            self.median_filter_size = 7
+            self.D3SaverWorkNum = 1
+            self.D3SaverThreadMaxsize = 1
+            self.ImageSaverThreadType = "Thread"
+            self.loc_sleep_time = 100
         self.start()
 
     def get(self):

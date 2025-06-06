@@ -5,6 +5,7 @@ import traceback
 from queue import Queue
 
 import logging
+from typing import List
 
 import AlarmDetection
 import AlarmDetection.detection
@@ -34,7 +35,7 @@ class ImageMosaicThread(Thread):
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
-        self.imageMosaicList = []
+        self.imageMosaicList:List[ImageMosaic] = []
         # 重新识别的排队机制
         self.reDetectionSet = set() # 重新检测 set
         self.reDetectionMsg = Queue()
@@ -126,9 +127,9 @@ class ImageMosaicThread(Thread):
                             "Msg": ""
                         })
                     if isLoc:
-                        sleep_time = 10
+                        sleep_time = Globs.control.loc_sleep_time
                         if status["L"] < 0 and status["S"] < 0:
-                            sleep_time = 0.01
+                            sleep_time = 0.1
                         print(f"loc model sleep {sleep_time}")
                         "避免性能问题"
                         time.sleep(sleep_time)

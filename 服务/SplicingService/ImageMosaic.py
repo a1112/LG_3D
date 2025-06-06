@@ -4,6 +4,7 @@ import traceback
 from pathlib import Path
 import logging
 from typing import List, Optional
+import six
 
 import cv2
 import numpy as np
@@ -77,6 +78,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     def _save_(self, image, path):
         if self.save:
             return self.imageSaver.add(image, path)
+        return None
 
     def set_coil_id(self, coil_id):
         coil_id = str(coil_id)
@@ -316,7 +318,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 # raise e
                 logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
                 if isLoc and Globs.control.debug_raise:
-                    import six
                     six.reraise(Exception, e)
 
             finally:

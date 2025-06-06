@@ -9,10 +9,13 @@ import "../../btns"
 import "../../GlobalView"
 import "../../Base"
 Item {
+    Layout.fillWidth: true
+    implicitHeight: coreStyle.topHeight
+
     id:root
     width: 1080
     height: 35
-            clip: false
+    clip: false
     Pane{
         anchors.fill: parent
         Material.elevation: 5

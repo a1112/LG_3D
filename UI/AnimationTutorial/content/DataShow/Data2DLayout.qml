@@ -6,7 +6,7 @@ Loader{
     active: surfaceData.is2DrootView
     Layout.fillWidth: true
     Layout.fillHeight:true
-
+    asynchronous:true
     sourceComponent: Item{
         Layout.fillWidth: true
         Layout.fillHeight:true

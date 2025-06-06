@@ -38,7 +38,6 @@ Item {
             ImageView{
             }
             ShowDefects{ // 缺陷绘制
-
             }
             DrawView{
                 // 绘制

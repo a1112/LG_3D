@@ -14,7 +14,8 @@ ColumnLayout {
         Loader{
             width: root.width
             Layout.fillHeight:true
-                        active: surfaceData.meshExits
+            asynchronous: true
+            active: surfaceData.meshExits
             sourceComponent:View3D{
             }
 

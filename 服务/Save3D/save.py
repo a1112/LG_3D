@@ -6,6 +6,9 @@ import traceback
 from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
+import open3d as o3d
+from scipy.spatial import Delaunay
+
 from CONFIG import serverConfigProperty
 from threading import Thread
 import threading
@@ -150,8 +153,6 @@ def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05):
 #     return mesh
 
 def generate_mesh_from_point_cloud(point_cloud):
-    import open3d as o3d
-    from scipy.spatial import Delaunay
     """从点云生成三角网格。"""
     points = point_cloud[:, :2]  # 只使用x和y坐标进行Delaunay三角剖分
     print(f"point_cloud points shape: {points.shape}")
@@ -168,6 +169,8 @@ def generate_mesh_from_point_cloud(point_cloud):
 def save_colored_obj(mesh, colors, filename):
     """将彩色网格保存为 .obj 文件。"""
     return o3d.io.write_triangle_mesh(filename, mesh)
+
+
     with open(filename, 'w') as f:
         for vertex, color in zip(np.asarray(mesh.vertices), colors):
             colorStr = f"{color[0]} {color[1]} {color[2]}"

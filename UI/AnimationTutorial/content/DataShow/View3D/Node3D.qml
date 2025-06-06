@@ -1,9 +1,23 @@
+import QtQuick
 import QtQuick3D
 
 
 Node {
     id: node
     eulerRotation.z:-90
+
+    property string meshes_url: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+surfaceData.key+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
+    onMeshes_urlChanged: {
+        defaultobject.source = ""
+        t_.start()
+    }
+    Timer{
+        id:t_
+        interval:5000
+        onTriggered: {
+            defaultobject.source = meshes_url
+        }
+    }
 
     Node {
         id: node3D_obj
@@ -13,7 +27,7 @@ Node {
             pickable:false
             objectName: "defaultobject"
             //source: "file:////"+surfaceData.meshUrl
-            source: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+surfaceData.key+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
+            source: ""
             materials: [
                 defaultMaterial_material,
             ]

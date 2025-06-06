@@ -7,7 +7,7 @@ Item {
         anchors.fill: parent
     }
     Image {
-        cache: true
+        cache: false
         width: parent.width
         height: parent.height
         fillMode: Image.PreserveAspectFit
@@ -22,20 +22,19 @@ Item {
         }
         Component.onCompleted: {
             dataShowCore.imageItem=this
-
         }
     }
-    Image {
-        cache: true
-        id: image2
-        asynchronous: true
-        source: surfaceData.source
-        sourceSize.width:canvas.width
-        sourceSize.height:canvas.height
-    }
+    // Image {
+    //     cache: true
+    //     id: image2
+    //     asynchronous: true
+    //     source: surfaceData.source
+    //     sourceSize.width:canvas.width
+    //     sourceSize.height:canvas.height
+    // }
     GammaAdjust {
              anchors.fill: image
-             source: image2
+             source: image
              gamma: dataShowCore.adjustConfig.image_gamma
              enabled:visible
              visible: dataShowCore.adjustConfig.image_gamma_enable

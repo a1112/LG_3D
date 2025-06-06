@@ -14,7 +14,7 @@ Menu {
     }
     visible: isHoved
     id:root
-    x: left.width+10
+    x: left.width+20
     y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
     width:620 //col.width+20
     height:col.height+30

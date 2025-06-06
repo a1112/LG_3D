@@ -10,14 +10,11 @@ import "DataList"
 import "SearchView"
 import "FliterSelect"
 
-
+/*
+    左侧列表
+*/
 Item {
     id:root
-    Pane{
-        anchors.fill: parent
-        Material.elevation: 5
-        // Material.background:"#201F28"
-    }
     Pane{
         width: parent.width
         Material.elevation: 5
@@ -29,20 +26,17 @@ Item {
         anchors.fill: parent
         spacing:8
         orientation: Qt.Vertical
-        CurrentInfo{ // 当前卷信息
+        CurrentInfo{ // 卷信息
             SplitView.fillWidth: true
         }
         // AlarmInfoGlob{// 全局报警信息
         //     SplitView.fillWidth: true
         //     Layout.fillWidth: true
         // }
-        AlarmCheckInfoView{
-
-            visible: true
+        AlarmCheckInfoView{  // 判级
             width: parent.width
         }
-        AlarmItemSimple{
-            visible:true
+        AlarmItemSimple{    // 报警
             width: parent.width
         }
 
@@ -52,16 +46,14 @@ Item {
             SplitView.fillWidth: true
         }
 
-        FliterSelectView{
+        FliterSelectView{ // 过滤界面
 
         }
 
         DataListView{   // 左侧列表
-            SplitView.fillWidth: true
-            SplitView.fillHeight: true
+
             id:dataList
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+
         }
 
         FootView{

@@ -19,7 +19,6 @@ Item {
             anchors.fill:parent
             onClicked:{
                 surfaceData.rootViewto3D()
-
             }
 
         }

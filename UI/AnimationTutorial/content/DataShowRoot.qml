@@ -2,7 +2,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "Pages/LeftPage"
 import "DataShow"
+/*
+    图像显示主界面
 
+
+*/
 SplitView{
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -10,8 +14,8 @@ SplitView{
         id:left
         SplitView.fillHeight: true
         SplitView.preferredWidth:coreStyle.leftWidth
-        SplitView.minimumWidth: 300
-        SplitView.maximumWidth: 500
+        SplitView.minimumWidth: 330
+        SplitView.maximumWidth: 550
     }
         DataShowLayout{    // 数据显示
             Layout.fillWidth: true

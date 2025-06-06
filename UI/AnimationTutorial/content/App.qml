@@ -10,7 +10,6 @@ import "Pages/AlarmPage"
 import "Dialogs"
 import "./Style/Adaptive"
 
-
 AppBase {
     id:app
     visible: true
@@ -21,13 +20,6 @@ AppBase {
     title: "LG3D "
     Material.accent: coreStyle.accentColor
     CoreAction{}
-    // Settings {
-    //     category: "OutputPanel"
-    //          property alias x: app.x
-    //          property alias y: app.y
-    //          property alias width: app.width
-    //          property alias height: app.height
-    //      }
     property CppInterFace cpp:CppInterFace{}
 
     MainLayout{ //          入口 <-
@@ -51,11 +43,10 @@ AppBase {
     property Auth auth: Auth{}
     property CoreSignal coreSignal :CoreSignal{}
     property CoreState coreState: CoreState{}
-    readonly property AdaptiveViewBase adaptive:coreStyle.currentAdaptive
+    readonly property AdaptiveViewBase adaptive : coreStyle.currentAdaptive
 
-    property CoreControl coreControl: CoreControl{
+    property CoreControl coreControl: CoreControl{}
 
-    }
     property Script autoScript:Script{}
 
     // Junp{}

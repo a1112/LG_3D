@@ -5,7 +5,12 @@ import QtQuick.Controls
 ListView {
 
     add: Transition {
-             NumberAnimation { properties: "x"; from: 300; duration: 500 }
+
+
+             SequentialAnimation {
+                      NumberAnimation { properties: "x"; from: 500; duration: 1000 }
+                      ColorAnimation { duration: 1000 }
+                  }
          }
 
     spacing:5

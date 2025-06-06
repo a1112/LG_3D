@@ -5,12 +5,19 @@ import QtQuick.Controls.Material
 
 import "../../../animation"
 Item{
+    SplitView.fillWidth: true
+    SplitView.fillHeight: true
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+
     id:root
     property bool showFilterIcon:true
     ColumnLayout {
         anchors.fill: parent
+
         HeadView{
         }
+
         ListTitleView{}  // 列表头
 
         Item{
