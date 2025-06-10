@@ -69,7 +69,7 @@ class YoloModelSegResults(YoloModelResultsBase):
             self.contour.copy(),
             -1,  # 绘制所有轮廓
             (0, 255, 0),  # 绿色
-            2  # 线宽
+            -1  # 线宽
         )
         return image
 
@@ -78,10 +78,11 @@ class YoloModelSegResults(YoloModelResultsBase):
          opencv 显示轮廓
         """
         draw_image = self.get_draw()
-        resized_image = cv2.resize(draw_image, (640, 640))  # 例如，将图像大小调整为640x480像素
+        resized_image = cv2.resize(draw_image, (512, 512))  # 例如，将图像大小调整为640x480像素
 
-        # 显示结果
-        cv2.imshow(f"Object Contours", resized_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        Image.fromarray(resized_image).show()
+        # # 显示结果
+        # cv2.imshow(f"Object Contours", resized_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
