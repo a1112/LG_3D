@@ -8,7 +8,7 @@ class SurfaceWork(WorkBase):
     """
     单表面
     """
-    def __init__(self,key,config):
+    def __init__(self,key,config:SurfaceConfig):
         self.key = key
         super().__init__(config)
         self.config:SurfaceConfig
@@ -34,9 +34,14 @@ class SurfaceWork(WorkBase):
             for camera_wolk in self.cameras_wolk:
                 camera_wolk.add_work(coil_id)
             for camera_wolk in self.cameras_wolk:
+                # print("camera_wolk " ,camera_wolk.config.key)
+                # print(image_dict)
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
+            print(fr"image_dict {image_dict}")
             try:
                 max_image = self.join_images(image_dict)
+                print(fr"max_image {max_image}")
+
                 self.save_wolk.add_work([coil_id, max_image])
             except AttributeError:
                 pass

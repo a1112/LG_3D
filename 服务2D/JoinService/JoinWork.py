@@ -9,7 +9,7 @@ class JoinWork(WorkBase):
       对于 整体的  拼接  工作
     """
 
-    def __init__(self, config):
+    def __init__(self, config:JoinConfig):
         super().__init__(config)
         self.config: JoinConfig
         self.surface_dict = {}
@@ -17,7 +17,7 @@ class JoinWork(WorkBase):
         self.start()
 
     def run(self):
-        print("JoinWork")
+        print("JoinWork Started")
         self.surface_dict = {key: SurfaceWork(key, surface_config) for key, surface_config in
                              self.config.surfaces.items()}
 

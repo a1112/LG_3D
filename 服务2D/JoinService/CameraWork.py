@@ -2,6 +2,7 @@ from queue import Queue
 from pathlib import Path
 from PIL import Image
 
+from area_alg.YoloSeg import SteelSegModel
 from .SaverWork import DebugSaveWork
 from .WorkBase import WorkBase
 from configs.CameraConfig import CameraConfig
@@ -9,13 +10,17 @@ from . import tool
 from configs import CONFIG
 
 class CameraWork(WorkBase):
-
+    """
+    相机加载线程
+    """
     def __init__(self, config):
         super().__init__(config)
-        self.scale=1
+        self.scale = 1
         self.start()
         self.config:CameraConfig
         self.debug_work = None
+        self.model = SteelSegModel()
+        print(fr"model {self.model}")
         if CONFIG.DEBUG:
             self.debug_work = DebugSaveWork(self.config)
 
@@ -40,7 +45,7 @@ class CameraWork(WorkBase):
             if not self.config.is_run():
                 return
             folder = self.config.get_folder(coil_id)
-            images = self.get_images(folder,coil_id)
+            images = self.get_images(folder, coil_id)
             try:
                 max_image = self.horizontal_concat(images)
                 print(max_image)
@@ -54,9 +59,24 @@ class CameraWork(WorkBase):
 
 
     def horizontal_concat(self,images):
-        for i in range(len(images)):
-            w, h = images[i].size
-            images[i] = images[i].crop([1100, 0, w-1100, h])
+        """
+        单行数据的拼接流程
+
+        Args:
+            images:
+
+        Returns:
+
+        """
+
+        for i, image in enumerate(images):
+            w, h = image.size
+            seg_results = self.model.predict(image)
+            seg_results.show()
+            input()
+
+
+            # images = image.crop([1100, 0, w-1100, h])
         # 打开所有图像并转换为Image对象
         imgs = [Image.open(i) if isinstance(i, str) else i for i in images]
         new_img=tool.join_image(imgs,"H", self.scale)

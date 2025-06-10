@@ -3,13 +3,21 @@ import json
 from typing import List
 from pathlib import WindowsPath
 
+from . import CONFIG
 from .BaseConfig import BaseConfig
+from .DebugConfigs import debug_config
+
 
 class CameraConfig(BaseConfig):
-    def __init__(self, file_):
+    def __init__(self,surface_key, file_):
+        self.surface_key = surface_key
         super().__init__(file_)
         self.folder = Path(self.config["folder"])
+
         self.key = Path(self.folder.as_uri()).name
+        if CONFIG.DEBUG:
+            self.folder = debug_config.get_surface_folder(self.key)
+
         self.loss_num = self.get_value("loss_num",0)
         self.max_len = self.get_value("max_len",10)
 

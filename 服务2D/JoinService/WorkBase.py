@@ -1,5 +1,8 @@
 from queue import Queue
 from  configs import CONFIG
+from configs.CameraConfig import CameraConfig
+from configs.SurfaceConfig import SurfaceConfig
+
 
 class WorkBase(CONFIG.WorkClass):
     def __init__(self,config):

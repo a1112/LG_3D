@@ -1,17 +1,22 @@
 from pathlib import Path
 from PIL import Image
+
+from configs import CONFIG
+from configs.CameraConfig import CameraConfig
 from configs.SurfaceConfig import SurfaceConfig
 from .WorkBase import WorkBase
 
 class SaverWork(WorkBase):
-    def __init__(self,config):
+    def __init__(self,config:SurfaceConfig):
         super().__init__(config)
         self.start()
         self.config:SurfaceConfig
         self.size=(512, 512)
 
-    def save_thumbnail(self,url_,image,):
+    def save_thumbnail(self,url_,image):
         image.thumbnail(self.size)
+        if CONFIG.DEBUG:
+            image.show()
         image.save(url_)
 
     def run(self):
@@ -35,6 +40,7 @@ class DebugSaveWork(WorkBase):
 
     """
     def __init__(self,config):
+        self.config:CameraConfig = config
         self.image_save_folder = Path(fr"D:\AreaSaveFolder")
         self.image_save_folder.mkdir(parents=True, exist_ok=True)
         super().__init__(config)

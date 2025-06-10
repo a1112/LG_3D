@@ -13,7 +13,7 @@ class JoinConfig(BaseConfig):
     def __init__(self, file_):
         super().__init__(file_)
         self.surfaces = {
-            surface_key: SurfaceConfig(config)
+            surface_key: SurfaceConfig(surface_key,config)
             for surface_key, config in self.config["surfaces"].items()
         }
 
@@ -34,7 +34,7 @@ class JoinConfig(BaseConfig):
         return folders[-1].stem
 
     def can_(self,coil_id):
-        coil_id=int(coil_id)
+        coil_id = int(coil_id)
         surface = list(self.surfaces.values())[0]
         if  surface.get_area_url(coil_id).parent.parent.exists() and \
              surface.get_area_url(coil_id+1).parent.parent.exists():
