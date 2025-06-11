@@ -1,8 +1,11 @@
 from queue import Queue
 from pathlib import Path
+
+import cv2
 from PIL import Image
 
 from area_alg.YoloSeg import SteelSegModel
+from configs.DebugConfigs import debug_config
 from .SaverWork import DebugSaveWork
 from .WorkBase import WorkBase
 from configs.CameraConfig import CameraConfig
@@ -71,13 +74,16 @@ class CameraWork(WorkBase):
 
         for i, image in enumerate(images):
             w, h = image.size
-            seg_results = self.model.predict(image)
-            seg_results.show()
-            input()
+            image.resize((512, 512))
+            seg_results = self.model.predict_one(image)
+            if CONFIG.DEBUG:
+                print(f"seg_results {seg_results}")
+                draw_image = seg_results.get_draw()
+                debug_config.save_simple_image(draw_image, f"seg_{self.config.key}_{i}.jpg")
 
 
             # images = image.crop([1100, 0, w-1100, h])
         # 打开所有图像并转换为Image对象
         imgs = [Image.open(i) if isinstance(i, str) else i for i in images]
-        new_img=tool.join_image(imgs,"H", self.scale)
+        new_img = tool.join_image(imgs,"H", self.scale)
         return new_img

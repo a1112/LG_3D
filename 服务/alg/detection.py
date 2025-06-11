@@ -208,7 +208,7 @@ def get_clip_images(join_image, mask_image, clip_num=None, mask_threshold=0.02):
 
 def detection_by_image_list(clip_image_url_list, cdm_=None):
     clip_image_list = [Image.open(f) for f in clip_image_url_list]
-    res_list = cdm_.predict(clip_image_list)
+    res_list = cdm_.predict_one(clip_image_list)
     for url, image, info in zip(clip_image_url_list, clip_image_list, res_list):
         if len(info):
             folder = (Path(url).parent.parent / "detection_by_image_list")
