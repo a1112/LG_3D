@@ -34,7 +34,12 @@ class YoloModelSegResults(YoloModelResultsBase):
     @property
     def contour(self):
         cons = []
+
+        if self.result.masks is None:
+            return cons
+
         for i, (box, mask) in enumerate(zip(self.result.boxes, self.result.masks)):
+
             contours = mask.xy
             # 绘制轮廓（在原图上）
             contour = np.array(contours, dtype=np.float32)  # 保持浮点精度
@@ -51,9 +56,21 @@ class YoloModelSegResults(YoloModelResultsBase):
             self.contour.copy(),
             -1,  # 绘制所有轮廓
             (0, 255, 0),  # 绿色
-            -1  # 线宽
+            5  # 线宽
         )
         return image
+    def get_mask(self):
+        """
+        获取掩码
+        """
+        if self.result.masks is None:
+            return None
+        mask = self.result.masks.data.cpu().numpy()
+        mask = np.sum(mask, axis=0)
+        mask = np.squeeze(mask)
+        mask = (mask * 255).astype(np.uint8)
+        return mask
+
 
     def show(self):
         """
@@ -68,31 +85,3 @@ class YoloModelSegResults(YoloModelResultsBase):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
-    def to_labelme_json(self):
-        """
-        Convert the segmentation results to a labelme format.
-        """
-        self.image: np.ndarray
-        labelme_data = {
-            "version": "4.5.6",
-            "flags": {},
-            "shapes": [],
-            "imagePath": "",
-            "imageData": None,
-            "imageHeight": self.image.shape[0],
-            "imageWidth": self.image.shape[1]
-        }
-
-        for i, (box, mask) in enumerate(zip(self.result.boxes, self.result.masks)):
-            contours = mask.xy
-            contour = np.array(contours, dtype=np.float32)
-            contour_int = np.round(contour).astype(np.int32).tolist()
-            labelme_data["shapes"].append({
-                "label": self.all_names[box.cls],
-                "points": contour_int,
-                "group_id": None,
-                "shape_type": "polygon",
-                "flags": {}
-            })
-
-        return labelme_data

@@ -24,7 +24,7 @@ def main():
         jw.add_work(start_coil)
         jw.get()
         print(f"coil_id: {start_coil} 处理完成")
-        input()
+        # input()
 
 
 if __name__ == "__main__":

@@ -4,8 +4,10 @@ from pathlib import Path
 import cv2
 from PIL import Image
 
+from area_alg.YoloModelResults import YoloModelSegResults
 from area_alg.YoloSeg import SteelSegModel
 from configs.DebugConfigs import debug_config
+from .cv_count_tool import get_intersections, hconcat_list
 from .SaverWork import DebugSaveWork
 from .WorkBase import WorkBase
 from configs.CameraConfig import CameraConfig
@@ -51,11 +53,12 @@ class CameraWork(WorkBase):
             images = self.get_images(folder, coil_id)
             try:
                 max_image = self.horizontal_concat(images)
-                print(max_image)
+
                 # print(max_image)
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(max_image)
-            except ValueError as e:
+                print(fr"max_image {max_image.shape}")
+            except (ValueError,AttributeError) as e:
                 print(e)
                 print(images)
                 self.set(None)
@@ -71,19 +74,38 @@ class CameraWork(WorkBase):
         Returns:
 
         """
-
+        seg_result_list = []
         for i, image in enumerate(images):
-            w, h = image.size
-            image.resize((512, 512))
             seg_results = self.model.predict_one(image)
             if CONFIG.DEBUG:
-                print(f"seg_results {seg_results}")
                 draw_image = seg_results.get_draw()
                 debug_config.save_simple_image(draw_image, f"seg_{self.config.key}_{i}.jpg")
 
+                mask_image = seg_results.get_mask()
+                if mask_image is not None:
+                    try:
+                        debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{i}.jpg")
+                    except Exception as e:
+                        print(f"Error saving mask image: {e}")
+            seg_result_list.append(seg_results)
 
-            # images = image.crop([1100, 0, w-1100, h])
-        # 打开所有图像并转换为Image对象
-        imgs = [Image.open(i) if isinstance(i, str) else i for i in images]
-        new_img = tool.join_image(imgs,"H", self.scale)
-        return new_img
+        # imgs = [Image.open(i) if isinstance(i, str) else i for i in images]
+        # new_img = tool.join_image(imgs,"H", self.scale)
+        # return new_img
+        return self.join_image(seg_result_list)
+
+    def join_image(self,seg_result_list):
+        mask_list=[]
+        image_list=[]
+        for seg_result in seg_result_list:
+            seg_result: "YoloModelSegResults"
+            mask = seg_result.get_mask()
+            if mask is not None:
+                mask_list.append(mask)
+                image_list.append(seg_result.image)
+        intersections = get_intersections(mask_list)
+        intersections =[ i*10 for i in intersections]
+
+
+        print(fr"intersections {intersections}")
+        return hconcat_list(image_list,intersections)

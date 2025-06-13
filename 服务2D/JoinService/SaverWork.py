@@ -15,19 +15,21 @@ class SaverWork(WorkBase):
 
     def save_thumbnail(self,url_,image):
         image.thumbnail(self.size)
-        if CONFIG.DEBUG:
-            image.show()
+        # if CONFIG.DEBUG:
+        #     image.show()
         image.save(url_)
 
     def run(self):
         while self._run_:
             coil_id,image = self.queue_in.get()
+            image=Image.fromarray(image)
             save_f=self.config.get_area_url(coil_id)
             save_f.parent.mkdir(parents=True, exist_ok=True)
 
             save_t=self.config.get_area_url_pre(coil_id)
             save_t.parent.mkdir(parents=True, exist_ok=True)
             try:
+                print(fr"save_f {save_f}")
                 image.save(save_f)
                 self.save_thumbnail(save_t,image)
             except BaseException as e:
