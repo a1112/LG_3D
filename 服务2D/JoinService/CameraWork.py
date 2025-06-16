@@ -58,7 +58,7 @@ class CameraWork(WorkBase):
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(max_image)
                 print(fr"max_image {max_image.shape}")
-            except (ValueError,AttributeError) as e:
+            except BaseException as e:
                 print(e)
                 print(images)
                 self.set(None)

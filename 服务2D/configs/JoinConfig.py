@@ -6,7 +6,7 @@ from .BaseConfig import BaseConfig
 from .SurfaceConfig import SurfaceConfig
 
 def sort_folder(image_url_list):
-    image_url_list.sort(key=lambda i: int(Path(i).stem),reverse=True)
+    image_url_list.sort(key=lambda i: int(Path(i).stem),reverse = True)
     return image_url_list
 
 class JoinConfig(BaseConfig):
@@ -16,6 +16,16 @@ class JoinConfig(BaseConfig):
             surface_key: SurfaceConfig(surface_key,config)
             for surface_key, config in self.config["surfaces"].items()
         }
+
+    def get_max_coil(self):
+        if CONFIG.DEBUG:
+            return 66000
+
+        surface = list(self.surfaces.values())[0]
+        save_folder1 = Path(surface.save_folder)
+        folders = list(save_folder1.iterdir())
+        folders = sort_folder(folders)
+        return folders[0].stem
 
 
     def get_last_coil(self):
