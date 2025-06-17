@@ -35,7 +35,7 @@ class EnhancedMultiProcessLogger:
             log_level: str = "INFO",
             console_output: bool = True,
             log_to_file: bool = True,
-            log_dir: str = "./logs",
+            log_dir: str = "../logs",
             log_filename: str = "app.log",
             max_bytes: int = 10 * 1024 * 1024,  # 10MB
             backup_count: int = 5,
@@ -207,7 +207,7 @@ _logger_ = EnhancedMultiProcessLogger(
     log_level="DEBUG",
     console_output=True,
     log_to_file = True,
-    log_dir="../log/logs",
+    log_dir="../logs",
     log_filename="app.log",
     max_bytes=5 * 1024 * 1024,  # 5MB
     backup_count=7,
@@ -215,7 +215,7 @@ _logger_ = EnhancedMultiProcessLogger(
     when="midnight",  # 每天轮转
     interval=1
 )
-logger = EnhancedMultiProcessLogger.get_logger()
+logger = _logger_.get_logger()
 # 使用示例
 if __name__ == "__main__":
     # 在主进程中初始化日志系统
@@ -230,9 +230,6 @@ if __name__ == "__main__":
     main_logger.error("This is an error message (main process)")
     main_logger.critical("This is a critical message (main process)")
 
-    # 模拟文件日志记录
-    for i in range(100):
-        main_logger.info(f"Log entry {i}: Testing file logging system")
 
     # 在子进程中使用
     from multiprocessing import Process

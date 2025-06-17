@@ -6,6 +6,8 @@ from collections import defaultdict
 from threading import Thread
 import numpy as np
 
+from utils.MultiprocessColorLogger import logger
+
 
 class ThreadImageShow(Thread):
     def __init__(self):
@@ -221,7 +223,8 @@ def format_intersections_list(intersections_list):
     """
     格式化交点列表
     """
-    ave_value = statistics.mean([i for i in intersections_list if i>120]) if intersections_list else 0
+    intersections_list = [i for i in intersections_list if i > 120]
+    ave_value = statistics.mean(intersections_list) if intersections_list else 0
     formatted = []
     for intersections in intersections_list:
         if intersections>120:
@@ -260,7 +263,7 @@ def get_intersections(mask_list):
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
         intersections.append(get_the_difference_int(ins))
 
+    format_intersections_ = format_intersections_list(intersections)
+    logger.debug(fr"intersections {intersections}")
 
-    print(fr"intersections {intersections}")
-
-    return format_intersections_list(intersections)
+    return format_intersections_

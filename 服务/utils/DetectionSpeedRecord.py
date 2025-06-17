@@ -1,7 +1,8 @@
 import time
 from datetime import datetime
 from typing import Callable, TypeVar, Any
-from utils.Log import logger
+
+from utils.MultiprocessColorLogger import logger
 
 T = TypeVar('T')
 
