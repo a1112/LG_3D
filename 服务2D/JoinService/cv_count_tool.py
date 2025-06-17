@@ -29,8 +29,6 @@ def draw_points(gray_img, contour, intersections):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
     im_show(output, "Contour and Intersections")
 
-
-
 def get_max_contour_and_intersections(gray_image):
     """
     获取灰度图像的最大轮廓及其与y=0到h的水平线交点
@@ -42,9 +40,36 @@ def get_max_contour_and_intersections(gray_image):
         max_contour: 最大轮廓(numpy数组)
         intersections: 与y=0到h的水平线交点列表[(x1,y1), (x2,y2), ...]
     """
+    # 存储交点
+    intersections = []
+    # 检查轮廓是否与每条水平线相交
+
+    nonzero_indices = np.nonzero(gray_image)
+    start_index_y = -1
+    pre_p = None
+    for index_y,index_x in zip(nonzero_indices[0], nonzero_indices[1]):
+        if index_y>start_index_y:
+            if pre_p is not None:
+                intersections.append(pre_p)
+            intersections.append([int(index_y), int(index_x)])
+        pre_p = [int(index_y), int(index_x)]
+        start_index_y = index_y
+    return None, intersections
+
+def get_max_contour_and_intersections_(gray_image):
+    """
+    获取灰度图像的最大轮廓及其与y=0到h的水平线交点
+
+    参数:
+        gray_image: 输入的灰度图像(二维numpy数组)
+
+    返回:
+        max_contour: 最大轮廓(numpy数组)
+        intersections: 与y=0到h的水平线交点列表[(x1,y1), (x2,y2), ...]
+    """
+
     # 二值化图像
     _, binary = cv2.threshold(gray_image, 100, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
     # 查找轮廓
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -62,7 +87,7 @@ def get_max_contour_and_intersections(gray_image):
     intersections = []
 
     # 检查轮廓是否与每条水平线相交
-    for y in range(h):
+    for y in range(h,2):
         # 创建一条水平线(从最左到最右)
         line_start = (0, y)
         line_end = (gray_image.shape[1], y)
@@ -172,10 +197,10 @@ def hconcat_list(image_list,ins_int_list):
 def get_intersections(mask_list):
     intersections=[]
     for gray_index in range(len(mask_list)-1):
-        contour_l, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
-        contour_r, intersections_r = get_max_contour_and_intersections(mask_list[gray_index+1])
-        format_intersections_l = format_intersections(intersections_l,mask_list[gray_index].shape)
-        format_intersections_r = format_intersections(intersections_r,mask_list[gray_index+1].shape)
+        _, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
+        _, intersections_r = get_max_contour_and_intersections(mask_list[gray_index+1])
+        format_intersections_l = format_intersections(intersections_l, mask_list[gray_index].shape)
+        format_intersections_r = format_intersections(intersections_r, mask_list[gray_index+1].shape)
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
         intersections.append(get_the_difference_int(ins))
     return intersections

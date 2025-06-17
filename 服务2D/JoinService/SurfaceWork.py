@@ -1,15 +1,20 @@
+from logging import DEBUG
+from typing import Dict
+
 import cv2
 import numpy as np
 
 from configs.SurfaceConfig import SurfaceConfig
-from .WorkBase import WorkBase
+from utils.MultiprocessColorLogger import logger
+
+from property.CameraImageGrop import CameraImageGrop
+from .WorkBase import WorkBaseThread
 from .CameraWork import CameraWork
 from .SaverWork import SaverWork
-from . import tool
-from .cv_count_tool import im_show
 
 
-class SurfaceWork(WorkBase):
+
+class SurfaceWork(WorkBaseThread):
     """
     单表面
     """
@@ -21,17 +26,15 @@ class SurfaceWork(WorkBase):
         self.cameras_wolk = []
         self.start()
 
-    def join_images(self,image_dict):
+    def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop]):
+        camera_image_grop_list = [camera_image_grop_dict["U"], camera_image_grop_dict["M"], camera_image_grop_dict["D"]]
+        return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list])
+
+    def _join_images_(self,image_list):
         """
         拼接图像
         """
-        image_list = [image_dict["U"],image_dict["M"],image_dict["D"]]
-        # return tool.join_image(image_list,"V")
-        # cv2.imwrite("u.jpg",image_list[0])
-        # cv2.imwrite("m.jpg",image_list[1])
-        # cv2.imwrite("d.jpg",image_list[2])
-        #纵向拼接
-        # 获取最大宽度
+        #  image_list = [image_dict["U"],image_dict["M"],image_dict["D"]]
         max_width = max(img.shape[1] for img in image_list)
         new_image_list = []
         for img in image_list:
@@ -58,13 +61,13 @@ class SurfaceWork(WorkBase):
             for camera_wolk in self.cameras_wolk:
                 camera_wolk.add_work(coil_id)
             for camera_wolk in self.cameras_wolk:
-                # print("camera_wolk " ,camera_wolk.config.key)
-                # print(image_dict)
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
             try:
                 max_image = self.join_images(image_dict)
-
                 self.save_wolk.add_work([coil_id, max_image])
-            except AttributeError:
-                pass
+
+            except BaseException as e:
+                logger.error(e)
+                if DEBUG:
+                    raise e
             self.set(None)

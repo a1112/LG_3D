@@ -51,5 +51,3 @@ class JoinConfig(BaseConfig):
             return True
         return False
 
-
-join_config = JoinConfig(CONFIG.JOIN_CONFIG_FILE)

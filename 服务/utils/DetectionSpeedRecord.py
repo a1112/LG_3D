@@ -26,7 +26,7 @@ class DetectionSpeedRecord:
                 if elapsed_time > 5:
                     log_func = logger.error
                 log_func(
-                    f"timing_decorator {log_message}: Function '{func.__name__}' executed in {elapsed_time:.4f} seconds.")
+                    f"计时器 {log_message}: Function '{func.__name__}' executed in {elapsed_time:.4f} seconds.")
                 return result
 
             return wrapper

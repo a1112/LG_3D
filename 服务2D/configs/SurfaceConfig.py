@@ -17,6 +17,9 @@ class SurfaceConfig(BaseConfig):
         else:
             self.save_folder = self.config["save_folder"]
 
+    def is_run(self):
+        return self._run_
+
     def get_area_url_base(self,coil_id,type_):
         base_folder = Path(self.save_folder)/str(coil_id)
         if CONFIG.DEBUG:

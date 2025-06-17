@@ -1,15 +1,17 @@
 from queue import Queue
-from .WorkBase import WorkBase
+
+from configs import CONFIG
+from .WorkBase import WorkBaseThread
 from configs.JoinConfig import JoinConfig
 from .SurfaceWork import SurfaceWork
 
-
-class JoinWork(WorkBase):
+class JoinWork(WorkBaseThread):
     """
       对于 整体的  拼接  工作
     """
 
     def __init__(self, config:JoinConfig):
+
         super().__init__(config)
         self.config: JoinConfig
         self.surface_dict = {}
@@ -17,7 +19,6 @@ class JoinWork(WorkBase):
         self.start()
 
     def run(self):
-        print("JoinWork Started")
         self.surface_dict = {key: SurfaceWork(key, surface_config) for key, surface_config in
                              self.config.surfaces.items()}
 

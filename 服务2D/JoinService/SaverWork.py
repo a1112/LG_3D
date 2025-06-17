@@ -1,12 +1,12 @@
 from pathlib import Path
 from PIL import Image
 
-from configs import CONFIG
 from configs.CameraConfig import CameraConfig
 from configs.SurfaceConfig import SurfaceConfig
-from .WorkBase import WorkBase
+from utils.MultiprocessColorLogger import logger
+from .WorkBase import WorkBaseThread
 
-class SaverWork(WorkBase):
+class SaverWork(WorkBaseThread):
     def __init__(self,config:SurfaceConfig):
         super().__init__(config)
         self.start()
@@ -20,7 +20,7 @@ class SaverWork(WorkBase):
         image.save(url_)
 
     def run(self):
-        while self._run_:
+        while self.__run__:
             coil_id,image = self.queue_in.get()
             image=Image.fromarray(image)
             save_f=self.config.get_area_url(coil_id)
@@ -29,14 +29,14 @@ class SaverWork(WorkBase):
             save_t=self.config.get_area_url_pre(coil_id)
             save_t.parent.mkdir(parents=True, exist_ok=True)
             try:
-                print(fr"save_f {save_f}")
+                logger.debug(fr"图像保存： {save_f}")
                 image.save(save_f)
                 self.save_thumbnail(save_t,image)
             except BaseException as e:
                 print(e)
 
 
-class DebugSaveWork(WorkBase):
+class DebugSaveWork(WorkBaseThread):
     """
     保存用来识别模型的数据
 
