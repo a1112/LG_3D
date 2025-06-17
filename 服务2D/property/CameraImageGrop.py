@@ -1,13 +1,14 @@
 from typing import List
 
-from JoinService.cv_count_tool import get_intersections, hconcat_list
+from JoinService.cv_count_tool import get_intersections, hconcat_list, im_show
 from area_alg.YoloModelResults import YoloModelSegResults
 from configs import CONFIG
+from configs.CONFIG import DEBUG
 from configs.DebugConfigs import debug_config
 
 
 class CameraImageGrop:
-    def __init__(self,config,results:List[YoloModelSegResults]):
+    def __init__(self,config, results:List[YoloModelSegResults]):
         self.results = results
         self.config = config
         if CONFIG.DEBUG:
@@ -34,7 +35,17 @@ class CameraImageGrop:
         self.intersections = get_intersections(self.mask_list)
         self.intersections = [i * 10 for i in self.intersections]
 
+        for mask, image in zip(self.mask_list, self.image_list):
+            im_show(mask, fr"mask {self.config.key}")
+            im_show(image, fr"image {self.config.key}")
+
     def join_image(self):
 
         print(fr"intersections {self.intersections}")
-        return hconcat_list(self.image_list,self.intersections)
+        image = hconcat_list(self.image_list, self.intersections)
+
+        if DEBUG:
+
+            im_show(image,fr"join_image {self.config.key}")
+
+        return image

@@ -1,14 +1,41 @@
+from queue import Queue
+import statistics
+
 import cv2
 from collections import defaultdict
-
+from threading import Thread
 import numpy as np
 
 
+class ThreadImageShow(Thread):
+    def __init__(self):
+        super(ThreadImageShow, self).__init__()
+        self.queue = Queue(maxsize=10)
+        self.start()
+
+
+    def add_show_image(self, image, name):
+        self.queue.put([image,name])
+
+    def run(self):
+        while True:
+            try:
+                image, name = self.queue.get()
+                continue
+                cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+                cv2.resizeWindow(name,480,480)
+                cv2.imshow(name,image)
+                cv2.waitKey(0)
+
+            except BaseException as e:
+                print(e)
+                cv2.destroyAllWindows()
+                pass
+threadImageShow = ThreadImageShow()
+
 def im_show(image, title="Image"):
     # 显示结果
-    cv2.imshow(title, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    threadImageShow.add_show_image(image, title)
 
 def draw_points(gray_img, contour, intersections):
     # 创建彩色图像用于可视化
@@ -125,6 +152,11 @@ def line_intersection(line1, line2):
         return (int(x), int(y))
     return None
 
+def get_median_value(value_list):
+    if len(value_list) < 10:
+        return 0
+    return statistics.median(value_list)
+
 def inbounds(point, shape):
     """
     检查点是否在图像边界内
@@ -133,8 +165,17 @@ def inbounds(point, shape):
     return 3 <= point[0] < w-3 and 3 <= point[1] < h-3
 
 def get_the_difference_int(ins):
-    ins_all = ins[0] + ins[1]
-    return sum(ins_all)/len(ins_all) if len(ins_all) > 0 else 0
+    print(fr"get_the_difference_int {ins}")
+    median_l, median_r = get_median_value(ins[0]), get_median_value(ins[1])
+    if median_l == 0 and median_r == 0:
+        return 0
+    if median_l == 0:
+        return median_r
+    if median_r == 0:
+        return median_l
+    return (median_l + median_l)/2
+    # ins_all = ins[0] + ins[1]
+    # return sum(ins_all)/len(ins_all) if len(ins_all) > 0 else 0
 
 
 def get_the_difference(list1, list2, shape):
@@ -170,10 +211,25 @@ def format_intersections(intersections, shape):
     for p in intersections:
         # if p[1] <= 1 or p[1] >= h-1 or p[0] <= 1 or p[0] >= w-1:
         #     continue
-        if p[0] in r_dict[p[1]]:
+        if p[1] in r_dict[p[0]]:
             continue
-        r_dict[p[1]].append(p[0])
+        r_dict[p[0]].append(p[1])
     return r_dict
+
+
+def format_intersections_list(intersections_list):
+    """
+    格式化交点列表
+    """
+    ave_value = statistics.mean([i for i in intersections_list if i>120]) if intersections_list else 0
+    formatted = []
+    for intersections in intersections_list:
+        if intersections>120:
+            formatted.append(intersections)
+        else:
+            formatted.append(ave_value)
+    return formatted
+
 
 def hconcat_list(image_list,ins_int_list):
     """
@@ -195,7 +251,7 @@ def hconcat_list(image_list,ins_int_list):
     return count_image
 
 def get_intersections(mask_list):
-    intersections=[]
+    intersections = []
     for gray_index in range(len(mask_list)-1):
         _, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
         _, intersections_r = get_max_contour_and_intersections(mask_list[gray_index+1])
@@ -203,4 +259,8 @@ def get_intersections(mask_list):
         format_intersections_r = format_intersections(intersections_r, mask_list[gray_index+1].shape)
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
         intersections.append(get_the_difference_int(ins))
-    return intersections
+
+
+    print(fr"intersections {intersections}")
+
+    return format_intersections_list(intersections)
