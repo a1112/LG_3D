@@ -22,6 +22,8 @@ class SurfaceWork(WorkBaseThread):
         self.key = key
         super().__init__(config)
         self.config:SurfaceConfig
+
+
         self.save_wolk = SaverWork(self.config)
         self.cameras_wolk = []
         self.start()
@@ -35,7 +37,9 @@ class SurfaceWork(WorkBaseThread):
         拼接图像
         """
         #  image_list = [image_dict["U"],image_dict["M"],image_dict["D"]]
-        max_width = max(img.shape[1] for img in image_list if img is not None)
+        max_width = max([img.shape[1] for img in image_list if img is not None]+[0])
+        if max_width<=0:
+            return None
         new_image_list = []
         for img in image_list:
             # 调整图像宽度
@@ -66,7 +70,8 @@ class SurfaceWork(WorkBaseThread):
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
             try:
                 max_image = self.join_images(image_dict)
-                self.save_wolk.add_work([coil_id, max_image])
+                if max_image is not None:
+                    self.save_wolk.add_work([coil_id, max_image])
             except AttributeError as e:
                 logger.error(f"AttributeError: {e} - {self.key} - {coil_id}")
             except BaseException as e:
