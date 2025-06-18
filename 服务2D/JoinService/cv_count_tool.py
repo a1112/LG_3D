@@ -23,7 +23,6 @@ class ThreadImageShow(Thread):
         while True:
             try:
                 image, name = self.queue.get()
-                continue
                 cv2.namedWindow(name, cv2.WINDOW_NORMAL)
                 cv2.resizeWindow(name,480,480)
                 cv2.imshow(name,image)

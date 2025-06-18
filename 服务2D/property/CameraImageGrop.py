@@ -35,9 +35,9 @@ class CameraImageGrop:
         self.intersections = get_intersections(self.mask_list)
         self.intersections = [i * 10 for i in self.intersections]
 
-        for mask, image in zip(self.mask_list, self.image_list):
-            im_show(mask, fr"mask {self.config.key}")
-            im_show(image, fr"image {self.config.key}")
+        # for mask, image in zip(self.mask_list, self.image_list):
+            # im_show(mask, fr"mask {self.config.key}")
+            # im_show(image, fr"image {self.config.key}")
 
     def join_image(self):
 
