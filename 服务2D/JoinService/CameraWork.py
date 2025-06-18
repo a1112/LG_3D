@@ -30,6 +30,7 @@ class CameraWork(WorkBaseThread):
         self.surface_key=config.surface_key
         self.key = config.key
         self.debug_work = None
+        self.coil_id = 0
 
         if CONFIG.DEBUG:
             self.debug_work = DebugSaveWork(self.config)
@@ -53,6 +54,7 @@ class CameraWork(WorkBaseThread):
         self.config: CameraConfig
         while self._run_:
             coil_id = self.queue_in.get()
+            self.coil_id = coil_id
             if not self.config.is_run():
                 return
             folder = self.config.get_folder(coil_id)
@@ -82,7 +84,7 @@ class CameraWork(WorkBaseThread):
         """
 
         seg_results = model.predict(images)
-        return CameraImageGrop(self.config, seg_results)
+        return CameraImageGrop(self.coil_id,self.config, seg_results)
 
         # seg_result_list = []
         # for i, image in enumerate(images):
