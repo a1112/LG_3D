@@ -154,7 +154,8 @@ def line_intersection(line1, line2):
     return None
 
 def get_median_value(value_list):
-    if len(value_list) < 10:
+    value_list=[v for v in value_list if v>50]
+    if len(value_list) < 5:
         return 0
     return statistics.median(value_list)
 
@@ -166,7 +167,6 @@ def inbounds(point, shape):
     return 3 <= point[0] < w-3 and 3 <= point[1] < h-3
 
 def get_the_difference_int(ins):
-    print(fr"get_the_difference_int {ins}")
     median_l, median_r = get_median_value(ins[0]), get_median_value(ins[1])
     if median_l == 0 and median_r == 0:
         return 0
@@ -174,7 +174,7 @@ def get_the_difference_int(ins):
         return median_r
     if median_r == 0:
         return median_l
-    return (median_l + median_l)/2
+    return max(median_l , median_l)
     # ins_all = ins[0] + ins[1]
     # return sum(ins_all)/len(ins_all) if len(ins_all) > 0 else 0
 
@@ -195,11 +195,9 @@ def get_the_difference(list1, list2, shape):
             l1_r = l_list[-1]
             r1_r = r_list[-1]
             if inbounds((l1_l, i), shape) and inbounds((r1_l, i), shape):
-                if l1_l - r1_l>0:
-                    difference_l_list.append(l1_l - r1_l)
+                    difference_l_list.append(abs(l1_l - r1_l))
             if inbounds((l1_r, i), shape) and inbounds((r1_r, i), shape):
-                if l1_r - r1_r>0:
-                    difference_r_list.append(l1_r - r1_r)
+                    difference_r_list.append(abs(l1_r - r1_r))
 
     return difference_l_list, difference_r_list
 
@@ -218,15 +216,15 @@ def format_intersections(intersections, shape):
     return r_dict
 
 
-def format_intersections_list(intersections_list):
+def format_intersections_list(intersections_list_):
     """
     格式化交点列表
     """
-    intersections_list = [i for i in intersections_list if i > 120]
+    intersections_list = [i for i in intersections_list_ if i > 100]
     ave_value = statistics.mean(intersections_list) if intersections_list else 0
     formatted = []
-    for intersections in intersections_list:
-        if intersections>120:
+    for intersections in intersections_list_:
+        if intersections > 100:
             formatted.append(intersections)
         else:
             formatted.append(ave_value)
@@ -257,12 +255,22 @@ def get_intersections(mask_list):
     for gray_index in range(len(mask_list)-1):
         _, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
         _, intersections_r = get_max_contour_and_intersections(mask_list[gray_index+1])
+
         format_intersections_l = format_intersections(intersections_l, mask_list[gray_index].shape)
         format_intersections_r = format_intersections(intersections_r, mask_list[gray_index+1].shape)
+
+
+
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
         intersections.append(get_the_difference_int(ins))
 
-    format_intersections_ = format_intersections_list(intersections)
-    logger.debug(fr"intersections {intersections}")
 
+        print(fr"format_intersections_l {format_intersections_l}")
+        print(fr"format_intersections_r {format_intersections_r}")
+        print(fr"get_the_difference {ins}")
+        print(fr"get_the_difference_int(ins) {get_the_difference_int(ins)}")
+    format_intersections_ = format_intersections_list(intersections)
+    logger.debug(fr"intersections   {intersections}")
+    print(fr"_intersections_   {intersections}")
+    print(fr"format_intersections_   {format_intersections_}")
     return format_intersections_

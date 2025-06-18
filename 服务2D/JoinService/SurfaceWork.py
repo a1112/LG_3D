@@ -1,9 +1,9 @@
-from logging import DEBUG
 from typing import Dict
 
 import cv2
 import numpy as np
 
+from configs.CONFIG import DEBUG
 from configs.SurfaceConfig import SurfaceConfig
 from utils.MultiprocessColorLogger import logger
 
@@ -35,10 +35,12 @@ class SurfaceWork(WorkBaseThread):
         拼接图像
         """
         #  image_list = [image_dict["U"],image_dict["M"],image_dict["D"]]
-        max_width = max(img.shape[1] for img in image_list)
+        max_width = max(img.shape[1] for img in image_list if img is not None)
         new_image_list = []
         for img in image_list:
             # 调整图像宽度
+            if img is None:
+                img = np.array(np.zeros((5120,max_width,3), np.uint8))
             if img.shape[1] < max_width:
                 padding = max_width - img.shape[1]
                 img = cv2.copyMakeBorder(img, 0, 0, 0, padding, cv2.BORDER_CONSTANT, value=(255, 255, 255))

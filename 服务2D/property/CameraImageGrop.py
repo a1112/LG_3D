@@ -8,9 +8,10 @@ from configs.DebugConfigs import debug_config
 
 
 class CameraImageGrop:
-    def __init__(self,config, results:List[YoloModelSegResults]):
+    def __init__(self,coil_id,config, results:List[YoloModelSegResults]):
         self.results = results
         self.config = config
+        self.coil_id = coil_id
         if CONFIG.DEBUG:
             for i, seg_result in enumerate(results):
                 draw_image = seg_result.get_draw()
@@ -41,7 +42,7 @@ class CameraImageGrop:
 
     def join_image(self):
 
-        print(fr"intersections {self.intersections}")
+        print(fr"intersections {self.coil_id} {self.config.key} {self.intersections}")
         image = hconcat_list(self.image_list, self.intersections)
 
         if DEBUG:
