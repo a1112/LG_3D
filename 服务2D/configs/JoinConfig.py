@@ -41,7 +41,7 @@ class JoinConfig(BaseConfig):
             coil_id = f.stem
             if surface.get_area_url(coil_id).exists():
                 return coil_id
-        return folders[-1].stem
+        return int(folders[-1].stem)
 
     def can_(self,coil_id):
         coil_id = int(coil_id)

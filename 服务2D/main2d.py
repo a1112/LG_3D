@@ -18,10 +18,10 @@ def main():
     max_coil = join_config.get_max_coil()
     while True:
         can = join_config.can_(start_coil)
-        if not can and start_coil >= max_coil-2:
+        if ( not can ) and start_coil >= (max_coil-2) :
             time.sleep(5)
             max_coil = join_config.get_max_coil()
-            print(fr"not can {start_coil}")
+            print(fr"not can {start_coil}  max_coil {max_coil}")
             continue
         start_coil += 1
         print(f"coil_id: {start_coil}")

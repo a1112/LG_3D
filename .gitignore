@@ -20,3 +20,6 @@
 /UI/AnimationTutorial/cmake-build-release/
 /CONFIG_3D/model/
 /服务2D/log/logs/
+/采集/logs/
+/服务/script/logs/
+/采集/build/
