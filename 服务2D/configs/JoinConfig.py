@@ -25,7 +25,7 @@ class JoinConfig(BaseConfig):
         save_folder1 = Path(surface.save_folder)
         folders = list(save_folder1.iterdir())
         folders = sort_folder(folders)
-        return folders[0].stem
+        return int(folders[0].stem)
 
 
     def get_last_coil(self):
