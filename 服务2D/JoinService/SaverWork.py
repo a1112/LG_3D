@@ -11,7 +11,7 @@ class SaverWork(WorkBaseThread):
         super().__init__(config)
         self.start()
         self.config:SurfaceConfig
-        self.size=(512, 512)
+        self.size = (512, 512)
 
     def save_thumbnail(self,url_,image):
         image.thumbnail(self.size)

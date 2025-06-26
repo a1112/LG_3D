@@ -11,7 +11,7 @@ from property.CameraImageGrop import CameraImageGrop
 from .WorkBase import WorkBaseThread
 from .CameraWork import CameraWork
 from .SaverWork import SaverWork
-
+from .cv_count_tool import im_show
 
 
 class SurfaceWork(WorkBaseThread):
@@ -44,7 +44,7 @@ class SurfaceWork(WorkBaseThread):
         for img in image_list:
             # 调整图像宽度
             if img is None:
-                img = np.array(np.zeros((5120,max_width,3), np.uint8))
+                img = np.array(np.zeros((self.config.image_size,max_width,3), np.uint8))
             if img.shape[1] < max_width:
                 padding = max_width - img.shape[1]
                 img = cv2.copyMakeBorder(img, 0, 0, 0, padding, cv2.BORDER_CONSTANT, value=(255, 255, 255))
@@ -54,7 +54,8 @@ class SurfaceWork(WorkBaseThread):
         # 纵向拼接
         result = np.vstack(new_image_list)
         # cv2.imwrite("s.jpg", result)
-
+        if DEBUG:
+            im_show(result,title=fr"max_image{self.key}")
         return result
 
     def run(self):
