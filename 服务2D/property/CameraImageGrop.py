@@ -6,6 +6,7 @@ from JoinService.cv_count_tool import get_intersections, hconcat_list, im_show
 from area_alg.YoloModelResults import YoloModelSegResults
 from configs import CONFIG
 from configs.CONFIG import DEBUG
+from configs.CameraConfig import CameraConfig
 from configs.DebugConfigs import debug_config
 
 
@@ -19,7 +20,7 @@ def _image_all_in_(gray_image):
 
 
 class CameraImageGrop:
-    def __init__(self, coil_id, config, results:List[YoloModelSegResults]):
+    def __init__(self, coil_id, config:CameraConfig, results:List[YoloModelSegResults]):
         self.results = results
         self.config = config
         self.coil_id = coil_id
@@ -48,7 +49,7 @@ class CameraImageGrop:
         self.format_images()
 
         self.intersections = get_intersections(self.mask_list)
-        self.intersections = [i * 10 for i in self.intersections]
+        self.intersections = [i * self.config.surface_config.scale for i in self.intersections]
 
         # for mask, image in zip(self.mask_list, self.image_list):
             # im_show(mask, fr"mask {self.config.key}")

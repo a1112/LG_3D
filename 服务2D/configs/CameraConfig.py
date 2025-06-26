@@ -6,12 +6,15 @@ from pathlib import WindowsPath
 from . import CONFIG
 from .BaseConfig import BaseConfig
 from .DebugConfigs import debug_config
+if False:
+    from .SurfaceConfig import SurfaceConfig
 
 
 class CameraConfig(BaseConfig):
-    def __init__(self,surface_key, file_):
+    def __init__(self,surface_key, file_, surface_config:"SurfaceConfig"):
         self.surface_key = surface_key
         super().__init__(file_)
+        self.surface_config = surface_config
         self.folder = Path(self.config["folder"])
 
         self.key = Path(self.folder.as_uri()).name

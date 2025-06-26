@@ -19,7 +19,7 @@ def main():
         can = join_config.can_(start_coil)
         if not can:
             loger.info(fr"not can {start_coil}")
-            if int(max_coil)<=start_coil:
+            if int(max_coil) <= start_coil:
                 time.sleep(10)
                 max_coil = join_config.get_max_coil()
                 continue

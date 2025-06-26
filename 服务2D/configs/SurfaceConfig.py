@@ -6,16 +6,25 @@ from . import CONFIG
 from .BaseConfig import BaseConfig
 from .CameraConfig import CameraConfig
 from .DebugConfigs import debug_config
+from .GlobJoinConfig import GlobalJoinConfigS, GlobalJoinConfigL
+
 
 class SurfaceConfig(BaseConfig):
     def __init__(self,surface_key, f_):
         self.surface_key = surface_key
         super().__init__(f_)
-        self.camera_configs = [CameraConfig(surface_key,c) for c in self.config["cameras"] ]
+
+        self.global_config = GlobalJoinConfigL() if self.surface_key=="L" else GlobalJoinConfigS()
+        self.image_size = 5120
+
+        self.camera_configs = [CameraConfig(surface_key,c,self) for c in self.config["cameras"] ]
         if CONFIG.DEBUG:
+            self.image_size = 1024
             self.save_folder= debug_config.save_folder/surface_key
         else:
             self.save_folder = self.config["save_folder"]
+
+        self.scale = self.image_size / 512
 
     def is_run(self):
         return self._run_

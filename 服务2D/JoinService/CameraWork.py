@@ -27,6 +27,7 @@ class CameraWork(WorkBaseThread):
         self.scale = 1
         self.start()
         self.config:CameraConfig
+
         self.surface_key=config.surface_key
         self.key = config.key
         self.debug_work = None
@@ -35,12 +36,33 @@ class CameraWork(WorkBaseThread):
         if CONFIG.DEBUG:
             self.debug_work = DebugSaveWork(self.config)
 
+    def opem_image(self, url):
+        """
+        打开图像
+        Args:
+            url:
+
+        Returns:
+
+        """
+        try:
+            image = Image.open(url).convert("RGB")
+
+            if DEBUG:
+                image=image.resize((self.config.surface_config.image_size, self.config.surface_config.image_size))
+
+
+            return image
+        except Exception as e:
+            logger.error(f"Error opening image {url}: {e}")
+            return None
+
     @DetectionSpeedRecord.timing_decorator("图像: 获取")
     def get_images(self, folder,coil_id):
         image_url_list = list(folder.glob("*.jpg"))
         image_url_list.sort(key=lambda i: int(Path(i).stem))
         image_url_list = self.config.get_url_list(image_url_list)
-        image_list = [Image.open(u).convert("RGB") for u in image_url_list]
+        image_list = [self.opem_image(u) for u in image_url_list]
 
         if self.debug_work is not None:
             for url_,image_ in zip(image_url_list,image_list):
