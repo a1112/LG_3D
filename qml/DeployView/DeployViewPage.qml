@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import "QuickView"
 Item {
+            anchors.fill: parent
     SplitView{
         anchors.fill: parent
         Item{
@@ -52,10 +53,11 @@ Item {
                 }
             }
         }
-        Item{
+        StackLayout{
             SplitView.fillHeight: true
             SplitView.fillWidth: true
             id: rightPane
+            currentIndex: list.currentIndex
             QuickPageView{
             }
             CommonData{

@@ -1,6 +1,5 @@
 import os
 
-import psutil
 from PySide6.QtCore import QObject, Signal, Slot
 
 
@@ -30,25 +29,6 @@ class ProcessObj(QObject):
         return os.system(cmd)
         # return subprocess.Popen(cmd)
 
-
-allAttrs = ['pid', 'name', 'ppid',
-            'username', 'create_time', 'cpu_percent',
-            'memory_percent',
-            'exe', 'cmdline', 'status', 'cwd'
-            ]
-
-
-def getProcessDict():
-    process = getProcess()
-    processDict = {}
-    for pro in process:
-
-        if "exe" in pro:
-            processDict[os.path.normpath(pro["exe"])] = pro
-            if pro["name"] == "cmd.exe":
-                processDict[os.path.normpath(pro["cmdline"][-1]).strip()] = pro
-
-    return processDict
 # {'name': 'cmd.exe', 'ppid': 10664,
 #  'username': 'DESKTOP-TEM8G6F\\dell',
 #  'create_time': 1748598233.855297, 'cpu_percent': 0.0,
@@ -56,18 +36,4 @@ def getProcessDict():
 #  'cmdline': ['C:\\Windows\\system32\\cmd.exe', '/c', 'D:\\LCX_USER\\LG_3D\\采集\\Cap2d.bat '],
 #  'status': 'running', 'cwd': 'D:\\LCX_USER\\LG_3D\\采集'}
 
-def getProcess():
-    all_processes_ = psutil.process_iter()
-    all_processes_ = list(all_processes_)
-    return [toDict(process) for process in all_processes_]
 
-
-def toDict(process: psutil.Process):
-    processDict = {}
-    for attr in allAttrs:
-        try:
-            attrValue = getattr(process, attr)()
-            processDict[attr] = attrValue
-        except Exception as e:
-            pass
-    return processDict

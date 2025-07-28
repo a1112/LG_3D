@@ -25,7 +25,7 @@ def is_root_path(path):
         return normalized_path == '/'
 
 
-def tryGetInt(number):
+def try_get_int(number):
     try:
         return int(number)
     except:
@@ -44,7 +44,7 @@ class DiskMonitor(MonitorBase):
         for mountpoint in self.monitorData:
             for index in range(len(self.monitorData[mountpoint]["monitor"])):
                 item = self.monitorData[mountpoint]["monitor"][index]
-                item.update(self.getDefault(item["source"]))
+                item.update(self.get_default(item["source"]))
                 print(item)
                 self.monitorData[mountpoint]["monitor"][index] = item
 
@@ -67,7 +67,7 @@ class DiskMonitor(MonitorBase):
             entries.sort(key=lambda x: x[1])
             file_list, sort_keys = zip(*entries)
         elif sort_type == "number":
-            entries = [(entry, tryGetInt(entry)) for entry in entries]
+            entries = [(entry, try_get_int(entry)) for entry in entries]
             entries.sort(key=lambda x: x[1])
             file_list, sort_keys = zip(*entries)
         elif sort_type == "chart":
@@ -121,31 +121,35 @@ class DiskMonitor(MonitorBase):
         while True:
             self.fullData = self.get_full_disk_info()
             for key in self.monitorData:
-                monitorItem = self.monitorData[key]
-                for monitor in monitorItem["monitor"]:
-                    if key in self.fullData:
-                        diskInfo = self.fullData[key]
-                        if diskInfo["percentage"] > monitorItem["threshold"]:
-                            path = monitor["source"]
-                            monitorAble = monitor.get("monitorAble", False)
-                            sort_type = monitor.get("sort_type", "time")
+                try:
+                    monitorItem = self.monitorData[key]
+                    for monitor in monitorItem["monitor"]:
+                        if key in self.fullData:
+                            diskInfo = self.fullData[key]
+                            if diskInfo["percentage"] > monitorItem["threshold"]:
+                                path = monitor["source"]
+                                monitorAble = monitor.get("monitorAble", False)
+                                sort_type = monitor.get("sort_type", "time")
 
-                            if not Path(path).exists():
-                                continue
-                            if monitorAble:
-                                self.delete_(path, sort_type)
-                        else:
-                            print("未超过阈值")
-            time.sleep(5)
+                                if not Path(path).exists():
+                                    continue
+                                if monitorAble:
+                                    self.delete_(path, sort_type)
+                            else:
+                                pass
+                                # print("未超过阈值")
+                except BaseException as e:
+                    self.log.error(f"<DiskMonitor> {key}  {e}")
+            time.sleep(30)
 
     @Slot(str, result=list)
-    def getDiskMonitorData(self, mountpoint):
+    def get_disk_monitor_data(self, mountpoint):
         if mountpoint in self.monitorData:
             return self.monitorData[mountpoint]["monitor"]
         return []
 
     @Slot(str, result=dict)
-    def getDefault(self, path):
+    def get_default(self, path):
 
 
         path = path.replace("file:///", "")
@@ -159,17 +163,17 @@ class DiskMonitor(MonitorBase):
         }
 
     @Slot(QtCore.QJsonValue)
-    def addApp(self, app: QtCore.QJsonValue):
+    def add_app(self, app: QtCore.QJsonValue):
         app = app.toVariant()
         self.log.debug("添加数据" + json.dumps(app, indent=4, ensure_ascii=False))
         print(app)
         drive = Path(app["source"]).drive + "\\"
         # self.monitorData.append(app)
         if drive in self.monitorData:
-            self.monitorData[drive]["monitor"].append(self.getDefault(app["source"]))
+            self.monitorData[drive]["monitor"].append(self.get_default(app["source"]))
         else:
             self.monitorData[drive] = {
                 "threshold": 90,
-                "monitor": [self.getDefault(app["source"])]
+                "monitor": [self.get_default(app["source"])]
             }
         self.set_config_change(True)

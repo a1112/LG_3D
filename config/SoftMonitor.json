@@ -5,5 +5,12 @@
         "name": "WinRAR",
         "delay": "3",
         "monitorAble": true
+    },
+    {
+        "args": "",
+        "delay": 5,
+        "exe": "I:/NG_COOL_BED/src/ng_server.bat",
+        "monitorAble": true,
+        "name": "ng_server"
     }
 ]

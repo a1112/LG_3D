@@ -1,4 +1,4 @@
-from ProcessObj.ProcessObj import allAttrs, getProcessDict
+from tools.soft import getProcessDict, allAttrs
 
 
 def tryGetInt(value, default=5):

@@ -31,7 +31,7 @@ Item {
         MenuItem{
             text: "打开工具箱位置"
             onClicked: {
-                Qt.openUrlExternally("")
+                Qt.openUrlExternally(folder_source)
             }
         }
         MenuItem{
