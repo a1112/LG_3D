@@ -75,6 +75,12 @@ class SickCamera:
         # 清理资源，例如关闭相机
         self.release()
 
+    def get_last_frame(self):
+        return None
+
+    def if_save_index(self):
+        return False
+
 class DaHengCamera(Thread): # Process
     def __init__(self, yaml_config):
         super().__init__()

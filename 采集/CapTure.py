@@ -76,7 +76,7 @@ class CapTure3D(CapTureBase):
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(coil)
-                            bf.area_cap = self.camera.get_last_frame()
+                            # bf.area_cap = self.camera.get_last_frame()
                             self.dataSave.put(bf)
                             lastTimeDict[self.cameraInfo.key] = time.time()
                         finally:
@@ -162,9 +162,11 @@ class CapTure(Thread):
         camera_2d = self.set_camera_2d()
 
         if camera_2d is not None:
+            logger.debug("启动 2D 采集")
             CapTure2D(self.dataSave,camera_2d, self, self.cameraInfo).start()
 
         if camera_3d is not None:
+            logger.debug("启动 3D 采集")
             CapTure3D(self.dataSave,camera_3d, self, self.cameraInfo).start()
 
 

@@ -33,9 +33,12 @@ class SickBuffer(BufferBase):
         self.data2D_mean = 0
         self.data3D_mean = 0
         self.timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')
-        self.area_cap = None
+        self.area_cap = self.data2D
 
 
+
+    def if_save_index(self):
+        return True
 
     def get_json(self):
         js_data = {
