@@ -48,10 +48,14 @@ def getProcessDict():
     process = getProcess()
     processDict = {}
     for pro in process:
-        if "exe" in pro:
-            processDict[os.path.normpath(pro["exe"])] = pro
-            if pro["name"] == "cmd.exe":
-                processDict[os.path.normpath(pro["cmdline"][-1]).strip()] = pro
+        try:
+            if "exe" in pro:
+                processDict[os.path.normpath(pro["exe"])] = pro
+                if pro["name"] == "cmd.exe":
+                    if "cmdline" in pro:
+                        processDict[os.path.normpath(pro["cmdline"][-1]).strip()] = pro
+        except BaseException as e:
+            print(e)
     return processDict
 
 
