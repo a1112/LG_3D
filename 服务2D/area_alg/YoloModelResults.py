@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from ultralytics import Results
+from ultralytics.engine.results import Results
 from PIL import Image
 
 class YoloModelResultsBase:
