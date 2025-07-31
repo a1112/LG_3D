@@ -22,7 +22,7 @@ class ImageDataSave(Thread):
         self.name = self.saveFolder.name
         self.save_index = 0
         self.save_index_2d = 0
-        self.queue = Queue()
+        self.queue = Queue(maxsize=30)
         self.running = True
         self.camera:SickCamera|None = None
         self.start()
@@ -49,11 +49,17 @@ class ImageDataSave(Thread):
         if isinstance(buffer, SickBuffer):
             buffer.data2D_mean = buffer.data2D.mean()
             buffer.save_index = self.save_index
-            self.queue.put(buffer)
+            if self.save_index<20:
+                self.queue.put(buffer)
+            else:
+                logger.error(f"<save_index out >{self.save_index} <max 20>")
             self.save_index += 1
         if isinstance(buffer, DaHengBuffer):
             buffer.save_index = self.save_index_2d
-            self.queue.put(buffer)
+            if self.save_index_2d<20:
+                self.queue.put(buffer)
+            else:
+                logger.error(f"<save_index_2d out >{self.save_index_2d} <max 20>")
             self.save_index_2d += 1
 
     def save_camera_config(self, buffer):
