@@ -93,7 +93,7 @@ if socket.gethostname() == "lcx_ace":
     process_annotations(xml_folder, yolo_folder, classes_map, only=True)
 
 if socket.gethostname() == "DESKTOP-94ADH1G":
-    xml_folder = Path(r'D:\标志\detection_by_image_list1')
+    xml_folder = Path(r'G:\data\Copy\Copy')
     yolo_folder = xml_folder.parent / "txt"
     yolo_folder.mkdir(parents=True, exist_ok=True)
     process_annotations(xml_folder, yolo_folder, classes_map, only=True)
