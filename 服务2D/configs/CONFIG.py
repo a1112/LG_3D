@@ -14,7 +14,7 @@ WorkClass = Thread
 
 print(hostname)
 
-if hostname == "DESKTOP-94ADH1G":
+if hostname in ["DESKTOP-3VCH6DO","DESKTOP-94ADH1G"]:
     DEBUG = True
 else:
     DEBUG = False
