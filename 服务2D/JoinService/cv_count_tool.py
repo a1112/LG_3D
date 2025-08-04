@@ -8,7 +8,7 @@ import numpy as np
 
 from utils.MultiprocessColorLogger import logger
 
-from 服务2D.configs.CONFIG import DEBUG
+from configs.CONFIG import DEBUG
 
 
 class ThreadImageShow(Thread):

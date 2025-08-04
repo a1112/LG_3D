@@ -6,7 +6,7 @@ import shutil
 import tqdm
 toFolder = Path(r"E:\Copy")
 toFolder.mkdir(exist_ok=True)
-for coil_index in tqdm.tqdm(range(63346, 63366)):
+for coil_index in tqdm.tqdm(range(92803, 92853)):
     for folder in [
         "F:/Cap_L_D", "F:\Cap_L_U", "F:/Cap_L_M",
         "G:/Cap_S_U", "G:/Cap_S_D", "G:/Cap_S_M"
