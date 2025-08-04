@@ -80,6 +80,10 @@ class CameraImageGrop:
 
     def join_image(self):
 
+        # if DEBUG:
+        #     self.intersections=[440 for i in self.intersections]
+
+
         print(fr"intersections {self.coil_id} {self.config.key} {self.intersections}")
         image = hconcat_list(self.image_list, self.intersections)
 
