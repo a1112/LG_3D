@@ -8,6 +8,8 @@ import numpy as np
 
 from utils.MultiprocessColorLogger import logger
 
+from 服务2D.configs.CONFIG import DEBUG
+
 
 class ThreadImageShow(Thread):
     def __init__(self):
@@ -230,6 +232,13 @@ def format_intersections_list(intersections_list_):
             formatted.append(ave_value)
     return formatted
 
+def draw_debug_image(image,ins_int,d_count):
+    """
+    绘制
+    """
+    h,w,*_ = image.shape
+    image = cv2.putText(image,fr"{ins_int}",(int(w/2)-20,int(h/2)),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),3)
+    return image
 
 def hconcat_list(image_list,ins_int_list):
     """
@@ -237,17 +246,25 @@ def hconcat_list(image_list,ins_int_list):
     """
     if not image_list:
         return None
-    count_image = image_list[0].copy()
+    add_image_list = [image_list[0].copy()]
     for index in range(len(ins_int_list)):
-        h,w,*_= image_list[index+1].shape
-        ins_int = ins_int_list[index]
         try:
-            if ins_int == 0:
-                ins_int=ins_int_list[index-1]
+            h,w,*_= image_list[index+1].shape
+            ins_int = ins_int_list[index]
+            try:
+                if ins_int == 0:
+                    ins_int=ins_int_list[index-1]
+            except IndexError:
+                ins_int = ins_int_list[index+1]
+            d_count = int(w - ins_int)
+            item_image = image_list[index+1][:,d_count:]
+
+            if DEBUG:
+                item_image = draw_debug_image(item_image,ins_int,d_count)
+            add_image_list.append(item_image)
         except IndexError:
-            ins_int = ins_int_list[index+1]
-        d_count = int(w - ins_int)
-        count_image = cv2.hconcat([count_image,image_list[index+1][:,d_count:]])
+            logger.error(f"<hconcat_list IndexError>{index+1}")
+    count_image = cv2.hconcat(add_image_list)
     return count_image
 
 def get_intersections(mask_list):
@@ -265,8 +282,8 @@ def get_intersections(mask_list):
         intersections.append(get_the_difference_int(ins))
 
 
-        print(fr"format_intersections_l {format_intersections_l}")
-        print(fr"format_intersections_r {format_intersections_r}")
+        # print(fr"format_intersections_l {format_intersections_l}")
+        # print(fr"format_intersections_r {format_intersections_r}")
         print(fr"get_the_difference {ins}")
         print(fr"get_the_difference_int(ins) {get_the_difference_int(ins)}")
     format_intersections_ = format_intersections_list(intersections)

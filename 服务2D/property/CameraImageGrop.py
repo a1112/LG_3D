@@ -74,6 +74,10 @@ class CameraImageGrop:
         self.mask_list = self.mask_list[left_index:right_index+1]
         self.image_list = self.image_list[left_index:right_index+1]
 
+    def set_intersections(self,new_intersections):
+        "设置统一的 参数"
+        self.intersections = new_intersections
+
     def join_image(self):
 
         print(fr"intersections {self.coil_id} {self.config.key} {self.intersections}")

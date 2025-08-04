@@ -139,7 +139,6 @@ class CameraWork(WorkBaseThread):
                 mask_list.append(mask)
                 image_list.append(seg_result.image)
         intersections = get_intersections(mask_list)
-        intersections =[ i*10 for i in intersections]
-
+        intersections =[ i * 10 for i in intersections]
         print(fr"intersections {intersections}")
         return hconcat_list(image_list,intersections)
