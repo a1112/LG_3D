@@ -64,15 +64,18 @@ class CameraImageGrop:
             in_list.append(_image_all_in_(mask))
 
         for i in range(len(in_list)):
-            if in_list[i][0] and (i-1<0 or not in_list[i-1][0]):
+            if in_list[i][0] and (i-1<=0 or not in_list[i-1][0]):
                 left_index = i-1
 
         for i in range(len(in_list))[::-1]:
             if in_list[i][1] and (i + 1 >= len(in_list) or not in_list[i + 1][1]):
                 right_index = i+1
         print(fr"format_images {in_list} {left_index} {right_index}")
-        self.mask_list = self.mask_list[left_index:right_index+1]
-        self.image_list = self.image_list[left_index:right_index+1]
+        self.mask_list = self.mask_list
+        self.image_list = self.image_list
+
+        # self.mask_list = self.mask_list[left_index:right_index+1]
+        # self.image_list = self.image_list[left_index:right_index+1]
 
     def set_intersections(self,new_intersections):
         "设置统一的 参数"
@@ -84,6 +87,7 @@ class CameraImageGrop:
         image = hconcat_list(self.image_list, self.intersections)
 
         if DEBUG:
+            print(fr"self.image_list {len(self.image_list)}")
             im_show(image,fr"join_image {self.config.key}")
 
         return image
