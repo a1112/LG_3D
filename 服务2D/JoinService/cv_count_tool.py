@@ -263,6 +263,7 @@ def hconcat_list(image_list,ins_int_list):
                 item_image = draw_debug_image(item_image,ins_int,d_count)
             add_image_list.append(item_image)
         except IndexError:
+            # raise
             logger.error(f"<hconcat_list IndexError>{index+1}")
     count_image = cv2.hconcat(add_image_list)
     return count_image
