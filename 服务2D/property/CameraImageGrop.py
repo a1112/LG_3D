@@ -46,12 +46,16 @@ class CameraImageGrop:
             mask = seg_result.get_mask()
             if mask is not None:
                 self.mask_list.append(mask)
-                self.image_list.append(seg_result.image)
+            else:
+                self.mask_list.append(np.zeros(seg_result.image.shape[:2]))
+
+            self.image_list.append(seg_result.image)
 
         self.format_images()
 
         self.intersections = get_intersections(self.mask_list)
         self.intersections = [i * self.config.surface_config.scale for i in self.intersections]
+
 
         # for mask, image in zip(self.mask_list, self.image_list):
             # im_show(mask, fr"mask {self.config.key}")
@@ -67,12 +71,15 @@ class CameraImageGrop:
 
         for i in range(len(in_list)):
             if in_list[i][0] and (i-1<0 or not in_list[i-1][0]):
-                left_index = i-1
+                left_index = max(i-1,0)
+                break
 
         for i in range(len(in_list))[::-1]:
             if in_list[i][1] and (i + 1 >= len(in_list) or not in_list[i + 1][1]):
                 right_index = i+1
-        print(fr"format_images {in_list} {left_index} {right_index}")
+                break
+
+        print(fr"mask_list {len(self.mask_list)} format_images {in_list} {left_index} {right_index}")
 
         self.left_index = left_index
         self.right_index = right_index
@@ -81,6 +88,7 @@ class CameraImageGrop:
         # self.image_list = self.image_list[left_index:right_index+1]
 
     def init_image(self):
+        self.intersections=self.intersections[self.left_index:self.right_index]
         self.mask_list = self.mask_list[self.left_index:self.right_index + 1]
         self.image_list = self.image_list[self.left_index:self.right_index + 1]
 

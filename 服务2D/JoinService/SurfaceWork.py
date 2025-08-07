@@ -28,10 +28,40 @@ class SurfaceWork(WorkBaseThread):
         self.cameras_wolk = []
         self.start()
 
+    def get_intersections(self,camera_image_grop_dict):
+
+        left_index = min([item.left_index for item in camera_image_grop_dict])
+        right_index = max([item.right_index for item in camera_image_grop_dict])
+
+        intersections = camera_image_grop_dict[1].intersections
+
+        for i in range(camera_image_grop_dict[0].left_index,camera_image_grop_dict[0].right_index):
+            try:
+                intersections[i] = camera_image_grop_dict[0].intersections[i]
+            except:
+                intersections.append(camera_image_grop_dict[0].intersections[i])
+        return intersections,left_index,right_index
+
+        # for item in camera_image_grop_dict:
+        #     print(fr" item = {item}")
+        #     print(item.intersections)
+        #     print(item.left_index)
+        #     print(item.right_index)
+        #     print(len(item.mask_list))
+
+
     def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop]):
         camera_image_grop_list = [camera_image_grop_dict["U"], camera_image_grop_dict["M"], camera_image_grop_dict["D"]]
+
+        intersections,left_index,right_index = self.get_intersections(camera_image_grop_list)
+        camera_image_grop_dict["U"].left_index=left_index
+        camera_image_grop_dict["U"].right_index=right_index
+        camera_image_grop_dict["U"].intersections=intersections
+
+
         camera_image_grop_dict["M"].set_intersections(camera_image_grop_dict["U"])
         camera_image_grop_dict["D"].set_intersections(camera_image_grop_dict["U"])
+
         camera_image_grop_dict["U"].init_image()
         camera_image_grop_dict["M"].init_image()
         camera_image_grop_dict["D"].init_image()
