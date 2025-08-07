@@ -4,15 +4,15 @@
         "cameras": [
             {
                 "folder" : "G:\\Cap_S_U",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             },{
                 "folder": "G:\\Cap_S_M",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             },{
                 "folder": "G:\\Cap_S_D",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             }
         ],
@@ -22,15 +22,15 @@
         "cameras": [
             {
                 "folder" : "F:\\Cap_L_U",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             },{
                 "folder": "F:\\Cap_L_M",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             },{
                 "folder": "F:\\Cap_L_D",
-                "loss_num": 3,
+                "loss_num": 0,
                 "max_len": 10
             }
         ],
