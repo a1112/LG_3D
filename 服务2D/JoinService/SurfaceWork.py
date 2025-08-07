@@ -30,8 +30,14 @@ class SurfaceWork(WorkBaseThread):
 
     def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop]):
         camera_image_grop_list = [camera_image_grop_dict["U"], camera_image_grop_dict["M"], camera_image_grop_dict["D"]]
-        camera_image_grop_dict["M"].set_intersections(camera_image_grop_dict["U"].intersections)
-        camera_image_grop_dict["D"].set_intersections(camera_image_grop_dict["U"].intersections)
+        camera_image_grop_dict["M"].set_intersections(camera_image_grop_dict["U"])
+        camera_image_grop_dict["D"].set_intersections(camera_image_grop_dict["U"])
+        camera_image_grop_dict["U"].init_image()
+        camera_image_grop_dict["M"].init_image()
+        camera_image_grop_dict["D"].init_image()
+
+
+
         return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list])
 
     def _join_images_(self,image_list):

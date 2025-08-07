@@ -21,6 +21,8 @@ def _image_all_in_(gray_image):
 
 class CameraImageGrop:
     def __init__(self, coil_id, config:CameraConfig, results:List[YoloModelSegResults]):
+        self.right_index = None
+        self.left_index = None
         self.results = results
         self.config = config
         self.coil_id = coil_id
@@ -71,12 +73,22 @@ class CameraImageGrop:
             if in_list[i][1] and (i + 1 >= len(in_list) or not in_list[i + 1][1]):
                 right_index = i+1
         print(fr"format_images {in_list} {left_index} {right_index}")
-        self.mask_list = self.mask_list[left_index:right_index+1]
-        self.image_list = self.image_list[left_index:right_index+1]
 
-    def set_intersections(self,new_intersections):
+        self.left_index = left_index
+        self.right_index = right_index
+
+        # self.mask_list = self.mask_list[left_index:right_index+1]
+        # self.image_list = self.image_list[left_index:right_index+1]
+
+    def init_image(self):
+        self.mask_list = self.mask_list[self.left_index:self.right_index + 1]
+        self.image_list = self.image_list[self.left_index:self.right_index + 1]
+
+    def set_intersections(self,new_):
         "设置统一的 参数"
-        self.intersections = new_intersections
+        self.intersections = new_.intersections
+        self.left_index = new_.left_index
+        self.right_index = new_.right_index
 
     def join_image(self):
 
