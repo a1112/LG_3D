@@ -10,7 +10,7 @@ from utils.GlobalSignalHandling import GlobalSignalHandling
 from CONFIG import server_api_port, isLoc, offline_mode
 from utils.LoggerProcess import LoggerProcess
 from utils.StdoutLog import Logger
-
+import Lis
 Logger("算法")
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
