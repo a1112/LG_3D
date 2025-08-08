@@ -17,7 +17,7 @@ from property.ServerConfigProperty import ServerConfigProperty
 isLoc = False
 
 print(f"主机： {socket.gethostname()}  进程Id {os.getpid()}")
-if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G', "MS-LGKRSZGOVODD"]:
+if socket.gethostname() in ["lcx_ace", "lcx_mov", 'DESKTOP-94ADH1G', "MS-LGKRSZGOVODD", "DESKTOP-3VCH6DO"]:
     isLoc = True
 base_config_folder = Path(fr"D:\CONFIG_3D")
 

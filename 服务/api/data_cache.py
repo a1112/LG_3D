@@ -1,5 +1,6 @@
 
 import io
+import logging
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -30,8 +31,11 @@ class ImageCache:
         @lru_cache(maxsize=self.cache_size)
         def _load_image_byte(path):
             if not Path(path).exists():
+                logging.error(f" {path} does not exist")
+
                 return None
             with open(path, 'rb') as f:
+                logging.debug(f"loading image {path}")
                 return f.read()
 
         return _load_image_byte
@@ -121,7 +125,10 @@ class Data3dCache:
         self._cache.cache_clear()
 
 
-previewCache = ImageCache(512)
-imageCache = ImageCache(256)
-d3DataCache = Data3dCache(32)
-classifierCache = ImageCache(200)
+previewCache = ImageCache(256)
+imageCache = ImageCache(128)
+
+areaCache = ImageCache(64)
+
+d3DataCache = Data3dCache(16)
+classifierCache = ImageCache(100)

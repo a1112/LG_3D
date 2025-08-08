@@ -15,7 +15,7 @@ DataShowBackground {
 
     SplitView{
         anchors.fill: parent
-        DataShowView{
+        DataShowView{   // 单侧
             id: dataShowView_R
             surfaceData:coreModel.surfaceS
             dataShowCore : DataShowCore{
@@ -25,7 +25,7 @@ DataShowBackground {
             SplitView.preferredWidth: root.is_half?root.viewWidth_half:root.viewWidth
         }
 
-        DataShowView{
+        DataShowView{    // 单侧
             surfaceData:coreModel.surfaceL
             dataShowCore : DataShowCore{
                 surfaceData:coreModel.surfaceL

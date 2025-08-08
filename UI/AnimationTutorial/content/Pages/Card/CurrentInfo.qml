@@ -34,44 +34,44 @@ CardBase {
             Layout.fillWidth: true
             Layout.fillHeight: true
             FlowRowItem{
-                title:"流水号"
+                title:qsTr("流水号")
                 value:core.currentCoilModel["coilId"]
                 valueColor:Material.color(Material.Green)
             }
             FlowRowItem{
-                title:"去向"
+                title:qsTr("去向")
                 value:core.currentCoilModel.nextInfo
             }
             FlowRowItem{
-                title:"卷号 "
+                title:qsTr("卷号 ")
                 value:core.currentCoilModel.coilNo
             }
             FlowRowItem{
-                title:"钢种 "
+                title:qsTr("钢种 ")
                 value:core.currentCoilModel.coilType
             }
             FlowRowItem{
-                title:"外径 "
+                title:qsTr("外径 ")
                 value:core.currentCoilModel.coilDia
             }
             FlowRowItem{
-                title:"内径 "
+                title:qsTr("内径 ")
                 value:core.currentCoilModel.coilInside
             }
             FlowRowItem{
-                title:"卷宽 "
+                title:qsTr("卷宽 ")
                 value:core.currentCoilModel.coilWidth
             }
             FlowRowItem{
-                title:"卷厚 "
+                title:qsTr("卷厚 ")
                 value:core.currentCoilModel.coilThickness
             }
             FlowRowItem{
-                title:"日期 "
+                title:qsTr("日期 ")
                 value:core.currentCoilModel.coilDetectionTime.dataString
             }
             FlowRowItem{
-                title:"时间 "
+                title:qsTr("时间 ")
                 value:core.currentCoilModel.coilDetectionTime.timeString
             }
         }
@@ -86,7 +86,7 @@ CardBase {
     Menu{
         id:menu
         MenuItem{
-            text:"更多信息..."
+            text:qsTr("更多信息...")
             onClicked:{popManage.popupMsgPopView()}
         }
     }

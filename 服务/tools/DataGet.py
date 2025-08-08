@@ -1,6 +1,6 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
-from api.data_cache import previewCache, imageCache, d3DataCache, classifierCache
+from api.data_cache import previewCache, imageCache, d3DataCache, classifierCache, areaCache
 from CONFIG import serverConfigProperty
 from property.Types import ImageType
 
@@ -48,6 +48,8 @@ class DataGet:
             url = serverConfigProperty.get_preview_file(self.coil_id, self.surfaceKey, self.type_)
         else:
             url = serverConfigProperty.get_file(self.coil_id, self.surfaceKey, self.type_, self.mask)
+
+
         return url
 
     def get3d_source(self):
@@ -72,6 +74,8 @@ class DataGet:
         url = self.get_source()
         if self.sourceType == "preview":
             return previewCache.get_image(url, pil=pil)
+        elif self.type_.lower() == "area":
+            return areaCache.get_image(url, pil=pil)
         elif self.sourceType in ["image", "source"]:
             return imageCache.get_image(url, pil=pil)
         raise KeyError(f"get_image_array {self.sourceType}")

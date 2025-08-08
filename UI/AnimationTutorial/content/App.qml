@@ -22,7 +22,9 @@ AppBase {
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}
 
-    MainLayout{ //          入口 <-
+
+
+    MainLayout{ //          入口,界面构成 <-
         anchors.fill: parent
     }
 
@@ -48,7 +50,6 @@ AppBase {
     property CoreControl coreControl: CoreControl{}
 
     property Script autoScript:Script{}
-
     // Junp{}
     property AppCore app_core : AppCore{}
 

@@ -65,11 +65,13 @@ async def get_area_tiled(surface_key, coil_id: str,row=0, col=0, count=0):
         }
     w_width = w // count
     h_height = h // count
-    crop_image = image.crop((row*w_width, col*h_height,(row+1)*w_width, (col+1)*h_height))
+    crop_image = image.crop((row*w_width, col*h_height, (row+1)*w_width, (col+1)*h_height))
+
     img_byte_arr = io.BytesIO()
     crop_image.save(img_byte_arr, format='jpeg')
     img_byte_arr.seek(0)
-    return StreamingResponse( img_byte_arr, media_type="image/png")
+    return Response( img_byte_arr.getvalue(), media_type="image/jpeg")
+
 
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
 async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str, w: str, h: str):

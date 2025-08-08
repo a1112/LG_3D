@@ -17,8 +17,8 @@ SplitView{
         SplitView.minimumWidth: 330
         SplitView.maximumWidth: 550
     }
-        DataShowLayout{    // 数据显示
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+    DataShowLayout{    // 数据显示
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+    }
 }
