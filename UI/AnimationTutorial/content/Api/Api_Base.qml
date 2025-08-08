@@ -52,7 +52,6 @@ Item {
             // delayTimer.restart()
             coreModel.coreGlobalError.setError(1001,false)
         }
-
         ,function(err){
             coreState.connectServer=false
             delay= -1

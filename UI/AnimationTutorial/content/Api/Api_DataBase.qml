@@ -13,9 +13,10 @@ Api_Base {
     }
 
     function get_zValueData(_key_,coilId_,x1,y1,success,failure){
-    let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
+        let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
         return ajax.get(url,success,failure)
     }
+
     function geRenderDrawerSource(key,coil_id,scale,minValue,maxValue,mask=false){
         //  http://127.0.0.1:6013/coilData/L/1924?mask=true&minValue=0&maxValue=255
         let url_= apiConfig.url(apiConfig.serverUrlData,"coilData","Render",key,coil_id)+`?scale=${scale}&mask=${mask}&minValue=${minValue}&maxValue=${maxValue}`

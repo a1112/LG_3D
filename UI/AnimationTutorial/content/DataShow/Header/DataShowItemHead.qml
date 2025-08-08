@@ -64,9 +64,7 @@ HeaderBase {
             selected:surfaceData.rootViewIndex  == 2
             onClicked: {
                 surfaceData.rootViewIndex = 2  // 2
-
             }
-
         }
 
         ItemDelegateItemLabel {

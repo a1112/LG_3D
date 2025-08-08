@@ -26,7 +26,7 @@ Rectangle {
     onImageUrlChanged: {
         count_= 1
         api.ajax.get(imageUrl,(text)=>{
-                         console.log(text)
+                         console.log("imageUrl, ", imageUrl)
                          let json_data=JSON.parse(text)
                          dataAreaShowCore.sourceWidth = json_data["width"]
                          dataAreaShowCore.sourceHeight = json_data["height"]
@@ -57,12 +57,12 @@ Rectangle {
         Image {
             width: parent.width
             height: parent.height
-            source: imageUrl+"?row=-1" //+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_
-            sourceClipRect:Qt.rect(
-                                row_*source_item_width,
-                               col_*source_item_height,
-                               source_item_width,
-                               source_item_height)
+            source: imageUrl+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_
+            // sourceClipRect:Qt.rect(
+            //                     row_*source_item_width,
+            //                    col_*source_item_height,
+            //                    source_item_width,
+            //                    source_item_height)
             asynchronous: true
             fillMode: Image.PreserveAspectFit
             // sourceSize.width:parent.width

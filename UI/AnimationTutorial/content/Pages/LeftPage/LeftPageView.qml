@@ -47,13 +47,10 @@ Item {
         }
 
         FliterSelectView{ // 过滤界面
-
         }
 
         DataListView{   // 左侧列表
-
             id:dataList
-
         }
 
         FootView{
