@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-
+from cachetools import cached, LRUCache
 
 class ImageCache:
     def __init__(self, cache_size=128):
@@ -18,8 +18,11 @@ class ImageCache:
         self._cache = self._create_cache()
 
     def _cache_image_pil(self):
-        @lru_cache(maxsize=self.cache_size)
+        @cached(cache=LRUCache(maxsize=self.cache_size))
+        # @lru_cache(maxsize=self.cache_size)
         def _load_image_npy(path):
+            print(fr"load image npy {path}")
+
             image_byte = self.get_image(path)
             if image_byte is None:
                 return None
@@ -28,8 +31,10 @@ class ImageCache:
         return _load_image_npy
 
     def _cache_image_byte(self):
-        @lru_cache(maxsize=self.cache_size)
+        # @lru_cache(maxsize=self.cache_size)
+        @cached(cache=LRUCache(maxsize=self.cache_size))
         def _load_image_byte(path):
+            print(fr"load image byte {path}")
             if not Path(path).exists():
                 logging.error(f" {path} does not exist")
 
@@ -41,7 +46,8 @@ class ImageCache:
         return _load_image_byte
 
     def _mask_cache_image_byte(self):
-        @lru_cache(maxsize=self.cache_size)
+        # @lru_cache(maxsize=self.cache_size)
+        @cached(cache=LRUCache(maxsize=self.cache_size))
         def _load_image_byte(path, mask_path):
             binary_data = self._cache_image_byte(path)
             image = Image.open(io.BytesIO(binary_data))
@@ -67,7 +73,8 @@ class ImageCache:
         return _load_image_byte
 
     def _create_cache(self):
-        @lru_cache(maxsize=self.cache_size)
+        # @lru_cache(maxsize=self.cache_size)
+        @cached(cache=LRUCache(maxsize=self.cache_size))
         def _load_image(path):
             if not os.path.exists(path):
                 return None
@@ -81,7 +88,7 @@ class ImageCache:
 
     def get_image(self, path, pil=False):
         try:
-            print(path)
+            print(fr"getting image {path}")
             if pil:
                 return self._cache_image_pil(path)
             return self._cache_image_byte(path)
@@ -106,7 +113,8 @@ class Data3dCache:
         self._cache = self._create_cache()
 
     def _create_cache(self):
-        @lru_cache(maxsize=self.cache_size)
+        # @lru_cache(maxsize=self.cache_size)
+        @cached(cache=LRUCache(maxsize=self.cache_size))
         def _load_3d_data(path):
             if ".npy" in str(path):
                 return np.load(path).astype(int)
@@ -128,7 +136,7 @@ class Data3dCache:
 previewCache = ImageCache(256)
 imageCache = ImageCache(128)
 
-areaCache = ImageCache(64)
+areaCache = ImageCache(32)
 
 d3DataCache = Data3dCache(16)
 classifierCache = ImageCache(100)

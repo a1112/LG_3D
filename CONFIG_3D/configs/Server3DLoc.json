@@ -2,7 +2,7 @@
   "surface": [
     {
       "key": "S",
-      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_S",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\Save_S",
       "rotate": 90,
       "x_rotate": 17,
       "direction": "L",
@@ -23,7 +23,7 @@
       ]
     },{
       "key": "L",
-      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\surface_L",
+      "saveFolder": "F:\\datasets\\LG_3D_DataBase\\DataSave\\Save_L",
       "rotate": -90,
       "x_rotate": 10,
       "direction": "R",
