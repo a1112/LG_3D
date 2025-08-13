@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from cachetools import cached, LRUCache
+from cachetools import cached, LRUCache,TTLCache
 
 class ImageCache:
     def __init__(self, cache_size=128):
@@ -18,7 +18,7 @@ class ImageCache:
         self._cache = self._create_cache()
 
     def _cache_image_pil(self):
-        @cached(cache=LRUCache(maxsize=self.cache_size))
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         # @lru_cache(maxsize=self.cache_size)
         def _load_image_npy(path):
             print(fr"load image npy {path}")
@@ -32,7 +32,7 @@ class ImageCache:
 
     def _cache_image_byte(self):
         # @lru_cache(maxsize=self.cache_size)
-        @cached(cache=LRUCache(maxsize=self.cache_size))
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         def _load_image_byte(path):
             print(fr"load image byte {path}")
             if not Path(path).exists():
@@ -47,7 +47,7 @@ class ImageCache:
 
     def _mask_cache_image_byte(self):
         # @lru_cache(maxsize=self.cache_size)
-        @cached(cache=LRUCache(maxsize=self.cache_size))
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         def _load_image_byte(path, mask_path):
             binary_data = self._cache_image_byte(path)
             image = Image.open(io.BytesIO(binary_data))
@@ -74,7 +74,7 @@ class ImageCache:
 
     def _create_cache(self):
         # @lru_cache(maxsize=self.cache_size)
-        @cached(cache=LRUCache(maxsize=self.cache_size))
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         def _load_image(path):
             if not os.path.exists(path):
                 return None
@@ -114,7 +114,7 @@ class Data3dCache:
 
     def _create_cache(self):
         # @lru_cache(maxsize=self.cache_size)
-        @cached(cache=LRUCache(maxsize=self.cache_size))
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         def _load_3d_data(path):
             if ".npy" in str(path):
                 return np.load(path).astype(int)
