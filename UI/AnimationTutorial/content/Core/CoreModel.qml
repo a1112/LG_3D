@@ -10,7 +10,7 @@ CoreModel_ {
 
     property int currentCoilListIndex: 0
     onCurrentCoilListIndexChanged:{
-    core.flushListItem()
+        core.flushListItem()
     }
 
 
@@ -58,13 +58,6 @@ CoreModel_ {
     function getCurrentCoilListModelMinMaxDateTime(){
         return [currentCoilListModel.get(currentCoilListModel.count-1).DateTime,currentCoilListModel.get(0).DateTime]
     }
-
-    function getLastCoilId(){
-        if (coilListModel.count>0){
-            return coilListModel.get(0).Id
-            }
-        return 0
-    }
     readonly property int lastCoilId: realCoilListModel.get(0).Id
 
     property ListModel surfaceModel: ListModel{
@@ -100,14 +93,14 @@ CoreModel_ {
 
     function getLastCoilId(){
         let max_i=0
-        for(let i =0;i<10;i++){
+        for(let i =0;i<5;i++){
             let id_ = realCoilListModel.get(0).SecondaryCoilId
             if (id_>max_i){
                 max_i=id_
             }
         }
         return max_i
-        }
+    }
 
     function updateData(upData){
         while(coilListModel.count > maxCoilListModelLen){
@@ -123,7 +116,7 @@ CoreModel_ {
                         realCoilListModel.insert(0,coil)
                     }
                     else{
-                        for (let i = 0;i<10;i++){
+                        for (let i = 1;i<10;i++){
                             if (realCoilListModel.get(i).SecondaryCoilId === coil.SecondaryCoilId){
                                 realCoilListModel.set(i,coil)
                             }
