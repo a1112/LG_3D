@@ -26,6 +26,8 @@ Item {
     }
 
     function flushListItem(){
+
+
         let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
 
         if (c_data.SecondaryCoilId===currentCoilModel.coilId) {
@@ -56,6 +58,7 @@ Item {
 
     function setCoilIndex(index) {
         coilIndex = index
+        flushListItem()
     }
 
     property var allKey:["S","L"]

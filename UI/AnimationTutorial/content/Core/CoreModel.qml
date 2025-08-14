@@ -102,7 +102,7 @@ CoreModel_ {
             coilListModel.remove(coilListModel.count-1,1)
         }
 
-        if (upData["coilList"]== undefined){
+        if (upData["coilList"]=== undefined){
             return -2
         }
         upData["coilList"].forEach(function(coil){
@@ -131,7 +131,7 @@ CoreModel_ {
         for(var i=0;i<data.length;i++){
             historyCoilListModel.insert(0,data[i])
         }
-        core.setCoilIndex(-1)
+        // core.setCoilIndex(1)
         core.setCoilIndex(0)
     }
 

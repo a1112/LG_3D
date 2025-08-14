@@ -13,7 +13,7 @@ Item {
         // 初始化 卷 数据
         coreModel.coilListModel.clear()
         let data={
-        "coilList":coilData
+            "coilList":coilData
         }
         // coreModel.updateData(data)
         for(var i=0;i<coilData.length;i++){
@@ -51,7 +51,7 @@ Item {
             console.log("error")
         })
         coreModel.coilListModel.clear()
-        api.getCoilList(init_num,(result)=>{
+        api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
                         },(error)=>{

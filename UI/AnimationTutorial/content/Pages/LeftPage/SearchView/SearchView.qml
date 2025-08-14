@@ -8,7 +8,7 @@ import "../../../Comp/Card"
 import "../../../btns"
 CardBase{
     id:root
-    title: "     查询      "
+    title: qsTr("     查询      ")
     max_height: 95
     content_head_tool:
         ComboBox{
@@ -20,9 +20,9 @@ CardBase{
         }
 
         model: ListModel{
-            ListElement{ text: "卷号" }
-            ListElement{ text: "时间" }
-            ListElement{ text: "流水号" }
+            ListElement{ text: qsTr("卷号") }
+            ListElement{ text: qsTr("时间") }
+            ListElement{ text: qsTr("流水号") }
         }
     }
 
@@ -59,7 +59,7 @@ CardBase{
 
             ImageButton{
                 id:fliterBtn
-                tipText:"筛选"
+                tipText:qsTr("筛选")
                 width: parent.width
                 height: parent.height
                 source:coreStyle.isDark?coreStyle.getIcon("filter_light"):coreStyle.getIcon("filter")
@@ -68,6 +68,7 @@ CardBase{
                     }
             }
         }
+
         FilterView{
             x: fliterBtn.x
             id:fliterView
