@@ -102,7 +102,7 @@ CoreModel_ {
             coilListModel.remove(coilListModel.count-1,1)
         }
 
-        if (upData["coilList"]== undefined){
+        if (upData["coilList"]=== undefined){
             return -2
         }
         upData["coilList"].forEach(function(coil){

@@ -79,12 +79,15 @@ def format_coil_info(secondary_coil_list):
 
 
 @router.get("/coilList/{number}")
-async def get_coil(number: int,coil_id=None):
+async def get_coil(number: int,coil_id=None,rev=True):
     """
         获取 n 条数据
     """
     number= min(number, 1000)
-    return format_coil_info(Coil.get_coil_list(number,coil_id, by_coil=isLoc)[::-1])
+    data=Coil.get_coil_list(number,coil_id, by_coil=isLoc)
+    if rev:
+        return format_coil_info(data[::-1])
+    return format_coil_info(data)
 
 
 @router.get("/flush/{coil_id:int}")
@@ -94,7 +97,7 @@ async def get_flush(coil_id: int):
     """
     if coil_id>0:
         return {
-            "coilList": await get_coil(10,coil_id=coil_id)
+            "coilList": await get_coil(10,coil_id=coil_id,rev=True)
         }
     return {}
 
