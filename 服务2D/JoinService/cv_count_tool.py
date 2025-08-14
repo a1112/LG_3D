@@ -226,10 +226,11 @@ def format_intersections_list(intersections_list_):
     ave_value = statistics.mean(intersections_list) if intersections_list else 0
     formatted = []
     for intersections in intersections_list_:
-        if intersections > 100:
-            formatted.append(intersections)
-        else:
-            formatted.append(ave_value)
+        formatted.append(intersections)
+        # if intersections > 100:
+        #     formatted.append(intersections)
+        # else:
+        #     formatted.append(ave_value)
     return formatted
 
 def draw_debug_image(image,ins_int,d_count):
