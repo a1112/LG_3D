@@ -131,7 +131,7 @@ CoreModel_ {
         for(var i=0;i<data.length;i++){
             historyCoilListModel.insert(0,data[i])
         }
-        core.setCoilIndex(-1)
+        // core.setCoilIndex(1)
         core.setCoilIndex(0)
     }
 

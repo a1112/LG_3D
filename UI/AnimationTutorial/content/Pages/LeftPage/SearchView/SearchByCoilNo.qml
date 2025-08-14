@@ -10,7 +10,7 @@ ColumnLayout {
             font.bold:true
             font.family: "Microsoft YaHei UI"
             font.pointSize: 14
-            text: "卷号:"
+            text: qsTr("卷号:")
         }
         Item{
             Layout.fillWidth: true
@@ -19,7 +19,7 @@ ColumnLayout {
                 id: textField
                 anchors.fill: parent
                 selectByMouse: true
-                placeholderText : "请输入卷号"
+                placeholderText : qsTr("请输入卷号")
             }
         }
         Item{
