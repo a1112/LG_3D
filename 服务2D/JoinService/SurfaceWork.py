@@ -39,7 +39,10 @@ class SurfaceWork(WorkBaseThread):
             try:
                 intersections[i] = camera_image_grop_dict[0].intersections[i]
             except:
-                intersections.append(camera_image_grop_dict[0].intersections[i])
+                try:
+                    intersections.append(camera_image_grop_dict[0].intersections[i])
+                except IndexError:
+                    pass
         return intersections,left_index,right_index
 
         # for item in camera_image_grop_dict:
