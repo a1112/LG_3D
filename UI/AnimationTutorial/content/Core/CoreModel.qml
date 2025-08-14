@@ -65,7 +65,7 @@ CoreModel_ {
             }
         return 0
     }
-    readonly property int lastCoilId: realCoilListModel.get(Math.min(0,realCoilListModel.count)).Id
+    readonly property int lastCoilId: realCoilListModel.get(0).Id
 
     property ListModel surfaceModel: ListModel{
     }
@@ -97,28 +97,42 @@ CoreModel_ {
     property var colorMaps: {return {}}
     property string saveImageType: "png"
     property var previewSize: [512,512]
+
+    function getLastCoilId(){
+        let max_i=0
+        for(let i =0;i<10;i++){
+            let id_ = realCoilListModel.get(0).SecondaryCoilId
+            if (id_>max_i){
+                max_i=id_
+            }
+        }
+        return max_i
+        }
+
     function updateData(upData){
         while(coilListModel.count > maxCoilListModelLen){
             coilListModel.remove(coilListModel.count-1,1)
         }
 
-        if (upData["coilList"]=== undefined){
+        if (upData["coilList"] === undefined){
             return -2
         }
-        upData["coilList"].forEach(function(coil){
-            if(coil.SecondaryCoilId > lastCoilId){
-                realCoilListModel.insert(0,coil)
-            }
-            else{
-                for (let i = 0;i<30;i++){
-                    if (realCoilListModel.get(i).SecondaryCoilId == coil.SecondaryCoilId){
-                        realCoilListModel.set(i,coil)
+        upData["coilList"].forEach(
+                (coil)=>{
+                    if(coil.SecondaryCoilId > getLastCoilId()){
+                        realCoilListModel.insert(0,coil)
+                    }
+                    else{
+                        for (let i = 0;i<10;i++){
+                            if (realCoilListModel.get(i).SecondaryCoilId === coil.SecondaryCoilId){
+                                realCoilListModel.set(i,coil)
+                            }
+                        }
                     }
                 }
-            }
-        })
+            )
         if (keepLatest){
-        core.setCoilIndex(0)
+            core.setCoilIndex(0)
         }
     }
 
