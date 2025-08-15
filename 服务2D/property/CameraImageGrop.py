@@ -53,7 +53,7 @@ class CameraImageGrop:
 
         self.format_images()
 
-        self.intersections = get_intersections(self.mask_list)
+        self.intersections = get_intersections(self.mask_list,fr"{self.coil_id}_{self.config.surface_key}_{self.config.key}")
         self.intersections = [i * self.config.surface_config.scale for i in self.intersections]
 
 

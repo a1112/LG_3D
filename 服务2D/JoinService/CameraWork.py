@@ -138,7 +138,7 @@ class CameraWork(WorkBaseThread):
             if mask is not None:
                 mask_list.append(mask)
                 image_list.append(seg_result.image)
-        intersections = get_intersections(mask_list)
+        intersections = get_intersections(mask_list,fr"{self.coil_id}_{self.surface_key}_{self.config.key}")
         intersections =[ i * 10 for i in intersections]
         print(fr"intersections {intersections}")
         return hconcat_list(image_list,intersections)

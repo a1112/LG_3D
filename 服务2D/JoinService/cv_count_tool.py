@@ -222,7 +222,7 @@ def format_intersections_list(intersections_list_):
     """
     格式化交点列表
     """
-    intersections_list = [i for i in intersections_list_ if i > 100]
+    intersections_list = [i for i in intersections_list_ if i > 10]
     ave_value = statistics.mean(intersections_list) if intersections_list else 0
     formatted = []
     for intersections in intersections_list_:
@@ -241,7 +241,7 @@ def draw_debug_image(image,ins_int,d_count):
     image = cv2.putText(image,fr"{ins_int}",(int(w/2)-20,int(h/2)),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),3)
     return image
 
-def hconcat_list(image_list,ins_int_list):
+def hconcat_list(image_list, ins_int_list):
     """
     水平拼接图像列表
     """
@@ -251,13 +251,17 @@ def hconcat_list(image_list,ins_int_list):
     for index in range(len(ins_int_list)):
         try:
             h,w,*_= image_list[index+1].shape
-            ins_int = ins_int_list[index]
             try:
-                if ins_int == 0:
-                    ins_int=ins_int_list[index-1]
+                def get_ins(index_):
+                    if  ins_int_list[index_]==0:
+                        return get_ins(index_-1)
+                    else:
+                        return ins_int_list[index_]
+                ins_int = get_ins(index)
             except IndexError:
-                ins_int = ins_int_list[index+1]
-            d_count = int(w - ins_int)
+                ins_int = w
+
+            d_count = min(int(w - ins_int),w)
             item_image = image_list[index+1][:,d_count:]
 
             if DEBUG:
@@ -269,7 +273,8 @@ def hconcat_list(image_list,ins_int_list):
     count_image = cv2.hconcat(add_image_list)
     return count_image
 
-def get_intersections(mask_list):
+def get_intersections(mask_list,key_):
+    print(fr"key_ {key_}")
     intersections = []
     for gray_index in range(len(mask_list)-1):
         _, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
@@ -286,10 +291,10 @@ def get_intersections(mask_list):
 
         # print(fr"format_intersections_l {format_intersections_l}")
         # print(fr"format_intersections_r {format_intersections_r}")
-        print(fr"get_the_difference {ins}")
-        print(fr"get_the_difference_int(ins) {get_the_difference_int(ins)}")
+        print(fr"get_the_difference {key_} {ins}")
+        print(fr"get_the_difference_int(ins) {key_} {get_the_difference_int(ins)}")
     format_intersections_ = format_intersections_list(intersections)
-    logger.debug(fr"intersections   {intersections}")
-    print(fr"_intersections_   {intersections}")
-    print(fr"format_intersections_   {format_intersections_}")
+    logger.debug(fr"intersections {key_}  {intersections}")
+    print(fr"_intersections_ {key_}  {intersections}")
+    print(fr"format_intersections_ {key_}  {format_intersections_}")
     return format_intersections_

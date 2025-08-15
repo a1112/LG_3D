@@ -53,7 +53,7 @@ class SurfaceWork(WorkBaseThread):
         #     print(len(item.mask_list))
 
 
-    def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop]):
+    def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop],coil_id):
         camera_image_grop_list = [camera_image_grop_dict["U"], camera_image_grop_dict["M"], camera_image_grop_dict["D"]]
 
         intersections,left_index,right_index = self.get_intersections(camera_image_grop_list)
@@ -71,9 +71,9 @@ class SurfaceWork(WorkBaseThread):
 
 
 
-        return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list])
+        return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list],coil_id)
 
-    def _join_images_(self,image_list):
+    def _join_images_(self,image_list, coil_id):
         """
         拼接图像
         """
@@ -96,7 +96,7 @@ class SurfaceWork(WorkBaseThread):
         result = np.vstack(new_image_list)
         # cv2.imwrite("s.jpg", result)
         if DEBUG:
-            im_show(result,title=fr"max_image{self.key}")
+            im_show(result,title=fr"max_image{self.key}_{coil_id}")
         return result
 
     def run(self):
@@ -111,7 +111,7 @@ class SurfaceWork(WorkBaseThread):
             for camera_wolk in self.cameras_wolk:
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
             try:
-                max_image = self.join_images(image_dict)
+                max_image = self.join_images(image_dict,coil_id)
                 if max_image is not None:
                     self.save_wolk.add_work([coil_id, max_image])
             except AttributeError as e:
