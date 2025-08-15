@@ -29,12 +29,12 @@ class CameraImageGrop:
         if CONFIG.DEBUG:
             for i, seg_result in enumerate(results):
                 draw_image = seg_result.get_draw()
-                debug_config.save_simple_image(draw_image, f"seg_{self.config.key}_{i}.jpg")
+                debug_config.save_simple_image(draw_image, f"seg_{self.config.key}_{self.coil_id}_{i}.jpg")
 
                 mask_image = seg_result.get_mask()
                 if mask_image is not None:
                     try:
-                        debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{i}.jpg")
+                        debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{self.coil_id}_{i}.jpg")
                     except Exception as e:
                         print(f"Error saving mask image: {e}")
 

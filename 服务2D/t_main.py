@@ -9,7 +9,7 @@ def main():
     join_config = JoinConfig(CONFIG.JOIN_CONFIG_FILE)
     jw = JoinWork(join_config)
     loger = EnhancedMultiProcessLogger.get_logger()
-    start_coil =  92813
+    start_coil =  92838
 
     start_coil = int(start_coil)
 
@@ -28,6 +28,7 @@ def main():
         jw.add_work(start_coil)
         jw.get()
         loger.info(f"coil_id: {start_coil} 处理完成")
+        # input()
         # input()
 
 
