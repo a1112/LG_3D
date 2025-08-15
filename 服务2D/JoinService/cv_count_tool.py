@@ -156,7 +156,7 @@ def line_intersection(line1, line2):
     return None
 
 def get_median_value(value_list):
-    value_list=[v for v in value_list if v>50]
+    value_list=[v for v in value_list if v>10]
     if len(value_list) < 5:
         return 0
     return statistics.median(value_list)
