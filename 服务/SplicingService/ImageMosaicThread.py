@@ -73,75 +73,81 @@ class ImageMosaicThread(Thread):
                 # except :
                 #     lastCoilSecondaryCoilId = 0
                 for secondaryCoilIndex in range(len(list_data)):
-                    defection_time1 = time.time()
-                    secondary_coil = list_data[secondaryCoilIndex]
-                    less_num = max_secondary_coil_id - secondary_coil.Id
-                    if max_secondary_coil_id - secondary_coil.Id > 2:
-                        logger.debug("清理数据" + str(secondary_coil.Id))
-                        coil_data_base_tool.clear_by_coil_id(secondary_coil.Id)
-                    if less_num < 1:
-                        if not self.check_detection_end(secondary_coil.Id):
-                            # 采集未完成
-                            break
-                    logger.debug(f"开始处理 {secondary_coil.Id}剩余 {less_num} 个 已处理{run_num} 个" + "-" * 100)
-                    run_num += 1
-                    self.startCoilId = secondary_coil.Id
-                    status = {}
-                    for imageMosaic in self.imageMosaicList:  # 设置 ID
-                        set_ok = imageMosaic.set_coil_id(secondary_coil.Id)
-                        imageMosaic.currentSecondaryCoil = secondary_coil
-                        status[imageMosaic.key] = 0
-                        if not set_ok:
-                            logger.error(f"setOK: {set_ok}")
-                            status[imageMosaic.key] = ErrorMap["DataFolderError"]
-                            continue
-                    data_integration_list = DataIntegrationList()
-                    for imageMosaic in self.imageMosaicList:  # 获取图片
-                        if status[imageMosaic.key] < 0:
-                            continue
-                        data_integration = imageMosaic.get_data()
-                        data_integration_list.append(data_integration)  # 检测
-                        if data_integration.isNone():
-                            logger.error(f"image is None {secondary_coil.Id}")
-                            status[imageMosaic.key] = ErrorMap["ImageError"]
-                            continue
-                    defection_time2 = time.time()
-                    defection_time3 = time.time()
-                    cv_detection.detection_all(data_integration_list)
-                    defection_time4 = time.time()
-                    AlarmDetection.detection.detection_all(data_integration_list) # 判级
+                    try:
+                        defection_time1 = time.time()
+                        secondary_coil = list_data[secondaryCoilIndex]
+                        less_num = max_secondary_coil_id - secondary_coil.Id
+                        if max_secondary_coil_id - secondary_coil.Id > 2:
+                            logger.debug("清理数据" + str(secondary_coil.Id))
+                            coil_data_base_tool.clear_by_coil_id(secondary_coil.Id)
+                        if less_num < 1:
+                            if not self.check_detection_end(secondary_coil.Id):
+                                # 采集未完成
+                                break
+                        logger.debug(f"开始处理 {secondary_coil.Id}剩余 {less_num} 个 已处理{run_num} 个" + "-" * 100)
+                        run_num += 1
+                        self.startCoilId = secondary_coil.Id
+                        status = {}
+                        for imageMosaic in self.imageMosaicList:  # 设置 ID
+                            set_ok = imageMosaic.set_coil_id(secondary_coil.Id)
+                            imageMosaic.currentSecondaryCoil = secondary_coil
+                            status[imageMosaic.key] = 0
+                            if not set_ok:
+                                logger.error(f"setOK: {set_ok}")
+                                status[imageMosaic.key] = ErrorMap["DataFolderError"]
+                                continue
+                        data_integration_list = DataIntegrationList()
+                        for imageMosaic in self.imageMosaicList:  # 获取图片
+                            if status[imageMosaic.key] < 0:
+                                continue
+                            data_integration = imageMosaic.get_data()
+                            data_integration_list.append(data_integration)  # 检测
+                            if data_integration.isNone():
+                                logger.error(f"image is None {secondary_coil.Id}")
+                                status[imageMosaic.key] = ErrorMap["ImageError"]
+                                continue
+                        defection_time2 = time.time()
+                        defection_time3 = time.time()
+                        cv_detection.detection_all(data_integration_list)
+                        defection_time4 = time.time()
+                        AlarmDetection.detection.detection_all(data_integration_list) # 判级
 
-                    logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
-                    logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
-                    logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")
-                    logger.debug(f"完整检测时间 {defection_time4 - defection_time1}====================================")
-                    if self.saveDataBase:
-                        Coil.addCoil({
-                            "SecondaryCoilId": secondary_coil.Id,
-                            "DefectCountS": 0,
-                            "DefectCountL": 0,
-                            "CheckStatus": 0,
-                            "Status_L": status["L"],
-                            "Status_S": status["S"],
-                            "Grade": 0,
-                            "Msg": ""
-                        })
-                    if isLoc:
-                        sleep_time = Globs.control.loc_sleep_time
-                        if status["L"] < 0 and status["S"] < 0:
-                            sleep_time = 0.1
-                        print(f"loc model sleep {sleep_time}")
-                        "避免性能问题"
-                        time.sleep(sleep_time)
-                        print(f"loc model sleep {sleep_time} end")
-                    # if self.debugType:
-                    #     if self.endCoilId <= secondary_coil.Id:
-                    #         return -1
+                        logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
+                        logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
+                        logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")
+                        logger.debug(f"完整检测时间 {defection_time4 - defection_time1}====================================")
+                        if self.saveDataBase:
+                            Coil.addCoil({
+                                "SecondaryCoilId": secondary_coil.Id,
+                                "DefectCountS": 0,
+                                "DefectCountL": 0,
+                                "CheckStatus": 0,
+                                "Status_L": status["L"],
+                                "Status_S": status["S"],
+                                "Grade": 0,
+                                "Msg": ""
+                            })
+                        if isLoc:
+                            sleep_time = Globs.control.loc_sleep_time
+                            if status["L"] < 0 and status["S"] < 0:
+                                sleep_time = 0.1
+                            print(f"loc model sleep {sleep_time}")
+                            "避免性能问题"
+                            time.sleep(sleep_time)
+                            print(f"loc model sleep {sleep_time} end")
+                        # if self.debugType:
+                        #     if self.endCoilId <= secondary_coil.Id:
+                        #         return -1
+                    except Exception as e:
+                        logger.error(f"<UNK> {e}")
+                        if isLoc:
+                            raise e
+
             except (BaseException,) :
                 error_message = traceback.format_exc()
                 logger.error(error_message)
-                # if isLoc:
-                #     raise e
+                if isLoc:
+                    raise e
             finally:
                 import torch
                 torch.cuda.empty_cache()

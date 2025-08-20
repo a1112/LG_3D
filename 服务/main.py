@@ -18,7 +18,9 @@ Logger("算法")
 #     from CoilDataBase.Coil import deleteCoil
 #     deleteCoil(23100)
 # from CoilDataBase.Coil import delete_coil
-# deleteCoil(77146)
+
+# from CoilDataBase.Coil import delete_coil
+# delete_coil(97657)
 
 
 
