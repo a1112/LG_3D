@@ -17,7 +17,7 @@ class ClipImageItem:
         return im_show(self.image,str(self.box))
 
     def get_file_name(self):
-        return f"{self.coil_id}_{self.surface_key}_{"_".join([str(b) for b in self.box])}.png"
+        return f"{self.coil_id}_{self.surface_key}_"+"_".join([str(b) for b in self.box])+".png"
 
 class DataIntegration:
 
