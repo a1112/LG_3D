@@ -110,6 +110,7 @@ class YoloResult:
 
     def save_det(self):
         save_jpg=self.debug_save_folder/"det"/self.file_name
+        save_jpg.with_suffix(".jpg")
         save_jpg.parent.mkdir(parents=True, exist_ok=True)
         create_xml(save_jpg.name, self.image_info.image.shape, self.info_list, save_jpg.parent)
         detect_save.add(self.image, save_jpg)
