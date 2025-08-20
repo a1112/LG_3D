@@ -192,7 +192,7 @@ class DataFolder(Globs.control.BaseDataFolder):
                     Image.fromarray(image_mask).save(self.saveMaskFolder / f"{coil_id}_{self.folderName}_MASK.png")
 
                 # 显示图像
-            except Exception as e:
+            except BaseException as e:
                 logger.error(f"Error in DataFolder {coil_id}: {e}")
                 if isLoc and Globs.control.debug_raise:
                     raise e

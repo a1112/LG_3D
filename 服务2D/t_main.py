@@ -9,7 +9,7 @@ def main():
     join_config = JoinConfig(CONFIG.JOIN_CONFIG_FILE)
     jw = JoinWork(join_config)
     loger = EnhancedMultiProcessLogger.get_logger()
-    start_coil =  92803
+    start_coil =  96870
 
     start_coil = int(start_coil)
 
