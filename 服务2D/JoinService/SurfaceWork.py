@@ -3,16 +3,20 @@ from typing import Dict
 import cv2
 import numpy as np
 
+from alg.detection import detection
 from configs.CONFIG import DEBUG
 from configs.SurfaceConfig import SurfaceConfig
 from utils.MultiprocessColorLogger import logger
 
 from property.CameraImageGrop import CameraImageGrop
+
+from property.DataIntegration import DataIntegration
+
 from .WorkBase import WorkBaseThread
 from .CameraWork import CameraWork
 from .SaverWork import SaverWork
 from .cv_count_tool import im_show
-
+from alg.detection import detection
 
 class SurfaceWork(WorkBaseThread):
     """
@@ -105,6 +109,8 @@ class SurfaceWork(WorkBaseThread):
 
         while self._run_:
             coil_id = self.queue_in.get()
+            di = DataIntegration(self.config, coil_id)
+
             image_dict = {}
             for camera_wolk in self.cameras_wolk:
                 camera_wolk.add_work(coil_id)
@@ -113,6 +119,8 @@ class SurfaceWork(WorkBaseThread):
             try:
                 max_image = self.join_images(image_dict,coil_id)
                 if max_image is not None:
+                    di.set_max_image(max_image)
+                    detection(di)
                     self.save_wolk.add_work([coil_id, max_image])
             except AttributeError as e:
                 logger.error(f"AttributeError: {e} - {self.key} - {coil_id}")

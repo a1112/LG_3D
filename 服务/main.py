@@ -12,6 +12,7 @@ from utils.LoggerProcess import LoggerProcess
 from utils.StdoutLog import Logger
 
 Logger("算法")
+
 # from api import ApiDataBase,app,ApiImageServer, ApiDataServer
 
 # if offline_mode:

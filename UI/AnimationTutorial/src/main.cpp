@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     std::string computerName = getComputerName();
     //  將下述PC保留控制台
 
-    std::vector <std::string> args {"DESKTOP-94ADH1G","LCX_ACE","DESKTOP-TEM8G6F","DESKTOP-V9D92AP","MS-LGKRSZGOVODD","DESKTOP-3VCH6DO";
+    std::vector <std::string> args {"DESKTOP-94ADH1G","LCX_ACE","DESKTOP-TEM8G6F","DESKTOP-V9D92AP","MS-LGKRSZGOVODD","DESKTOP-3VCH6DO"};
     if (std::find(args.begin(), args.end(), computerName) == args.end()) {
 
         AllocConsole();

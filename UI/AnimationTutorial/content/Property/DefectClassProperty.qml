@@ -92,6 +92,7 @@ Item {
     }
 
     function selecct_all_un_defect_show(){
+        // 设置显示 屏蔽的缺陷
         for(let key in defectDictData){
             let value = defectDictData[key]
             if(!value["show"]){
@@ -102,6 +103,7 @@ Item {
     }
 
     function un_selecct_all_un_defect_show(){
+        // 设置不显示屏蔽的缺陷
         for(let key in defectDictData){
             let value = defectDictData[key]
             if(!value["show"]){
@@ -109,5 +111,13 @@ Item {
                 }
         }
         coreModel.flushDefectDictAll()
+    }
+
+    function select_area_defect(){
+        // 显示2D类别缺陷
+    }
+
+    function un_select_area_defect(){
+        // 不显示2D类别缺陷
     }
 }

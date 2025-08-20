@@ -8,6 +8,7 @@ from .SurfaceWork import SurfaceWork
 class JoinWork(WorkBaseThread):
     """
       对于 整体的  拼接  工作
+      主要类别
     """
 
     def __init__(self, config:JoinConfig):

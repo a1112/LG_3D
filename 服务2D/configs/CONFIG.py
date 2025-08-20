@@ -21,3 +21,6 @@ else:
 
 print(CONFIG_FOLDER)
 ModelFolder = CONFIG_FOLDER.parent / "model"
+
+base_config_folder = Path(fr"D:\CONFIG_3D")
+base_debug_image_save_folder = base_config_folder/"debug"
