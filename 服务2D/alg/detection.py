@@ -26,14 +26,12 @@ class DetectionSave(Thread):
     def run(self):
         while True:
             item = self.queue.get()
-            item: CoilDetectionResult
-            if CONFIG.DEBUG:
-                image, url = item
-                if isinstance(image, Image.Image):
-                    image = image
-                if isinstance(image,np.ndarray):
-                    image=Image.fromarray(image)
-                image.save(url)
+            image, url = item
+            if isinstance(image, Image.Image):
+                image = image
+            if isinstance(image,np.ndarray):
+                image=Image.fromarray(image)
+            image.save(url)
 
 
 
@@ -108,14 +106,14 @@ class YoloResult:
         self.image=image_info.image
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
         if self.has_det():
-            if CONFIG.DEBUG:
-                self.save_det()
+            self.save_det()
 
     def save_det(self):
         save_jpg=self.debug_save_folder/"det"/self.file_name
+        save_jpg.with_suffix(".jpg")
         save_jpg.parent.mkdir(parents=True, exist_ok=True)
-        create_xml(save_jpg.name, self.image_info.image, self.info_list, save_jpg.parent)
-        detect_save.add(self.image,save_jpg)
+        create_xml(save_jpg.name, self.image_info.image.shape, self.info_list, save_jpg.parent)
+        detect_save.add(self.image, save_jpg)
 
     def has_det(self):
         return bool(self.info_list)
