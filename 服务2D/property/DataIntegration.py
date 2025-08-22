@@ -33,6 +33,8 @@ class DataIntegration:
 
 
     def set_max_image(self, max_image):
+        if isinstance(max_image, str):
+            max_image = cv2.imread(max_image)
         self.max_image = max_image
         self.image_width = max_image.shape[1]
         self.image_height = max_image.shape[0]

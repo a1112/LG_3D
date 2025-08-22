@@ -23,15 +23,15 @@ DataListViewItenBase {
                     Label{
                         font.pointSize: 11
                         font.bold: true
-                        text: " " + root.coilModel.coilId
-                        color: root.listItemCoil.detectionStatuColor
+                        text: " " + coilModel.coilId
+                        color: listItemCoil.detectionStatuColor
                     }
                     Item {
                         Layout.fillWidth: true
                         implicitHeight: 1
                     }
                     Label{
-                        text:root.coilModel.coilNo
+                        text:coilModel.coilNo
 
                         font.bold: true
                         font.pointSize: 12
@@ -56,7 +56,7 @@ DataListViewItenBase {
                     }
                     Label{
                         font.pointSize: 11
-                        text: root.coilModel.coilType
+                        text: coilModel.coilType
                     }
                     Item {
                         Layout.fillWidth: true

@@ -8,14 +8,13 @@ Item {
     width: 300
     height: 25
     visible:leftCore.fliterEnable? coilModel.checkDefectShow(leftCore.fliterDict) :true
-
     property bool isCurrentIndex: index == core.coilIndex
-    onIsCurrentIndexChanged:{
-        if (isCurrentIndex){
-        core.currentCoilModel = coilModel
+    property int currentIndex: listView.currentIndex
+    onCurrentIndexChanged:{
+        if (currentIndex==index){
+        core.currentCoilModel.init(coilModel.coilData)
             }
     }
-
     property  CoilModel coilModel: CoilModel{}  // 数据
 
     Component.onCompleted:{
@@ -40,7 +39,9 @@ Item {
     ItemDelegate{
         anchors.fill:parent
             onClicked: {
-                core.setCoilIndex(index)
+
+                listView.currentIndex = index
+                // core.setCoilIndex(index)
                 coreModel.setKeepLatest(false)
             }
     }
