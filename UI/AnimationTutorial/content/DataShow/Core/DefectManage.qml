@@ -6,5 +6,4 @@ Item {
     property bool un_defect_show: false
     property bool area_defect_show: false
 
-
 }

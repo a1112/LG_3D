@@ -31,9 +31,7 @@ Item{
                 onCurrentIndexChanged: {
                     core.setCoilIndex(currentIndex)
                 }
-
                 model: leftCore.fliterEnable?leftCore.fliterListModel : coreModel.currentCoilListModel
-
                 delegate:DataListViewIten{    //    -----------------------------
                     width: listView.width
                 }
