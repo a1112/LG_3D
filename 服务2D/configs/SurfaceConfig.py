@@ -26,6 +26,8 @@ class SurfaceConfig(BaseConfig):
 
         self.scale = self.image_size / 512
 
+        self.area_copy_to_folder = CONFIG.base_debug_image_save_folder/"area_copy_to_folder"/self.surface_key
+
     def is_run(self):
         return self._run_
 

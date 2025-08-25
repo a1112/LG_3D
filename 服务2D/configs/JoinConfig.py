@@ -17,6 +17,7 @@ class JoinConfig(BaseConfig):
             for surface_key, config in self.config["surfaces"].items()
         }
 
+
     def get_max_coil(self):
         if CONFIG.DEBUG:
             return 66000
