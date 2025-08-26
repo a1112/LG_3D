@@ -17,6 +17,8 @@ class DebugConfig:
             self.FolderPath = Path(fr"G:\data\Copy\Copy")
             self.save_folder = self.FolderPath.parent/"save"
             self.save_simple_folder = self.FolderPath.parent / "save_simple"
+        print(fr"使用离线测试模式 {self.FolderPath} {self.save_folder}")
+
 
     def get_surface_folder(self, surface_key):
         return self.FolderPath / surface_key
