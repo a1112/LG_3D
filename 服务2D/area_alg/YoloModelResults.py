@@ -69,6 +69,7 @@ class YoloModelSegResults(YoloModelResultsBase):
         mask = np.sum(mask, axis=0)
         mask = np.squeeze(mask)
         mask = (mask * 255).astype(np.uint8)
+        mask = cv2.resize(mask, (512,512))
         return mask
 
 
