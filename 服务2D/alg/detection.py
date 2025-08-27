@@ -146,6 +146,32 @@ class CoilDetectionModel:
 
 coil_detection_model = CoilDetectionModel()
 
+from CoilDataBase.models.CoilDefect import CoilDefect
+from CoilDataBase.Coil import add_defects
+def add_db(det_info):
+    defect_list=[]
+    for item in det_info:
+        item: YoloResult
+        for defect_item in item.info_list:
+            defect_item:CoilDetectionResult
+            clip_image_item = item.image_info
+            clip_image_item:ClipImageItem
+            defect_list.append({
+            "secondaryCoilId": clip_image_item.coil_id,
+            "surface": clip_image_item.surface,
+            "defectClass": 101,
+            "defectName": "2D_检出",
+            "defectStatus": 5,
+            "defectX": clip_image_item.box[0]+defect_item.xmin,
+            "defectY": clip_image_item.box[1]+defect_item.ymin,
+            "defectW": clip_image_item.box[2]+defect_item.xmin,
+            "defectH":clip_image_item.box[3]+defect_item.ymin,
+            "defectSource": clip_image_item.source,
+            "defectData": "",
+            })
+    print(fr"添加检测数据 {defect_list}")
+    add_defects(defect_list)
+
 
 def detection(data_integration: DataIntegration):
 
@@ -157,6 +183,8 @@ def detection(data_integration: DataIntegration):
     for item in clip_image_list:
         item: ClipImageItem
         det_info = coil_detection_model.predict(item)
+        add_db(det_info)
+
 
 
 

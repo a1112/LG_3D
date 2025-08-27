@@ -1,16 +1,15 @@
-from configs import CONFIG
-CONFIG.loger_folder="../debug_log"
-CONFIG.loger_file = "debug.log"
-
 import time
 from JoinService.JoinWork import JoinWork
+from configs import CONFIG
 from configs.JoinConfig import JoinConfig
 from utils.MultiprocessColorLogger import EnhancedMultiProcessLogger
+
+
 def main():
     join_config = JoinConfig(CONFIG.JOIN_CONFIG_FILE)
     jw = JoinWork(join_config)
     loger = EnhancedMultiProcessLogger.get_logger()
-    start_coil =  98711
+    start_coil =  92802
 
     start_coil = int(start_coil)
 

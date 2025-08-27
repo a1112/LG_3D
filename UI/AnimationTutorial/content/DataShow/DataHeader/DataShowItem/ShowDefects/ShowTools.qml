@@ -25,7 +25,7 @@ Row {
 
     CheckDelegate{
         height:parent.height
-        text:"屏蔽类"
+        text:qsTr("屏蔽类")
         checked: dataShowCore.defectManage.un_defect_show
         onCheckedChanged:{
             if(dataShowCore.defectManage.un_defect_show !== checked){

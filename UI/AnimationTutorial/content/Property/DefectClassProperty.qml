@@ -115,9 +115,23 @@ Item {
 
     function select_area_defect(){
         // 显示2D类别缺陷
+        for(let key in defectDictData){
+            let value = defectDictData[key]
+            if(!value["area"]){
+            defectDictAll[value["name"]]=false
+                }
+        }
+        coreModel.flushDefectDictAll()
     }
 
     function un_select_area_defect(){
         // 不显示2D类别缺陷
+        for(let key in defectDictData){
+            let value = defectDictData[key]
+            if(!value["area"]){
+            defectDictAll[value["name"]]=false
+                }
+        }
+        coreModel.flushDefectDictAll()
     }
 }
