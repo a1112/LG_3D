@@ -105,7 +105,8 @@ class CameraImageGrop:
 
 
         print(fr"intersections {self.coil_id} {self.config.key} {self.intersections}")
-        image = hconcat_list(self.image_list, self.intersections)
+        image = hconcat_list(self.image_list, self.intersections,False)
+        # im_show(image, fr"join_image {self.config.key}")
 
         if DEBUG:
             im_show(image,fr"join_image {self.config.key}")

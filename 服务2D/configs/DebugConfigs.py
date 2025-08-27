@@ -8,16 +8,20 @@ from PIL import Image
 
 class DebugConfig:
     def __init__(self):
+        self.debug = False
         self.hostname = socket.gethostname()
         if self.hostname == "DESKTOP-94ADH1G":
             self.FolderPath = Path(fr"G:\data\Copy\Copy")
             self.save_folder = self.FolderPath.parent/"save"
             self.save_simple_folder = self.FolderPath.parent / "save_simple"
+            self.debug=True
         if self.hostname == "DESKTOP-3VCH6DO":
             self.FolderPath = Path(fr"G:\data\Copy\Copy")
             self.save_folder = self.FolderPath.parent/"save"
             self.save_simple_folder = self.FolderPath.parent / "save_simple"
-        print(fr"使用离线测试模式 {self.FolderPath} {self.save_folder}")
+            self.debug = True
+        if self.debug:
+            print(fr"使用离线测试模式 {self.FolderPath} {self.save_folder}")
 
 
     def get_surface_folder(self, surface_key):

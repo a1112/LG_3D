@@ -124,6 +124,9 @@ class SurfaceWork(WorkBaseThread):
                     self.save_wolk.add_work([coil_id, max_image])
             except AttributeError as e:
                 logger.error(f"AttributeError: {e} - {self.key} - {coil_id}")
+                # raise e
+                if DEBUG:
+                    raise e
             except BaseException as e:
                 logger.error(e)
                 if DEBUG:

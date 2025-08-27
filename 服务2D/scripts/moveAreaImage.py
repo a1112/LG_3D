@@ -17,7 +17,7 @@ print(max_coil)
 start_coil_id = max_coil - 20000
 for i in tqdm(range(start_coil_id, max_coil)):
     for surface_key, surface_config in join_config.surfaces.items():
-        url = surface_config.get_area_url(1000)
+        url = surface_config.get_area_url(i)
         move_to_folder = surface_config.area_copy_to_folder/str(i)
 
         if url.exists():

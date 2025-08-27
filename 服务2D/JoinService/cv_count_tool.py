@@ -241,7 +241,7 @@ def draw_debug_image(image,ins_int,d_count):
     image = cv2.putText(image,fr"{ins_int}",(int(w/2)-20,int(h/2)),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),3)
     return image
 
-def hconcat_list(image_list, ins_int_list):
+def hconcat_list(image_list, ins_int_list,debug=False):
     """
     水平拼接图像列表
     """
@@ -262,7 +262,10 @@ def hconcat_list(image_list, ins_int_list):
                 ins_int = w
 
             d_count = min(int(w - ins_int),w)
-            item_image = image_list[index+1][:,d_count:]
+            if debug:
+                item_image=image_list[index+1]
+            else:
+                item_image = image_list[index + 1][:, d_count:]
 
             if DEBUG:
                 item_image = draw_debug_image(item_image,ins_int,d_count)
@@ -288,13 +291,13 @@ def get_intersections(mask_list,key_):
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
         intersections.append(get_the_difference_int(ins))
 
-
+        # im_show(mask_list[gray_index])
         # print(fr"format_intersections_l {format_intersections_l}")
         # print(fr"format_intersections_r {format_intersections_r}")
-        print(fr"get_the_difference {key_} {ins}")
-        print(fr"get_the_difference_int(ins) {key_} {get_the_difference_int(ins)}")
+        print(fr"get_the_difference {gray_index} {key_} {ins}")
+        print(fr"get_the_difference_int(ins) {gray_index} {key_} {get_the_difference_int(ins)}")
     format_intersections_ = format_intersections_list(intersections)
-    logger.debug(fr"intersections {key_}  {intersections}")
-    print(fr"_intersections_ {key_}  {intersections}")
-    print(fr"format_intersections_ {key_}  {format_intersections_}")
+    logger.debug(fr"intersections {gray_index} {key_}  {intersections}")
+    print(fr"_intersections_ {gray_index} {key_}  {intersections}")
+    print(fr"format_intersections_ {gray_index} {key_}  {format_intersections_}")
     return format_intersections_
