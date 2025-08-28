@@ -169,11 +169,11 @@ def add_db(det_info):
             "defectY": clip_image_item.box[1]+defect_item.ymin,
             "defectW": clip_image_item.box[2]+defect_item.xmin,
             "defectH":clip_image_item.box[3]+defect_item.ymin,
-            "defectSource": clip_image_item.source,
+            # "defectSource": clip_image_item.source,
             "defectData": "",
             })
     print(fr"添加检测数据 {defect_list}")
-    add_defects(defect_list)
+    # add_defects(defect_list)
 
 
 def detection(data_integration: DataIntegration):

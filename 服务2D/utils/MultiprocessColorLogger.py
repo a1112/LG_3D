@@ -6,7 +6,7 @@ from multiprocessing import Queue
 import colorlog
 from typing import Optional, Dict, Any
 from pathlib import Path
-
+from configs import CONFIG
 
 class EnhancedMultiProcessLogger:
     """
@@ -35,8 +35,8 @@ class EnhancedMultiProcessLogger:
             log_level: str = "INFO",
             console_output: bool = True,
             log_to_file: bool = True,
-            log_dir: str = "../logs",
-            log_filename: str = "app.log",
+            log_dir: str = CONFIG.loger_folder,
+            log_filename: str = CONFIG.loger_file,
             max_bytes: int = 10 * 1024 * 1024,  # 10MB
             backup_count: int = 5,
             use_color: bool = True,
@@ -207,8 +207,8 @@ _logger_ = EnhancedMultiProcessLogger(
     log_level="DEBUG",
     console_output=True,
     log_to_file = True,
-    log_dir="../logs",
-    log_filename="app.log",
+    log_dir = CONFIG.loger_folder,
+    log_filename = CONFIG.loger_file,
     max_bytes=5 * 1024 * 1024,  # 5MB
     backup_count=7,
     use_color=True,
