@@ -12,7 +12,7 @@ Item {
         }
     }
 
-    property string appTitle: "涟钢热轧1580端面缺陷检测系统"
+    property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
 
     property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
 

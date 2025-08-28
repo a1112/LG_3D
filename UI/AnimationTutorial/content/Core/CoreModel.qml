@@ -94,7 +94,7 @@ CoreModel_ {
     function getLastCoilId(){
         let max_i=0
         for(let i =0;i<5;i++){
-            let id_ = realCoilListModel.get(0).SecondaryCoilId
+            let id_ = realCoilListModel.get(0).Id
             if (id_>max_i){
                 max_i=id_
             }
@@ -112,12 +112,12 @@ CoreModel_ {
         }
         upData["coilList"].forEach(
                 (coil)=>{
-                    if(coil.SecondaryCoilId > getLastCoilId()){
+                    if(coil.Id > getLastCoilId()){
                         realCoilListModel.insert(0,coil)
                     }
                     else{
                         for (let i = 1;i<10;i++){
-                            if (realCoilListModel.get(i).SecondaryCoilId === coil.SecondaryCoilId){
+                            if (realCoilListModel.get(i).Id === coil.Id){
                                 realCoilListModel.set(i,coil)
                             }
                         }

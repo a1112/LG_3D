@@ -96,7 +96,7 @@ Item {
                height: parent.height
                width: height
         FlushButton{
-            tipText: "刷新"
+            tipText: qsTr("刷新")
             visible:true //! leftCore.searchViewShow
             anchors.fill: parent
             onClicked: {

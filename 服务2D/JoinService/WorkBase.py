@@ -3,15 +3,15 @@ import threading
 from queue import Queue
 from  configs import CONFIG
 from utils.MultiprocessColorLogger import logger
-
+from collections import deque
 
 
 class _WorkBase_:
     def __init__(self,config):
         super().__init__()
         self.config = config
-        self.queue_in = Queue()
-        self.queue_out = Queue()
+        self.queue_in = Queue(maxsize=10)
+        self.queue_out = Queue(maxsize=10)
         self._run_ = True
         self.coil_id = None
 

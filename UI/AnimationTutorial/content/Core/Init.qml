@@ -50,7 +50,9 @@ Item {
         },(error)=>{
             console.log("error")
         })
-        coreModel.coilListModel.clear()
+
+        coreModel.coilListModel.clear()//实时数据
+
         api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
@@ -58,5 +60,7 @@ Item {
                             console.log("error")
                         }
                     )
+        core.setCoilIndex(0)
+
     }
 }

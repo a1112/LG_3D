@@ -21,14 +21,13 @@ class SaverWork(WorkBaseThread):
 
     def run(self):
         while self.__run__:
-            coil_id,image = self.queue_in.get()
-            image=Image.fromarray(image)
-            save_f=self.config.get_area_url(coil_id)
-            save_f.parent.mkdir(parents=True, exist_ok=True)
-
-            save_t=self.config.get_area_url_pre(coil_id)
-            save_t.parent.mkdir(parents=True, exist_ok=True)
             try:
+                coil_id, image = self.queue_in.get()
+                image = Image.fromarray(image)
+                save_f = self.config.get_area_url(coil_id)
+                save_f.parent.mkdir(parents=True, exist_ok=True)
+                save_t = self.config.get_area_url_pre(coil_id)
+                save_t.parent.mkdir(parents=True, exist_ok=True)
                 logger.debug(fr"图像保存： {save_f}")
                 image.save(save_f)
                 self.save_thumbnail(save_t,image)

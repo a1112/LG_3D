@@ -17,7 +17,7 @@ class DetectionSave(Thread):
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
         if CONFIG.DEBUG:
             self.debug_save_folder.mkdir(parents=True, exist_ok=True)
-        self.queue = Queue()
+        self.queue = Queue(maxsize=20)
         self.start()
 
     def add(self,image,url):
@@ -25,13 +25,16 @@ class DetectionSave(Thread):
 
     def run(self):
         while True:
-            item = self.queue.get()
-            image, url = item
-            if isinstance(image, Image.Image):
-                image = image
-            if isinstance(image,np.ndarray):
-                image=Image.fromarray(image)
-            image.save(url)
+            try:
+                item = self.queue.get()
+                image, url = item
+                if isinstance(image, Image.Image):
+                    image = image
+                if isinstance(image,np.ndarray):
+                    image=Image.fromarray(image)
+                image.save(url)
+            except:
+                pass
 
 
 

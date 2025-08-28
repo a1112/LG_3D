@@ -70,7 +70,7 @@ PaneBase  {
         FlushButton{
             height: parent.height
             width: height
-            tipText: "刷新"
+            tipText: qsTr("刷新")
             onClicked: {
                 //刷新列表
                 control.initMainListByNum(100)
