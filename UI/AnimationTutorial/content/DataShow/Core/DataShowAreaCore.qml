@@ -21,6 +21,8 @@ Item {
     property Flickable flick
 
     property string source: surfaceData.area_source //"http://127.0.0.1:5012/image/area/S/66252?"//
+    property string pre_source: surfaceData.area_source+"row=-2"
+
 
     // 画布数据
     property real canvasScale: minScale // 画布缩放比例

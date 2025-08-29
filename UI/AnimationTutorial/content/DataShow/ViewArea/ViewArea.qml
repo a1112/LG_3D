@@ -44,9 +44,8 @@ Item {
 
     }
 
-
     AerialView{// 鸟亏图
-        source: dataAreaShowCore.source
+        source: dataAreaShowCore.pre_source  // 缩略图像
         y:root.height - height-scrollBarH.height
     }
 

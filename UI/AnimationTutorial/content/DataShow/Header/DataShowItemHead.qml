@@ -106,9 +106,9 @@ HeaderBase {
         Repeater{
             model: 6
             MenuItem{
-                text: ((dataShowCore.minScale+((1-dataShowCore.minScale)/5 * (modelData)))*100).toFixed(0) + "%"
+                text: ((dataShowCore_.minScale+((1-dataShowCore_.minScale)/5 * (modelData)))*100).toFixed(0) + "%"
                 onClicked: {
-                    dataShowCore.canvasScale = dataShowCore.minScale+((1-dataShowCore.minScale)/5 * (modelData))
+                    dataShowCore_.canvasScale = dataShowCore_.minScale+((1-dataShowCore_.minScale)/5 * (modelData))
                 }
             }
         }
