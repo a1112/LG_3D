@@ -17,18 +17,18 @@ Rectangle{
     opacity:0.7
     color: "transparent"
     // visible: global.defectClassProperty.defectDictAll[defectName]??false
-Label{
-    visible:global.defectClassProperty.defeftDrawShowLasbel
-    color: Qt.lighter(defectItem.defectColor)
-    text: defectItem.defectName
-    font.pixelSize: 15
-    anchors.left: parent.right
-    background:Rectangle{
-        opacity:1
-        color:"#000"
+    Label{
+        visible:global.defectClassProperty.defeftDrawShowLasbel
+        color: Qt.lighter(defectItem.defectColor)
+        text: defectItem.defectName
+        font.pixelSize: 15
+        anchors.left: parent.right
+        background: Rectangle{
+            opacity:1
+            color:"#000"
+        }
     }
-}
-Component.onCompleted:{
-    defectItem.init(dataShowCore.defectModel.get(index))
-}
+    Component.onCompleted:{
+        defectItem.init(dataShowCore.defectModel.get(index))
+    }
 }

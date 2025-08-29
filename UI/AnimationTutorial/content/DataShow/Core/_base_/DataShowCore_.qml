@@ -117,11 +117,16 @@ Item {
 
                                     if(defectName.indexOf("2D_")>=0){
                                         areaDefectModel.append(item)
+                                        item["is_area"]=true
+                                        item.defectName=item.defectName.slice(3)
                                     }
-
                                     else{
-                                        defectAllModel.append(item)
+                                        item["is_area"]=false
                                     }
+                                    // else{
+                                    //     defectAllModel.append(item)
+                                    // }
+                                    defectAllModel.append(item)
 
                                 })
         }

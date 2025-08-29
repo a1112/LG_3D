@@ -5,6 +5,8 @@ import QtQuick.Layouts
 Item{
     Layout.fillWidth: true
     height: col.height
+
+
     ColumnLayout{
         id:col
         width: parent.width
@@ -14,7 +16,12 @@ Item{
             CheckButtonOk{
                 visible:hovrHanller.hovered
             }
-
+            Label{
+                text:"2D "
+                font.pointSize: 15
+                color: "blue"
+                visible: defect.isArea
+            }
             Label{
                 text:defect.defect_name
                 font.pointSize: 20
@@ -48,14 +55,6 @@ Item{
                 }
                 Component.onCompleted: {
                     msgModel.clear()
-                    // msgModel.append({
-                    //                 key:"id",
-                    //                 value:Id
-                    //                 })
-                    // msgModel.append({
-                    //                 key:"名称",
-                    //                 value:defectName
-                    //                 })
                     msgModel.append({
                                         key:"x",
                                         value:defect.defect_x_mm

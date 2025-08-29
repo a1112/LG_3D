@@ -14,6 +14,9 @@ Item {
     property int defectH
     property real defectSource
     property var defectData
+
+    property bool isArea:false
+
     property int defectLevel:global.defectClassProperty.getDefectLevelByDefectName(defectName)
     property color defectColor:global.defectClassProperty.getColorByName(defectName)
 
@@ -41,7 +44,7 @@ Item {
                                            defectW,
                                            defectH
                                            )
-
+            isArea = item.is_area
     }
 
     property string defect_url:""

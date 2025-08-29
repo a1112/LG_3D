@@ -21,6 +21,8 @@ Item {
 
     property var defect_name:defectName
 
+    property var isArea : is_area
+
     function setCheckDefectName(check_defect_name){
         // 设置新的名称
         defect_name = check_defect_name

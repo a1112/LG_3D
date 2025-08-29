@@ -97,8 +97,17 @@ ItemDelegate {
                 }
             }
             DefectInfos{
+
             }
         }
+    }
+    Rectangle{
+        anchors.fill: parent
+        color: "#00000000"
+        border.width: 2
+        opacity: 0.5
+        border.color: "blue"
+        visible: defect.isArea
     }
 
 }
