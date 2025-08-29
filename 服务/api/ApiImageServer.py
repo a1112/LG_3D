@@ -136,9 +136,6 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     当 count == 0 返回宽高
     按照 count 分割返回图像
     """
-    print(f"开始访问图像 time {datetime.now().strftime("%H:%M:%S")} {coil_id} {row} {col}")
-    sT = time.time()
-
     row = int(row)
     col = int(col)
     count = int(count)
@@ -171,8 +168,6 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     crop_image_byte = image_dict[col][row]
     # 并发处理图像分块
     # image_data = await process_image_tile(image_dict[col][row], row, col, count, w, h)
-
-    eT = time.time()
     return Response(crop_image_byte, media_type="image/jpg")  # 注意修改为正确的MIME类型
 
 
