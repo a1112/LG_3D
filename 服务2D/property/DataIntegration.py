@@ -9,7 +9,7 @@ class ClipImageItem:
     def __init__(self,coil_id,surface_key,image,box):
         self.coil_id = coil_id
         self.surface_key = surface_key
-        self.surface=surface_key
+        self.surface = surface_key
         self.image = image
         self.box = box
 

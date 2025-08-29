@@ -8,7 +8,7 @@ Item {
         running: true
         onTriggered: {
             api.getDataFlush(
-                        coreModel.getLastCoilId(),(result)=>{
+                        coreModel.getLastCoilId()-3,(result)=>{
                             coreModel.updateData(JSON.parse(result))
                         },(error)=>{
                             console.log("刷新数据失败")

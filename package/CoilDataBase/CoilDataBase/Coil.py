@@ -164,6 +164,8 @@ def add_defects(defects: List[dict]):
     Returns:
 
     """
+    if len(defects):
+        print(fr"add_defects = {defects}")
     with Session() as session:
         session.add_all([CoilDefect(
             secondaryCoilId=defect["secondaryCoilId"],

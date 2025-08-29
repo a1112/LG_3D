@@ -5,7 +5,8 @@ Item {
     anchors.fill: parent
     property var defects : []
     Repeater{
-        model: dataShowCore.defectModel
+        id:repeater
+        model: dataShowCore.areaDefectModel
         DefectShowItem{
         }
     }

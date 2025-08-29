@@ -13,7 +13,7 @@ property DataShowAreaCore dataAreaShowCore:dataShowCore.dataShowAreaCore
     Layout.fillWidth: true
     Layout.fillHeight:true
     id: dataShow2DView
-        ViewArea{}
+        ViewArea{}  // 显示主菜单
         // Show2dView{}    // 2D 显示
         // MaskToolView{}// 功能菜单
             MaskToolView{}// 功能菜单

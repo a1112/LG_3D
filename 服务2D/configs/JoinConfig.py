@@ -17,21 +17,42 @@ class JoinConfig(BaseConfig):
             for surface_key, config in self.config["surfaces"].items()
         }
 
+    def get_source_min_coil(self):
+        camera_folder = list(self.surfaces.values())[0].camera_configs[0].folder
+        print(camera_folder)
+        folders = list(camera_folder.iterdir())
+        folders = sort_folder(folders)
+        return int(folders[-1].stem)
 
-    def get_max_coil(self):
-        if CONFIG.DEBUG:
-            return 66000
 
-        surface = list(self.surfaces.values())[0]
-        save_folder1 = Path(surface.save_folder)
-        folders = list(save_folder1.iterdir())
+    def get_source_max_coil(self):
+        camera_folder = list(self.surfaces.values())[0].camera_configs[0].folder
+        print(camera_folder)
+        folders = list(camera_folder.iterdir())
         folders = sort_folder(folders)
         return int(folders[0].stem)
 
+    def get_save_min_coil(self):
+        try:
+            surface = list(self.surfaces.values())[0]
+            save_folder1 = Path(surface.save_folder)
+            folders = list(save_folder1.iterdir())
+            folders = sort_folder(folders)
+            return int(folders[-1].stem)
+        except IndexError:
+            return 0
+
+    def get_save_max_coil(self):
+        try:
+            surface = list(self.surfaces.values())[0]
+            save_folder1 = Path(surface.save_folder)
+            folders = list(save_folder1.iterdir())
+            folders = sort_folder(folders)
+            return int(folders[0].stem)
+        except IndexError:
+            return 0
 
     def get_last_coil(self):
-        if CONFIG.DEBUG:
-            return 66000
 
         surface = list(self.surfaces.values())[0]
         save_folder1 = Path(surface.save_folder)

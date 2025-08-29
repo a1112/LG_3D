@@ -115,11 +115,9 @@ CoreModel_ {
                     if(coil.Id > getLastCoilId()){
                         realCoilListModel.insert(0,coil)
                     }
-                    else{
-                        for (let i = 1;i<10;i++){
-                            if (realCoilListModel.get(i).Id === coil.Id){
-                                realCoilListModel.set(i,coil)
-                            }
+                    for (let i = 1;i<10;i++){
+                        if (realCoilListModel.get(i).Id === coil.Id){
+                            realCoilListModel.set(i,coil)
                         }
                     }
                 }

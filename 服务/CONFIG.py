@@ -62,10 +62,12 @@ infoConfigFile = get_file_url(r"configs/Info.json")
 controlConfigFile = get_file_url(r"configs/Control.json")
 coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
 defectClassesConfigFile = get_file_url(r"configs/DefectClasses.json")
+DEBUG_MODEL=False
+
 
 if isLoc:
     configFile = get_file_url(r"configs/Server3DLoc2.json")
-
+    DEBUG_MODEL = True
 
 # elif args.config:
 #     configFile = Path(args.config)
@@ -88,6 +90,8 @@ controlConfigProperty = ControlConfigProperty(controlConfigFile)
 
 if socket.gethostname() == "DESKTOP-94ADH1G":
     serverConfigProperty.balsam_exe = fr"C:\Qt\6.8.0\llvm-mingw_64\bin\balsam.exe"
+
+
 
 def getAllKey():
     return "2D", "MASK", "3D"

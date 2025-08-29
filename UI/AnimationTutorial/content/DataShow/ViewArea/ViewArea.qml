@@ -26,15 +26,14 @@ Item {
             id:scrollBarH
         }
         Item{
-
             id:canvas
             width: dataAreaShowCore.canvasContentWidth
             height: dataAreaShowCore.canvasContentHeight
 
             ImageView{}
 
-            // ShowDefects{ // 缺陷绘制
-            // }
+            ShowDefects{ // 缺陷绘制
+            }
             // DrawView{
             //     // 绘制
             // }

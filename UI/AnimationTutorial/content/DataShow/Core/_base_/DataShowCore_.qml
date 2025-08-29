@@ -39,7 +39,9 @@ Item {
     // property ListModel has_defectModel: ListModel{}
     // property ListModel un_defectModel: ListModel{}
 
-    property ListModel defectModel:defectAllModel// defectManage.un_defect_show? defectAllModel : has_defectModel
+    property ListModel defectModel: defectAllModel    // defectManage.un_defect_show? defectAllModel : has_defectModel
+    property ListModel areaDefectModel: ListModel{} // 2D 缺陷
+
 
     property ListModel defecClassListModel:ListModel{}
     // property ListModel currentDefectDictModel:ListModel{ // 缺陷类别
@@ -51,7 +53,7 @@ Item {
     function getNumByDefectName(defectName){
         if (defectName in defectDict){
             return defectDict[defectName].length
-            }
+        }
         return 0
     }
 
@@ -59,12 +61,12 @@ Item {
         var num = 0
         let temp_show_num=0
         for (var defectName_ in defectDict){
-        if (!defect_show(defectName_)){
-            num += defectDict[defectName_].length
+            if (!defect_show(defectName_)){
+                num += defectDict[defectName_].length
             }
-        else{
-            temp_show_num += defectDict[defectName_].length
-        }
+            else{
+                temp_show_num += defectDict[defectName_].length
+            }
 
         }
 
@@ -85,23 +87,24 @@ Item {
     }
     function set_show_state(){ // 设置显示状态
         return tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
-            let name = item.name
-            if (!(item["name"] in coreModel.defectDictAll)){
-                coreModel.defectDictAll[item["name"]]=item["show"]
-                }
+                                       let name = item.name
+                                       if (!(item["name"] in coreModel.defectDictAll)){
+                                           coreModel.defectDictAll[item["name"]]=item["show"]
+                                       }
 
-            if (name in defectDict){
-                                defecClassListModel.append(item)
-                                }
-                            })
+                                       if (name in defectDict){
+                                           defecClassListModel.append(item)
+                                       }
+                                   })
 
 
     }
     property var defectsData: []
 
     onDefectsDataChanged: {
-        defectAllModel.clear()
-        defecClassListModel.clear()
+        // 刷新全部的缺陷数据
+        defectClear()
+
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
                                     let defectName = item.defectName
@@ -112,9 +115,16 @@ Item {
                                         defectDict[defectName] = [item]
                                     }
 
-                                    defectAllModel.append(item)
-                                 })
-            }
+                                    if(defectName.indexOf("2D_")>=0){
+                                        areaDefectModel.append(item)
+                                    }
+
+                                    else{
+                                        defectAllModel.append(item)
+                                    }
+
+                                })
+        }
         set_show_state()
         set_num()
     }
@@ -122,10 +132,11 @@ Item {
     function defectClear(){
         defectAllModel.clear()
         defecClassListModel.clear()
+        areaDefectModel.clear()
         defectDict = {}
     }
 
-    function flushDefect(){
+    function flushDefect(){//刷新
         defectClear()
         api.getDefects(surfaceData.coilId,surfaceData.key,
                        (result)=>{

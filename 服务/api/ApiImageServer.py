@@ -1,6 +1,8 @@
+import asyncio
 import io
 import time
 from pathlib import Path
+from typing import List
 
 from PIL import Image
 from fastapi import APIRouter
@@ -11,6 +13,9 @@ from property.Types import ImageType
 from tools.DataGet import DataGet, noFindImageByte
 from .api_core import app
 from tools.tool import expansion_box, bound_box
+from datetime  import datetime
+
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 router = APIRouter(tags=["图像访问服务"])
 
@@ -30,6 +35,8 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     """
     增加 2D 的 图像
     """
+
+
     data_get = DataGet("source", surface_key, coil_id, type_, mask)
     # url = Path(data_get.get_source())
     image_bytes = data_get.get_image()
@@ -43,34 +50,133 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     #     return Response(content=noFindImageByte, media_type="image/jpeg")
     return Response(image_bytes, media_type="image/jpeg")
 
+# @router.get("/image/area/{surface_key:str}/{coil_id:str}")
+# async def get_area_tiled(surface_key, coil_id: str,row=0, col=0, count=0):
+#     """
+#     当 row == -1 返回完整图像
+#     当 count == 0 返回宽高
+#     按照 count 分割返回图像
+#     """
+#     print(fr"开始访问图像 time{time.time()} {coil_id} {row} {col}")
+#     sT=time.time()
+#     row=int(row)
+#     col=int(col)
+#     count=int(count)
+#
+#     if count==1:
+#         return None
+#
+#     data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+#
+#
+#     if row ==- 1:
+#         return Response(data_get.get_image(), media_type="image/jpeg")
+#     image = data_get.get_image(pil=True)
+#     w,h = image.size
+#     if count==0:
+#         return {
+#             "width":w,
+#             "height":h
+#         }
+#
+#
+#     w_width = w // count
+#     h_height = h // count
+#     crop_image = image.crop((row*w_width, col*h_height, (row+1)*w_width, (col+1)*h_height))
+#
+#
+#
+#     img_byte_arr = io.BytesIO()
+#     crop_image.save(img_byte_arr, format='png')
+#     img_byte_arr.seek(0)
+#     eT = time.time()
+#     print(fr"2D 访问时间  {eT-sT} ")
+#     return Response( img_byte_arr.getvalue(), media_type="image/jpeg")
+
+
+# 线程池用于IO密集型操作
+thread_pool = ThreadPoolExecutor(max_workers=10)
+
+
+async def process_image_tile(pil_image, row, col, count, w, h):
+    """处理单个图像分块的异步函数"""
+    loop = asyncio.get_event_loop()
+    pil_image = pil_image
+    # 在单独的线程中执行Pillow操作
+    def _crop_image():
+        return pil_image
+
+        image = pil_image
+        w_width = w // count
+        h_height = h // count
+        return image.crop((
+            row * w_width,
+            col * h_height,
+            (row + 1) * w_width,
+            (col + 1) * h_height
+        ))
+
+    crop_image = await loop.run_in_executor(thread_pool, _crop_image)
+
+    # 在单独的线程中执行图像编码
+    def _encode_image():
+        img_byte_arr = io.BytesIO()
+        crop_image.save(img_byte_arr, format='jpeg')
+        img_byte_arr.seek(0)
+        return img_byte_arr.getvalue()
+
+    return await loop.run_in_executor(thread_pool, _encode_image)
+
+
 @router.get("/image/area/{surface_key:str}/{coil_id:str}")
-async def get_area_tiled(surface_key, coil_id: str,row=0, col=0, count=0):
+async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     """
+    并发处理图像分块请求
     当 row == -1 返回完整图像
     当 count == 0 返回宽高
     按照 count 分割返回图像
     """
-    row=int(row)
-    col=int(col)
-    count=int(count)
-    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
-    if row==-1:
-        return Response(data_get.get_image(), media_type="image/jpeg")
-    image = data_get.get_image(pil=True)
-    w,h = image.size
-    if count==0:
-        return {
-            "width":w,
-            "height":h
-        }
-    w_width = w // count
-    h_height = h // count
-    crop_image = image.crop((row*w_width, col*h_height, (row+1)*w_width, (col+1)*h_height))
+    print(f"开始访问图像 time {datetime.now().strftime("%H:%M:%S")} {coil_id} {row} {col}")
+    sT = time.time()
 
-    img_byte_arr = io.BytesIO()
-    crop_image.save(img_byte_arr, format='jpeg')
-    img_byte_arr.seek(0)
-    return Response( img_byte_arr.getvalue(), media_type="image/jpeg")
+    row = int(row)
+    col = int(col)
+    count = int(count)
+
+    if count == 1:
+        return None
+
+    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+
+    # 返回完整图像
+    if row == -1:
+        return Response(data_get.get_image(), media_type="image/jpeg")
+
+    # 获取图像尺寸
+    loop = asyncio.get_event_loop()
+
+    def _get_image_size():
+        image = data_get.get_image(pil=True)
+        return image.size
+
+    w, h = await loop.run_in_executor(thread_pool, _get_image_size)
+
+    if count == 0:
+        return {
+            "width": w,
+            "height": h
+        }
+
+    image_dict = data_get.get_image(clip_num=count)
+    crop_image_byte = image_dict[col][row]
+    # 并发处理图像分块
+    # image_data = await process_image_tile(image_dict[col][row], row, col, count, w, h)
+
+    eT = time.time()
+    return Response(crop_image_byte, media_type="image/jpg")  # 注意修改为正确的MIME类型
+
+
+
 
 
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")

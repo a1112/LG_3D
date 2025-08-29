@@ -6,6 +6,10 @@ import "../../Controls/TiledImageView"
 TiledImageView{
     anchors.fill: parent
     imageUrl : dataAreaShowCore.source
+
+
+
+
 }
 
 // Item {
