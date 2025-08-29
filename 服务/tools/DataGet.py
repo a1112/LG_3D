@@ -70,14 +70,15 @@ class DataGet:
             return imageCache.get_image(url)
         raise KeyError(f"get_image_array {self.sourceType}")
 
-    def get_image(self, pil=False):
+    def get_image(self, pil=False,clip_num=0):
         url = self.get_source()
         if self.sourceType == "preview":
-            return previewCache.get_image(url, pil=pil)
+            return previewCache.get_image(url, pil=pil,clip_num=clip_num)
         elif self.type_.lower() == "area":
-            return areaCache.get_image(url, pil=pil)
+            return areaCache.get_image(url, pil=pil,clip_num=clip_num)
         elif self.sourceType in ["image", "source"]:
-            return imageCache.get_image(url, pil=pil)
+            return imageCache.get_image(url, pil=pil,clip_num=clip_num)
+
         raise KeyError(f"get_image_array {self.sourceType}")
 
     def get_3d_data(self):

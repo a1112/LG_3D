@@ -7,11 +7,11 @@ Rectangle{
     // property ServerDefectModel srverDefectModel: ServerDefectModel{
     // }
 
-    visible: dataShowCore.defect_show(defectName)
-    x: defectItem.defectX*dataShowCore.canvasScale
-    y: defectItem.defectY*dataShowCore.canvasScale
-    width: defectItem.defectW*dataShowCore.canvasScale
-    height: defectItem.defectH*dataShowCore.canvasScale
+    visible: dataShowCore.defect_show(defectName) //dataAreaShowCore
+    x: defectItem.defectX*dataAreaShowCore.canvasScale
+    y: defectItem.defectY*dataAreaShowCore.canvasScale
+    width: defectItem.defectW*dataAreaShowCore.canvasScale
+    height: defectItem.defectH*dataAreaShowCore.canvasScale
     border.color: defectItem.defectColor
     border.width: 2
     opacity:0.7
@@ -29,6 +29,6 @@ Label{
     }
 }
 Component.onCompleted:{
-    defectItem.init(dataShowCore.defectModel.get(index))
+    defectItem.init(repeater.model.get(index))
 }
 }

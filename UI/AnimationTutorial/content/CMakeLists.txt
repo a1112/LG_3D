@@ -42,6 +42,7 @@ qt6_add_qml_module(content
         fonts/DS-DIGIT.TTF
     QML_FILES ${QML_FILES}
     RESOURCES ${RESOURCES_FILES}
+    QML_FILES
 
 
     )

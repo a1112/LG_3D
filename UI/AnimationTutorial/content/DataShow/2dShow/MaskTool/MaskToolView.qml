@@ -18,7 +18,7 @@ Item {
                 id:row
                 ItemDelegateItem {
                     height: 20
-                    text: "重置"
+                    text: qsTr("重置")
                     selected: false
                     font.bold:true
                     onClicked: {

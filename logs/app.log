@@ -9325,3 +9325,232 @@
 2025-08-27 15:39:29,449 [42744:40948] ERROR    my_app          - timing_decorator 图像预测 : Function 'predict' executed in 9.0095 seconds.
 2025-08-27 15:39:30,484 [42744:40948] DEBUG    my_app          - intersections 6 100001_L_Cap_L_M  [0, 252.0, 254, 0, 291, 241.0, 85.0]
 2025-08-27 15:39:30,485 [42744:40948] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 10.0459 seconds.
+2025-08-28 15:18:24,547 [17328:17800] DEBUG    my_app          - start_coil 100000 max_coil 66000
+2025-08-28 15:18:24,635 [17328:17800] INFO     my_app          - coil_id: 100001
+2025-08-28 15:18:24,670 [17328:34704] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0336 seconds.
+2025-08-28 15:18:24,670 [17328:35952] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0348 seconds.
+2025-08-28 15:18:24,671 [17328:34704] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,671 [17328:35952] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,684 [17328:7496] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0482 seconds.
+2025-08-28 15:18:24,685 [17328:7496] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,696 [17328:36192] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0592 seconds.
+2025-08-28 15:18:24,696 [17328:36192] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,746 [17328:36592] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.1105 seconds.
+2025-08-28 15:18:24,747 [17328:36592] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,747 [17328:32364] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - S - 100001
+2025-08-28 15:18:24,761 [17328:11980] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.1248 seconds.
+2025-08-28 15:18:24,762 [17328:11980] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:18:24,762 [17328:7548] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - L - 100001
+2025-08-28 15:23:03,719 [14952:9512] DEBUG    my_app          - start_coil 1000 max_coil 100001
+2025-08-28 15:23:03,732 [14952:9512] INFO     my_app          - coil_id: 1001
+2025-08-28 15:23:03,732 [14952:5736] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0003 seconds.
+2025-08-28 15:23:03,733 [14952:35972] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0008 seconds.
+2025-08-28 15:23:03,733 [14952:36308] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0008 seconds.
+2025-08-28 15:23:03,733 [14952:4116] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0006 seconds.
+2025-08-28 15:23:03,733 [14952:5736] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,734 [14952:18540] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0007 seconds.
+2025-08-28 15:23:03,734 [14952:1164] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0002 seconds.
+2025-08-28 15:23:03,734 [14952:35972] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,734 [14952:36308] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,734 [14952:4116] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,735 [14952:18540] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,735 [14952:1164] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:03,736 [14952:19616] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - S - 1001
+2025-08-28 15:23:03,737 [14952:16804] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - L - 1001
+2025-08-28 15:23:47,365 [27584:15088] DEBUG    my_app          - start_coil 1000 max_coil 100001
+2025-08-28 15:23:47,366 [27584:15088] INFO     my_app          - coil_id: 1001
+2025-08-28 15:23:47,366 [27584:20932] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0003 seconds.
+2025-08-28 15:23:47,367 [27584:16444] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0008 seconds.
+2025-08-28 15:23:47,367 [27584:23608] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0007 seconds.
+2025-08-28 15:23:47,367 [27584:20932] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,367 [27584:36076] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0011 seconds.
+2025-08-28 15:23:47,367 [27584:16444] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,368 [27584:23608] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,368 [27584:36076] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,368 [27584:5824] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0014 seconds.
+2025-08-28 15:23:47,368 [27584:13996] INFO     my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 0.0005 seconds.
+2025-08-28 15:23:47,369 [27584:5824] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,369 [27584:13996] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.0000 seconds.
+2025-08-28 15:23:47,370 [27584:6016] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - S - 1001
+2025-08-28 15:23:47,371 [27584:30852] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - L - 1001
+2025-08-28 15:51:39,012 [37224:28020] DEBUG    my_app          - start_coil 92803 max_coil 0
+2025-08-28 15:51:39,636 [37224:28020] INFO     my_app          - coil_id: 92804
+2025-08-28 15:51:53,720 [37224:36320] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 14.0840 seconds.
+2025-08-28 15:51:54,305 [37224:21008] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 14.6683 seconds.
+2025-08-28 15:51:54,306 [37224:23344] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 14.6696 seconds.
+2025-08-28 15:51:54,643 [37224:16372] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 15.0058 seconds.
+2025-08-28 15:51:55,495 [37224:36512] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 15.8581 seconds.
+2025-08-28 15:51:56,422 [37224:4024] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 16.7859 seconds.
+2025-08-28 15:51:58,700 [37224:22796] ERROR    my_app          - AttributeError: 'NoneType' object has no attribute 'left_index' - S - 92804
+2025-08-28 15:52:05,463 [37224:4024] ERROR    my_app          - timing_decorator 图像预测 : Function 'predict' executed in 9.0400 seconds.
+2025-08-28 15:52:05,656 [37224:36512] ERROR    my_app          - timing_decorator 图像预测 : Function 'predict' executed in 10.1605 seconds.
+2025-08-28 15:52:05,805 [37224:36320] ERROR    my_app          - timing_decorator 图像预测 : Function 'predict' executed in 12.0849 seconds.
+2025-08-28 15:52:13,740 [37224:36320] DEBUG    my_app          - intersections 9 92804_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 232, 230.5, 141.0, 248]
+2025-08-28 15:52:13,740 [37224:36320] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 20.0199 seconds.
+2025-08-28 15:52:14,034 [37224:4024] DEBUG    my_app          - intersections 11 92804_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 250, 254, 265, 236.0, 251, 176]
+2025-08-28 15:52:14,034 [37224:4024] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 17.6116 seconds.
+2025-08-28 15:52:14,345 [37224:36512] DEBUG    my_app          - intersections 11 92804_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 251.0, 0, 252.0, 0, 252, 163.0]
+2025-08-28 15:52:14,402 [37224:36512] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 18.9069 seconds.
+2025-08-28 15:52:14,425 [37224:36472] ERROR    my_app          - <hconcat_list IndexError>5
+2025-08-28 15:52:15,387 [37224:36472] ERROR    my_app          - 'defectSource'
+2025-08-28 15:57:22,188 [3156:37336] DEBUG    my_app          - start_coil 92803 max_coil 92804
+2025-08-28 15:57:22,188 [3156:37336] INFO     my_app          - coil_id: 92804
+2025-08-28 15:57:33,743 [3156:26012] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 11.5511 seconds.
+2025-08-28 15:57:33,767 [3156:32584] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 11.5751 seconds.
+2025-08-28 15:57:36,119 [3156:10032] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 13.9256 seconds.
+2025-08-28 15:57:36,927 [3156:32008] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 14.7343 seconds.
+2025-08-28 15:57:36,987 [3156:15116] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 14.7938 seconds.
+2025-08-28 15:57:38,186 [3156:7356] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 15.9934 seconds.
+2025-08-28 15:57:39,275 [3156:32584] ERROR    my_app          - timing_decorator 图像预测 : Function 'predict' executed in 5.5073 seconds.
+2025-08-28 15:57:39,517 [3156:10032] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.3984 seconds.
+2025-08-28 15:57:39,875 [3156:32008] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.9487 seconds.
+2025-08-28 15:57:40,290 [3156:15116] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.3033 seconds.
+2025-08-28 15:57:40,956 [3156:7356] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.7690 seconds.
+2025-08-28 15:57:48,762 [3156:10032] DEBUG    my_app          - intersections 11 92804_L_Cap_L_U  [96, 46.0, 52, 77.0, 371.0, 454, 19.0, 352.0, 0, 435, 32.0, 237]
+2025-08-28 15:57:48,763 [3156:10032] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 12.6440 seconds.
+2025-08-28 15:57:48,775 [3156:32584] DEBUG    my_app          - intersections 11 92804_S_Cap_S_U  [237, 32.0, 435, 0, 352.0, 19.0, 454, 128, 179.0, 161, 88.0, 109.0]
+2025-08-28 15:57:48,776 [3156:32584] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 15.0083 seconds.
+2025-08-28 15:57:49,236 [3156:15116] DEBUG    my_app          - intersections 9 92804_L_Cap_L_D  [58, 76.0, 144, 19.0, 468.5, 333, 332.0, 81.0, 0, 330]
+2025-08-28 15:57:49,237 [3156:15116] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 12.2499 seconds.
+2025-08-28 15:58:06,805 [3508:10028] DEBUG    my_app          - start_coil 92803 max_coil 92804
+2025-08-28 15:58:06,806 [3508:10028] INFO     my_app          - coil_id: 92804
+2025-08-28 15:58:15,306 [3508:36360] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 8.4979 seconds.
+2025-08-28 15:58:16,544 [3508:1840] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 9.7361 seconds.
+2025-08-28 15:58:17,380 [3508:8744] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 10.5707 seconds.
+2025-08-28 15:58:18,291 [3508:36360] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.9850 seconds.
+2025-08-28 15:58:18,427 [3508:35056] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 11.6192 seconds.
+2025-08-28 15:58:18,471 [3508:1840] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 1.9265 seconds.
+2025-08-28 15:58:18,623 [3508:36648] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 11.8144 seconds.
+2025-08-28 15:58:18,668 [3508:8744] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 1.2884 seconds.
+2025-08-28 15:58:18,840 [3508:35056] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.4126 seconds.
+2025-08-28 15:58:19,011 [3508:36648] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.3870 seconds.
+2025-08-28 15:58:20,017 [3508:23348] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 13.2080 seconds.
+2025-08-28 15:58:20,193 [3508:23348] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.1757 seconds.
+2025-08-28 15:58:21,120 [3508:8744] DEBUG    my_app          - intersections 11 92804_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 250, 254, 265, 236.0, 251, 176]
+2025-08-28 15:58:21,120 [3508:8744] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.7401 seconds.
+2025-08-28 15:58:22,290 [3508:1840] DEBUG    my_app          - intersections 11 92804_S_Cap_S_U  [176, 251, 236.0, 265, 254, 250, 0, 0, 0, 0, 0, 0]
+2025-08-28 15:58:22,291 [3508:1840] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 5.7463 seconds.
+2025-08-28 15:58:22,805 [3508:35056] DEBUG    my_app          - intersections 11 92804_S_Cap_S_D  [185.0, 247, 242, 265.0, 257.5, 253, 0, 0, 0, 0, 0, 0]
+2025-08-28 15:58:22,805 [3508:35056] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.3774 seconds.
+2025-08-28 15:58:23,306 [3508:36648] DEBUG    my_app          - intersections 11 92804_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 251.0, 0, 252.0, 0, 252, 163.0]
+2025-08-28 15:58:23,307 [3508:36648] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.6830 seconds.
+2025-08-28 15:58:23,307 [3508:36360] DEBUG    my_app          - intersections 11 92804_S_Cap_S_M  [0, 259.0, 0, 260.0, 0, 248.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 15:58:23,308 [3508:36360] ERROR    my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 8.0016 seconds.
+2025-08-28 15:58:23,358 [3508:23348] DEBUG    my_app          - intersections 9 92804_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 232, 230.5, 141.0, 248]
+2025-08-28 15:58:23,358 [3508:23348] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.3414 seconds.
+2025-08-28 15:58:23,385 [3508:36144] ERROR    my_app          - <hconcat_list IndexError>5
+2025-08-28 15:58:24,456 [3508:36144] ERROR    my_app          - can only concatenate str (not "int") to str
+2025-08-28 15:58:24,482 [3508:16676] ERROR    my_app          - can only concatenate str (not "int") to str
+2025-08-28 16:02:52,792 [36412:37312] DEBUG    my_app          - start_coil 92803 max_coil 92804
+2025-08-28 16:02:52,793 [36412:37312] INFO     my_app          - coil_id: 92804
+2025-08-28 16:02:56,534 [36412:37652] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.7380 seconds.
+2025-08-28 16:02:56,671 [36412:36804] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.8747 seconds.
+2025-08-28 16:02:56,692 [36412:18868] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.8967 seconds.
+2025-08-28 16:02:56,731 [36412:35924] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.9360 seconds.
+2025-08-28 16:02:56,925 [36412:32764] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 4.1296 seconds.
+2025-08-28 16:02:57,076 [36412:5912] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 4.2801 seconds.
+2025-08-28 16:02:58,936 [36412:37652] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.4019 seconds.
+2025-08-28 16:02:59,134 [36412:35924] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.4017 seconds.
+2025-08-28 16:02:59,383 [36412:37652] DEBUG    my_app          - intersections 9 92804_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 232, 230.5, 141.0, 248]
+2025-08-28 16:02:59,383 [36412:37652] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 2.8490 seconds.
+2025-08-28 16:02:59,601 [36412:18868] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.9090 seconds.
+2025-08-28 16:02:59,746 [36412:35924] DEBUG    my_app          - intersections 11 92804_S_Cap_S_U  [176, 251, 236.0, 265, 254, 250, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:02:59,746 [36412:35924] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.0141 seconds.
+2025-08-28 16:02:59,845 [36412:32764] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.9193 seconds.
+2025-08-28 16:03:00,148 [36412:18868] DEBUG    my_app          - intersections 11 92804_S_Cap_S_D  [185.0, 247, 242, 265.0, 257.5, 253, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:03:00,149 [36412:18868] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.4563 seconds.
+2025-08-28 16:03:00,211 [36412:36804] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.5394 seconds.
+2025-08-28 16:03:00,582 [36412:5912] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.5051 seconds.
+2025-08-28 16:03:00,608 [36412:32764] DEBUG    my_app          - intersections 11 92804_S_Cap_S_M  [0, 259.0, 0, 260.0, 0, 248.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:03:00,608 [36412:32764] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.6821 seconds.
+2025-08-28 16:03:01,074 [36412:36804] DEBUG    my_app          - intersections 11 92804_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 251.0, 0, 252.0, 0, 252, 163.0]
+2025-08-28 16:03:01,075 [36412:36804] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.4035 seconds.
+2025-08-28 16:03:01,130 [36412:33700] ERROR    my_app          - can only concatenate str (not "int") to str
+2025-08-28 16:03:01,346 [36412:5912] DEBUG    my_app          - intersections 11 92804_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 250, 254, 265, 236.0, 251, 176]
+2025-08-28 16:03:01,347 [36412:5912] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.2701 seconds.
+2025-08-28 16:03:01,367 [36412:18268] ERROR    my_app          - <hconcat_list IndexError>5
+2025-08-28 16:03:01,442 [36412:18268] ERROR    my_app          - can only concatenate str (not "int") to str
+2025-08-28 16:05:31,672 [31452:35664] DEBUG    my_app          - start_coil 92803 max_coil 92804
+2025-08-28 16:05:31,673 [31452:35664] INFO     my_app          - coil_id: 92804
+2025-08-28 16:05:34,879 [31452:27868] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.2022 seconds.
+2025-08-28 16:05:35,208 [31452:26384] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.5326 seconds.
+2025-08-28 16:05:35,355 [31452:3376] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.6794 seconds.
+2025-08-28 16:05:35,528 [31452:36460] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.8510 seconds.
+2025-08-28 16:05:35,529 [31452:36044] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.8533 seconds.
+2025-08-28 16:05:35,529 [31452:35932] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.8527 seconds.
+2025-08-28 16:05:37,231 [31452:27868] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.3513 seconds.
+2025-08-28 16:05:37,427 [31452:26384] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.2178 seconds.
+2025-08-28 16:05:37,656 [31452:27868] DEBUG    my_app          - intersections 9 92804_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 232, 230.5, 141.0, 248]
+2025-08-28 16:05:37,657 [31452:27868] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 2.7778 seconds.
+2025-08-28 16:05:37,873 [31452:3376] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.5175 seconds.
+2025-08-28 16:05:38,104 [31452:26384] DEBUG    my_app          - intersections 11 92804_S_Cap_S_M  [0, 259.0, 0, 260.0, 0, 248.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:38,104 [31452:26384] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 2.8956 seconds.
+2025-08-28 16:05:38,204 [31452:35932] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.6739 seconds.
+2025-08-28 16:05:38,511 [31452:3376] DEBUG    my_app          - intersections 11 92804_S_Cap_S_U  [176, 251, 236.0, 265, 254, 250, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:38,512 [31452:3376] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.1564 seconds.
+2025-08-28 16:05:38,612 [31452:36044] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.0828 seconds.
+2025-08-28 16:05:38,920 [31452:35932] DEBUG    my_app          - intersections 11 92804_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 251.0, 0, 252.0, 0, 252, 163.0]
+2025-08-28 16:05:38,920 [31452:35932] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.3899 seconds.
+2025-08-28 16:05:39,104 [31452:36460] WARNING  my_app          - timing_decorator 图像预测 : Function 'predict' executed in 3.5760 seconds.
+2025-08-28 16:05:39,247 [31452:36044] DEBUG    my_app          - intersections 11 92804_S_Cap_S_D  [185.0, 247, 242, 265.0, 257.5, 253, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:39,247 [31452:36044] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.7174 seconds.
+2025-08-28 16:05:39,624 [31452:36460] DEBUG    my_app          - intersections 11 92804_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 250, 254, 265, 236.0, 251, 176]
+2025-08-28 16:05:39,625 [31452:36460] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.0969 seconds.
+2025-08-28 16:05:39,651 [31452:2176] ERROR    my_app          - <hconcat_list IndexError>5
+2025-08-28 16:05:42,232 [31452:35664] INFO     my_app          - coil_id: 92804 处理完成
+2025-08-28 16:05:42,242 [31452:35664] INFO     my_app          - coil_id: 92805
+2025-08-28 16:05:42,311 [31452:21624] DEBUG    my_app          - 图像保存： G:\data\Copy\save\S\92804\jpg\AREA.jpg
+2025-08-28 16:05:42,312 [31452:19428] DEBUG    my_app          - 图像保存： G:\data\Copy\save\L\92804\jpg\AREA.jpg
+2025-08-28 16:05:45,915 [31452:3376] WARNING  my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 3.6725 seconds.
+2025-08-28 16:05:46,472 [31452:3376] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.5532 seconds.
+2025-08-28 16:05:47,246 [31452:26384] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 5.0034 seconds.
+2025-08-28 16:05:47,586 [31452:3376] DEBUG    my_app          - intersections 10 92805_S_Cap_S_U  [246.0, 273.0, 260.0, 260.0, 250, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:47,586 [31452:3376] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 1.6677 seconds.
+2025-08-28 16:05:47,610 [31452:26384] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.3595 seconds.
+2025-08-28 16:05:48,054 [31452:36044] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 5.8125 seconds.
+2025-08-28 16:05:48,136 [31452:26384] DEBUG    my_app          - intersections 10 92805_S_Cap_S_M  [252.0, 0, 262, 0, 259.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:48,136 [31452:26384] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 0.8857 seconds.
+2025-08-28 16:05:48,182 [31452:36460] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 5.9397 seconds.
+2025-08-28 16:05:48,304 [31452:36044] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.2451 seconds.
+2025-08-28 16:05:48,305 [31452:35932] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 6.0626 seconds.
+2025-08-28 16:05:48,493 [31452:36460] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.3076 seconds.
+2025-08-28 16:05:48,656 [31452:27868] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 6.4138 seconds.
+2025-08-28 16:05:48,839 [31452:36044] DEBUG    my_app          - intersections 10 92805_S_Cap_S_D  [250.0, 251.0, 269, 260.0, 269.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:05:48,839 [31452:36044] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 0.7806 seconds.
+2025-08-28 16:05:48,875 [31452:35932] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.5652 seconds.
+2025-08-28 16:05:49,077 [31452:27868] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 0.4175 seconds.
+2025-08-28 16:05:49,319 [31452:36460] DEBUG    my_app          - intersections 11 92805_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 0, 228, 238, 240.0, 231.0, 203]
+2025-08-28 16:05:49,320 [31452:36460] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 1.1339 seconds.
+2025-08-28 16:05:49,826 [31452:35932] DEBUG    my_app          - intersections 11 92805_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 0, 230.0, 235.0, 228.0, 0, 205.0]
+2025-08-28 16:05:49,827 [31452:35932] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 1.5171 seconds.
+2025-08-28 16:05:49,978 [31452:27868] DEBUG    my_app          - intersections 11 92805_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 233, 238, 245, 52.5, 259, 221]
+2025-08-28 16:05:49,979 [31452:27868] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 1.3193 seconds.
+2025-08-28 16:05:54,182 [31452:21624] DEBUG    my_app          - 图像保存： G:\data\Copy\save\S\92805\jpg\AREA.jpg
+2025-08-28 16:05:54,969 [31452:35664] INFO     my_app          - coil_id: 92805 处理完成
+2025-08-28 16:05:54,971 [31452:35664] INFO     my_app          - coil_id: 92806
+2025-08-28 16:05:54,991 [31452:19428] DEBUG    my_app          - 图像保存： G:\data\Copy\save\L\92805\jpg\AREA.jpg
+2025-08-28 16:06:01,907 [31452:36460] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 6.9350 seconds.
+2025-08-28 16:06:02,139 [31452:35932] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 7.1667 seconds.
+2025-08-28 16:06:02,216 [31452:26384] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 7.2442 seconds.
+2025-08-28 16:06:02,344 [31452:3376] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 7.3722 seconds.
+2025-08-28 16:06:02,882 [31452:27868] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 7.9099 seconds.
+2025-08-28 16:06:02,904 [31452:36044] ERROR    my_app          - timing_decorator 图像: 获取: Function 'get_images' executed in 7.9321 seconds.
+2025-08-28 16:06:02,923 [31452:36460] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 1.0071 seconds.
+2025-08-28 16:06:03,334 [31452:35932] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 1.1882 seconds.
+2025-08-28 16:06:03,910 [31452:36460] DEBUG    my_app          - intersections 10 92806_L_Cap_L_U  [0, 0, 0, 0, 0, 0, 234, 235.0, 240.0, 243.5, 220]
+2025-08-28 16:06:03,911 [31452:36460] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 1.9955 seconds.
+2025-08-28 16:06:04,071 [31452:26384] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 1.8483 seconds.
+2025-08-28 16:06:04,697 [31452:35932] DEBUG    my_app          - intersections 10 92806_L_Cap_L_M  [0, 0, 0, 0, 0, 0, 239.0, 0, 232, 0, 227.0]
+2025-08-28 16:06:04,698 [31452:35932] INFO     my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 2.5525 seconds.
+2025-08-28 16:06:04,808 [31452:3376] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.4550 seconds.
+2025-08-28 16:06:05,497 [31452:26384] DEBUG    my_app          - intersections 11 92806_S_Cap_S_M  [0, 262.0, 0, 264.0, 0, 262.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:06:05,497 [31452:26384] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 3.2748 seconds.
+2025-08-28 16:06:05,542 [31452:27868] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.6518 seconds.
+2025-08-28 16:06:05,836 [31452:36044] INFO     my_app          - timing_decorator 图像预测 : Function 'predict' executed in 2.9244 seconds.
+2025-08-28 16:06:06,826 [31452:3376] DEBUG    my_app          - intersections 11 92806_S_Cap_S_U  [179, 265, 263.5, 268.0, 271.0, 263, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:06:06,827 [31452:3376] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.4744 seconds.
+2025-08-28 16:06:06,975 [31452:27868] DEBUG    my_app          - intersections 10 92806_L_Cap_L_D  [0, 0, 0, 0, 0, 0, 484, 246, 225.0, 275, 243.0]
+2025-08-28 16:06:06,976 [31452:27868] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.0855 seconds.
+2025-08-28 16:06:07,624 [31452:36044] DEBUG    my_app          - intersections 11 92806_S_Cap_S_D  [179.0, 261, 246.0, 277, 272.0, 266.0, 0, 0, 0, 0, 0, 0]
+2025-08-28 16:06:07,625 [31452:36044] WARNING  my_app          - timing_decorator 图像拼接 : Function 'horizontal_concat' executed in 4.7134 seconds.
+2025-08-28 16:06:10,074 [31452:19428] DEBUG    my_app          - 图像保存： G:\data\Copy\save\L\92806\jpg\AREA.jpg

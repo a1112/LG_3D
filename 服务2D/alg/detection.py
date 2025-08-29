@@ -142,7 +142,7 @@ class CoilDetectionModel:
                 name = self.model.names[label_index]
                 xmin, ymin, xmax, ymax = xyxy
                 source = float(box.conf[0].cpu().numpy())
-                res_item_list.append(CoilDetectionResult(int(xmin), int(ymin), int(xmax), int(ymax), label_index, source,name,image))
+                res_item_list.append(CoilDetectionResult(int(xmin), int(ymin), int(xmax), int(ymax), label_index, source, name, image))
             res_list.append(YoloResult(image,res_item_list))
         return res_list
 
@@ -163,17 +163,16 @@ def add_db(det_info):
             "secondaryCoilId": clip_image_item.coil_id,
             "surface": clip_image_item.surface,
             "defectClass": 101,
-            "defectName": "2D_检出",
+            "defectName": "2D_"+defect_item.name,
             "defectStatus": 5,
             "defectX": clip_image_item.box[0]+defect_item.xmin,
             "defectY": clip_image_item.box[1]+defect_item.ymin,
-            "defectW": clip_image_item.box[2]+defect_item.xmin,
-            "defectH":clip_image_item.box[3]+defect_item.ymin,
-            # "defectSource": clip_image_item.source,
+            "defectW": clip_image_item.box[2],
+            "defectH":clip_image_item.box[3],
+            "defectSource": defect_item.source,
             "defectData": "",
             })
-    print(fr"添加检测数据 {defect_list}")
-    # add_defects(defect_list)
+    add_defects(defect_list)
 
 
 def detection(data_integration: DataIntegration):

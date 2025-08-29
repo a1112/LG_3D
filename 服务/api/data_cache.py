@@ -2,8 +2,11 @@
 import io
 import logging
 import os
+from collections import defaultdict
+from datetime import time
 from functools import lru_cache
 from pathlib import Path
+import time
 
 import numpy as np
 from PIL import Image
@@ -15,26 +18,55 @@ class ImageCache:
         self._cache_image_byte = self._cache_image_byte()
         self.mask_cache_image_byte = self._mask_cache_image_byte()
         self._cache_image_pil = self._cache_image_pil()
+        self._cache_image_clip = self._cache_image_clip()
+
         self._cache = self._create_cache()
 
     def _cache_image_pil(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         # @lru_cache(maxsize=self.cache_size)
         def _load_image_npy(path):
-            print(fr"load image npy {path}")
+            logging.info(fr"load image npy {path}")
 
             image_byte = self.get_image(path)
             if image_byte is None:
                 return None
-            return Image.open(io.BytesIO(image_byte))
+            return Image.open(io.BytesIO(image_byte)).convert("L")
 
         return _load_image_npy
+
+    def _cache_image_clip(self):
+        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
+        def _load_image_clip(path,count):
+            logging.info(fr"load image clip {path} {count}")
+            sT=time.time()
+            image = self.get_image(path,pil=True)
+            image:Image.Image
+            if image is None:
+                return None
+            w, h = image.size
+            w_width = w // count
+            h_height = h // count
+            re_dict=defaultdict(dict)
+            for row in range(count):
+                for col in range(count):
+                    crop_image = image.crop(( row * w_width, col * h_height,(row + 1) * w_width,(col + 1) * h_height))
+                    img_byte_arr = io.BytesIO()
+                    crop_image.save(img_byte_arr, format='jpeg')
+                    img_byte_arr.seek(0)
+                    re_dict[col][row] = img_byte_arr.getvalue()
+            print(fr"load image clip time {time.time()-sT}")
+            eT = time.time()
+
+            return re_dict
+
+        return _load_image_clip
 
     def _cache_image_byte(self):
         # @lru_cache(maxsize=self.cache_size)
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=200))
         def _load_image_byte(path):
-            print(fr"load image byte {path}")
+            logging.info(fr"load image byte {path}")
             if not Path(path).exists():
                 logging.error(f" {path} does not exist")
 
@@ -86,11 +118,13 @@ class ImageCache:
 
         return _load_image
 
-    def get_image(self, path, pil=False):
+    def get_image(self, path, pil=False,clip_num=0):
         try:
             print(fr"getting image {path}")
             if pil:
                 return self._cache_image_pil(path)
+            if clip_num:
+                return self._cache_image_clip(path, clip_num)
             return self._cache_image_byte(path)
         except Exception as e:
             print(f"Error loading image: {e}")
