@@ -55,8 +55,7 @@ class ImageCache:
                     crop_image.save(img_byte_arr, format='jpeg')
                     img_byte_arr.seek(0)
                     re_dict[col][row] = img_byte_arr.getvalue()
-            print(fr"load image clip time {time.time()-sT}")
-            eT = time.time()
+            logging.info(fr"load image clip time {time.time()-sT}")
 
             return re_dict
 
