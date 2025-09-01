@@ -41,7 +41,7 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     # url = Path(data_get.get_source())
     image_bytes = data_get.get_image()
     if image_bytes is None:
-        return None
+        return Response(content=noFindImageByte, media_type="image/jpeg")
     # print(f"图像获取 surface_key：{surface_key} coil_id：{coil_id} type_：{type_}  时间：{et-st}")
     # return FileResponse(str(url), media_type="image/png")
     # return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")

@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from fastapi import APIRouter
+from starlette.responses import StreamingResponse
 
 from property.Data3D import LineData
 from property.Types import Point2D
@@ -106,14 +107,18 @@ async def get_error(
         coil_id: str,
         scale: float = 1.0,
         mask: bool = True,
-        min_value: int = 0,
-        max_value: int = 255
+        minValue: int = 0,
+        maxValue: int = 255
 ):
+
+
     mask = get_bool(mask)
     scale = float(scale)
-    min_value, max_value = int(min_value), int(max_value)
+    min_value, max_value = int(minValue), int(maxValue)
     sT = time.time()
     # 数据获取
+    print(fr"min_value : {min_value}, max_value : {max_value}")
+
     data_get = DataGet("image", surface_key, coil_id, "MASK", mask)
     npy_data = data_get.get_3d_data()
     # mask_image = Image.open(io.BytesIO(data_get.get_mask_source()))
@@ -138,6 +143,6 @@ async def get_error(
     img_bytes = io.BytesIO(img_encoded.tobytes())
     e_t = time.time()
     print(f"Processing Time: {e_t - sT:.2f} seconds")
-    # return StreamingResponse(img_bytes, media_type="image/png")
+    return StreamingResponse(img_bytes, media_type="image/png")
 
 app.include_router(router)

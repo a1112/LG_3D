@@ -18,7 +18,7 @@ Item {
         Row{
             ItemDelegateItem {
                 height: root.height
-                text: "视图"
+                text: qsTr("视图")
                 selected: dataShowCore.viewRendererListView
                 onClicked: {
                     dataShowCore.viewRendererListView =! dataShowCore.viewRendererListView
@@ -26,7 +26,7 @@ Item {
             }
             ItemDelegateItem {
                 height: root.height
-                text: "高低值"
+                text: qsTr("高低值")
                 selected: dataShowCore.viewRendererMaxMinValue
                 onClicked: {
                     dataShowCore.viewRendererMaxMinValue =! dataShowCore.viewRendererMaxMinValue
@@ -39,6 +39,12 @@ Item {
                 color: "#0090E0"
             }
         }
+
+        FootMsg{
+
+
+        }
+
         Item{
             Layout.fillWidth: true
             implicitHeight: 1

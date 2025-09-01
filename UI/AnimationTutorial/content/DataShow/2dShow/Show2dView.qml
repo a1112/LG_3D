@@ -7,8 +7,6 @@ import "ViewTool"
 Item {
     id:root
     anchors.fill: parent
-    property View2DTool view2DTool: View2DTool{}
-
     Rectangle{
     color: "black"
     anchors.fill: parent

@@ -16,6 +16,9 @@ Item {
     function rootViewto3D(){
         rootViewIndex = 1
     }
+    function rootViewtoArea(){
+        rootViewIndex = 2
+    }
 
     readonly property real scan3dScaleZ: 0.016229506582021713
     readonly property real scan3dScaleX: 0.33693358302116394
@@ -409,8 +412,8 @@ Item {
     }
 
     //  报警相关设置
-    property real tower_warning_threshold_up: 50
-    property real tower_warning_threshold_down: -50
+    property real tower_warning_threshold_up: 100
+    property real tower_warning_threshold_down: -100
 
 
 

@@ -7,7 +7,6 @@ import "ViewTool"
 Item {
     id:root
     anchors.fill: parent
-    property View2DTool view2DTool: View2DTool{}
 
 
     Flickable{

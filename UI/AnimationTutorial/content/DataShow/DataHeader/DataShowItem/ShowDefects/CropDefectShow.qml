@@ -85,12 +85,19 @@ ItemDelegate {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     anchors.fill:parent
                     onClicked:{
-                        if (mouse.button == Qt.LeftButton){
-                            dataShowCore_.view2DTool.setDefectShowView(  defect )
+
+                        if(defect.isArea)
+                            surfaceData.rootViewtoArea()
+                        else if (!defect.isArea){
+                            surfaceData.rootViewto2D()
                         }
-                        if (mouse.button == Qt.RightButton)
+
+                        if (mouse.button === Qt.LeftButton){
+                            dataShowCore_.setDefectShowView(  defect )
+                        }
+                        if (mouse.button === Qt.RightButton)
                         {
-                            dataShowCore_.setToMinScale()
+                            dataShowCore.setToMinScale()
                         }
                     }
 

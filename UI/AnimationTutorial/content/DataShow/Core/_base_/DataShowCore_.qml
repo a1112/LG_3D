@@ -152,6 +152,6 @@ Item {
                        )
     }
 
-    property View2DTool view2DTool:View2DTool{}
+
 
 }

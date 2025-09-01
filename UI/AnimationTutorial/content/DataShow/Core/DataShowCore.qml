@@ -1,6 +1,7 @@
 import QtQuick
 import "../../Model"
-
+import "../../Core/Surface"
+import "../../DataShow/2dShow/ViewTool"
 import "_base_"
 DataShowCore_ {
     // OBJ
@@ -209,4 +210,19 @@ DataShowCore_ {
         surfaceData.error_visible=true
     }
 
+    function setDefectShowView(defect){
+        setToMaxScale()
+        flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
+        flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+    }
+
+    // property View2DTool view2DTool:View2DTool{
+    //     onSet_max: {
+    //                    console.log("onSet_max")
+    //                    setToMaxScale()
+    //                    flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
+    //                    flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+    //                }
+
+    // }
 }

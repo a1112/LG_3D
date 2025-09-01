@@ -1,8 +1,10 @@
 import QtQuick
-
+import "_base_"
+import "../../Core/Surface"
+import "../../DataShow/2dShow/ViewTool"
 Item {
-        property var key: "AREA"
-
+        property string key: "AREA"
+    id:root
     function flush(){
         surfaceData.error_visible=false
         flushDefect()
@@ -33,6 +35,7 @@ Item {
     function setToMinScale(){
         canvasScale = minScale
     }
+
 
     onCanvasScaleChanged: {
         if(canvasScale<minScale){
@@ -75,7 +78,7 @@ Item {
 
     property int checkRendererIndex:0
 
-    property real minScale:Math.min(canvasHeight/sourceWidth,canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
+    property real minScale:Math.min(canvasHeight/sourceWidth, canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
     property real maxScale: 1 // 最大缩放比例
     property point scaleTempPoint: Qt.point(0,0)
 
@@ -196,4 +199,24 @@ Item {
                                                            )
         surfaceData.error_visible=true
     }
+
+
+    function setDefectShowView(defect){
+        setToMaxScale()
+        flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
+        flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+    }
+
+
+    // property View2DTool view2DTool:View2DTool{
+
+    //     onSet_max: {
+    //                    console.log("onSet_max")
+    //                    setToMaxScale()
+    //                    flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
+    //                    flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+    //                }
+
+    // }
+
 }

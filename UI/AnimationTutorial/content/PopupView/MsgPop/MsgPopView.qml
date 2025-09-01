@@ -128,8 +128,6 @@ Menu {
                                  var cData = coilStateData[i]
                                  var msg_item= msg_l
                                  // console.log("getCoilState result",cData["surface"])
-                                 console.log("cData[median_3d_mm].toFixed(2)")
-                                 console.log(cData["median_3d_mm"].toFixed(2))
                                  if (cData["surface"]==="S")
                                      {
                                         msg_item= msg_s

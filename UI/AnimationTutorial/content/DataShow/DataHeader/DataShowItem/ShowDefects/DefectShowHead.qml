@@ -10,6 +10,7 @@ Item {
         anchors.fill:parent
         Material.elevation:5
     }
+
     RowLayout{
         anchors.fill:parent
         ShowDefectNamesRow{

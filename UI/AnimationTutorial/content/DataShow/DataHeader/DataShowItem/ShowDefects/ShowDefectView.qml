@@ -11,7 +11,7 @@ ColumnLayout {
             visible : dataShowCore_.show_num
             font.bold : true
             anchors.centerIn : parent
-            text:"无缺陷报警！"
+            text:qsTr("无缺陷报警！")
             font.pointSize : 28
             color : "green"
         }

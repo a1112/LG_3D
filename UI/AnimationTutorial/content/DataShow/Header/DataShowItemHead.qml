@@ -59,21 +59,21 @@ HeaderBase {
         Row{
         ItemDelegateItemLabel {
             height: 20
-            text: "2D"
-            key:"2D"
+            text: qsTr("2D")
+            key:qsTr("2D")
             selected:surfaceData.rootViewIndex  == 2
             onClicked: {
-                surfaceData.rootViewIndex = 2  // 2
+                surfaceData.rootViewtoArea()  // 2
             }
         }
 
         ItemDelegateItemLabel {
-            key:"JPG"
+            key:qsTr("JPG")
             height: 20
             text: surfaceData.currentViewKey
             selected:surfaceData.rootViewIndex==0
             onClicked: {
-                surfaceData.rootViewIndex = 0
+                surfaceData.rootViewto2D()
             }
 
             HoverHandler{
@@ -85,7 +85,7 @@ HeaderBase {
             key:"MESH"
             text: qsTr("3D")
             selected:surfaceData.rootViewIndex==1
-            onClicked: surfaceData.rootViewIndex = 1
+            onClicked: surfaceData.rootViewto3D()
         }
         }
 
