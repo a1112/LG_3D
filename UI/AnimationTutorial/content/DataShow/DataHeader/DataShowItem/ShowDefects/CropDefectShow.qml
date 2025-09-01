@@ -86,11 +86,11 @@ ItemDelegate {
                     anchors.fill:parent
                     onClicked:{
                         if (mouse.button == Qt.LeftButton){
-                            dataShowCore.view2DTool.setDefectShowView(  defect )
+                            dataShowCore_.view2DTool.setDefectShowView(  defect )
                         }
                         if (mouse.button == Qt.RightButton)
                         {
-                            dataShowCore.setToMinScale()
+                            dataShowCore_.setToMinScale()
                         }
                     }
 
