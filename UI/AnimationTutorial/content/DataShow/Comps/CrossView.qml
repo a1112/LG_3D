@@ -48,7 +48,7 @@ Item {
         text: dataShowCore.hoverdZmm
         y:crossY-30
         x:crossX-30
-        scale:0.7
+        scale:1
         background: Rectangle{
             color: "black"
             radius: 5

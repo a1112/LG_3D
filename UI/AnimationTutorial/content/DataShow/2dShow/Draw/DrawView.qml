@@ -98,52 +98,51 @@ Item {
 
         }
     }
-        Shape {
-    ShapePath {
-        strokeColor: "blue"
-        strokeWidth: 1
-        fillColor: "transparent"
+    Shape {
+        ShapePath {
+            strokeColor: "blue"
+            strokeWidth: 1
+            fillColor: "transparent"
 
-        dashPattern: [ 2, 2 ]
+            dashPattern: [ 2, 2 ]
 
-        property int joinStyleIndex: 0
-        startX: ellipse.center.x
-        startY: ellipse.center.y
-        PathLine {
-            x: ellipse.axes.major_axis + ellipse.center.x
-            y:ellipse.center.y
+            property int joinStyleIndex: 0
+            startX: ellipse.center.x
+            startY: ellipse.center.y
+            PathLine {
+                x: ellipse.axes.major_axis + ellipse.center.x
+                y:ellipse.center.y
 
-        }
-        PathMove{
-            x:ellipse.center.x + ellipse.axes.major_axis/2
-            y:ellipse.center.y  - ellipse.axes.minor_axis/2
-        }
+            }
+            PathMove{
+                x:ellipse.center.x + ellipse.axes.major_axis/2
+                y:ellipse.center.y  - ellipse.axes.minor_axis/2
+            }
 
-        PathLine {
+            PathLine {
+                x: ellipse.center.x + ellipse.axes.major_axis/2;
+                y: ellipse.axes.minor_axis +ellipse.center.y  - ellipse.axes.minor_axis/2
 
-            x: ellipse.center.x + ellipse.axes.major_axis/2;
-            y: ellipse.axes.minor_axis +ellipse.center.y  - ellipse.axes.minor_axis/2
-
+            }
         }
     }
+    Label{
+        x:ellipse.center.x+ellipse.axes.major_axis/2+5
+        y:ellipse.center.y - ellipse.axes.minor_axis * (1/3)
+        text:surfaceData.ix_to_mm( inner_ellipse[1][1])
+        color: "green"
+        font.bold: true
+        font.pointSize: 14
     }
-        Label{
-            x:ellipse.center.x+ellipse.axes.major_axis/2+5
-            y:ellipse.center.y - ellipse.axes.minor_axis * (1/3)
-            text:surfaceData.ix_to_mm( inner_ellipse[1][1])
-            color: "green"
-            font.bold: true
-            font.pointSize: 14
-        }
 
-        Label{
-            x:ellipse["center"].x+ellipse.axes.major_axis*(2/3)
-            y:ellipse["center"].y+5
-            text:surfaceData.ix_to_mm( inner_ellipse[1][0])
-            color: "green"
-            font.bold: true
-            font.pointSize: 14
-        }
+    Label{
+        x:ellipse["center"].x+ellipse.axes.major_axis*(2/3)
+        y:ellipse["center"].y+5
+        text:surfaceData.ix_to_mm( inner_ellipse[1][0])
+        color: "green"
+        font.bold: true
+        font.pointSize: 14
+    }
     Rectangle{
         width: 4
         height: 4

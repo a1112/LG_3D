@@ -31,6 +31,7 @@ async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x
 
 @router.get("/coilData/heightPoint/{surface_key:str}/{coil_id:str}")
 async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
+
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
     npy_data = data_get.get_3d_data()
     try:

@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../Base"
 SelectItem{
+
 startX:dataShowCore.controls.surveyStartPointX
 startY:dataShowCore.controls.surveyStartPointY
 endX:dataShowCore.controls.surveyEndPointX
@@ -38,7 +39,6 @@ LabelBase{
     text: dataShowCore.toMm(Math.sqrt(drawHeight**2+drawWidth**2)).toFixed(0) +" mm"
 
     rotation: Math.atan((drawHeight)/(drawWidth))*180/Math.PI
-
 }
 
 Canvas {

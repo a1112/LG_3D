@@ -140,7 +140,26 @@ DataShowCore_ {
     property int hoverdX: (hoverPoint.x+flick.contentX)/canvasScale
     property int hoverdY: (hoverPoint.y+flick.contentY)/canvasScale
     property real hoverdXmm: pxtoPos(hoverdX).toFixed(1)
+
+
     property real hoverdYmm: pxtoPos(hoverdY).toFixed(1)
+    onHoverdXChanged: {
+        get_zValue()
+    }
+    function get_zValue(){
+        api.get_zValueData(surfaceData.key,surfaceData.coilId,
+                           hoverdX,
+                           hoverdY,
+                           (result)=>{
+                               hoverdZmm = (parseInt(result)*surfaceData.scan3dScaleZ-medianZ).toFixed(2)
+                           },
+                           (error)=>{
+                               console.log("get_zValueData error:",error)
+                           }
+                        )
+    }
+
+
     property real hoverdZmm : 0
     property real chartsHoverdZmm: 0
 

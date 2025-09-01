@@ -43,6 +43,8 @@ Item {
             ControlView{
             // 控制系统
             }
+
+
         }
 
 
