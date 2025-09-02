@@ -9,7 +9,7 @@ import "./Core"
 import "Pages/AlarmPage"
 import "Dialogs"
 import "./Style/Adaptive"
-
+import "Graphs"
 AppBase {
     id:app
     visible: true
@@ -17,7 +17,7 @@ AppBase {
     Material.theme: coreStyle.theme
     width: global.screenConfig.width-100
     height: global.screenConfig.height-100
-    title: "LG3D "
+    title: qsTr("LG3D ")
     Material.accent: coreStyle.accentColor
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}
@@ -46,12 +46,14 @@ AppBase {
     property CoreSignal coreSignal :CoreSignal{}
     property CoreState coreState: CoreState{}
     readonly property AdaptiveViewBase adaptive : coreStyle.currentAdaptive
-
     property CoreControl coreControl: CoreControl{}
-
     property Script autoScript:Script{}
     // Junp{}
     property AppCore app_core : AppCore{}
+
+    property GraphsManage graphs_manage: GraphsManage{
+
+    }
 
 }
 

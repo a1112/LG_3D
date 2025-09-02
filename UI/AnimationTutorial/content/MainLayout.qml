@@ -14,12 +14,13 @@ Item {
         anchors.fill: parent
         TopHeader{      // 标题界面
         }
+
         StackLayout{
             currentIndex : app_core.appIndex
             Layout.fillWidth: true
             Layout.fillHeight: true
-        DataShowRoot{}  // 主 界面
-        DefectShowRoot{} // 缺陷 界面
+            DataShowRoot{}  // 主 界面
+            DefectShowRoot{} // 缺陷 界面
         }
     }
 
