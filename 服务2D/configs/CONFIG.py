@@ -27,3 +27,5 @@ base_debug_image_save_folder = base_config_folder/"debug"
 
 loger_folder = "../logs"
 loger_file = "app.log"
+
+add_to_database=False

@@ -17,14 +17,14 @@ AppBase {
     Material.theme: coreStyle.theme
     width: global.screenConfig.width-100
     height: global.screenConfig.height-100
-    title: qsTr("LG3D ")
+    title: qsTr("涟钢3D端面检测系统")
     Material.accent: coreStyle.accentColor
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}
 
 
 
-    MainLayout{ //          入口,界面构成 <-
+    MainLayout{ //    入口,界面构成 <-
         anchors.fill: parent
     }
 

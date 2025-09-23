@@ -21,7 +21,7 @@ Item {
     property int dataPort: 6013
     property int plcPort: 6014
 
-    property int updataTime: 3000
+    property int updataTime: 5000
 
     // 保持最新图像 -> 时间
     property int autoKeepTimeMax: 180

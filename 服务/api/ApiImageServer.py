@@ -152,19 +152,13 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     # 返回完整图像
     if row == -1:
         return Response(data_get.get_image(), media_type="image/jpeg")
-
-
-
-
     # 获取图像尺寸
     loop = asyncio.get_event_loop()
 
     def _get_image_size():
         image = data_get.get_image(pil=True)
         return image.size
-
     w, h = await loop.run_in_executor(thread_pool, _get_image_size)
-
     if count == 0:
         return {
             "width": w,

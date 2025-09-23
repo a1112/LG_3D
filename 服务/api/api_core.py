@@ -1,15 +1,15 @@
 from fastapi import FastAPI
-
+from fastapi.responses import ORJSONResponse
 from CONFIG import serverConfigProperty
 
-app = FastAPI()
+app = FastAPI(default_response_class=ORJSONResponse)
 
 @app.get("/")
-def read_root():
+async def read_root():
     return {"/docs": "请访问 /docs 查看文档"}
 
 @app.get("/version")
-def read_version():
+async def read_version():
     return serverConfigProperty.version
 
 @app.get("/delay")

@@ -185,7 +185,8 @@ def detection(data_integration: DataIntegration):
     for item in clip_image_list:
         item: ClipImageItem
         det_info = coil_detection_model.predict(item)
-        add_db(det_info)
+        if CONFIG.add_to_database:
+            add_db(det_info)
 
 
 

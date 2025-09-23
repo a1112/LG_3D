@@ -119,7 +119,6 @@ class ImageCache:
 
     def get_image(self, path, pil=False,clip_num=0):
         try:
-            print(fr"getting image {path}")
             if pil:
                 return self._cache_image_pil(path)
             if clip_num:

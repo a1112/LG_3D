@@ -291,16 +291,23 @@ Item {
     }
 
     function getSource(_coilId_,_viewKey_, preView=false){
+        let res_url=""
         if(coreSetting.useLoc){
-            return getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
+            res_url = getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
         }
         else{
-            if (coreSetting.useSharedFolder){
-                return getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
+            if ("AREA"==_viewKey_){// 2D 图像必须使用 HTTP
+                res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
             }
-            else
-                return getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+            else{
+                if (coreSetting.useSharedFolder){
+                    res_url = getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
+                }
+                else
+                    res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+            }
         }
+        return res_url
     }
 
     property ListModel viewDataModel: ListModel{

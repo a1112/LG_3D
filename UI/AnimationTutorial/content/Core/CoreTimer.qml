@@ -18,7 +18,7 @@ Item {
     }
 
     Timer{  // 保持最新数据数据 定时器
-        interval: 1000
+        interval: 7000
         running: !coreModel.keepLatest
         repeat: true
         onTriggered: {
