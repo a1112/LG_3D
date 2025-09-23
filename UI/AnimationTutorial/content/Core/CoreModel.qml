@@ -91,8 +91,19 @@ CoreModel_ {
     property string saveImageType: "png"
     property var previewSize: [512,512]
 
+    function getMaxCoilId(){
+        return getLastCoilId()
+    }
+
+    function getMinCoilId(){
+        return realCoilListModel.get(realCoilListModel.count-1).Id
+    }
+
     function getLastCoilId(){
         let max_i=0
+        if (realCoilListModel.count===0){
+
+        }
         for(let i =0;i<5;i++){
             let id_ = realCoilListModel.get(0).Id
             if (id_>max_i){
@@ -110,6 +121,7 @@ CoreModel_ {
         if (upData["coilList"] === undefined){
             return -2
         }
+
         upData["coilList"].forEach(
                 (coil)=>{
                     if(coil.Id > getLastCoilId()){

@@ -274,6 +274,10 @@ def  get_defects_all(start_coil_id, end_coil_id):
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId >= start_coil_id,
                                                 CoilDefect.secondaryCoilId <= end_coil_id).all()
 
+def defects():
+    with  Session() as session:
+        return session.query(CoilDefect)
+
 def get_defect_class_dict():
     with Session() as session:
         return session.query(DefectClassDict).all()

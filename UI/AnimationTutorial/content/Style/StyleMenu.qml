@@ -119,4 +119,11 @@ Menu{
             }
         }
     }
+
+    MenuItem{
+        text:qsTr("曲线工具")
+        onClicked:{
+            graphs_manage.open()
+        }
+    }
 }

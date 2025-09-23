@@ -44,7 +44,7 @@ Item {
                                            defectW,
                                            defectH
                                            )
-            isArea = item.is_area
+            isArea = item.is_area??false
     }
 
     property string defect_url:""

@@ -6,5 +6,12 @@ import QtQuick
 */
 import "GraphsValueView"
 GraphsValueViewMain{
+  property GraphsCore graphsCore: GraphsCore{}
+
+  function open(){
+    visible=true
+    graphsCore.init()
+
+  }
 
 }
