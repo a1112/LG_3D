@@ -376,6 +376,14 @@ def set_coil_status_by_data(coil_id, status, msg):
 
         session.commit()
 
+def get_coilState(coil_id, surface_key=None)->CoilState:
+    with Session() as session:
+        que = session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).filter(CoilState.surface == surface_key)
+        all_data=que.all()
+        if all_data:
+            return all_data[0]
+        else:
+            return None
 
 list_data_keys = {
     "二级内径": SecondaryCoil.CoilInside,

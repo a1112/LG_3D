@@ -10,9 +10,7 @@ class JoinWork(WorkBaseThread):
       对于 整体的  拼接  工作
       主要类别
     """
-
     def __init__(self, config:JoinConfig):
-
         super().__init__(config)
         self.config: JoinConfig
         self.surface_dict = {}

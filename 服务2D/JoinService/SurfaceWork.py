@@ -17,7 +17,7 @@ from .CameraWork import CameraWork
 from .SaverWork import SaverWork
 from .cv_count_tool import im_show
 from alg.detection import detection
-
+from CoilDataBase.Coil import get_coilState
 class SurfaceWork(WorkBaseThread):
     """
     单表面
@@ -72,10 +72,27 @@ class SurfaceWork(WorkBaseThread):
         camera_image_grop_dict["U"].init_image()
         camera_image_grop_dict["M"].init_image()
         camera_image_grop_dict["D"].init_image()
-
-
-
         return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list],coil_id)
+
+    def get_num_clip_by_mm(self,coil_state,median_3d_mm):
+        # c = a*x+b    b= -700  a=1
+        if coil_state.surface=="S":
+            b=530
+            a=1.5
+            c = (median_3d_mm-b)*a
+            print(fr" coil_state {coil_state.secondaryCoilId}  {coil_state.surface} median_3d:{coil_state.median_3d} median_3d_mm{coil_state.median_3d_mm} {int(c)}")
+        else:
+            pass
+        c=int(max(c,0))
+        return c,c
+
+    def vstack_by_distance(self,new_image_list):
+        coil_state = get_coilState(self.coil_id,self.config.surface_key)
+        if coil_state is None:
+            return np.vstack(new_image_list)
+        clip_nums=self.get_num_clip_by_mm(coil_state,coil_state.median_3d_mm)
+
+        return np.vstack([new_image_list[0],new_image_list[1][clip_nums[0]:,:], new_image_list[2][clip_nums[1]:,:]])
 
     def _join_images_(self,image_list, coil_id):
         """
@@ -97,11 +114,13 @@ class SurfaceWork(WorkBaseThread):
                 img = img[:, :max_width]
             new_image_list.append(img)
         # 纵向拼接
-        result = np.vstack(new_image_list)
+
+        max_image=self.vstack_by_distance(new_image_list)
+        # result = np.vstack(new_image_list)
         # cv2.imwrite("s.jpg", result)
         if DEBUG:
-            im_show(result,title=fr"max_image{self.key}_{coil_id}")
-        return result
+            im_show(max_image,title=fr"max_image{self.key}_{coil_id}")
+        return max_image
 
     def run(self):
         print(fr" SurfaceWork run {self.key}")

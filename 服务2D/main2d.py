@@ -12,7 +12,6 @@ def main():
     jw = JoinWork(join_config)
 
     start_coil = join_config.get_last_coil()
-
     start_coil = int(start_coil)
     print(start_coil)
     max_coil = join_config.get_save_max_coil()
