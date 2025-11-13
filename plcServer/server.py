@@ -76,4 +76,8 @@ def write_plc(addr,typeStr,value):
         return siemens.WriteInt16(addr,value)
     if typeStr == 'word':
         return siemens.WriteDouble(addr,value)
+    if typeStr == 'real':
+        return siemens.WriteDouble(addr,value)
+    if typeStr == 'bool':
+        return siemens.WriteBool(addr,value)
     raise

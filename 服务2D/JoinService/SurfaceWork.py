@@ -77,12 +77,14 @@ class SurfaceWork(WorkBaseThread):
     def get_num_clip_by_mm(self,coil_state,median_3d_mm):
         # c = a*x+b    b= -700  a=1
         if coil_state.surface=="S":
-            b=530
+            b=600
             a=1.5
             c = (median_3d_mm-b)*a
             print(fr" coil_state {coil_state.secondaryCoilId}  {coil_state.surface} median_3d:{coil_state.median_3d} median_3d_mm{coil_state.median_3d_mm} {int(c)}")
         else:
-            pass
+            b = 530
+            a = 1.5
+            c = (median_3d_mm - b) * a
         c=int(max(c,0))
         return c,c
 

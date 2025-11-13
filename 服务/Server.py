@@ -14,7 +14,7 @@ from utils.StdoutLog import Logger
 
 from CONFIG import serverConfigProperty
 from api import app
-
+import Lis
 Logger("服务")
 # 参数服务
 from api import ApiInfo
