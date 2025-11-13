@@ -164,6 +164,8 @@ def add_defects(defects: List[dict]):
     Returns:
 
     """
+    if len(defects):
+        print(fr"add_defects = {defects}")
     with Session() as session:
         session.add_all([CoilDefect(
             secondaryCoilId=defect["secondaryCoilId"],
@@ -272,6 +274,10 @@ def  get_defects_all(start_coil_id, end_coil_id):
         return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId >= start_coil_id,
                                                 CoilDefect.secondaryCoilId <= end_coil_id).all()
 
+def defects():
+    with  Session() as session:
+        return session.query(CoilDefect)
+
 def get_defect_class_dict():
     with Session() as session:
         return session.query(DefectClassDict).all()
@@ -370,6 +376,14 @@ def set_coil_status_by_data(coil_id, status, msg):
 
         session.commit()
 
+def get_coilState(coil_id, surface_key=None)->CoilState:
+    with Session() as session:
+        que = session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).filter(CoilState.surface == surface_key)
+        all_data=que.all()
+        if all_data:
+            return all_data[0]
+        else:
+            return None
 
 list_data_keys = {
     "二级内径": SecondaryCoil.CoilInside,

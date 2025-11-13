@@ -2,11 +2,11 @@ import requests
 from server import write_plc,read_plc
 import time
 import datetime
-from CoilDataBase import addToPlc,getCoilByCoilNo
+from CoilDataBase.Coil import addToPlc,get_coil_by_coil_no
 
 
 def add_plc(coil_No):
-    coil_id = getCoilByCoilNo(coil_No).Id
+    coil_id = get_coil_by_coil_no(coil_No).Id
     addToPlc({
         "secondaryCoilId": coil_id,
         "location_S": read_plc("DB32.600", "int", 2),
