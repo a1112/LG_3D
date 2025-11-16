@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     // qmlRegisterType<FileDownloader>("FileDownloader",1,0,"FileDownloader");
 
-    const QUrl url(u"qrc:/main.qml"_qs);
+    const QUrl url(u"qrc:/qml/main.qml"_qs);
     QObject::connect(
                 &engine, &QQmlApplicationEngine::objectCreated, &app,
                 [url](QObject *obj, const QUrl &objUrl) {

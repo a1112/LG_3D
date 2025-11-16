@@ -5,7 +5,7 @@ Item{
 property var timeFamioly:fL.font.family
 FontLoader{
     id:fL
-    source:"DS-DIGIT.TTF"
+    source:"qrc:/qml/fonts/DS-DIGIT.TTF"
 }
 
 }

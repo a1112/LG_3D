@@ -345,8 +345,14 @@ Item {
 
     function setTxModel(){
         txModel.clear()
+        if (!lineData || lineData.length === 0) {
+            return
+        }
         for(let key in lineData){
-            let datas= lineData[key]["points"]
+            let datas = lineData[key] && lineData[key]["points"]
+            if (!Array.isArray(datas) || datas.length === 0) {
+                continue
+            }
             let startX =0
             let startY =0
             let startZ =0

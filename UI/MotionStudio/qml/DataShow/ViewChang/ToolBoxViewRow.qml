@@ -2,7 +2,9 @@ import QtQuick
 
 Row {
     id:root
-    property bool meshExits: ScriptLauncher.fileExists("\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + surfaceData.key + "/"+surfaceData.coilId + "/meshes/defaultobject_mesh.mesh")
+    property bool meshExits: ScriptLauncher
+                            ? ScriptLauncher.fileExists("\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + surfaceData.key + "/"+surfaceData.coilId + "/meshes/defaultobject_mesh.mesh")
+                            : false
     onMeshExitsChanged:{
         surfaceData.meshExits = root.meshExits
     }

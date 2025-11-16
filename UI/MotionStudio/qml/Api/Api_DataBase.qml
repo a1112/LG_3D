@@ -1,10 +1,80 @@
 
-
+import QtWebSockets
 Api_Base {
     id:api_database
 
 
     property string oldHeightDatUrl:""
+    property WebSocket heightPointSocket: WebSocket{
+        id: heightPointWs
+        // Direct URL to avoid auto remapping.
+        url: apiConfig.ws_protocol+apiConfig.hostname+":"+apiConfig.dataPort+"/ws/coilData/heightPoint"
+        active: true
+        onStatusChanged: {
+            if (status === WebSocket.Open) {
+                while (_heightPointQueue.length > 0) {
+                    let payload = _heightPointQueue.shift()
+                    sendTextMessage(payload)
+                }
+            } else if (status === WebSocket.Error || status === WebSocket.Closed) {
+                console.log("heightPoint ws closed/error", status, errorString)
+                // flush pending with failure
+                for (let key in _heightPointRequests) {
+                    let cb = _heightPointRequests[key]
+                    if (cb && cb.failure) {
+                        cb.failure("ws error")
+                    }
+                }
+                _heightPointRequests = {}
+                _heightPointQueue = []
+            }
+        }
+        onTextMessageReceived: function(message){
+            try{
+                let data = JSON.parse(message)
+                let reqId = data.id
+                let cb = _heightPointRequests[reqId]
+                delete _heightPointRequests[reqId]
+                if (!cb) return
+                if (data.error !== undefined){
+                    cb.failure && cb.failure(data.error)
+                }else if (data.value !== undefined){
+                    if (isFinite(data.value)){
+                        cb.success && cb.success(data.value)
+                    }else{
+                        cb.failure && cb.failure("invalid value")
+                    }
+                }else{
+                    cb.failure && cb.failure("ws no value")
+                }
+            }catch(e){
+                console.log("ws parse error", e)
+            }
+        }
+    }
+
+    property int _heightPointReqId: 0
+    property var _heightPointRequests: ({})
+    property var _heightPointQueue: []
+
+    function _sendHeightPointWs(payload, success, failure){
+        _heightPointReqId += 1
+        payload.id = _heightPointReqId
+        _heightPointRequests[payload.id] = {
+            success: success,
+            failure: failure
+        }
+        let text = JSON.stringify(payload)
+        if (heightPointSocket.status === WebSocket.Open){
+            heightPointSocket.sendTextMessage(text)
+        }else{
+            _heightPointQueue.push(text)
+            if (!heightPointSocket.active){
+                heightPointSocket.active = true
+            }
+        }
+    }
+
     function getHeightData(_key_,coilId_,x1,y1,x2,y2,success,failure){
     let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightData",_key_,coilId_)+`?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`
         oldHeightDatUrl=url
@@ -14,8 +84,23 @@ Api_Base {
 
 
     function get_zValueData(_key_,coilId_,x1,y1,success,failure){
-        let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
-        return ajax.get(url,success,failure)
+        // Prefer WebSocket for low-latency single-point queries; fallback to HTTP.
+        _sendHeightPointWs({
+                              "surface_key": _key_,
+                              "coil_id": coilId_,
+                              "x": x1,
+                              "y": y1
+                          }, success, function(err){
+                              let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
+                              let failureCb = failure ? failure : function(e){console.log("heightPoint http error", e, err)}
+                              return ajax.get(url,function(val){
+                                  if (isFinite(val)){
+                                      success && success(val)
+                                  }else{
+                                      failureCb("invalid value")
+                                  }
+                              },failureCb)
+                          })
     }
 
     function geRenderDrawerSource(key,coil_id,scale,minValue,maxValue,mask=false){
@@ -174,3 +259,4 @@ Api_Base {
         // 设置新的
     }
 }
+

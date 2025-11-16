@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from CONFIG import serverConfigProperty
+from runtime import runtime_controller
 
 try:
     import orjson
@@ -23,3 +24,19 @@ async def read_version():
 @app.get("/delay")
 async def get_delay():
     return 0
+
+
+def _runtime_enabled() -> bool:
+    return getattr(app.state, "enable_runtime", True)
+
+
+@app.on_event("startup")
+async def start_runtime_services():
+    if _runtime_enabled():
+        runtime_controller.start()
+
+
+@app.on_event("shutdown")
+async def stop_runtime_services():
+    if _runtime_enabled():
+        runtime_controller.stop()

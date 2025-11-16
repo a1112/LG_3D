@@ -22,7 +22,7 @@ Item {
         visible: opacity
         icon.width: width * 0.3
         icon.height: height * 0.3
-        icon.source: "qrc:/images/icon_settings.png"
+        icon.source: "qrc:/qt-project.org/imports/QtQuick/Controls/Material/images/icons/settings.png"
         icon.color: "transparent"
         background: Rectangle {
             color: "transparent"

@@ -4,12 +4,14 @@ import QtQuick.Shapes
 Item {
     id:root
     anchors.fill: parent
-    property var inner_circle_centre: surfaceData.inner_circle_centre
-    property var circle: [parseInt(inner_circle_centre[0]*dataShowCore.canvasScale),
-        parseInt(inner_circle_centre[1]*dataShowCore.canvasScale),
-        parseInt(inner_circle_centre[3]*dataShowCore.canvasScale),
-        parseInt(inner_circle_centre[4]*dataShowCore.canvasScale)]
-    property var inner_ellipse: surfaceData.inner_ellipse
+    property var inner_circle_centre: surfaceData.inner_circle_centre || [0,0,0,0,0]
+    property var circle: [
+        parseInt((inner_circle_centre[0] || 0)*dataShowCore.canvasScale),
+        parseInt((inner_circle_centre[1] || 0)*dataShowCore.canvasScale),
+        parseInt((inner_circle_centre[3] || 0)*dataShowCore.canvasScale),
+        parseInt((inner_circle_centre[4] || 0)*dataShowCore.canvasScale)
+    ]
+    property var inner_ellipse: surfaceData.inner_ellipse || [[0,0],[0,0],0]
 
 
     property var ellipse: {
@@ -21,7 +23,7 @@ Item {
             "minor_axis": inner_ellipse[1][0]*dataShowCore.canvasScale},
         "angle": inner_ellipse[2]
     }
-    property var lineData: surfaceData.lineData
+    property var lineData: surfaceData.lineData || []
 
     onLineDataChanged: {
         canva.requestPaint()
@@ -38,7 +40,10 @@ Item {
             context.setLineDash([10, 5])
             // 遍历线段列表进行绘制
             for (var i = 0; i < lineData.length; i++) {
-                var line = lineData[i]
+                var line = lineData[i] || {}
+                if (!line.pointL || !line.pointR) {
+                    continue
+                }
                 context.beginPath()
                 context.moveTo(line.pointL[0]*dataShowCore.canvasScale, line.pointL[1]*dataShowCore.canvasScale)
                 context.lineTo(line.pointR[0]*dataShowCore.canvasScale, line.pointR[1]*dataShowCore.canvasScale)

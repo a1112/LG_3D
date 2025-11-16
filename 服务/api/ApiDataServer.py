@@ -4,7 +4,7 @@ import time
 import cv2
 import numpy as np
 from PIL import Image
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket
 from starlette.responses import StreamingResponse
 
 from property.Data3D import LineData
@@ -39,6 +39,38 @@ async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
     except (BaseException,) as e:
         print(e)
         return "error"
+
+
+@router.websocket("/ws/coilData/heightPoint")
+async def ws_height_point(websocket: WebSocket):
+    """
+    WebSocket interface for querying single height points.
+
+    Expected JSON message:
+    {"id": 1, "surface_key": "S", "coil_id": "1755", "x": 100, "y": 200}
+    """
+    await websocket.accept()
+    while True:
+        message = await websocket.receive_json()
+        req_id = message.get("id")
+        surface_key = message.get("surface_key") or message.get("surfaceKey")
+        coil_id = str(message.get("coil_id") or message.get("coilId") or "")
+        x = int(message.get("x", 0))
+        y = int(message.get("y", 0))
+
+        base_resp = {"id": req_id, "surface_key": surface_key, "coil_id": coil_id, "x": x, "y": y}
+
+        if not surface_key or not coil_id:
+            await websocket.send_json({**base_resp, "error": "surface_key and coil_id are required"})
+            continue
+
+        data_get = DataGet("image", surface_key, coil_id, "MASK", False)
+        npy_data = data_get.get_3d_data()
+        try:
+            value = int(npy_data[int(y)][int(x)])
+            await websocket.send_json({**base_resp, "value": value})
+        except Exception as exc:  # pragma: no cover - runtime guard
+            await websocket.send_json({**base_resp, "error": str(exc)})
 
 
 @router.get("/coilData/Render/{surfaceKey:str}/{coil_id:str}")
