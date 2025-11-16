@@ -24,3 +24,7 @@
 /服务/script/logs/
 /采集/build/
 /logs/
+/UI/MotionStudio/build/
+/UI/MotionStudio/.idea/
+/UI/MotionStudio/.qtcreator/
+/log/
