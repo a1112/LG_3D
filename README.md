@@ -3,8 +3,7 @@
 
 https://peps.python.org/pep-0008/
 
-pip config --global set global.index-url https://mirrors.aliyun.com/pypi/simple/
- 
+pip config --global set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 pip config --global set install.trusted-host mirrors.aliyun.com
 
 python -m pip install --upgrade pip

@@ -7,9 +7,9 @@
 # )
 
 
-# qt_add_library(AnimationTutorial STATIC)
-# qt6_add_qml_module(AnimationTutorial
-#     URI "AnimationTutorial"
+# qt_add_library(MotionStudio STATIC)
+# qt6_add_qml_module(MotionStudio
+#     URI "MotionStudio"
 #     VERSION 1.0
 #     QML_FILES
 #         EventListSimulator.qml

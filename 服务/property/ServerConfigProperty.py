@@ -100,6 +100,7 @@ class ServerConfigProperty(BaseConfigProperty):
         self.max_clip_mun = _get_config_("max_clip_mun",500)   # serverConfig["max_clip_mun"]
         self.server_count = _get_config_("server_count",10)
         self.server_port = _get_config_("server_port",5010)
+        self.server_host = _get_config_("server_host","0.0.0.0")
         self.version = _get_config_("VERSION",".".join([str(i) for i in [0, 1, 11]]))
         self.renderer_list = _get_config_("RendererList",["JET"])
         self.save_image_type=_get_config_("SaveImageType",".png")

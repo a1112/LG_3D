@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.18)
 
-set(BUILD_QDS_COMPONENTS ON CACHE BOOL "Build design studio components")
+set(BUILD_QDS_COMPONENTS OFF CACHE BOOL "Build design studio components")
 
-project(AnimationTutorialApp LANGUAGES CXX)
+project(MotionStudioApp LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+# Keep compiler-generated object/dependency paths manageable for Windows path limits.
+set(CMAKE_OBJECT_PATH_MAX 240)
 
 
 find_package(QT NAMES Qt6 COMPONENTS Charts Core Gui Quick Qml Graphs REQUIRED)
@@ -44,6 +47,12 @@ qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"
         qtquickcontrols2.conf
 )
 
+qt6_add_resources(QML_BUNDLE
+    qml.qrc
+)
+
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${QML_BUNDLE})
+
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Charts
     Qt${QT_VERSION_MAJOR}::Core
@@ -55,4 +64,3 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 if (${BUILD_QDS_COMPONENTS})
     include(${CMAKE_CURRENT_SOURCE_DIR}/qmlcomponents)
 endif ()
-include(${CMAKE_CURRENT_SOURCE_DIR}/qmlmodules)

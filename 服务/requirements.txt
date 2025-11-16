@@ -11,7 +11,8 @@ sqlalchemy_utils
 cryptography
 psutil
 GPUtil
-GPUtil
 timm
 colorlog
 python-multipart
+lxml
+orjson

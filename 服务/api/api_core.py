@@ -1,8 +1,16 @@
+import logging
+
 from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
 from CONFIG import serverConfigProperty
 
-app = FastAPI(default_response_class=ORJSONResponse)
+try:
+    import orjson
+    from fastapi.responses import ORJSONResponse as DefaultResponse
+except ImportError:
+    from fastapi.responses import JSONResponse as DefaultResponse
+    logging.getLogger(__name__).warning("orjson not installed; falling back to JSONResponse")
+
+app = FastAPI(default_response_class=DefaultResponse)
 
 @app.get("/")
 async def read_root():

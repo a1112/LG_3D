@@ -19,6 +19,9 @@ class GlobalSignalHandling(Thread):
     def run(self):
         while True:
             msg_code,msgType,msgData=self.managerQueue.get()
+            if msg_code in {"shutdown", "stop"}:
+                print("GlobalSignalHandling shutdown signal received")
+                break
             if msg_code=="cmd":
                 cmd,workPath=msgType,msgData
                 print("GlobalSignalHandling", msg_code, msgType, msgData)

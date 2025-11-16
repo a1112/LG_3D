@@ -1,3 +1,5 @@
+import os
+os.environ.setdefault("ENABLE_BACKGROUND_RUNTIME", "0")
 from api import ApiDataServer,app
 import pymysql
 import sqlalchemy

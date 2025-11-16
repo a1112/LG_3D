@@ -1,3 +1,5 @@
+import os
+os.environ.setdefault("ENABLE_BACKGROUND_RUNTIME", "0")
 from CONFIG import image_api_port
 from api.ApiImageServer import app
 import uvicorn

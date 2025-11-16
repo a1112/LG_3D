@@ -5,7 +5,7 @@
 
 #include <QtQml/qqmlextensionplugin.h>
 
-Q_IMPORT_QML_PLUGIN(contentPlugin)
-//Q_IMPORT_QML_PLUGIN(AnimationTutorialPlugin)
+// QML modules are embedded via resources, no plugin import required.
+//Q_IMPORT_QML_PLUGIN(MotionStudioPlugin)
 //Q_IMPORT_QML_PLUGIN(Quick3DAssets_BallBearing1Plugin)
 

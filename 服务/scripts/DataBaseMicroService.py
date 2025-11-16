@@ -1,5 +1,7 @@
 from utils.StdoutLog import Logger
 Logger("DatabaseApi")
+import os
+os.environ.setdefault("ENABLE_BACKGROUND_RUNTIME", "0")
 import CONFIG
 import pymysql
 import sqlalchemy

@@ -2,8 +2,8 @@
 C++ project. */
 
 import QtQuick
-import content
 import QtQuick.Controls
+import "./content"
 
 App {
 
