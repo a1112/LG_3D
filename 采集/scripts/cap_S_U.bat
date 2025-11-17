@@ -1,1 +1,0 @@
-python main.py --config configs/CapTureS_U.json

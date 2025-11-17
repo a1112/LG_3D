@@ -1,5 +1,0 @@
-
-
-CheckRec {
-fillWidth:true
-}

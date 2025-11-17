@@ -1,3 +1,0 @@
-"""
-BKVision service package.
-"""

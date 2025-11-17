@@ -1,1 +1,0 @@
-python main.py --config configs/CapTure_L_U.json

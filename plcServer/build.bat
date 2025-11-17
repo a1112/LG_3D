@@ -1,1 +1,0 @@
-pyinstaller --name plc_server main.py
