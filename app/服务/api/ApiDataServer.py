@@ -18,15 +18,48 @@ router = APIRouter(tags=["深度数据访问服务"])
 
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
 async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x2: int = 0, y2: int = 0):
+    """
+    Return line segments for curve display.
+
+    The UI expects:
+    [
+      {
+        "pointL": [x0, y0],
+        "pointR": [x1, y1],
+        "points": [[x, y, z], ...]
+      },
+      ...
+    ]
+    """
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
     mask_image = data_get.get_image(pil=True)
     npy_data = data_get.get_3d_data()
 
+    if mask_image is None or npy_data is None:
+        return []
+
     mask_image = np.array(mask_image)
     if not y2 and not x2:
         x2, y2 = x1 + 10, y1
+
     line_data = LineData(npy_data, mask_image, Point2D(x1, y1), Point2D(x2, y2))
-    return line_data.all_image_line_points().tolist()
+    segments = line_data.split_image_line_points()
+
+    result = []
+    for seg in segments:
+        if not seg:
+            continue
+        # seg is a list/array of [x, y, z]
+        left = seg[0]
+        right = seg[-1]
+        result.append(
+            {
+                "pointL": [int(left[0]), int(left[1])],
+                "pointR": [int(right[0]), int(right[1])],
+                "points": [[int(p[0]), int(p[1]), int(p[2])] for p in seg],
+            }
+        )
+    return result
 
 
 @router.get("/coilData/heightPoint/{surface_key:str}/{coil_id:str}")

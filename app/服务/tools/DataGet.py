@@ -1,6 +1,6 @@
 import io
 from property.ServerConfigProperty import ServerConfigProperty
-from api.data_cache import previewCache, imageCache, d3DataCache, classifierCache, areaCache
+from cache import previewCache, imageCache, d3DataCache, classifierCache, areaCache
 from CONFIG import serverConfigProperty
 from property.Types import ImageType
 
