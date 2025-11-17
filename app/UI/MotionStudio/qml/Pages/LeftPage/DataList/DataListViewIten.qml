@@ -1,0 +1,76 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Controls.Material
+import "DataListMenu"
+import "Core"
+import "../../../Model"
+import "../../../animation"
+DataListViewItenBase {
+    id:root
+
+        RowLayout{
+            width: parent.width
+            Rectangle{
+                implicitWidth: 2
+                implicitHeight: 1
+            }
+            ColumnLayout{
+                spacing: 0
+                Layout.fillWidth: true
+                implicitHeight: 30
+                RowLayout{
+                    Label{
+                        font.pointSize: 11
+                        font.bold: true
+                        text: " " + coilModel.coilId
+                        color: listItemCoil.detectionStatuColor
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                    }
+                    Label{
+                        text:coilModel.coilNo
+
+                        font.bold: true
+                        font.pointSize: 12
+
+                        Rectangle{
+                            width:parent.width/3
+                            anchors.horizontalCenter:parent.horizontalCenter
+                            height:3
+                            anchors.top:parent.bottom
+                            color:coilModel.coilCheck.statusColor
+                        }
+
+                    }
+
+                    StateWrapper{
+                        // c_state:coilState
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                    }
+                    Label{
+                        font.pointSize: 11
+                        text: coilModel.coilType
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 1
+                    }
+
+                    StatusMsg{
+                    }
+                }
+            }
+            Item{
+                implicitWidth: 5
+                implicitHeight: 2
+            }
+        }
+
+}

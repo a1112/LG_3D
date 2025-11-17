@@ -1,0 +1,11 @@
+{
+  "signalUrl": "http://127.0.0.1:6005/currentCoil",
+  "camera": [
+    {
+      "sn": "22110085",
+        "name": "Camera 1",
+      "saveFolder": "E:\\",
+      "key": "camera1"
+    }
+  ]
+}

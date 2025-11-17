@@ -1,0 +1,1 @@
+python main.py --config configs/CapTure_S_M.json

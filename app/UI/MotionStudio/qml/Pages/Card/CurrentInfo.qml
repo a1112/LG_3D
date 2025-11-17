@@ -1,0 +1,103 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtGraphs
+import "../../Base"
+import "../../Comp/Card"
+CardBase {
+    id:root
+    Layout.fillWidth: true
+    max_height:165//col.height+10
+    title:  core.currentCoilModel.coilNo        //"当前卷信息"
+    // content_head_tool:ColorImageButton{
+    //     source: "../icons/defectInfo.png"
+    //     width: 30
+    //     selectColor: Material.color(Material.LightGreen)
+    //     height: 30
+    //     ItemDelegate{
+    //         anchors.fill: parent
+    //         onClicked: {
+    //             app.showDefectInfo()
+    //         }
+    //     }
+    // }
+
+    content_body:Item{
+        id:col
+        width:root.width
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+                visible: root.isShow
+        Flow{
+            anchors.fill: parent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            FlowRowItem{
+                title:qsTr("流水号")
+                value:core.currentCoilModel["coilId"]
+                valueColor:Material.color(Material.Green)
+            }
+            FlowRowItem{
+                title:qsTr("去向")
+                value:core.currentCoilModel.nextInfo
+            }
+            FlowRowItem{
+                title:qsTr("卷号 ")
+                value:core.currentCoilModel.coilNo
+            }
+            FlowRowItem{
+                title:qsTr("钢种 ")
+                value:core.currentCoilModel.coilType
+            }
+            FlowRowItem{
+                title:qsTr("外径 ")
+                value:core.currentCoilModel.coilDia
+            }
+            FlowRowItem{
+                title:qsTr("内径 ")
+                value:core.currentCoilModel.coilInside
+            }
+            FlowRowItem{
+                title:qsTr("卷宽 ")
+                value:core.currentCoilModel.coilWidth
+            }
+            FlowRowItem{
+                title:qsTr("卷厚 ")
+                value:core.currentCoilModel.coilThickness
+            }
+            FlowRowItem{
+                title:qsTr("日期 ")
+                value:core.currentCoilModel.coilDetectionTime.dataString
+            }
+            FlowRowItem{
+                title:qsTr("时间 ")
+                value:core.currentCoilModel.coilDetectionTime.timeString
+            }
+        }
+    }
+    MouseArea{
+        anchors.fill:parent
+        acceptedButtons:Qt.RightButton
+        onClicked:{
+        menu.popup()
+        }
+    }
+    Menu{
+        id:menu
+        MenuItem{
+            text:qsTr("更多信息...")
+            onClicked:{popManage.popupMsgPopView()}
+        }
+    }
+
+
+    LabelBase{
+        font.bold:true
+        font.pointSize:11
+        anchors.right:parent.right
+        anchors.top:parent.top
+        text:tool.getDelTimeStr(core.nowTime,core.currentCoilModel.coilCreateTime.dateTime)
+    }
+
+}
