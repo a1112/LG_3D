@@ -1,6 +1,6 @@
 import QtQuick
 
 ItemDelegateButtonBase {
-    source:"../icons/setting.png"
+    source: coreStyle.getIcon("setting")
     tipText:"设置"
 }

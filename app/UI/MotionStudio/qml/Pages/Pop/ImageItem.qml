@@ -9,7 +9,7 @@ ItemDelegate {
             scale:0.7
             anchors.centerIn: parent
             asynchronous: true
-            source: "../../icons/imageError.png"
+            source: coreStyle.getIcon("imageError")
             width: parent.width
             height: parent.height
             fillMode: Image.PreserveAspectFit

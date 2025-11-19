@@ -4,7 +4,7 @@ import QtQuick.Layouts
     Image {
         id: uSTB
         Layout.fillWidth: true
-        source: coreStyle.isDark? "../../icons/USTB_Dark.png":"../../icons/USTB_Light.png" //"../../images/USTB.png"
+        source: coreStyle.isDark ? coreStyle.getIcon("USTB_Dark") : coreStyle.getIcon("USTB_Light")
         fillMode: Image.PreserveAspectFit
     }
 

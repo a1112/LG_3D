@@ -3,5 +3,5 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 IconBase {
-    source: "../../icons/FullScreen"
+    source: coreStyle.getIcon("FullScreen")
 }

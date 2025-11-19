@@ -126,6 +126,18 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"info"),success,failure)
     }
 
+    function getRuntimeInfo(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"runtime_info"), success, failure)
+    }
+
+    function getDatabaseInfo(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"database_info"), success, failure)
+    }
+
+    function getServerVersion(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"version"), success, failure)
+    }
+
     function getDataFlush(coilId,success,failure){
         console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId))
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId),success,failure)

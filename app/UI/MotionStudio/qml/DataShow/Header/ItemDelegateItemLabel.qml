@@ -1,6 +1,5 @@
 import QtQuick
 import "../Foot"
-import "../../icons"
 ItemDelegateItem {
     property string key:""
 

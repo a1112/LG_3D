@@ -39,6 +39,17 @@ Item {
             Layout.preferredWidth: 1
             Layout.preferredHeight: 1
         }
+        ItemDelegateButtonBase {
+          id: mainMenuButton
+          height: parent.height
+          width: height
+          tipText: qsTr("主菜单")
+          source:  coreStyle.getIcon("Menu")
+          onClicked: {
+              popManage.popupStyleMenu()
+          }
+        }
+
         TopIcon{}
         TopTabBar{}
         SeparatorLine{}

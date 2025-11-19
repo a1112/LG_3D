@@ -1,5 +1,5 @@
 import QtQuick.Controls
 BaseIconBtn {
-    source:"../../icons/survey.png"
+    source: coreStyle.getIcon("survey")
     ToolTip.text:"测量"
 }

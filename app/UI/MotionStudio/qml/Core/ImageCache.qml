@@ -1,25 +1,24 @@
 import QtQuick
 
 Item {
-        property bool cacheAbel: coreSetting.useImageCache
+    property bool cacheAbel: coreSetting.useImageCache
     property int maxCache: coreSetting.maxImageCache
-
 
     function pushCache(source) {
 
-        if(!cacheAbel) {
+        if (!cacheAbel) {
             return
         }
 
-        if(cacheModel.count >= maxCache) {
+        if (cacheModel.count >= maxCache) {
             cacheModel.remove(0)
         }
-        cacheModel.append({"cacheSource":source})
+        cacheModel.append({"cacheSource": source})
     }
 
     Repeater {
         model: ListModel{
-                id:cacheModel
+            id: cacheModel
         }
         Image {
             cache: true
@@ -28,5 +27,4 @@ Item {
             source: cacheSource
         }
     }
-
 }

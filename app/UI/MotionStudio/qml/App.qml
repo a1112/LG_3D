@@ -55,6 +55,8 @@ AppBase {
 
     }
 
+    // 全局运行环境与路径信息
+    property CoreInfo coreInfo: CoreInfo{}
 }
 
 

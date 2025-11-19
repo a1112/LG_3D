@@ -20,9 +20,9 @@ Item {
         if(level<=1){
             return ""
         }else if(level==2){
-            return "../../../icons/warning_1.png"
+            return coreStyle.getIcon("warning_1")
         }else if(level>=3){
-            return "../../../icons/warning_1.png"
+            return coreStyle.getIcon("warning_1")
         }
     }
 

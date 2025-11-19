@@ -26,8 +26,6 @@ Item {
     }
 
     function flushListItem(){
-
-
         let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
 
         if (c_data.SecondaryCoilId === currentCoilModel.coilId) {

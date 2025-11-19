@@ -31,8 +31,9 @@ Item {
     property AdaptiveViewBase currentAdaptive:autoGetAdaptiveView()
 
     function getIcon(name){
-        return "../icons/" + name + ".png"
-
+        if (!name || name.length === 0)
+            return ""
+        return "qrc:/resource/icon/" + name + ".png"
     }
 
     property bool isDark: true

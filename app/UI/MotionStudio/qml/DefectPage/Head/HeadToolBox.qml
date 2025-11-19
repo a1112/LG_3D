@@ -55,13 +55,13 @@ Item{
 
         }
         Button{
-            icon.source: "../../icons/uploading.png"
+            icon.source: coreStyle.getIcon("uploading")
             text: qsTr("导出")
             implicitHeight: root.height-5
         }
 
         Button{
-            icon.source: "../../icons/Flush_Dark.png"
+            icon.source: coreStyle.getIcon("Flush_Dark")
             text: qsTr("刷新")
             implicitHeight: root.height-5
         }

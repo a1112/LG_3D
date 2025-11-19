@@ -241,8 +241,9 @@ Item {
     }
 
 
+    // 本机数据保存根目录（由服务端返回），格式如 file:///D:/Save_S
     function initData(data){
-        locRootSource ="file:///"+ data.saveFolder
+        locRootSource = "file:///" + data.saveFolder
         locFromDataSourceList = data.folderList
     }
 
@@ -260,12 +261,29 @@ Item {
         return locRootSource+"/"+coilId+baseFolder+_viewKey_+baseType
     }
 
+    // 共享文件夹根路径（UNC），用于远程服务器访问
     function getSharedFolderBase(__key__,_coilId_){
-        return "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+__key__+"/"+_coilId_
+        return "file:////" + api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + __key__ + "/" + _coilId_
+    }
+
+    // 当前服务器是否在本机（127.0.0.1 / localhost）
+    readonly property bool serverIsLocal: api.apiConfig.hostname === "127.0.0.1" || api.apiConfig.hostname === "localhost"
+
+    // 本机保存目录：基于服务端返回的 saveFolder 构造
+    function getLocalFolderBase(__key__, _coilId_) {
+        if (!locRootSource || locRootSource.length === 0)
+            return getSharedFolderBase(__key__, _coilId_)
+        var base = locRootSource
+        // 去掉末尾的 /
+        if (base.charAt(base.length - 1) === "/")
+            base = base.substring(0, base.length - 1)
+        return base + "/" + _coilId_
     }
 
     function getBaseUrl(id_){
-        return getSharedFolderBase(key,id_)
+        if (serverIsLocal)
+            return getLocalFolderBase(key, id_)
+        return getSharedFolderBase(key, id_)
     }
 
     function getSourceBySharedFolder(_key_,_coilId_,_viewKey_,preView=false){ // 共享文件夹

@@ -5,7 +5,4 @@ Item {
     property DefectClassProperty defectClassProperty: DefectClassProperty{}
 
     property ScreenConfig screenConfig:ScreenConfig{}
-
-
-
 }

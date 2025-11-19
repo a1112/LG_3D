@@ -13,7 +13,7 @@ Row {
         AnimErrorImage{
                 fillMode:Image.PreserveAspectFit
             anchors.fill:parent
-            source:"../icons/warning_1.png"
+            source: coreStyle.getIcon("warning_1")
         }
         anchors.verticalCenter:parent.verticalCenter
     }

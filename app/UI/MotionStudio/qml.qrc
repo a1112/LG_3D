@@ -138,6 +138,7 @@
         <file>qml/Core/CoreState.qml</file>
         <file>qml/Core/CoreStyle.qml</file>
         <file>qml/Core/CoreTimer.qml</file>
+        <file>qml/Core/CoreInfo.qml</file>
         <file>qml/Core/CppInterFace.qml</file>
         <file>qml/Core/Global.qml</file>
         <file>qml/Core/ImageCache.qml</file>
@@ -370,51 +371,6 @@
         <file>qml/Graphs/GraphsValueView/GraphsValueViewMain.qml</file>
         <file>qml/Graphs/GraphsValueView/HeaderView.qml</file>
         <file>qml/Graphs/Test/GraphsTest.qml</file>
-        <file>qml/icons/alarm2.png</file>
-        <file>qml/icons/alarmBase.png</file>
-        <file>qml/icons/alarmLight.png</file>
-        <file>qml/icons/arrow-next.png</file>
-        <file>qml/icons/arrow-pre.png</file>
-        <file>qml/icons/close.png</file>
-        <file>qml/icons/defectIcon.png</file>
-        <file>qml/icons/defectInfo.png</file>
-        <file>qml/icons/Edit_Dark.png</file>
-        <file>qml/icons/eye_d.png</file>
-        <file>qml/icons/eyeu_d.png</file>
-        <file>qml/icons/filter.png</file>
-        <file>qml/icons/filter_end.png</file>
-        <file>qml/icons/filter_light.png</file>
-        <file>qml/icons/flush.png</file>
-        <file>qml/icons/Flush_Dark.png</file>
-        <file>qml/icons/Flush_Light.png</file>
-        <file>qml/icons/FullScreen.png</file>
-        <file>qml/icons/help.png</file>
-        <file>qml/icons/ImageCat.png</file>
-        <file>qml/icons/imageError.png</file>
-        <file>qml/icons/link.png</file>
-        <file>qml/icons/location.png</file>
-        <file>qml/icons/more.png</file>
-        <file>qml/icons/moreSet.png</file>
-        <file>qml/icons/MourceArray.png</file>
-        <file>qml/icons/MourceMove.png</file>
-        <file>qml/icons/NO.png</file>
-        <file>qml/icons/pie.png</file>
-        <file>qml/icons/quit.png</file>
-        <file>qml/icons/search.png</file>
-        <file>qml/icons/setting.png</file>
-        <file>qml/icons/survey.png</file>
-        <file>qml/icons/switch.png</file>
-        <file>qml/icons/tool.png</file>
-        <file>qml/icons/top.png</file>
-        <file>qml/icons/upApp.png</file>
-        <file>qml/icons/uploading.png</file>
-        <file>qml/icons/USTB_Dark.png</file>
-        <file>qml/icons/USTB_Light.png</file>
-        <file>qml/icons/warning_1.png</file>
-        <file>qml/icons/warning_2.png</file>
-        <file>qml/icons/WindowScreen.png</file>
-        <file>qml/icons/zoomH.png</file>
-        <file>qml/icons/zoomV.png</file>
         <file>qml/Input/SimpleFileInput.qml</file>
         <file>qml/Input/SimpleFolderInput.qml</file>
         <file>qml/Input/SimpleTextInput.qml</file>

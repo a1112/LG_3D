@@ -1,0 +1,6 @@
+CoreSetting 1.0 CoreSetting.qml
+Global 1.0 Global.qml
+Tool 1.0 Tool.qml
+Auth 1.0 Auth.qml
+Script 1.0 Script.qml
+ImageCache 1.0 ImageCache.qml

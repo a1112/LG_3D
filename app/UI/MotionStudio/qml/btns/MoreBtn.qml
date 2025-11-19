@@ -1,4 +1,4 @@
 
 ItemDelegateButtonBase {
-        source: "../icons/more.png"
+        source: coreStyle.getIcon("more")
 }

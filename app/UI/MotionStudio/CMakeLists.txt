@@ -39,6 +39,7 @@ qt_add_executable(${CMAKE_PROJECT_NAME} WIN32
     src/clipboard.cpp src/clipboard.h
     src/filedownloader.h src/filedownloader.cpp
     src/consolecontroller.h src/consolecontroller.cpp
+    resource.qrc
 )
 
 qt_add_resources(${CMAKE_PROJECT_NAME} "configuration"

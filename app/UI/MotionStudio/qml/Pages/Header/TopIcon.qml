@@ -13,10 +13,5 @@ Item{
                 coreStyle.isDark=!coreStyle.isDark
             }
         }
-        MouseArea{
-            anchors.fill: parent
-            acceptedButtons: Qt.RightButton
-            onClicked: {popManage.popupStyleMenu()}
-        }
     }
 }

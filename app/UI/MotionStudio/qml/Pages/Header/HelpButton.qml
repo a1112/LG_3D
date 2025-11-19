@@ -4,6 +4,6 @@ ToolsButton{
    height:35
    width:height
    tipText: qsTr("帮助")
-  source:"../icons/help.png"
+  source: coreStyle.getIcon("help")
   onClicked: popManage.popupHelpView()
 }

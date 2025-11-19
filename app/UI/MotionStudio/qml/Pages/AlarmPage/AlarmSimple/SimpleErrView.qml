@@ -9,7 +9,7 @@ Row{
         anchors.centerIn:parent
         spacing:10
         Image{
-            source:"../../../icons/alarmLight.png"
+            source: coreStyle.getIcon("alarmLight")
             width:height
             height:lab.height
             fillMode:Image.PreserveAspectFit

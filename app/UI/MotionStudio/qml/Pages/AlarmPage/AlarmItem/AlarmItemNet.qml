@@ -75,7 +75,7 @@ Item {
                 width: parent.width
                 height: parent.height
                 id: image
-                source: "../../../icons/uploading.png"
+                source: coreStyle.getIcon("uploading")
             }
         }
 

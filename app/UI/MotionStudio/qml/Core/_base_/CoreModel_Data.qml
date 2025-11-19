@@ -18,19 +18,19 @@ Item {
     // 显示区域数据
     property var toolBarModel:ListModel{
         ListElement{
-            source_icon: "../icons/tool.png"
+            source_icon: "qrc:/resource/icon/tool.png"
             tool_visible: false
             tipText_info: "调整"
             key: "adjust"
         }
         ListElement{
-            source_icon: "../icons/defectIcon.png"
+            source_icon: "qrc:/resource/icon/defectIcon.png"
             tool_visible: true
             tipText_info: "缺陷显示"
             key: "defectShow"
         }
         ListElement{
-            source_icon: "../icons/location.png"
+            source_icon: "qrc:/resource/icon/location.png"
             tool_visible: true
             tipText_info: "点"
             key: "location"

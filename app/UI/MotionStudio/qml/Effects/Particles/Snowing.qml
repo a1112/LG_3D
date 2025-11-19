@@ -45,7 +45,7 @@ Item{
             SpriteParticle3D {
                 id: snowParticle
                 sprite: Texture {
-                    source: "USTB.png"
+                    source: "qrc:/resource/img/USTB.png"
                 }
                 maxAmount: 5000 * sliderIntensity.sliderValue
                 color: "#ffffff"
