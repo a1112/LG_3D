@@ -15,12 +15,11 @@ class MemoryImageCache(BaseImageCache):
     """
 
     def _load_image_bytes(self, path: str) -> Optional[bytes]:
-        path_obj = Path(path)
+        path_obj = self._resolve_image_path(path)
         if not path_obj.exists():
             logging.error("%s does not exist", path_obj)
             return None
         with path_obj.open("rb") as file:
-            logging.debug("loading image %s", path_obj)
             return file.read()
 
 
@@ -33,9 +32,30 @@ class Memory3dCache(Base3dCache):
     def _create_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
         def _load_3d_data(path: str):
-            if ".npy" in str(path):
-                return np.load(path).astype(int)
-            return np.load(path)["array"]
+            """
+            加载 3D 数据；在开发者模式 + 本地环境下，优先从 TestData 映射路径。
+            """
+            from CONFIG import isLoc, developer_mode  # 延迟导入避免循环
+
+            path_obj = Path(path)
+
+            if isLoc and developer_mode:
+                try:
+                    # 约定：原始路径形如 .../<coil_id>/3D.npy
+                    coil_id = path_obj.parent.name
+                    project_root = Path(__file__).resolve().parents[3]
+                    test_base = project_root / "TestData" / str(coil_id)
+                    for name in ("3D.npz", "3D.npy"):
+                        candidate = test_base / name
+                        if candidate.exists():
+                            path_obj = candidate
+                            break
+                except Exception:  # pragma: no cover - 解析失败直接使用原路径
+                    pass
+
+            if ".npy" in str(path_obj):
+                return np.load(path_obj).astype(int)
+            return np.load(path_obj)["array"]
 
         return _load_3d_data
 

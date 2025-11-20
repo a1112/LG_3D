@@ -4,6 +4,8 @@ import time
 from pathlib import Path
 from typing import List
 
+import cv2
+import numpy as np
 from PIL import Image
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, FileResponse, Response
@@ -142,7 +144,6 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
 
     if count == 1:
         return None
-
     if row == -2:
         data_get = DataGet("preview", surface_key, coil_id, "AREA", False)
         return  Response(data_get.get_image(), media_type="image/jpeg")
@@ -152,18 +153,17 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     # 返回完整图像
     if row == -1:
         return Response(data_get.get_image(), media_type="image/jpeg")
-    # 获取图像尺寸
-    loop = asyncio.get_event_loop()
 
-    def _get_image_size():
-        image = data_get.get_image(pil=True)
-        return image.size
-    w, h = await loop.run_in_executor(thread_pool, _get_image_size)
     if count == 0:
-        return {
-            "width": w,
-            "height": h
-        }
+        image_bytes = data_get.get_image()
+        if image_bytes is None:
+            return Response(content=noFindImageByte, media_type="image/jpeg")
+        np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
+        image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            return Response(content=noFindImageByte, media_type="image/jpeg")
+        h, w = image.shape[:2]
+        return {"width": w, "height": h}
 
     image_dict = data_get.get_image(clip_num=count)
     crop_image_byte = image_dict[col][row]

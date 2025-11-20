@@ -35,18 +35,18 @@ class CacheProvider:
 def _get_cache_mode(mode: Optional[str]) -> str:
     if mode:
         return mode.lower()
-    return os.getenv("IMAGE_CACHE_BACKEND", os.getenv("CACHE_BACKEND", "memory")).lower()
+    return os.getenv("IMAGE_CACHE_BACKEND", os.getenv("CACHE_BACKEND", "memory")).lower() #redis
 
 
 def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
     cache_mode = _get_cache_mode(mode)
-    ttl = int(os.getenv("CACHE_TTL", "200"))
+    ttl = int(os.getenv("CACHE_TTL", "60"))
     redis_ttl = int(os.getenv("CACHE_REDIS_TTL", str(ttl)))
     redis_host = os.getenv("CACHE_REDIS_HOST", "localhost")
     redis_port = int(os.getenv("CACHE_REDIS_PORT", "6379"))
     redis_db = int(os.getenv("CACHE_REDIS_DB", "0"))
     redis_password = os.getenv("CACHE_REDIS_PASSWORD")
-
+    print(fr"init_cache_provider {cache_mode}")
     if cache_mode == "redis":
         preview_cache = RedisImageCache(
             host=redis_host,

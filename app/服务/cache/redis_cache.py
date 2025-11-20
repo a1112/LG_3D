@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -41,22 +42,28 @@ class RedisImageCache(BaseImageCache):
         return f"{self.prefix}:{path}"
 
     def _load_image_bytes(self, path: str) -> Optional[bytes]:
+        print(f"redis loading image from {path}")
         key = self._key(path)
         try:
+            sT=time.time()
             cached_bytes = self.client.get(key)
+            print(f"redis loading image  {path}  time: {time.time()-sT}")
             if cached_bytes:
                 return cached_bytes
         except Exception as exc:  # pragma: no cover - best-effort for Redis failures
             logging.warning("redis get failed for %s: %s", key, exc)
 
-        path_obj = Path(path)
+        path_obj = self._resolve_image_path(path)
         if not path_obj.exists():
             logging.error("%s does not exist", path_obj)
             return None
-
+        sT=time.time()
         binary = path_obj.read_bytes()
+        print(f"io loading image  {path}  time: {time.time()-sT}")
         try:
+            sT=time.time()
             self.client.setex(key, self.redis_ttl, binary)
+            print(f"redis save image  {path}  time: {time.time()-sT}")
         except Exception as exc:  # pragma: no cover
             logging.warning("redis setex failed for %s: %s", key, exc)
         return binary

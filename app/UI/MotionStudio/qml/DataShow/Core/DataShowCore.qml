@@ -53,24 +53,24 @@ DataShowCore_ {
         }
     }
 
-    property int canvasWidth: flick.width
-    property int canvasHeight: flick.height
-    readonly property real canvasWidthAspectRatio: canvasWidth/canvasContentWidth
-    readonly property real canvasHeightAspectRatio: canvasHeight/canvasContentHeight
+    property int canvasWidth: flick ? flick.width : 0
+    property int canvasHeight: flick ? flick.height : 0
+    readonly property real canvasWidthAspectRatio: canvasContentWidth === 0 ? 0 : canvasWidth/canvasContentWidth
+    readonly property real canvasHeightAspectRatio: canvasContentHeight === 0 ? 0 : canvasHeight/canvasContentHeight
 
-    property int showLeft: flick.contentX/canvasScale
-    property int showTop: flick.contentY/canvasScale
-    property int showRight: (flick.contentX+flick.width)/canvasScale
-    property int showBottom: (flick.contentY+flick.height)/canvasScale
+    property int showLeft: flick ? flick.contentX/canvasScale : 0
+    property int showTop: flick ? flick.contentY/canvasScale : 0
+    property int showRight: flick ? (flick.contentX+flick.width)/canvasScale : 0
+    property int showBottom: flick ? (flick.contentY+flick.height)/canvasScale : 0
 
     property real max_mm: sourceWidth*surfaceData.scan3dScaleX
     property real showLeftmm: (showLeft-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
     property real showRightmm: (showRight-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
 
-    readonly property int canvasContentX: flick.contentX
-    readonly property int canvasContentY: flick.contentY
-    readonly property real canvasContentXaspectRatio: canvasContentX/canvasContentWidth
-    readonly property real canvasContentYaspectRatio: canvasContentY/canvasContentHeight
+    readonly property int canvasContentX: flick ? flick.contentX : 0
+    readonly property int canvasContentY: flick ? flick.contentY : 0
+    readonly property real canvasContentXaspectRatio: canvasContentWidth === 0 ? 0 : canvasContentX/canvasContentWidth
+    readonly property real canvasContentYaspectRatio: canvasContentHeight === 0 ? 0 : canvasContentY/canvasContentHeight
 
     readonly property int canvasContentWidth: sourceWidth * canvasScale
     readonly property int canvasContentHeight: sourceHeight * canvasScale

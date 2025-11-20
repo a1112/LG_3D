@@ -1,4 +1,4 @@
-import QtQuick
+﻿import QtQuick
 import "_base_"
 import "../../Core/Surface"
 import "../../DataShow/2dShow/ViewTool"
@@ -9,7 +9,7 @@ Item {
         surfaceData.error_visible=false
         flushDefect()
     }
-      // 图标的显示方式
+      // 鍥炬爣鐨勬樉绀烘柟寮?
     property int chartShowType: 0
 
 
@@ -23,11 +23,11 @@ Item {
     property Flickable flick
 
     property string source: surfaceData.area_source //"http://127.0.0.1:5012/image/area/S/66252?"//
-    property string pre_source: surfaceData.area_source+"row=-2"
+    // 棰勮鍥撅細鐩存帴浣跨敤鏈嶅姟绔?preview 鎺ュ彛锛岄伩鍏?row=-2 杩斿洖浠呭楂?    property string pre_source: surfaceData.getSouceByKey("AREA", true)
 
 
-    // 画布数据
-    property real canvasScale: minScale // 画布缩放比例
+    // 鐢诲竷鏁版嵁
+    property real canvasScale: minScale // 鐢诲竷缂╂斁姣斾緥
 
     function setToMaxScale(){
         canvasScale = maxScale
@@ -65,7 +65,7 @@ Item {
     readonly property int canvasContentWidth: sourceWidth * canvasScale
     readonly property int canvasContentHeight: sourceHeight * canvasScale
 
-    // 图像数据
+    // 鍥惧儚鏁版嵁
     property int sourceWidth: 0
     property int sourceHeight: 0
 
@@ -78,8 +78,8 @@ Item {
 
     property int checkRendererIndex:0
 
-    property real minScale:Math.min(canvasHeight/sourceWidth, canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
-    property real maxScale: 1 // 最大缩放比例
+    property real minScale:Math.min(canvasHeight/sourceWidth, canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 鏈€灏忕缉鏀炬瘮渚?
+    property real maxScale: 1 // 鏈€澶х缉鏀炬瘮渚?
     property point scaleTempPoint: Qt.point(0,0)
 
     function getAspectRatioByPoint(point){
@@ -126,7 +126,7 @@ Item {
     property real perpendicularPointYmm: pxtoPos(perpendicularPointY).toFixed(1)
 
 
-    property point hoverPoint: Qt.point(0,0) // 鼠标悬停点
+    property point hoverPoint: Qt.point(0,0) // 榧犳爣鎮仠鐐?
     property int hoverdX: (hoverPoint.x+flick.contentX)/canvasScale
     property int hoverdY: (hoverPoint.y+flick.contentY)/canvasScale
     property real hoverdXmm: pxtoPos(hoverdX).toFixed(1)
@@ -144,7 +144,7 @@ Item {
 
     property bool txChartView: true
 
-    property bool telescopedJointView: true // 是否显示塔形
+    property bool telescopedJointView: true // 鏄惁鏄剧ず濉斿舰
 
     readonly property ListModel pointDbData: surfaceData.pointDbData
     readonly property ListModel pointUserData: surfaceData.pointUserData

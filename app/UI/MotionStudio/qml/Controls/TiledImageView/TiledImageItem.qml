@@ -7,24 +7,41 @@ Item{
     y: parseInt(index%count_)*height
     width: root.width/count_
     height: root.height/count_
+    readonly property bool inView: {
+        // Simple rectangle overlap check; avoids Qt.rect.intersects availability issues
+        const vpX1 = root.viewportX
+        const vpY1 = root.viewportY
+        const vpX2 = vpX1 + root.viewportW
+        const vpY2 = vpY1 + root.viewportH
+        const tileX1 = x
+        const tileY1 = y
+        const tileX2 = tileX1 + width
+        const tileY2 = tileY1 + height
+        return !(tileX2 <= vpX1 || tileX1 >= vpX2 || tileY2 <= vpY1 || tileY1 >= vpY2)
+    }
+    // Enable to load immediately; disable to lazy-load by viewport
+    readonly property bool shouldLoad: enableParallelLoad ? true : inView
+    readonly property var statusNames: ["Null", "Ready", "Loading", "Error"]
+    function nowString() {
+        const d = new Date()
+        return `${d.toLocaleTimeString()}.${("000" + d.getMilliseconds()).slice(-3)}`
+    }
     Rectangle{
         anchors.fill: parent
         border.width: 1
         color:"#00000000"
         border.color: "red"
     }
-Image {
-    width: parent.width
-    height: parent.height
-    source: imageUrl+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_
-    // sourceClipRect:Qt.rect(
-    //                     row_*source_item_width,
-    //                    col_*source_item_height,
-    //                    source_item_width,
-    //                    source_item_height)
-    asynchronous: true
-    fillMode: Image.PreserveAspectFit
-    // sourceSize.width:parent.width
-    // sourceSize.height:parent.width
-}
+    Image {
+        width: parent.width
+        height: parent.height
+        cache: true
+        asynchronous: true
+        fillMode: Image.PreserveAspectFit
+        source: shouldLoad ? imageUrl+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_ : ""
+        onStatusChanged: {
+            console.log(`[tile ${index} (${row_},${col_}) ${nowString()}] status=${statusNames[status]}`)
+        }
+    }
+
 }

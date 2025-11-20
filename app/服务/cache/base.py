@@ -1,11 +1,30 @@
 import io
 import logging
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Optional
 
+import cv2
+import numpy as np
 from PIL import Image
 from cachetools import TTLCache, cached
+
+# 解除 PIL 对单张图片像素数量的安全限制，避免大幅面图像触发 DecompressionBombError。
+Image.MAX_IMAGE_PIXELS = None
+
+try:
+    # CONFIG 提供 isLoc / developer_mode，用于本地开发时走 TestData。
+    from CONFIG import isLoc, developer_mode
+except Exception:  # pragma: no cover - 保底防止导入失败影响正式环境
+    isLoc = False
+    developer_mode = False
+
+
+_TESTDATA_COIL_ID = "125143"
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_TESTDATA_DIR = _PROJECT_ROOT / "TestData" / _TESTDATA_COIL_ID
 
 
 class CacheComponent(ABC):
@@ -41,12 +60,18 @@ class BaseImageCache(CacheComponent):
         """
 
     def get_image(self, path: str, pil: bool = False, clip_num: int = 0) -> Optional[Any]:
+        start = time.perf_counter()
         try:
             if pil:
-                return self._cache_image_pil(path)
-            if clip_num:
-                return self._cache_image_clip(path, clip_num)
-            return self._cache_image_byte(path)
+                result = self._cache_image_pil(path)
+            elif clip_num:
+                result = self._cache_image_clip(path, clip_num)
+            else:
+                result = self._cache_image_byte(path)
+            elapsed = time.perf_counter() - start
+            if elapsed >= 0.01:
+                logging.info("get_image %s took %.2fs", path, elapsed)
+            return result
         except Exception as exc:  # pragma: no cover - defensive, keep same behavior as before
             logging.exception("Error loading image: %s", exc)
             return None
@@ -64,44 +89,100 @@ class BaseImageCache(CacheComponent):
         self._cache_image_pil.cache_clear()
         self._cache_image_clip.cache_clear()
 
+    def _resolve_image_path(self, original_path: str) -> Path:
+        """
+        在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
+        其余情况直接返回原路径。
+        """
+        path_obj = Path(original_path)
+
+        if not (developer_mode and isLoc):
+            return path_obj
+        if not _TESTDATA_DIR.exists():
+            return path_obj
+
+        try:
+            parts = path_obj.parts
+
+            # 预览图像：.../<coil_id>/preview/<type>.<ext>
+            if "preview" in parts:
+                type_name = path_obj.stem
+                preview_dir = _TESTDATA_DIR / "preview"
+                for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+                    if not ext:
+                        continue
+                    candidate = preview_dir / f"{type_name}{ext}"
+                    if candidate.exists():
+                        return candidate
+                return path_obj
+
+            # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
+            folder_name = path_obj.parent.name
+            type_name = path_obj.stem
+            target_dir = _TESTDATA_DIR / folder_name
+
+            for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+                if not ext:
+                    continue
+                candidate = target_dir / f"{type_name}{ext}"
+                if candidate.exists():
+                    return candidate
+        except Exception:  # pragma: no cover - 映射失败时保留原路径
+            return path_obj
+
+        return path_obj
+
     def _build_image_byte_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
         def _load_image_byte(path: str) -> Optional[bytes]:
-            logging.info("load image byte %s", path)
-            return self._load_image_bytes(path)
+            start = time.perf_counter()
+            data = self._load_image_bytes(path)
+            elapsed = time.perf_counter() - start
+            logging.info("cache miss image byte %s took %.2fs", path, elapsed)
+            return data
 
         return _load_image_byte
 
     def _build_pil_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
         def _load_image_pil(path: str) -> Optional[Image.Image]:
-            logging.info("load image pil %s", path)
             image_byte = self._cache_image_byte(path)
             if image_byte is None:
                 return None
-            return Image.open(io.BytesIO(image_byte)).convert("L")
+            start = time.perf_counter()
+            pil_img = Image.open(io.BytesIO(image_byte)).convert("L")
+            elapsed = time.perf_counter() - start
+            logging.info("cache miss image pil %s took %.2fs", path, elapsed)
+            return pil_img
 
         return _load_image_pil
 
     def _build_clip_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
         def _load_image_clip(path: str, count: int) -> Optional[dict]:
-            logging.info("load image clip %s %s", path, count)
-            image = self.get_image(path, pil=True)
-            if image is None:
+            start = time.perf_counter()
+            image_bytes = self._cache_image_byte(path)
+            if image_bytes is None:
                 return None
-            image = image  # type: Image.Image
-            w, h = image.size
+            np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
+            image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                logging.error("cv2 imdecode failed for %s", path)
+                return None
+            h, w = image.shape[:2]
             w_width = w // count
             h_height = h // count
             re_dict = defaultdict(dict)
             for row in range(count):
                 for col in range(count):
-                    crop_image = image.crop((row * w_width, col * h_height, (row + 1) * w_width, (col + 1) * h_height))
-                    img_byte_arr = io.BytesIO()
-                    crop_image.save(img_byte_arr, format="jpeg")
-                    img_byte_arr.seek(0)
-                    re_dict[col][row] = img_byte_arr.getvalue()
+                    tile = image[col * h_height:(col + 1) * h_height, row * w_width:(row + 1) * w_width]
+                    ok, buf = cv2.imencode(".jpg", tile)
+                    if not ok:
+                        logging.error("cv2 imencode failed for %s row=%s col=%s", path, row, col)
+                        return None
+                    re_dict[col][row] = buf.tobytes()
+            elapsed = time.perf_counter() - start
+            logging.info("cache miss image clip %s count=%s took %.2fs", path, count, elapsed)
             return re_dict
 
         return _load_image_clip
@@ -109,6 +190,7 @@ class BaseImageCache(CacheComponent):
     def _build_mask_image_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
         def _load_mask_image_byte(path: str, mask_path: str) -> Optional[bytes]:
+            start = time.perf_counter()
             base_image_bytes = self._cache_image_byte(path)
             if base_image_bytes is None:
                 return None
@@ -127,6 +209,8 @@ class BaseImageCache(CacheComponent):
             png_byte_arr = io.BytesIO()
             image.save(png_byte_arr, format="PNG")
             png_byte_arr.seek(0)
+            elapsed = time.perf_counter() - start
+            logging.info("cache miss mask image %s + %s took %.2fs", path, mask_path, elapsed)
             return png_byte_arr.getvalue()
 
         return _load_mask_image_byte

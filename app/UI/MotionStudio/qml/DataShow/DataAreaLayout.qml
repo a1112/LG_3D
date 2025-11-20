@@ -8,7 +8,7 @@ Loader{
     active: surfaceData.isAreaRootView
     Layout.fillWidth: true
     Layout.fillHeight:true
-property DataShowAreaCore dataAreaShowCore:dataShowCore.dataShowAreaCore
+    property DataShowAreaCore dataAreaShowCore:dataShowCore.dataShowAreaCore
     sourceComponent: Item{
     Layout.fillWidth: true
     Layout.fillHeight:true

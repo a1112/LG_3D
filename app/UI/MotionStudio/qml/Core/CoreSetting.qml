@@ -28,6 +28,8 @@ Item {
 
     property bool useLoc: false
 
+    // AREA 视图初始分块（每边块数），加载完尺寸后会按需调整
+    property int defaultAreaTileCount: 3
 
     property int headDateShowModel: 0
     property int dataHeaderHeight:320
@@ -50,6 +52,7 @@ Item {
 
         property alias headDateShowModel:root.headDateShowModel
         property alias dataHeaderHeight:root.dataHeaderHeight
+        property alias defaultAreaTileCount: root.defaultAreaTileCount
         category: "AppSettings"
         location: "settings.ini"
     }
