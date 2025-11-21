@@ -10,7 +10,7 @@ from api import app as fastapi_app  # noqa: E402
 
 from Base.utils.StdoutLog import Logger
 
-Logger("服务")
+Logger("Server")
 
 
 

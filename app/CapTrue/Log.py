@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 print("采集日志")
 log_dir_base = Path("logs")
 # 创建 TimedRotatingFileHandler
-log_dir = log_dir_base/"采集"/f"{CONFIG.configFile.stem}_{os.getpid()}"
+log_dir = log_dir_base/"CapTrue"/f"{CONFIG.configFile.stem}_{os.getpid()}"
 
 log_dir_base.mkdir(parents=True, exist_ok=True)
 

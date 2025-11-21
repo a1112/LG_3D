@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('服务')
+sys.path.append('Server')
 from alg import detection  # loads models
 import uvicorn
 from fastapi import FastAPI

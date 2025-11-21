@@ -7,7 +7,7 @@ class Captrue(Thread):
     def __init__(self, yaml=r"../demo/Area_S_D.yaml"):
         super().__init__()
         self.yaml=yaml
-        self.capter = crate_capter(self.yaml)  # 创建 采集 模型
+        self.capter = crate_capter(self.yaml)  # 创建 CapTrue 模型
 
     def run(self):
         pass

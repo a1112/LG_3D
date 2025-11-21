@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import uvicorn
 from fastapi import FastAPI
-from 服务.utils.StdoutLog import Logger
-Logger('服务')
+from Server.utils.StdoutLog import Logger
+Logger('Server')
 app = FastAPI()
 @app.get('/')
 async def root():

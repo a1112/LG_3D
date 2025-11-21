@@ -41,7 +41,7 @@ def get_coil_item_info(c):
 
 def format_secondary_item_data(secondary_coil: SecondaryCoil):
     """
-     格式化 单个 二级 返回 数据
+     格式化 单个 Communication 返回 数据
      非 自动添加
     """
     c_data = {"hasCoil": False,
@@ -72,7 +72,7 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
 
 def format_coil_info(secondary_coil_list):
     """
-     格式化 二级 返回 数据
+     格式化 Communication 返回 数据
     """
     return [format_secondary_item_data(secondary_coil) for secondary_coil in secondary_coil_list]
 

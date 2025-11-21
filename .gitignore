@@ -28,8 +28,8 @@
 /UI/MotionStudio/.idea/
 /UI/MotionStudio/.qtcreator/
 /log/
-/app/服务/log/
-/app/服务/logs/
+/app/Server/log/
+/app/Server/logs/
 /app/UI/MotionStudio/build/
 /app/UI/MotionStudio/.qtcreator/
 /app/UI/MotionStudio/.idea/

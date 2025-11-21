@@ -11,7 +11,7 @@ from Log import logger
 
 def main():
     CONFIG.set_console_mode_none()
-    logger.debug("启动...  采集 ...")
+    logger.debug("启动...  CapTrue ...")
     cap_list = []
     for camera_config in CONFIG.capTureConfig.camera_config_list:
         camera_config.config["cap2D"] = False

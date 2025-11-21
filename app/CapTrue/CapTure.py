@@ -162,11 +162,11 @@ class CapTure(Thread):
         camera_2d = self.set_camera_2d()
 
         if camera_2d is not None:
-            logger.debug("启动 2D 采集")
+            logger.debug("启动 2D CapTrue")
             CapTure2D(self.dataSave,camera_2d, self, self.cameraInfo).start()
 
         if camera_3d is not None:
-            logger.debug("启动 3D 采集")
+            logger.debug("启动 3D CapTrue")
             CapTure3D(self.dataSave,camera_3d, self, self.cameraInfo).start()
 
 
