@@ -30,7 +30,3 @@ ErrorMap = {
     "DataFolderError":-3,   # 文件无法读取
     "ImageError":-2,        # 图片处理失败
 }
-
-if __name__=='__main__':
-    import Globs
-    from CoilDataBase import Coil

@@ -1,1 +1,0 @@
-D:/python/py311/python.exe main.py

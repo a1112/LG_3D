@@ -1,14 +1,14 @@
-xz# from api.DataGet import DataGet
+# from api.DataGet import DataGet
 # from PIL import Image
 # import io
 from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
 
-import Globs
-from property.Types import Point2D
-from property.Data3D import LineData
-from tools.tool import get_intersection_points
+from Base import Globs
+from Base.property.Types import Point2D
+from Base.property.Data3D import LineData
+from Base.tools.tool import get_intersection_points
 
 
 def extract_segment_values(npy_data, mask_image, p1, p2):

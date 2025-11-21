@@ -3,7 +3,7 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 import string
 import multiprocessing
-import Init
+from Base import Init
 from pathlib import Path
 import colorlog
 

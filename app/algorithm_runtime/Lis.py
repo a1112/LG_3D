@@ -6,7 +6,7 @@ from CoilDataBase.Coil import get_secondary_coil
 
 import psutil
 
-def kill_process(p):
+def kill_process_(p):
     try:
         for proc in p.children():
             proc.kill()
@@ -22,7 +22,7 @@ def get_proc(name):
 
 def kill_process(name):
     try:
-        kill_process(get_proc(name))
+        kill_process_(get_proc(name))
         print(f"成功终止 {name}")
     except psutil.AccessDenied:
         print(f"权限不足，无法终止 {name}")

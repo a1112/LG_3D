@@ -9,13 +9,13 @@ import numpy as np
 from PIL import Image
 from Base.CONFIG import isLoc, serverConfigProperty
 from SplicingService.DataFolderLog import DataFolderLog
-from tools.Glob import cmdThread
+from Base.tools.Glob import cmdThread
 
-from tools import tool
-from tools.data3dTool import auto_data_leveling_3d
+from Base.tools import tool
+from Base.tools.data3dTool import auto_data_leveling_3d
 
 from Base.utils import Log
-import Globs
+from Base import Globs
 from Base.property.Types import LevelingType
 
 logger = Log.logger
@@ -26,7 +26,6 @@ class DataFolder(Globs.control.BaseDataFolder):
         super().__init__()
         self.coilAreaModel = None
         self.loggerProcess = logger_process
-        print("self.loggerProcess",self.loggerProcess)
         self.saveMaskFolder = None
         self.saveMask = None
         self.imageMosaicList = None
@@ -73,7 +72,6 @@ class DataFolder(Globs.control.BaseDataFolder):
         cmdThread.put(cmd)
 
     def load_json(self, coil_id):
-        print("load_json")
         source_json = self.source / coil_id / "json"
         source_json_list = list(source_json.glob("*.json"))
         source_json_list.sort(key=lambda x: int(x.stem))

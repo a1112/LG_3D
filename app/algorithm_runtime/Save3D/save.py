@@ -46,15 +46,11 @@ def filter_outliers(matrix, threshold=2):
 
 
 def apply_jet_colormap(z_coords, minV=None, maxV=None):
-    """将 z 坐标应用 jet 颜色映射。"""
-    # 如果 minV 或 maxV 没有提供，则使用 z_coords 的最小值和最大值
+    """将 z 坐标应用 jet 颜色映射（使用 OpenCV LUT）。"""
     if minV is None:
         minV = np.min(z_coords)
-    print(f"minV: {minV}  {np.min(z_coords)}")
-    print(f"maxV: {maxV}  {np.max(z_coords)}")
     if maxV is None:
         maxV = np.max(z_coords)
-    # 确保 minV <= maxV
     if minV > maxV:
         minV, maxV = maxV, minV
     norm = Normalize(vmin=minV, vmax=maxV, clip=True)
@@ -291,6 +287,7 @@ class D3Saver:
         while True:
             data = queue.get()
             if data is None:
+                queue.task_done()
                 break
             try:
                 if not Globs.control.save_3d_obj:
@@ -307,6 +304,6 @@ class D3Saver:
         self.queue.join()
         # 停止所有进程
         for _ in range(self.num_processes):
-            self.queue.put((None, None, None))
+            self.queue.put(None)
         for process in self.processes:
             process.join()

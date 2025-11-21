@@ -28,7 +28,7 @@ class ImageMosaicThread(Thread):
     """
 
     def __init__(self, manager_queue, logger_process: LoggerProcess):
-        print("ImageMosaicThread init")
+        print("实例化 ImageMosaicThread")
         super().__init__()
         self.managerQueue = manager_queue
         self.loggerProcess = logger_process
@@ -65,9 +65,7 @@ class ImageMosaicThread(Thread):
             try:
                 max_secondary_coil_id = Coil.get_secondary_coil(1)[0].Id
                 list_data = Coil.get_secondary_coil_by_id(self.startCoilId).all()
-                # 忽略 list 以前的数据
                 # list_data = list_data[-3:]
-
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
@@ -106,16 +104,15 @@ class ImageMosaicThread(Thread):
                                 logger.error(f"image is None {secondary_coil.Id}")
                                 status[imageMosaic.key] = ErrorMap["ImageError"]
                                 continue
-                        defection_time2 = time.time()
+
                         defection_time3 = time.time()
                         cv_detection.detection_all(data_integration_list)
                         defection_time4 = time.time()
                         AlarmDetection.detection.detection_all(data_integration_list) # 判级
+                        defection_time5 = time.time()
 
-                        logger.debug(f"图像检测时间 {defection_time2 - defection_time1}")
-                        logger.debug(f"3D 检测时间 {defection_time3 - defection_time2}")
-                        logger.debug(f"深度学习 检测时间 {defection_time4 - defection_time3}")
-                        logger.debug(f"完整检测时间 {defection_time4 - defection_time1}====================================")
+                        logger.debug(f"完整{defection_time5 - defection_time1}= 图像处理 {defection_time3-defection_time1}"
+                                     f" 缺陷 {defection_time4-defection_time3}= 3D检测 {defection_time5-defection_time4}------- ")
                         if self.saveDataBase:
                             Coil.addCoil({
                                 "SecondaryCoilId": secondary_coil.Id,

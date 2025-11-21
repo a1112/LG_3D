@@ -6,7 +6,7 @@ from CoilDataBase.models import CoilDefect, SecondaryCoil
 from Base import CONFIG
 from .export_config import ExportConfig, XlsxWriterFormatConfig
 from .export_database import get_defects, get_header_data
-from  tools.DataGet import get_pil_image_by_defect
+from  Base.tools.DataGet import get_pil_image_by_defect
 
 
 def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):

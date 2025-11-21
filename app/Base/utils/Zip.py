@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 
-import Globs
+from Base import Globs
 
 
 def _zip_camera_data_(folder):

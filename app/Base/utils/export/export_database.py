@@ -10,7 +10,6 @@ from CoilDataBase.models import AlarmLooseCoil
 from CoilDataBase.models import AlarmInfo
 
 from Base import CONFIG
-import Globs
 from .export_tool import format_time ,spit_data_list
 
 from .export_config import ExportConfig

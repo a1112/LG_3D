@@ -5,13 +5,14 @@ from Base.property.ServerConfigProperty import SurfaceConfigProperty
 from Base.utils.Zip import ZipAndDeletionCameraData, ZipAndDeletionSaveData
 
 
-class ZipServer(control.ProcessClass):
+class ZipServer(control.ThreadClass):
     """
     对服务器单数据进行压缩
     """
     def __init__(self, manager_queue):
         super().__init__()
         self.managerQueue = manager_queue
+        self.start()
 
     def run(self):
         if isLoc:

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.spatial.transform import Rotation as R
 
@@ -143,6 +142,7 @@ def plot_surface(data, title="Surface"):
     """
     可视化表面
     """
+    import matplotlib.pyplot as plt
     x = np.arange(0, data.shape[1])
     y = np.arange(0, data.shape[0])
     X, Y = np.meshgrid(x, y)
@@ -196,6 +196,7 @@ def extract_normal_distribution_z_values(data):
     """
     提取旋转后的平面中心部分的 Z 值，并检查其是否遵循正态分布
     """
+
     # 获取中心区域
     center_region = data[data.shape[0] // 4:data.shape[0] // 2 + data.shape[0] // 4,
                     data.shape[1] // 4:data.shape[1] // 2 + data.shape[1] // 4]

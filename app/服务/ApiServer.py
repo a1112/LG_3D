@@ -1,32 +1,45 @@
-import os
 import sys
-from pathlib import Path
+sys.path.append(fr"D:\Project\BKVison\LG_3D\app")
+sys.path.append(fr"D:\Project\BKVison\LG_3D\app\Base")
+sys.path.append(fr"D:\Project\BKVison\LG_3D\app\algorithm_runtime")
 
-# Ensure shared Base modules (property/utils/CONFIG 等) are on import path
-BASE_DIR = Path(__file__).resolve().parents[2] / "Base"
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
 
+from fastapi import FastAPI
 import uvicorn
-from api_app import create_app
+from api import app as fastapi_app  # noqa: E402
+
 from Base.utils.StdoutLog import Logger
 
+Logger("服务")
 
-def create_api_app():
-    # API 只提供接口，不启动 Lis/Zip 等算法后台服务
-    app = create_app(enable_runtime=False)
-    return app
+
+
+def _load_default_routers():
+    from api import ApiInfo  # noqa: F401
+    from api import ApiDataBase  # noqa: F401
+    from api import ApiServerControl  # noqa: F401
+    from api import ApiDataServer  # noqa: F401
+    from api import ApiImageServer  # noqa: F401
+    from api import ApiBackupServer  # noqa: F401
+    from api import ApiTest  # noqa: F401
+    from api import ApiSettings  # noqa: F401
+    from AlarmDetection.Server import ApiAlarmInfo  # noqa: F401
+
+
+def create_app(enable_runtime: bool = True) -> FastAPI:
+    _load_default_routers()
+    fastapi_app.state.enable_runtime = enable_runtime
+    return fastapi_app
 
 
 def run():
     uvicorn.run(
-        "api_app:create_app",
+        "ApiServer:create_app",
         host="0.0.0.0",
         port=5010,
-        workers=5,
+        workers=3,
         factory=True,
     )
-
 
 if __name__ == "__main__":
     run()

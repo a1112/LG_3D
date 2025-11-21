@@ -16,7 +16,7 @@ from Save3D.save import D3Saver
 from Base.property.ErrorBase import ServerDetectionException
 from Base.property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from tools import tool  # FlattenSurface
+from Base.tools import tool  # FlattenSurface
 
 from Base.CONFIG import isLoc, serverConfigProperty
 from Init import ColorMaps, PreviewSize
@@ -53,6 +53,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     """
     def __init__(self, config, managerQueue, logger_process: LoggerProcess):
         super().__init__()
+        self._running = True
         self.dataFolderList: List[DataFolder] = []
         self.d3Saver: Optional[D3Saver] = None
         self.imageSaver: Optional[ImageSaver] = None
@@ -117,7 +118,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         start = data_integration.median_non_zero + serverConfigProperty.colorFromValue_mm // data_integration.scan3dCoordinateScaleZ
         self._save_(data_integration.npy_data, self.saveFolder / coil_id / "3D.npy")
-
         step = (serverConfigProperty.colorToValue_mm - serverConfigProperty.colorFromValue_mm) // data_integration.scan3dCoordinateScaleZ
         data_integration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
         data_integration.set("colorToValue_mm", serverConfigProperty.colorToValue_mm)
@@ -288,10 +288,13 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         for folderConfig in self.config["folderList"]:
             fd_dt = [folderConfig, self.config["saveFolder"], self.config["direction"]]
             self.dataFolderList.append(DataFolder(fd_dt, self.loggerProcess.get_logger()))
-        while True:
-            data_integration = DataIntegration(self.producer.get(), self.saveFolder, self.direction, self.key)
+        while self._running:
+            coil_id = self.producer.get()
+            if coil_id is None:
+                break
+            data_integration = DataIntegration(coil_id, self.saveFolder, self.direction, self.key)
             try:
-                logger.info(f"ImageMosaic {data_integration.coilId}")
+                logger.info(f"ImageMosaic {self.key} {data_integration.coilId}")
                 self.__getAllData__(data_integration)  # 获取全部的拼接数据
                 data_integration.set_original_data(data_integration.datas)
                 # 裁剪 2D 3D MASK
@@ -319,6 +322,16 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
             finally:
                 self.consumer.put(data_integration)
+
+    def stop(self):
+        self._running = False
+        # 退出 run 循环
+        self.producer.put(None)
+        # 停止工作进程/线程
+        if self.imageSaver:
+            self.imageSaver.join()
+        if self.d3Saver:
+            self.d3Saver.join()
 
     def get_data(self):
         return self.consumer.get()

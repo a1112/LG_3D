@@ -28,7 +28,6 @@ def main():
         jw.add_work(start_coil)
         jw.get()
         loger.info(f"coil_id: {start_coil} 处理完成")
-        # input()
 
 
 if __name__ == "__main__":

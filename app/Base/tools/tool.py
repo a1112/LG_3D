@@ -3,9 +3,9 @@ import numpy
 import numpy as np
 from PIL import Image
 
-from property.Types import Point2D
-from utils.DetectionSpeedRecord import DetectionSpeedRecord
-from utils.Log import logger
+from Base.property.Types import Point2D
+from Base.utils.DetectionSpeedRecord import DetectionSpeedRecord
+from Base.utils.Log import logger
 
 
 def showImage(image, name="image"):

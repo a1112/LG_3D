@@ -17,7 +17,7 @@ from AlarmDetection.Result.AlarmData import AlarmData
 from Base.CONFIG import infoConfigProperty
 from Globs import control
 from Base.property.Types import BdData, LevelingType
-from tools import tool, FlattenSurface
+from Base.tools import tool, FlattenSurface
 
 
 def sublist_with_indices(input_list, x, offset=0):

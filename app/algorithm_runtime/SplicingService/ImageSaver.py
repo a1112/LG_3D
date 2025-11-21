@@ -101,10 +101,11 @@ class ImageSaver:
     @staticmethod
     def _save_images(queue):
         while True:
-
-            data, path, tp = queue.get()
-            if data is None:
+            item = queue.get()
+            if item is None:
+                queue.task_done()
                 break
+            data, path, tp = item
             try:
                 if tp == "pil":
                     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -121,6 +122,6 @@ class ImageSaver:
         self.queue.join()
         # 停止所有进程
         for _ in range(self.num_processes):
-            self.queue.put((None, None, None))
+            self.queue.put(None)
         for process in self.processes:
             process.join()

@@ -6,7 +6,7 @@ from Base.property.Types import ImageType
 
 from CoilDataBase.models import CoilDefect
 
-from tools.tool import expansion_box
+from Base.tools.tool import expansion_box
 
 serverConfigProperty: ServerConfigProperty
 

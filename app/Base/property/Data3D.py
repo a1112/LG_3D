@@ -7,8 +7,8 @@ import numpy as np
 from skimage.draw import line
 
 from Base.property.Types import Point3D
-from tools.alg import IQR_outliers
-from tools.tool import get_intersection_points
+from Base.tools.alg import IQR_outliers
+from Base.tools.tool import get_intersection_points
 
 from CoilDataBase.models import LineData as LineDataModel
 from CoilDataBase.models import PointData as PointDataModel

@@ -1,5 +1,4 @@
 import CONFIG
-import Globs
 from CONFIG import isLoc
 from Globs import control
 from Base.property.ServerConfigProperty import SurfaceConfigProperty

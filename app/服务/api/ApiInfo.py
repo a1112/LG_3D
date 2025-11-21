@@ -5,7 +5,7 @@ import platform
 from fastapi import APIRouter
 
 from Base import CONFIG
-import Init
+from Base import Init
 from Base.CONFIG import serverConfigProperty, defectClassesProperty
 from .api_core import app
 from CoilDataBase.core import engine
