@@ -106,8 +106,9 @@ Item {
             width: parent.width
             currentIndex: coreState.currentSteelIndex
             onCurrentIndexChanged: {
-                if(coreState.currentSteelIndex==coreModels.mainListModel.count-1){
-                    list.positionViewAtEnd()
+                if (coreState.currentSteelIndex === coreModels.mainListModel.count - 1) {
+                    // 刷新时保持视图停留在列表顶部，而不是跳转到底部
+                    list.positionViewAtBeginning()
                 }
             }
 

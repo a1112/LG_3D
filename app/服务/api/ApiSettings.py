@@ -8,8 +8,7 @@ from CoilDataBase.Coil import get_coil_status_by_coil_id
 from fastapi import APIRouter
 from fastapi import WebSocket
 
-import CONFIG
-import Globs
+from Base import CONFIG
 from .api_core import app
 
 router = APIRouter(tags=["参数设置"])

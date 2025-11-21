@@ -3,7 +3,7 @@ from multiprocessing import freeze_support
 import AlarmDetection
 import AlarmDetection.detection
 from property.Base import DataIntegrationList
-from utils.LoggerProcess import LoggerProcess
+from Base.utils.LoggerProcess import LoggerProcess
 
 if __name__ == '__main__':
     freeze_support()
@@ -19,7 +19,7 @@ if __name__ == '__main__':
             # mosaic.setSave(True)
             mosaic.set_coil_id(i)
             dataIntegration = mosaic.get_data()
-            dataIntegrationList.append(dataIntegration)  # 检测
+            dataIntegrationList.append(dataIntegration)  # 妫€娴?
         AlarmDetection.detection.detection_all(dataIntegrationList)
         # cv_detection.detectionAll(dataIntegrationList)
     # mosaic.maskImage.show()

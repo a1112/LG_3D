@@ -5,8 +5,8 @@
 """
 import socket
 
-from utils.ControlManagement import ControlManagement, ThreadClass, ProcessClass
-from utils.ServerMsg import ServerMsg
+from Base.utils.ControlManagement import ControlManagement, ThreadClass, ProcessClass
+from Base.utils.ServerMsg import ServerMsg
 
 ThreadClass = ThreadClass
 ProcessClass = ProcessClass

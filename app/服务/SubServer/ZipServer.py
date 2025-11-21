@@ -2,8 +2,8 @@ import CONFIG
 import Globs
 from CONFIG import isLoc
 from Globs import control
-from property.ServerConfigProperty import SurfaceConfigProperty
-from utils.Zip import ZipAndDeletionCameraData, ZipAndDeletionSaveData
+from Base.property.ServerConfigProperty import SurfaceConfigProperty
+from Base.utils.Zip import ZipAndDeletionCameraData, ZipAndDeletionSaveData
 
 
 class ZipServer(control.ProcessClass):

@@ -4,14 +4,13 @@ from collections import defaultdict
 
 from fastapi import APIRouter
 
-import CONFIG
-import Globs
-from CONFIG import isLoc, serverConfigProperty
+from Base import CONFIG
+from Base.CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect
-from property.ServerConfigProperty import ServerConfigProperty
-from utils import Hardware, Backup, export
+from Base.property.ServerConfigProperty import ServerConfigProperty
+from Base.utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
 from .api_core import app
 

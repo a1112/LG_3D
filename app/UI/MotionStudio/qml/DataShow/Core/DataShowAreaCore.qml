@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import "_base_"
 import "../../Core/Surface"
 import "../../DataShow/2dShow/ViewTool"

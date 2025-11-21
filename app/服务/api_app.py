@@ -2,9 +2,7 @@ import logging
 from fastapi import FastAPI
 import uvicorn
 
-from CONFIG import server_api_port
-from utils.StdoutLog import Logger
-from runtime import runtime_controller
+from Base.utils.StdoutLog import Logger
 
 Logger("算法")
 
@@ -28,15 +26,3 @@ def create_app(enable_runtime: bool = True) -> FastAPI:
     fastapi_app.state.enable_runtime = enable_runtime
     return fastapi_app
 
-
-def run():
-    uvicorn.run(
-        lambda: create_app(enable_runtime=True),
-        host="0.0.0.0",
-        port=server_api_port,
-        factory=True,
-    )
-
-
-if __name__ == "__main__":
-    run()

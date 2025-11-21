@@ -1,0 +1,4 @@
+2025-11-21 09:04:36,351 [13620:2376] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.2585 seconds.
+2025-11-21 09:04:36,417 [13620:11344] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.3286 seconds.
+2025-11-21 09:04:42,272 [13620:11344] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.8546 seconds.
+2025-11-21 09:04:42,612 [13620:2376] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 6.2585 seconds.

@@ -7,8 +7,8 @@ from PIL import Image
 from fastapi import APIRouter, WebSocket
 from starlette.responses import StreamingResponse
 
-from property.Data3D import LineData
-from property.Types import Point2D
+from Base.property.Data3D import LineData
+from Base.property.Types import Point2D
 from tools.DataGet import DataGet
 from ._tool_ import get_bool
 from .api_core import app

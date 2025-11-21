@@ -1,0 +1,20 @@
+2025-11-20 19:06:10,765 [14432:22212] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.4149 seconds.
+2025-11-20 19:06:10,851 [14432:2396] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.5039 seconds.
+2025-11-20 19:07:50,440 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0000 seconds.
+2025-11-20 19:07:50,771 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0000 seconds.
+2025-11-20 19:07:51,079 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0000 seconds.
+2025-11-20 19:07:51,484 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0000 seconds.
+2025-11-20 19:07:52,076 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0000 seconds.
+2025-11-20 19:07:53,539 [2116:15292] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 0.0147 seconds.
+2025-11-20 19:27:22,823 [26252:18876] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.2080 seconds.
+2025-11-20 19:27:22,861 [26252:12668] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.2480 seconds.
+2025-11-20 19:28:39,492 [23032:22240] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.6834 seconds.
+2025-11-20 19:28:39,548 [23032:27792] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 16.7402 seconds.
+2025-11-20 19:32:41,359 [6532:4216] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 17.0827 seconds.
+2025-11-20 19:32:41,416 [6532:26760] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 17.1410 seconds.
+2025-11-20 19:52:29,103 [25912:26552] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.8689 seconds.
+2025-11-20 19:52:29,163 [25912:3632] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.9301 seconds.
+2025-11-20 19:52:36,620 [25912:3632] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 7.4559 seconds.
+2025-11-20 19:52:42,877 [25912:3632] ERROR    my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 6.2568 seconds.
+2025-11-20 19:56:31,735 [30216:11660] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.6388 seconds.
+2025-11-20 19:56:31,743 [30216:22028] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.6449 seconds.

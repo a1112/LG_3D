@@ -1,8 +1,8 @@
 import io
-from property.ServerConfigProperty import ServerConfigProperty
+from Base.property.ServerConfigProperty import ServerConfigProperty
 from cache import previewCache, imageCache, d3DataCache, classifierCache, areaCache
-from CONFIG import serverConfigProperty
-from property.Types import ImageType
+from Base.CONFIG import serverConfigProperty
+from Base.property.Types import ImageType
 
 from CoilDataBase.models import CoilDefect
 

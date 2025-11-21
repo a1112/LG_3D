@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import sys
 sys.path.append('服务')
 from alg import detection  # loads models

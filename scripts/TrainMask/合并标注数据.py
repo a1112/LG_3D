@@ -16,9 +16,6 @@ def join_files(from_folder, to_folder):
                 raise e
 
 
-print(socket.gethostname())
-
-
 if socket.gethostname() == "lcx_ace":
     rootFolder = Path(fr"F:\subImage\样本")
     toFolder = rootFolder.parent / "样本_合并"

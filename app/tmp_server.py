@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import uvicorn
 from fastapi import FastAPI
 from 服务.utils.StdoutLog import Logger

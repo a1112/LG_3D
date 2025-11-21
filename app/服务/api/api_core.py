@@ -1,8 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from CONFIG import serverConfigProperty
-from runtime import runtime_controller
 from cache import get_cache_mode, shutdown_cache, startup_cache
 
 try:
@@ -20,7 +18,7 @@ async def read_root():
 
 @app.get("/version")
 async def read_version():
-    return serverConfigProperty.version
+    return "0.1.1"
 
 @app.get("/delay")
 async def get_delay():
@@ -31,16 +29,3 @@ def _runtime_enabled() -> bool:
     return getattr(app.state, "enable_runtime", True)
 
 
-@app.on_event("startup")
-async def start_runtime_services():
-    startup_cache()
-    logging.getLogger(__name__).info("cache backend mode: %s", get_cache_mode())
-    if _runtime_enabled():
-        runtime_controller.start()
-
-
-@app.on_event("shutdown")
-async def stop_runtime_services():
-    shutdown_cache()
-    if _runtime_enabled():
-        runtime_controller.stop()
