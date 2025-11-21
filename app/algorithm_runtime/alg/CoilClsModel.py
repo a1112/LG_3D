@@ -9,6 +9,7 @@ from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
 from Base.CONFIG import get_file_url, coilClassifiersConfigFile
+from Base.utils.Log import logger
 
 
 class CoilClsModel:
@@ -40,7 +41,7 @@ class CoilClsModel:
             self.config["input_size"]=(1,224,224)
             self.config["mean"]=(0.485,)
             self.config["std"]=(0.229, )
-        print(self.config)
+        logger.debug(self.config)
         self.transform = create_transform(**self.config)
 
     def image_to_tensor(self, image):

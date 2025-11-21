@@ -107,7 +107,7 @@ def crop_max_image_black_edges(key, image, star_pos):
         if column_no_black_count[right_index] > r_limit:
             break
         right_index -= 1
-    print(f"r_index  {key}   {right_index}  {w-right_index} { column_no_black_count[right_index]}")
+    logger.debug(f"r_index  {key}   {right_index}  {w-right_index} { column_no_black_count[right_index]}")
     # print(f"{key} {max_l} {maxR} left_index {left_index}  right_index {w-right_index}")
     # showImage(image)
     # 保存裁剪后的图像
@@ -203,41 +203,67 @@ def crop_black_border(gray):
     return x, y, w, h
 
 
-def hstack_3d(npyList, n_=100, num=20, joinMaskImage=None):
+def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
+    """
+    水平拼接多个 3D 高度矩阵，并对相邻块的边缘做高度对齐。
 
-    def n_zeero_indexes(array, n, min_value=0):
-        indices = []
-        for i in range(len(array) // n):
-            if np.all(array[i * n:(i + 1) * n] > min_value):
-                indices.append(i * n)
-                if len(indices) > 3:
+    Args:
+        npy_list (List[np.ndarray]): 按顺序排列的 3D 高度矩阵。
+        window_size (int): 连续多少行作为有效窗口判定。
+        max_blocks (int): 边缘最多检测多少个有效窗口，取最后一个窗口的行号用于对齐。
+        joinMaskImage (np.ndarray | None): 兼容旧接口，未使用。
+        join_mask_image (np.ndarray | None): 兼容旧接口，未使用。
+
+    Returns:
+        np.ndarray: 拼接后的 3D 高度矩阵。
+    """
+
+    def find_valid_rows(column_data, ws, max_n, min_value=0):
+        """在单列数据中查找连续 ws 行都大于 min_value 的起始行索引，最多返回 max_n 个。"""
+        idxs = []
+        total = len(column_data)
+        for i in range(total // ws):
+            start = i * ws
+            end = start + ws
+            if np.all(column_data[start:end] > min_value):
+                idxs.append(start)
+                if len(idxs) >= max_n:
                     break
-        return indices
+        return idxs
 
-    def get_mean(data):
-        data = data[data > 1500]
-        return numpy.mean(data)
-
-    # 水平拼接3D图像
-    for index in range(1, len(npyList)):
-        r_npy = npyList[index]
-        l_npy = npyList[index - 1]
-        r_l_line = r_npy[:, 0]
-        l_r_line = l_npy[:, -1]
-        r_l_line_nz_indexes = n_zeero_indexes(r_l_line, n_, num)
-        if r_l_line_nz_indexes:
-            sampling_index = r_l_line_nz_indexes[-1]
-            mean_l = get_mean(l_npy[:, -5:-2][sampling_index:sampling_index + n_])
-            mean_r = get_mean(r_npy[:, 2:5][sampling_index:sampling_index + n_])
-            if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l-mean_r) > 1000000:
-                logger.error(f"get_mean Error nan mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r} ")
-                continue
-            print(f"sampling_index {sampling_index}  mean_l {mean_l} mean_r {mean_r}  {mean_l-mean_r}")
-            npyList[index] = npyList[index] - mean_r + mean_l
+    def edge_mean(data, start_row, width=3, side="left"):
+        """计算指定行附近、左/右边缘若干列的均值。"""
+        rows = slice(start_row, start_row + window_size)
+        if side == "left":
+            cols = data[rows, :width]
         else:
-            pass
+            cols = data[rows, -width:]
+        valid = cols[cols > 1500]
+        return np.mean(valid) if valid.size else np.nan
 
-    return np.hstack(npyList)
+    stitched = [npy_list[0]]
+    for idx in range(1, len(npy_list)):
+        left = stitched[-1]
+        right = npy_list[idx]
+
+        r_left_col = right[:, 0]
+        valid_rows = find_valid_rows(r_left_col, window_size, max_blocks, min_value=0)
+        if not valid_rows:
+            stitched.append(right)
+            continue
+
+        sample_row = valid_rows[-1]
+        mean_l = edge_mean(left, sample_row, side="right")
+        mean_r = edge_mean(right, sample_row, side="left")
+
+        if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l - mean_r) > 1e6:
+            logger.error(f"hstack_3d align skip: mean_l={mean_l}, mean_r={mean_r}, row={sample_row}")
+        else:
+            right = right - mean_r + mean_l
+
+        stitched.append(right)
+
+    return np.hstack(stitched)
 
 
 def rotate_around_x_axis(height_data, angle):
@@ -278,6 +304,75 @@ def get_horizontal_projection_list(image_list):
         horizontal_projection = horizontal_projection_first_nonzero(image)
         horizontal_projection_list.append(horizontal_projection)
     return horizontal_projection_list
+
+
+def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
+    """
+    水平拼接多个 3D 高度矩阵，并对相邻块的边缘做高度对齐。
+
+    Args:
+        npy_list (List[np.ndarray]): 需要拼接的 3D 高度矩阵列表，按顺序排列。
+        window_size (int): 用于边缘检测的窗口高度（连续 window_size 行非零判定为有效区域）。
+        max_blocks (int): 在边缘上最多检测多少个有效窗口，用最后一个窗口的行号来对齐。
+        join_mask_image (np.ndarray | None): 未使用，保留接口。
+
+    Returns:
+        np.ndarray: 拼接后的 3D 高度矩阵。
+    """
+
+    def find_valid_rows(column_data, ws, max_n, min_value=0):
+        """
+        在单列数据中查找连续 ws 行都大于 min_value 的起始行索引，最多返回 max_n 个。
+        """
+        idxs = []
+        total = len(column_data)
+        for i in range(total // ws):
+            start = i * ws
+            end = start + ws
+            if np.all(column_data[start:end] > min_value):
+                idxs.append(start)
+                if len(idxs) >= max_n:
+                    break
+        return idxs
+
+    def edge_mean(data, start_row, width=3, side="left"):
+        """
+        计算指定行附近、左/右边缘若干列的均值，用于对齐。
+        """
+        if side == "left":
+            cols = data[start_row:start_row + window_size, :width]
+        else:
+            cols = data[start_row:start_row + window_size, -width:]
+        return np.mean(cols[cols > 1500]) if cols.size else np.nan
+
+    stitched = [npy_list[0]]
+    for idx in range(1, len(npy_list)):
+        left = stitched[-1]
+        right = npy_list[idx]
+
+        # 取右块左边缘和左块右边缘
+        r_left_col = right[:, 0]
+        l_right_col = left[:, -1]
+
+        # 找到右块左边缘的有效行窗口
+        valid_rows = find_valid_rows(r_left_col, window_size, max_blocks, min_value=0)
+        if not valid_rows:
+            stitched.append(right)
+            continue
+
+        sample_row = valid_rows[-1]
+        mean_l = edge_mean(left, sample_row, side="right")
+        mean_r = edge_mean(right, sample_row, side="left")
+
+        # 对齐：如果均值有效且差值合理，平移右块
+        if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l - mean_r) > 1e6:
+            logger.error(f"hstack_3d align skip: mean_l={mean_l}, mean_r={mean_r}, row={sample_row}")
+        else:
+            right = right - mean_r + mean_l
+
+        stitched.append(right)
+
+    return np.hstack(stitched)
 
 
 def get_circle_config_by_mask(mask):

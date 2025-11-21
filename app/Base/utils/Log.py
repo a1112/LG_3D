@@ -6,6 +6,7 @@ import multiprocessing
 from Base import Init
 from pathlib import Path
 import colorlog
+import logging
 
 # 创建控制台和文件处理器
 # 获取日志记录器
@@ -56,3 +57,11 @@ console_formatter = colorlog.ColoredFormatter(
 console_handler.setFormatter(console_formatter)
 logger.addHandler(console_handler)
 
+# 降低第三方库的噪音日志
+for noisy in ["matplotlib", "ultralytics", "asyncio"]:
+    logging.getLogger(noisy).setLevel(logging.WARNING)
+try:
+    from ultralytics.utils import LOGGER as _ULTRA_LOGGER
+    _ULTRA_LOGGER.setLevel(logging.WARNING)
+except Exception:
+    pass

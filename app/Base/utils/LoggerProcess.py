@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+from pathlib import Path
 from multiprocessing import Process, Queue
 from queue import Empty
 
@@ -26,7 +27,9 @@ class LoggerProcess:
         """
         运行在单独进程中的日志监听器
         """
-        handler = logging.FileHandler(self.log_file)
+        log_path = Path(self.log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(log_path)
         formatter = logging.Formatter('%(asctime)s - %(processName)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
 
@@ -65,4 +68,3 @@ class LoggerProcess:
         logger.setLevel(self.log_level)
         logger.addHandler(queue_handler)
         return logger
-

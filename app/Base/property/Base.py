@@ -18,6 +18,7 @@ from Base.CONFIG import infoConfigProperty
 from Globs import control
 from Base.property.Types import BdData, LevelingType
 from Base.tools import tool, FlattenSurface
+from Base.utils.Log import logger
 
 
 def sublist_with_indices(input_list, x, offset=0):
@@ -152,7 +153,7 @@ class DataIntegration:
         return Path(self.saveFolder)/str(self.coilId)
 
     def set_npy_data(self, npy_data):
-        print("set set_npy_data", npy_data.shape)
+        logger.debug(f"set_npy_data {npy_data.shape}")
         self.__npyData__ = npy_data
 
     @property
@@ -226,6 +227,14 @@ class DataIntegration:
     def median_non_zero(self):
         if self.__median_non_zero__ is None:
             self.__median_non_zero__, self.annulus_mask = self.annular_region_mean(self.__npyData__,0.6,0.8)  # 获取平均值
+            if np.isnan(self.__median_non_zero__):
+                nz = self.__npyData__[self.__npyData__ != 0]
+                if nz.size:
+                    self.__median_non_zero__ = np.median(nz)
+                    logger.warning(f"{self.key} annular median is NaN, fallback to global median {self.__median_non_zero__}")
+                else:
+                    self.__median_non_zero__ = 0
+                    logger.error(f"{self.key} annular median is NaN and no non-zero data, fallback to 0")
         return self.__median_non_zero__
 
     @property
@@ -286,7 +295,7 @@ class DataIntegration:
         }
 
     def set(self, key, value):
-        print(f" {self.surface} set -> {key} : {value}")
+        logger.debug(f"{self.surface} set -> {key} : {value}")
         self.dictData[key] = value
         self.__dict__[key] = value
 
@@ -318,10 +327,15 @@ class DataIntegration:
 
     def commit(self):
         # 数据提交
-        print("commit")
-        print(self.dictData.get("median_3d"))
+        logger.debug("commit")
+        logger.debug(self.dictData.get("median_3d"))
         dict_data = self.dictData
         dict_data["startTime"] = dict_data["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
+        for k in ["median_3d", "median_3d_mm", "start"]:
+            v = dict_data.get(k)
+            if isinstance(v, float) and np.isnan(v):
+                logger.error(f"{self.key} {k} is NaN, fallback to 0")
+                dict_data[k] = 0.0
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
             surface=self.key,
@@ -378,17 +392,53 @@ class DataIntegration:
 
     def flatten_surface_by_rotation(self):
         median_non_zero,annulus_mask=self.annular_region_mean(self.__npyData__,0.6,0.65)  # 获取平均值
-        a, b, c, rotated_data, angle_data = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
-                                                                                      annulus_mask,
-                                                                                      median_non_zero)
+        logger.debug(
+            f"{self.key} flatten_surface_by_rotation input: npy_shape={self.__npyData__.shape}, "
+            f"npy_nz={int(np.count_nonzero(self.__npyData__))}, mask_nz={int(np.count_nonzero(self.npy_mask))}, "
+            f"median={median_non_zero}")
+        if np.isnan(median_non_zero) or np.count_nonzero(self.__npyData__) == 0:
+            logger.error(f"{self.key} skip flatten: median is NaN or data all zero")
+            return 0
+        try:
+            a, b, c, rotated_data, angle_data = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
+                                                                                          annulus_mask,
+                                                                                          median_non_zero)
+        except ValueError as e:
+            logger.error(f"{self.key} flatten_surface_by_rotation skipe: {e}")
+            return 0
         r_z = int(180 - angle_data['angle_with_z'])
-        print(f"{self.key} 旋转 {r_z} {angle_data}")
+        logger.debug(f"{self.key} 旋转 {r_z} {angle_data}")
         self.angleData = angle_data
         # return tool.rotate_around_x_axis(self.__npyData__,r_z)
         return r_z
 
     def set_defect_dict(self, defect_dict):
         self.defect_dict = defect_dict
+
+    def export_json(self):
+        """
+        构建保存到 data.json 的概要数据，包含中间计算值和二级卷信息。
+        """
+        data = dict(self.dictData)
+        if isinstance(data.get("startTime"), datetime.datetime):
+            data["startTime"] = data["startTime"].strftime("%Y-%m-%d %H:%M:%S:%f")
+        data["plane_mean"] = float(self.median_non_zero)
+        data["plane_mean_mm"] = float(self.median_3d_mm)
+        data["crop_box"] = data.get("crop_box")
+        data["crossPoints"] = self.crossPoints
+        data["coilData"] = self.coilData
+        if self.currentSecondaryCoil is not None:
+            sec = self.currentSecondaryCoil
+            data["secondary"] = {
+                "id": getattr(sec, "Id", getattr(sec, "id", None)),
+                "coil_id": getattr(sec, "CoilId", getattr(sec, "coilId", None)),
+                "secondary_coil_id": getattr(sec, "SecondaryCoilId", getattr(sec, "secondaryCoilId", None)),
+                "weight": getattr(sec, "Weight", None),
+                "status": getattr(sec, "Status", None),
+            }
+        else:
+            data["secondary"] = None
+        return data
 
 class DataIntegrationList:
     """

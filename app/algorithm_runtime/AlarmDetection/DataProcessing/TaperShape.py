@@ -27,7 +27,6 @@ def detection_taper_shape_by_area(data_integration: DataIntegration):
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detection_taper_shape_(data_integration: DataIntegration):
     print("塔形检测")
-
     # 角度检测
     line_data_dict = {}
     for rotate in [i * 20 for i in range(18)]:

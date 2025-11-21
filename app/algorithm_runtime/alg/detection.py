@@ -10,6 +10,7 @@ from Globs import control
 from Base.property.Base import DataIntegrationList, DataIntegration
 from Base.property.Types import DetectionType
 from Base.utils.DetectionSpeedRecord import DetectionSpeedRecord
+from Base.utils.Log import logger
 from .CoilMaskModel import CoilDetectionModel
 from .CoilClsModel import CoilClsModel
 from .tool import create_xml, get_image_box
@@ -46,7 +47,7 @@ def merge_rectangles(rectangles):
     """
     合并重叠的矩形。
     """
-    print("merge_rectangles  :", rectangles)
+    logger.debug(f"merge_rectangles count={len(rectangles)}")
     if not rectangles:
         return []
 
@@ -106,7 +107,6 @@ def commit_defects(defect_dict, data_integration):
 def save_classifier_item(image, save_url):
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
-    print(f"c {save_url}")
     save_url = save_url.with_suffix(".png")
     save_url.parent.mkdir(parents=True, exist_ok=True)
     image.save(save_url)
@@ -127,7 +127,6 @@ def save_detection_item(info, image, save_url):
     #     image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
 def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder=None, save_to_folders=True):
-    print("save_classifier_result")
     if not id_str:
         id_str = ""
     else:
@@ -136,7 +135,6 @@ def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_fold
     save_base_folder_list = []
     if save_base_folder is not None:
         save_base_folder_list.append(save_base_folder)
-    print(save_base_folder_list)
     if save_base_folder is None or save_to_folders:
         # save_base_folder = Path(
         #     list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder).parent / "det_save"
@@ -334,19 +332,17 @@ def clip_by_coil_id(coil_id, save_base_folder,suf_key = None):
             continue
         gray_image_url = surface.get_file(coil_id, surface.ImageType)
         mask_image_url = surface.get_file(coil_id, surface.MaskType)
-        print(gray_image_url)
+        logger.debug(gray_image_url)
         if not Path(gray_image_url).exists():
-            print(" not exist")
+            logger.debug(" not exist")
             continue
-        print(gray_image_url)
+        logger.debug(gray_image_url)
         gray = Image.open(gray_image_url)
         mask = Image.open(mask_image_url)
         id_str = f"{coil_id}_{key}"
         clip_image_list, clip_mask_list, clip_info_list = get_clip_images(gray, mask)
         for clip_image, clip_info in zip(clip_image_list, clip_info_list):
             x, y, w, h = clip_info
-            print(clip_image)
             clip_image.save(
                 str(save_base_folder / f"{id_str}_{x}_{y}_{w}_{h}.png")
             )
-            print(clip_image)

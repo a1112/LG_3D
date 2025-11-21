@@ -1,7 +1,9 @@
 import sys
-sys.path.append(fr"D:\Project\BKVison\LG_3D\app")
-sys.path.append(fr"D:\Project\BKVison\LG_3D\app\Base")
-sys.path.append(fr"D:\Project\BKVison\LG_3D\app\algorithm_runtime")
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent/"Base"))
+sys.path.append(str(Path(__file__).parent.parent/"algorithm_runtime"))
 
 
 from fastapi import FastAPI

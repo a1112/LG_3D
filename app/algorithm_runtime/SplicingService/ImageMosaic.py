@@ -106,7 +106,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
     async def save_json(self, data_integration: DataIntegration):
         coil_id = data_integration.coilId
-        data = data_integration.json_data
+        data = data_integration.export_json()
         with open(self.saveFolder / coil_id / "data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -225,7 +225,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
             npy_data = np.hstack([data["3D"] for data in datas])
         else:
-            npy_data = tool.hstack_3d([data["3D"] for data in datas], joinMaskImage=join_mask_image)
+            npy_data = tool.hstack_3d([data["3D"] for data in datas], join_mask_image=join_mask_image)
 
         if self.rotate == 90 or data_integration.surface == "S":
             join_image = np.rot90(join_image, 1)

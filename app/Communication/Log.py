@@ -11,7 +11,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # 创建 TimedRotatingFileHandler
-log_dir = 'logs/二级'
+log_dir = 'log/二级'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 

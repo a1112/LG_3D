@@ -158,6 +158,8 @@ def flatten_surface_by_rotation(data, mask, media_z):
     """
     通过旋转数据使其接近平行的平面
     """
+    from Base.utils.Log import logger
+    import logging
     data = np.copy(data)
     data[mask == False] = 0
     rows, cols = data.shape
@@ -171,14 +173,23 @@ def flatten_surface_by_rotation(data, mask, media_z):
 
     # 筛选出范围内的值
     non_zero_indices = np.logical_and(z > min_value, z < max_value)
+    if logger.isEnabledFor(logging.DEBUG):
+        total_nz = int(np.count_nonzero(data))
+        mask_nz = int(np.count_nonzero(mask))
+        logger.debug(
+            f"flatten_surface_by_rotation stats: shape={data.shape}, total_nz={total_nz}, mask_nz={mask_nz}, "
+            f"filtered_count={int(non_zero_indices.sum())}, range=({min_value}, {max_value}), median={media_z}")
     x = x[non_zero_indices]
     y = y[non_zero_indices]
     z = z[non_zero_indices]
+    if x.size == 0:
+        raise ValueError("平面拟合失败：筛选后无有效点")
 
     # 拟合平面并计算平面方程的系数
     a, b, c, normal_vector = fit_plane(x, y, z)
     angleData = vector_to_angles(normal_vector)
-    print(f"拟合平面方程: z = {a}*x + {b}*y + {c} {normal_vector}")
+    from Base.utils.Log import logger
+    logger.debug(f"拟合平面方程: z = {a}*x + {b}*y + {c} {normal_vector}")
     # 旋转数据使其法向量对齐到Z轴
     # rotated_data = rotate_data(data, np.array([a, b, 1]))
     return a, b, c, data, angleData

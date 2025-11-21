@@ -25,7 +25,7 @@ ModelFolder = CONFIG_FOLDER.parent / "model"
 base_config_folder = Path(fr"D:\CONFIG_3D")
 base_debug_image_save_folder = base_config_folder/"debug"
 
-loger_folder = "../logs"
+loger_folder = "../log"
 loger_file = "app.log"
 
 add_to_database=False

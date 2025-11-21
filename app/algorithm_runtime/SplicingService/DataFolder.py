@@ -67,8 +67,11 @@ class DataFolder(Globs.control.BaseDataFolder):
     def mk_link(self, coil_id):
         link_folder = self.saveFolder / coil_id / "link"
         link_folder.mkdir(parents=True, exist_ok=True)
+        target = self.source / coil_id
+        if (link_folder / self.folderName).exists():
+            return
         # os.link(link_folder / self.folderName, self.source / coilId)
-        cmd = fr"mklink /D {link_folder / self.folderName} {self.source / coil_id}"
+        cmd = fr"mklink /D {link_folder / self.folderName} {target}"
         cmdThread.put(cmd)
 
     def load_json(self, coil_id):

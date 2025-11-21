@@ -2,14 +2,18 @@
 Standalone entry point for algorithm runtime (Lis, ZipServer, ImageMosaic).
 """
 import faulthandler, sys
+from pathlib import Path
+
 faulthandler.enable(all_threads=True)
 
 import sys
-sys.path.append(fr"D:\Project\BKVison\LG_3D\app")
-sys.path.append(fr"D:\Project\BKVison\LG_3D\app\Base")
+
+sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent/"Base"))
 
 import multiprocessing
 import time
+import logging
 
 from Base.utils.StdoutLog import Logger
 from Base.utils.LoggerProcess import LoggerProcess
@@ -19,6 +23,13 @@ import Globs
 
 
 def main() -> None:
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    try:
+        from ultralytics.utils import LOGGER as ULTRA_LOGGER
+        ULTRA_LOGGER.setLevel(logging.WARNING)
+    except Exception:
+        pass
     Logger("算法")
     logger_process = LoggerProcess(log_file="log/app.log")
     logger_process.start()

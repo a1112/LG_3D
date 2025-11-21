@@ -8,10 +8,10 @@ from Base.property.Types import DetectionType
 
 class CoilAreaModel:
     def __init__(self):
-        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilArea.pt"))   # load a custom model
+        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilArea.pt"), verbose=False)   # load a custom model
 
     def predict(self, image):
-        results = self.model(image)
+        results = self.model(image, verbose=False)
         if results[0].xyxy:
             return results[0].xyxy
 
@@ -33,10 +33,10 @@ class CoilAreaModel:
 class CoilMaskModel:
     def __init__(self):
         from ultralytics import YOLO
-        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilSeg.pt"))   # load a custom model
+        self.model = YOLO(str(CONFIG.base_config_folder / "model/CoilSeg.pt"), verbose=False)   # load a custom model
 
     def predict(self, image):
-        results = self.model(image)
+        results = self.model(image, verbose=False)
         if results[0].masks:
             orig_shape = results[0].masks.orig_shape
             mask = results[0].masks.data[0].cpu().numpy()*255
@@ -61,10 +61,10 @@ class CoilDetectionModel:
                 model_url = str(CONFIG.base_config_folder / "model" / "CoilDetection_JC.pt")
         print(model_url)
         self.model_url = model_url
-        self.model = YOLO(model_url)  # load a custom model
+        self.model = YOLO(model_url, verbose=False)  # load a custom model
 
     def predict(self, images):
-        results = self.model(images)
+        results = self.model(images, verbose=False)
         res_list = []
         for result in results:
             res_item_list = []

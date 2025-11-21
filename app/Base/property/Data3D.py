@@ -263,6 +263,8 @@ class LineData:
         points = self.ray_data
         arr = points
         non_zero_indices = np.where(arr[:, 2] != 0)[0]
+        if non_zero_indices.size == 0:
+            raise ValueError("塔形检测失败: 线数据为空或全零")
         # 起始索引和结束索引
         start_index = non_zero_indices[0]
         end_index = non_zero_indices[-1]

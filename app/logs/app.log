@@ -593,3 +593,98 @@
 2025-11-21 16:02:49,374 [45064:44836] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1588 seconds.
 2025-11-21 16:02:49,540 [45064:44836] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1651 seconds.
 2025-11-21 16:02:49,637 [45064:44836] INFO     my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 2.9406 seconds.
+2025-11-21 16:14:10,413 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.0078 seconds.
+2025-11-21 16:14:10,416 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.0123 seconds.
+2025-11-21 16:14:15,077 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.6608 seconds.
+2025-11-21 16:14:15,486 [9624:26724] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.0733 seconds.
+2025-11-21 16:14:17,701 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.6240 seconds.
+2025-11-21 16:14:18,024 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.5384 seconds.
+2025-11-21 16:14:25,780 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.3546 seconds.
+2025-11-21 16:14:25,991 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2101 seconds.
+2025-11-21 16:14:26,113 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 5.8560 seconds.
+2025-11-21 16:14:34,455 [9624:26724] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.1405 seconds.
+2025-11-21 16:14:34,516 [9624:41956] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.2034 seconds.
+2025-11-21 16:14:38,792 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.3360 seconds.
+2025-11-21 16:14:39,663 [9624:41956] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.1469 seconds.
+2025-11-21 16:14:41,452 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.6594 seconds.
+2025-11-21 16:14:41,921 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.2581 seconds.
+2025-11-21 16:14:47,831 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1723 seconds.
+2025-11-21 16:14:48,008 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1770 seconds.
+2025-11-21 16:14:48,140 [9624:16156] WARNING  my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 4.6063 seconds.
+2025-11-21 16:14:56,751 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.7585 seconds.
+2025-11-21 16:14:56,814 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.8214 seconds.
+2025-11-21 16:15:02,430 [9624:26724] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.6784 seconds.
+2025-11-21 16:15:03,108 [9624:41956] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 6.2928 seconds.
+2025-11-21 16:15:05,538 [9624:26724] WARNING  my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 3.1084 seconds.
+2025-11-21 16:15:05,865 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.7568 seconds.
+2025-11-21 16:15:14,171 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.7359 seconds.
+2025-11-21 16:15:14,461 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2903 seconds.
+2025-11-21 16:15:14,591 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 6.7756 seconds.
+2025-11-21 16:15:22,731 [9624:26724] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.0605 seconds.
+2025-11-21 16:15:22,805 [9624:41956] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.1365 seconds.
+2025-11-21 16:15:27,533 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.8017 seconds.
+2025-11-21 16:15:27,955 [9624:41956] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.1495 seconds.
+2025-11-21 16:15:30,550 [9624:26724] WARNING  my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 3.0172 seconds.
+2025-11-21 16:15:30,637 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.6823 seconds.
+2025-11-21 16:15:38,846 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2280 seconds.
+2025-11-21 16:15:39,112 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2657 seconds.
+2025-11-21 16:15:39,346 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 6.7583 seconds.
+2025-11-21 16:15:48,121 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 1.2404 seconds.
+2025-11-21 16:15:48,134 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 1.2511 seconds.
+2025-11-21 16:15:53,589 [9624:26724] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 5.4535 seconds.
+2025-11-21 16:15:54,258 [9624:41956] ERROR    my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 6.1377 seconds.
+2025-11-21 16:15:56,830 [9624:26724] WARNING  my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 3.2406 seconds.
+2025-11-21 16:15:57,040 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.7814 seconds.
+2025-11-21 16:16:03,786 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.4933 seconds.
+2025-11-21 16:16:03,955 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1693 seconds.
+2025-11-21 16:16:04,071 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 5.0653 seconds.
+2025-11-21 16:16:12,464 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.8969 seconds.
+2025-11-21 16:16:12,509 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.9436 seconds.
+2025-11-21 16:16:16,566 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.0568 seconds.
+2025-11-21 16:16:16,924 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.4601 seconds.
+2025-11-21 16:16:19,052 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.4866 seconds.
+2025-11-21 16:16:19,305 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.3816 seconds.
+2025-11-21 16:16:25,023 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1746 seconds.
+2025-11-21 16:16:25,200 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1769 seconds.
+2025-11-21 16:16:25,312 [9624:16156] WARNING  my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 4.4051 seconds.
+2025-11-21 16:16:36,742 [9624:41956] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 6.3725 seconds.
+2025-11-21 16:16:36,742 [9624:26724] ERROR    my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 6.3710 seconds.
+2025-11-21 16:16:41,368 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.6258 seconds.
+2025-11-21 16:16:41,413 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.6705 seconds.
+2025-11-21 16:16:43,690 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.2768 seconds.
+2025-11-21 16:16:43,928 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.5153 seconds.
+2025-11-21 16:16:51,206 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.5079 seconds.
+2025-11-21 16:16:51,388 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1820 seconds.
+2025-11-21 16:16:51,501 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 5.1778 seconds.
+2025-11-21 16:16:59,277 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.7126 seconds.
+2025-11-21 16:16:59,308 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 2.7456 seconds.
+2025-11-21 16:17:03,441 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.1647 seconds.
+2025-11-21 16:17:04,277 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.9694 seconds.
+2025-11-21 16:17:06,336 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.8947 seconds.
+2025-11-21 16:17:06,806 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.5282 seconds.
+2025-11-21 16:17:12,662 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1727 seconds.
+2025-11-21 16:17:12,832 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1681 seconds.
+2025-11-21 16:17:12,926 [9624:16156] WARNING  my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 4.4115 seconds.
+2025-11-21 16:17:22,872 [9624:41956] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 4.8657 seconds.
+2025-11-21 16:17:22,890 [9624:26724] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 4.8819 seconds.
+2025-11-21 16:17:27,658 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.7679 seconds.
+2025-11-21 16:17:27,748 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.8757 seconds.
+2025-11-21 16:17:30,528 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.7802 seconds.
+2025-11-21 16:17:30,626 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.9096 seconds.
+2025-11-21 16:17:38,013 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.5645 seconds.
+2025-11-21 16:17:38,227 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2139 seconds.
+2025-11-21 16:17:38,358 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 5.8994 seconds.
+2025-11-21 16:17:46,951 [9624:26724] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.3881 seconds.
+2025-11-21 16:17:46,973 [9624:41956] WARNING  my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 3.4120 seconds.
+2025-11-21 16:17:51,675 [9624:26724] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.7245 seconds.
+2025-11-21 16:17:51,749 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 4.7762 seconds.
+2025-11-21 16:17:54,217 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.4676 seconds.
+2025-11-21 16:17:54,291 [9624:26724] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 2.5420 seconds.
+2025-11-21 16:18:01,029 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1782 seconds.
+2025-11-21 16:18:01,215 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.1856 seconds.
+2025-11-21 16:18:01,332 [9624:16156] ERROR    my_app          - timing_decorator 判级时间: Function 'detection_all' executed in 5.2076 seconds.
+2025-11-21 16:18:10,387 [9624:26724] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 1.1313 seconds.
+2025-11-21 16:18:10,438 [9624:41956] INFO     my_app          - timing_decorator 数据获取 __getAllData__: Function '__getAllData__' executed in 1.1857 seconds.
+2025-11-21 16:18:13,869 [9624:41956] WARNING  my_app          - timing_decorator 拼接图像计时: Function '__stitching__' executed in 3.4303 seconds.
+2025-11-21 16:18:15,381 [9624:41956] INFO     my_app          - timing_decorator 图像保持: Function 'sync_save' executed in 1.5121 seconds.
+2025-11-21 16:18:18,125 [9624:16156] INFO     my_app          - timing_decorator _detectionTaperShape_: Function '_detection_taper_shape_' executed in 0.2080 seconds.

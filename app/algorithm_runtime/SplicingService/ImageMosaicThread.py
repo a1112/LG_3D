@@ -112,7 +112,8 @@ class ImageMosaicThread(Thread):
                         defection_time5 = time.time()
 
                         logger.debug(f"完整{defection_time5 - defection_time1}= 图像处理 {defection_time3-defection_time1}"
-                                     f" 缺陷 {defection_time4-defection_time3}= 3D检测 {defection_time5-defection_time4}------- ")
+                                     f" 缺陷 {defection_time4-defection_time3}= 3D检测 {defection_time5-defection_time4}-"
+                                     f"==================================== ")
                         if self.saveDataBase:
                             Coil.addCoil({
                                 "SecondaryCoilId": secondary_coil.Id,
@@ -128,10 +129,9 @@ class ImageMosaicThread(Thread):
                             sleep_time = Globs.control.loc_sleep_time
                             if status["L"] < 0 and status["S"] < 0:
                                 sleep_time = 0.1
-                            print(f"loc model sleep {sleep_time}")
-                            "避免性能问题"
+                            logger.debug(f"loc model sleep {sleep_time}")
                             time.sleep(sleep_time)
-                            print(f"loc model sleep {sleep_time} end")
+                            logger.debug(f"loc model sleep {sleep_time} end")
                         # if self.debugType:
                         #     if self.endCoilId <= secondary_coil.Id:
                         #         return -1
@@ -140,7 +140,7 @@ class ImageMosaicThread(Thread):
                         if isLoc:
                             raise e
 
-            except (BaseException,) :
+            except BaseException as e:
                 error_message = traceback.format_exc()
                 logger.error(error_message)
                 if isLoc:
