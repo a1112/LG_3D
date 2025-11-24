@@ -15,7 +15,7 @@ log_dir_base = Path("log")
 # 创建 TimedRotatingFileHandler
 log_dir = log_dir_base/"CapTrue"/f"{CONFIG.configFile.stem}_{os.getpid()}"
 
-log_dir_base.mkdir(parents=True, exist_ok=True)
+log_dir.parent.mkdir(parents=True, exist_ok=True)
 
 filename = str(log_dir)
 handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
