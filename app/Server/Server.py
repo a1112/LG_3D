@@ -36,7 +36,7 @@ def create_app(enable_runtime: bool = True) -> FastAPI:
 
 def run():
     uvicorn.run(
-        "ApiServer:create_app",
+        "Server:create_app",
         host="0.0.0.0",
         port=5010,
         workers=3,

@@ -20,8 +20,8 @@ from Base.utils.LoggerProcess import LoggerProcess
 from SplicingService.ImageMosaicThread import ImageMosaicThread
 from SubServer.ZipServer import ZipServer
 import Globs
-
-
+# from CoilDataBase.Coil import deleteCoilByCoilId
+# deleteCoilByCoilId(125640)
 def main() -> None:
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)

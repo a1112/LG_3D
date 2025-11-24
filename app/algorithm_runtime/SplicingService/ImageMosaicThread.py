@@ -69,6 +69,7 @@ class ImageMosaicThread(Thread):
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
                 # except :
+
                 #     lastCoilSecondaryCoilId = 0
                 for secondaryCoilIndex in range(len(list_data)):
                     try:
