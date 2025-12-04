@@ -168,7 +168,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         for dataFolder in self.dataFolderList:  # 获取所有的图片
             data = dataFolder.get_data()
             datas.append(data)
-            config_datas.append(data["json"])
+            try:
+                config_datas.append(data["json"])
+            except KeyError:
+                print(fr"config_datas 数据加载失败")
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas
 

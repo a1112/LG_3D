@@ -8,8 +8,8 @@ class WorkerBase(ABC):
     def __init__(self, use_process=False):
         self.process = use_process
         self.queue_class = MulQueue if use_process else ThreadQueue
-        self.producer = self.queue_class()
-        self.consumer = self.queue_class()
+        self.producer = self.queue_class(maxsize=1)
+        self.consumer = self.queue_class(maxsize=1)
 
 
 class WorkerThreadBase(WorkerBase, Thread):
