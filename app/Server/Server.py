@@ -26,6 +26,7 @@ def _load_default_routers():
     from api import ApiTest  # noqa: F401
     from api import ApiSettings  # noqa: F401
     from AlarmDetection.Server import ApiAlarmInfo  # noqa: F401
+    from api import ApiAlgTest  # noqa: F401
 
 
 def create_app(enable_runtime: bool = True) -> FastAPI:

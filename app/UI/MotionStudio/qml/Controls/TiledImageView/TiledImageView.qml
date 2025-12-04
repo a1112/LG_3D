@@ -20,6 +20,7 @@ Rectangle {
     // Parallel load toggle; when true all tiles activate immediately
     property bool enableParallelLoad: true
     property int maxParallel: 16
+    property int _requestToken: 0
     color: "#00000000"
     property int source_item_width: parseInt(dataAreaShowCore.sourceWidth/count_)
     property int source_item_height: parseInt(dataAreaShowCore.sourceHeight/count_)
@@ -38,10 +39,12 @@ Rectangle {
         if (!imageUrl || imageUrl.length === 0) {
             return
         }
-        // Load with the default grid first, then resize after we know the source dimensions
-        count_ = defaultTileCount
+        _requestToken += 1
+        const currentToken = _requestToken
         api.ajax.get(imageUrl,(text)=>{
-                         console.log("imageUrl, ", imageUrl)
+                         if (currentToken !== _requestToken){
+                             return
+                         }
                          let json_data = JSON.parse(text)
                          dataAreaShowCore.sourceWidth = json_data["width"]
                          dataAreaShowCore.sourceHeight = json_data["height"]

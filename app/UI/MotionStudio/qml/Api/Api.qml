@@ -39,6 +39,22 @@ Api_DataBase {
         return apiConfig.url(apiConfig.wsServerUrl,"ws","reDetection")
     }
 
+    function getAlgModels(success,failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrl,"alg","models"),success,failure)
+    }
+
+    function startAlgTest(payload,success,failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrl,"alg","test","start"),payload,success,failure)
+    }
+
+    function stopAlgTest(payload,success,failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrl,"alg","test","stop"),payload,success,failure)
+    }
+
+    function getAlgTestWsUrl(){
+        return apiConfig.url(apiConfig.wsServerUrl,"ws","alg","test","progress")
+    }
+
 
     function clipMaxImage(coilId,key,success,failure){
         let url =  apiConfig.url(apiConfig.serverUrlData,"clipMaxImage",coilId,key)

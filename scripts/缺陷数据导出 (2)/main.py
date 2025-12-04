@@ -5,12 +5,6 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 from CoilDataBase.config import Config,DeriverList
 import requests
-offline_mode=True
-
-if offline_mode:
-    Config.deriver = DeriverList.sqlite
-    Config.file_url = fr"D:\CONFIG_3D\Coil.db"
-
 from CoilDataBase import Coil, models
 
 

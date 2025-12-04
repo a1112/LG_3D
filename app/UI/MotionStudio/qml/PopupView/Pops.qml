@@ -13,6 +13,7 @@ import "../Style"
 import "ServerMange"
 import "ListValueChange"
 import "HelpPop"
+import "AlgTest"
 import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
     ConnectDialog{ id:connectDialog }//连接 菜單
@@ -47,4 +48,6 @@ Item {
         lefeListMemu.popup()}
     HelpPopView{id:helpMenu}
     function popupHelpView(){helpMenu.popup()}
+    AlgTestDialog{id:algTestDialog}
+    function popupAlgTestDialog(){algTestDialog.openDialog()}
 }

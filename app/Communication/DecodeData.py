@@ -72,9 +72,7 @@ if __name__ == "__main__":
     #     ]
     # data = Data()
     testData = bytes.fromhex(testData)
-    print(testData)
     data = DecodeData(testData)
-    print(data)
     data_ = {'h0': 96,
              'h1': 24003,
              'telCount': 241,

@@ -103,8 +103,6 @@ class BaseImageCache(CacheComponent):
 
         try:
             parts = path_obj.parts
-
-            # 预览图像：.../<coil_id>/preview/<type>.<ext>
             if "preview" in parts:
                 type_name = path_obj.stem
                 preview_dir = _TESTDATA_DIR / "preview"
@@ -115,7 +113,6 @@ class BaseImageCache(CacheComponent):
                     if candidate.exists():
                         return candidate
                 return path_obj
-
             # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
             folder_name = path_obj.parent.name
             type_name = path_obj.stem
@@ -127,7 +124,8 @@ class BaseImageCache(CacheComponent):
                 candidate = target_dir / f"{type_name}{ext}"
                 if candidate.exists():
                     return candidate
-        except Exception:  # pragma: no cover - 映射失败时保留原路径
+        except Exception as e:  # pragma: no cover - 映射失败时保留原路径
+            print(e)
             return path_obj
 
         return path_obj

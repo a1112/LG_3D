@@ -49,7 +49,7 @@ def _env_flag(name: str) -> bool:
 # 2. 或在 CONFIG_3D 目录下放置文件 developer_mode=true
 developer_mode = _env_flag("API_DEVELOPER_MODE") or (Path(base_config_folder) / "developer_mode=true").exists()
 
-
+print(fr" app 运行模式 developer_mode：{developer_mode} isLoc {isLoc}")
 def get_file_url(base: str) -> Path:
     url = base_config_folder / base
     if not url.exists():

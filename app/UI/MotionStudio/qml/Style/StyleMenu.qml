@@ -118,6 +118,12 @@ Menu{
                 popManage.popupApiList()
             }
         }
+        MenuItem{
+            text:qsTr("算法测试...")
+            onClicked:{
+                popManage.popupAlgTestDialog()
+            }
+        }
     }
 
     MenuItem{
