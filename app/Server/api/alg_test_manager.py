@@ -19,6 +19,7 @@ from Base.alg.CoilClsModel import CoilClsModel
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 IOU_THRESHOLD = 0.5
 MODEL_FOLDER = (Path(base_config_folder) / "model").resolve()
+CLASSIFIER_FOLDER = (MODEL_FOLDER / "classifier").resolve()
 
 
 def _sanitize_folder_name(text: str) -> str:
@@ -286,14 +287,20 @@ class AlgTestManager:
                 if not path.is_file():
                     continue
                 suffix = path.suffix.lower()
-                if suffix not in {".pt", ".onnx", ".json"}:
+                if suffix not in {".pt", ".onnx"}:
                     continue
-                if suffix == ".json":
-                    model_type = self._guess_model_type(path)
-                    if model_type != "classifier":
-                        continue
-                else:
-                    model_type = self._guess_model_type(path)
+                model_type = self._guess_model_type(path)
+                models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
+        if CLASSIFIER_FOLDER.is_dir():
+            for path in CLASSIFIER_FOLDER.iterdir():
+                if not path.is_file():
+                    continue
+                suffix = path.suffix.lower()
+                if suffix != ".json":
+                    continue
+                model_type = self._guess_model_type(path)
+                if model_type != "classifier":
+                    continue
                 models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
         self._models = models
 

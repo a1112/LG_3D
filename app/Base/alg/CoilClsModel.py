@@ -1,6 +1,6 @@
 import json
 import time
-from pathlib import WindowsPath
+from pathlib import Path, WindowsPath
 
 import numpy as np
 import torch
@@ -22,11 +22,19 @@ class CoilClsModel:
             config = coilClassifiersConfigFile
         self.names = []
         if config is not None:
-            config = json.load(open(config, encoding="utf-8"))
-            self.model_name = config["model_name"]
-            self.checkpoint_path = get_file_url(config["checkpoint_path"])
-            self.in_chans = config["in_chans"]
-            self.names = config["names"]
+            config_path = Path(config)
+            config_data = json.loads(config_path.read_text(encoding="utf-8"))
+            self.model_name = config_data["model_name"]
+            checkpoint_cfg = config_data["checkpoint_path"]
+            checkpoint_path = Path(checkpoint_cfg)
+            if not checkpoint_path.is_absolute():
+                checkpoint_path = (config_path.parent / checkpoint_path).resolve()
+            if not checkpoint_path.exists():
+                checkpoint_path = get_file_url(checkpoint_cfg)
+            self.checkpoint_path = checkpoint_path
+            self.in_chans = config_data["in_chans"]
+            self.names = config_data["names"]
+
 
         self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=None, in_chans=self.in_chans)
         self.model.eval()
