@@ -2,8 +2,8 @@ import socket
 from pathlib import Path
 import concurrent.futures
 
-from alg import detection
-from alg.CoilMaskModel import CoilDetectionModel
+from Base.alg import detection
+from Base.alg.CoilMaskModel import CoilDetectionModel
 
 cdm = CoilDetectionModel(base_name="CoilDetection_JC.pt")
 

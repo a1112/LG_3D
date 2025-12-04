@@ -5,8 +5,8 @@ import concurrent.futures
 from sqlalchemy.util import await_only
 
 import Globs
-from alg import detection
-from alg.CoilMaskModel import CoilDetectionModel
+from Base.alg import detection
+from Base.alg.CoilMaskModel import CoilDetectionModel
 
 # cdm = CoilDetectionModel(base_name="CoilDetection_ZD.pt")
 save_base_folder = Path(fr"E:\detection_save_ZD")

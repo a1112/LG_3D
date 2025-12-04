@@ -1,2 +1,2 @@
-from alg.CoilClsModel import CoilClsModel
+from Base.alg.CoilClsModel import CoilClsModel
 

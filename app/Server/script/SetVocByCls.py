@@ -1,6 +1,6 @@
 import tqdm
 
-from alg.CoilClsModel import CoilClsModel
+from Base.alg.CoilClsModel import CoilClsModel
 from pathlib import Path
 from PIL import Image
 import os

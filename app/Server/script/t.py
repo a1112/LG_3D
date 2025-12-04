@@ -4,7 +4,7 @@ import socket
 from pathlib import Path
 import concurrent.futures
 
-from alg import detection
+from Base.alg import detection
 
 save_base_folder = Path(fr"E:\detection_sub_image_折叠")
 if "DESKTOP-V9D92AP" == socket.gethostname():

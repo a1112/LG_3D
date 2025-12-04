@@ -166,7 +166,7 @@ class DataFolder(Globs.control.BaseDataFolder):
             self.saveMaskFolder = self.source.parent / "SaveMask" / self.folderName
             self.saveMaskFolder.mkdir(parents=True, exist_ok=True)
 
-        from alg.CoilMaskModel import CoilAreaModel
+        from Base.alg.CoilMaskModel import CoilAreaModel
         self.coilAreaModel = CoilAreaModel()
         while True:
             coil_id = self.producer.get()

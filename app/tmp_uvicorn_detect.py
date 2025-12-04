@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('Server')
-from alg import detection  # loads models
+from Base.alg import detection  # loads models
 import uvicorn
 from fastapi import FastAPI
 app = FastAPI()

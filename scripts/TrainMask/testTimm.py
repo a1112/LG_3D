@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from pathlib import Path
-from alg.CoilClsModel import CoilClsModel
+from Base.alg.CoilClsModel import CoilClsModel
 import shutil
 model = CoilClsModel()
 print(model)

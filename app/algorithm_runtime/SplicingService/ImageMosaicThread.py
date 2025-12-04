@@ -17,7 +17,7 @@ from threading import Thread
 from CoilDataBase import Coil
 from CoilDataBase import tool as coil_data_base_tool
 from Base.utils.Log import logger
-from alg import detection as cv_detection
+from Base.alg import detection as cv_detection
 from Base.utils.LoggerProcess import LoggerProcess
 import Globs
 
