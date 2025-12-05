@@ -18,7 +18,7 @@ from CoilDataBase import tool as coil_data_base_tool
 from CoilDataBase.Alarm import Session as CoilSession
 from CoilDataBase.models.Coil import Coil as CoilModel
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil as SecondaryCoilModel
-from alg import detection as cv_detection
+from Base.alg import detection as cv_detection
 from threading import Thread
 from .ImageMosaic import ImageMosaic
 import Globs
