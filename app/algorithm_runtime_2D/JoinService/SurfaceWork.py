@@ -3,7 +3,7 @@ from typing import Dict
 import cv2
 import numpy as np
 
-from alg.detection import detection
+from Base.alg.detection import detection
 from configs.CONFIG import DEBUG
 from configs.SurfaceConfig import SurfaceConfig
 from utils.MultiprocessColorLogger import logger
@@ -16,7 +16,7 @@ from .WorkBase import WorkBaseThread
 from .CameraWork import CameraWork
 from .SaverWork import SaverWork
 from .cv_count_tool import im_show
-from alg.detection import detection
+from Base.alg.detection import detection
 from CoilDataBase.Coil import get_coilState
 class SurfaceWork(WorkBaseThread):
     """

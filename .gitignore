@@ -34,3 +34,7 @@
 /app/UI/MotionStudio/.qtcreator/
 /app/UI/MotionStudio/.idea/
 /TestData/
+/app/log/
+/app/CapTrue/log/
+/.log/
+/.logs/

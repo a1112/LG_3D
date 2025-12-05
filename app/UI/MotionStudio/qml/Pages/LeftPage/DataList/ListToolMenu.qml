@@ -27,7 +27,7 @@ Menu {
         }
     }
     MenuItem{
-        text: "重新识别"
+        text: "全部重新识别"
         onClicked: {
             popManage.popupReDetectionView()
         }

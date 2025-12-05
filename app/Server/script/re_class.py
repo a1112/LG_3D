@@ -9,7 +9,7 @@ import concurrent.futures
 from sqlalchemy.util import await_only
 
 import Globs
-from alg import detection
+from Base.alg import detection
 
 ccm = detection.ccm
 

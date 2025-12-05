@@ -3,7 +3,7 @@ import socket
 from pathlib import Path
 import concurrent.futures
 import Globs
-from alg import detection
+from Base.alg import detection
 from tqdm import tqdm
 save_base_folder = Path(fr"E:\detection_sub_image")
 if "DESKTOP-V9D92AP" == socket.gethostname():

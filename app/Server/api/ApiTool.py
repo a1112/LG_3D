@@ -1,5 +1,5 @@
 from pathlib import Path
-from alg import detection
+from Base.alg import detection
 from fastapi import UploadFile, File, APIRouter
 
 from .api_core import app

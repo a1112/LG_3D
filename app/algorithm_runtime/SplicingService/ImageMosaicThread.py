@@ -37,9 +37,13 @@ class ImageMosaicThread(Thread):
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
-        self.imageMosaicList:List[ImageMosaic] = []
-        # 重新识别的排队机制
-        self.reDetectionSet = set() # 重新检测 set
+        self.imageMosaicList: List[ImageMosaic] = []
+        # 重新识别的排队机制（优先级低于新数据）
+        self.re_detection_queue: list[int] = []
+        self.re_detection_total: int = 0
+        self.re_detection_done: int = 0
+        self.re_detection_running: bool = False
+        self.re_detection_error: str = ""
         self.reDetectionMsg = Queue()
 
         for surface in serverConfigProperty.surface:
@@ -165,6 +169,38 @@ class ImageMosaicThread(Thread):
                         if isLoc:
                             raise e
 
+                # 在线数据处理完成后，再按队列处理重新识别任务（优先级低于新数据）
+                if not list_data and self.re_detection_queue:
+                    from CoilDataBase.core import Session as InnerSession
+                    try:
+                        self.re_detection_running = True
+                        re_coil_id = self.re_detection_queue.pop(0)
+                        logger.info(f"重新识别队列处理 SecondaryCoilId={re_coil_id}")
+                        with InnerSession() as session:
+                            secondary_coil = (
+                                session.query(SecondaryCoilModel)
+                                .filter(SecondaryCoilModel.Id == re_coil_id)
+                                .first()
+                            )
+                        if secondary_coil is not None:
+                            _, _ = self._process_secondary_coil(
+                                secondary_coil=secondary_coil,
+                                max_secondary_coil_id=max_secondary_coil_id,
+                                run_num=0,
+                                check_detection=False,
+                            )
+                        else:
+                            logger.warning(f"重新识别队列 SecondaryCoilId={re_coil_id} 不存在，跳过")
+                        self.re_detection_done += 1
+                    except Exception as e:
+                        logger.error(f"重新识别队列处理失败 SecondaryCoilId={re_coil_id}: {e}")
+                        self.re_detection_error = str(e)
+                        if isLoc:
+                            raise e
+                    finally:
+                        if not self.re_detection_queue:
+                            self.re_detection_running = False
+
             except BaseException as e:
                 error_message = traceback.format_exc()
                 logger.error(error_message)
@@ -233,7 +269,7 @@ class ImageMosaicThread(Thread):
         logger.debug("历史数据重算完成")
 
     def add_msg(self, msg, level=logging.DEBUG):
-        self.reDetectionSet.add({
+        self.reDetectionMsg.put({
             "Base": "ImageMosaicThread",
             "time": datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
             "msg": msg,
@@ -241,14 +277,46 @@ class ImageMosaicThread(Thread):
         })
 
     def set_re_detection_by_coil_id(self, startId, endId):
-        coilList = Coil.searchByCoilId(startId, endId)
-        for coil in coilList:
-            self.set_re_detection(coil)
-        self.add_msg("")
+        """
+        设置重新识别的 coilId 队列（从大到小），用于历史数据补算。
+        """
+        start_id = int(startId)
+        end_id = int(endId)
+        if end_id < start_id:
+            start_id, end_id = end_id, start_id
+        coil_list = Coil.searchByCoilId(start_id, end_id)
+        ids = sorted({coil.Id for coil in coil_list}, reverse=True)
+        self.re_detection_queue = ids
+        self.re_detection_total = len(ids)
+        self.re_detection_done = 0
+        self.re_detection_running = False
+        self.re_detection_error = ""
+        self.add_msg(f"set_re_detection_by_coil_id start={start_id} end={end_id} count={len(ids)}")
 
     def set_re_detection(self, coilId):
-        # 设置 重新检测 列表
-        self.reDetectionSet.add(coilId.Id)
+        # 设置单个重新检测 列表项
+        coil_id = int(getattr(coilId, "Id", coilId))
+        if coil_id not in self.re_detection_queue:
+            self.re_detection_queue.append(coil_id)
+            self.re_detection_total += 1
+            self.add_msg(f"set_re_detection {coil_id}")
 
     def get_re_detection_msg(self):
-        return list(self.reDetectionSet)
+        """
+        获取重新识别任务状态，用于前端进度显示。
+        """
+        total = self.re_detection_total
+        done = self.re_detection_done
+        pending = max(total - done, 0)
+        progress = 0.0
+        if total > 0:
+            progress = done / total
+        return {
+            "total": total,
+            "done": done,
+            "pending": pending,
+            "running": self.re_detection_running,
+            "error": self.re_detection_error,
+            "queue": list(self.re_detection_queue),
+            "progress": progress,
+        }
