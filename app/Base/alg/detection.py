@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 import concurrent.futures
 from CoilDataBase.Coil import add_defects
-from Base.CONFIG import coilClassifiersConfigFile, serverConfigProperty
+from Base.CONFIG import serverConfigProperty
 from Globs import control
 from Base.property.Base import DataIntegrationList, DataIntegration
 from Base.property.Types import DetectionType
@@ -228,7 +228,7 @@ def classifiers_data(image_list,res_list,pil_image,clip_info_list):
             sub_image_clip = pil_image.crop([xmin, ymin, xmax, ymax])
             sub_image_clip_list.append(sub_image_clip)
     if ccm is None:
-        ccm = CoilClsModel(config=coilClassifiersConfigFile)
+        ccm = CoilClsModel()
     res_index, res_source, names = ccm.predict_image(sub_image_clip_list)
     index = 0
 
