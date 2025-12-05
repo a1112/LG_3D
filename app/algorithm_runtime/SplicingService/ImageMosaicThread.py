@@ -146,8 +146,6 @@ class ImageMosaicThread(Thread):
             try:
                 max_secondary_coil_id = Coil.get_secondary_coil(1)[0].Id
                 list_data = Coil.get_secondary_coil_by_id(self.startCoilId).all()
-                if len(list_data) >1000:
-                    list_data=list_data[-1000:]
                 # list_data = list_data[-3:]
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
