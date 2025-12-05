@@ -35,7 +35,14 @@ Item {
     BackupDataView{id:backupDataView}   // 数据备份
     function popupBackupDataView(){backupDataView.popup()}
     ReDetectionView{id:reDetectonView}  //重新识别
-    function popupReDetectionView(){reDetectonView.popup()}
+    function popupReDetectionView(fromId, toId){
+        if (fromId !== undefined && toId !== undefined){
+            reDetectonView.setRange(fromId, toId)
+        }else{
+            reDetectonView.useAutoRange = true
+        }
+        reDetectonView.popup()
+    }
     GlobalAlarmView{id:globalAlarmView} // 设备报警
     function popupGlobalAlarmView(){globalAlarmView.popup()}
     ServerMangeView{id:serverMangeView}

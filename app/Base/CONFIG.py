@@ -70,7 +70,6 @@ configFile = get_file_url("configs/Server3D.json")
 alarmConfigFile = get_file_url(r"configs/Alarm.json")
 infoConfigFile = get_file_url(r"configs/Info.json")
 controlConfigFile = get_file_url(r"configs/Control.json")
-coilClassifiersConfigFile = get_file_url(r"model/CoilClassifiersConfig.json")
 defectClassesConfigFile = get_file_url(r"configs/DefectClasses.json")
 DEBUG_MODEL = False
 

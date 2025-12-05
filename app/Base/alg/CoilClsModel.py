@@ -8,7 +8,7 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
-from Base.CONFIG import get_file_url, coilClassifiersConfigFile
+from Base.CONFIG import get_file_url
 from Base.utils.Log import logger
 
 
@@ -18,8 +18,9 @@ class CoilClsModel:
         self.model_name = model_name
         self.checkpoint_path = checkpoint_path
         self.in_chans = in_chans
+        # 默认使用统一的分类器配置文件 model/classifier/classifier.json
         if model_name is None and config is None:
-            config = coilClassifiersConfigFile
+            config = get_file_url(r"model/classifier/classifier.json")
         self.names = []
         if config is not None:
             config_path = Path(config)

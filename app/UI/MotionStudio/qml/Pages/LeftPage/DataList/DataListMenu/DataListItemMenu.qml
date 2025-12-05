@@ -133,6 +133,17 @@ Menu{
         }
         MenuItem{
             text: "重新检测该卷"
+            onClicked: {
+                // 打开重新识别窗口，仅针对当前卷
+                popManage.popupReDetectionView(coilModel.coilId, coilModel.coilId)
+            }
+        }
+        MenuItem{
+            text: "全部重新识别"
+            onClicked: {
+                // 打开重新识别窗口，对当前列表所有卷
+                popManage.popupReDetectionView()
+            }
         }
         MenuItem{
             text: "查看原始返回数据"

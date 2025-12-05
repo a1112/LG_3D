@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
-configSave = Path(fr"D:\CONFIG_3D\model") / "CoilClassifiersConfig.json"
+# 训练输出统一写入 CONFIG_3D/model/classifier/classifier.json，供运行时 CoilClsModel 使用
+configSave = Path(r"D:\CONFIG_3D\model\classifier") / "classifier.json"
+configSave.parent.mkdir(parents=True, exist_ok=True)
 train_folder = Path(fr"E:\train\cropped_images")
 train_split = "cropped_images"
 val_split = "cropped_images"

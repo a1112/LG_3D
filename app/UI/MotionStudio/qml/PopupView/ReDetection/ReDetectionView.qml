@@ -11,6 +11,8 @@ import QtCore
 Menu{
 
     property ReDetectionStatus reDetectionStatus: ReDetectionStatus{}
+    // 是否在打开时根据当前列表自动填充起止流水号
+    property bool useAutoRange: true
     dim:true
 
     x:parent.width
@@ -18,10 +20,18 @@ Menu{
     width: 590
     height: col.height+60
 
+    function setRange(fromId, toId){
+        useAutoRange = false
+        from_id.value = fromId
+        to_id.value = toId
+    }
+
     onOpened:{
-        let mmList = coreModel.getCurrentCoilListModelMinMaxId()
-        from_id.value=mmList[0]
-        to_id.value=mmList[1]
+        if (useAutoRange){
+            let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+            from_id.value=mmList[0]
+            to_id.value=mmList[1]
+        }
         ws_id.active=true
     }
     ColumnLayout{
@@ -113,7 +123,21 @@ Menu{
             return api.getWsReDetectionUrl()
         }
         onTextMessageReceived:(message)=>{
-                                  root.reDetectionStatus.setRunning()
+                                  try{
+                                      let data = JSON.parse(message)
+                                      if (data.error){
+                                          root.reDetectionStatus.setError(data.error)
+                                      }else{
+                                          root.reDetectionStatus.setRunning()
+                                          root.reDetectionStatus.progress = data.progress
+                                          if (!data.running && data.total>0 && data.pending===0){
+                                              root.reDetectionStatus.setFinished()
+                                          }
+                                      }
+                                  }catch(e){
+                                      console.log("reDetection ws parse error", e, message)
+                                      root.reDetectionStatus.setRunning()
+                                  }
                               }
         onErrorStringChanged:(error)=>{
                                  if (error) {

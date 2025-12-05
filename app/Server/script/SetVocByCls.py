@@ -6,7 +6,6 @@ from PIL import Image
 import os
 import shutil
 import xml.etree.ElementTree as ET
-from CONFIG import coilClassifiersConfigFile
 
 voc_folder=Path(fr"E:\detection_by_image_list")
 image_folder = voc_folder
@@ -34,7 +33,7 @@ for xml_url in tqdm.tqdm(voc_folder.glob("*.xml")):
     # if len(sub_images)>100:
     #     break
 
-model = CoilClsModel(config=coilClassifiersConfigFile)
+model = CoilClsModel()
 res_index,res_source,names = model.predict_image(sub_images)
 
 zip_data=zip(objects,res_index,res_source,names,sub_images)
