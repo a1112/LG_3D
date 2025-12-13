@@ -28,13 +28,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--start-id",
         type=int,
-        default=None,
+        default=15000,
         help="起始 SecondaryCoil.Id (包含)，为空则从最大 Id 开始",
     )
     parser.add_argument(
         "--end-id",
         type=int,
-        default=None,
+        default=130000,
         help="结束 SecondaryCoil.Id (包含)，为空则遍历到最小 Id",
     )
     return parser.parse_args()

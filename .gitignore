@@ -35,6 +35,7 @@
 /app/UI/MotionStudio/.idea/
 /TestData/
 /app/log/
+/app/log/app.log
 /app/CapTrue/log/
 /.log/
 /.logs/
