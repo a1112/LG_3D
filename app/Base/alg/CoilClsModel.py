@@ -22,6 +22,7 @@ class CoilClsModel:
         if model_name is None and config is None:
             config = get_file_url(r"model/classifier/classifier.json")
         self.names = []
+        config_data = None
         if config is not None:
             config_path = Path(config)
             config_data = json.loads(config_path.read_text(encoding="utf-8"))
@@ -44,12 +45,32 @@ class CoilClsModel:
         if torch.cuda.is_available():
             self.device = 'cuda:0'
             self.model = self.model.cuda()
-        self.config = resolve_data_config({
-        }, model=self.model)
-        if self.in_chans==1:
-            self.config["input_size"]=(1,224,224)
-            self.config["mean"]=(0.485,)
-            self.config["std"]=(0.229, )
+        # 先从模型默认配置推断预处理参数
+        self.config = resolve_data_config({}, model=self.model)
+
+        # 如果 classifier.json 中提供了 input_size / mean / std，则优先使用配置中的值
+        if config_data is not None:
+            if "input_size" in config_data:
+                try:
+                    self.config["input_size"] = tuple(config_data["input_size"])
+                except Exception as e:
+                    logger.error(f"classifier.json input_size 解析失败: {e}")
+            if "mean" in config_data:
+                try:
+                    self.config["mean"] = tuple(config_data["mean"])
+                except Exception as e:
+                    logger.error(f"classifier.json mean 解析失败: {e}")
+            if "std" in config_data:
+                try:
+                    self.config["std"] = tuple(config_data["std"])
+                except Exception as e:
+                    logger.error(f"classifier.json std 解析失败: {e}")
+
+        # 兼容老模型：灰度输入且未在配置中显式指定 input_size/mean/std 时，使用默认单通道参数
+        if self.in_chans == 1 and (config_data is None or "input_size" not in config_data):
+            self.config["input_size"] = (1, 224, 224)
+            self.config["mean"] = (0.485,)
+            self.config["std"] = (0.229,)
         logger.debug(self.config)
         self.transform = create_transform(**self.config)
 
