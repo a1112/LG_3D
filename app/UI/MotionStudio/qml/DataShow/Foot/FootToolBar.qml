@@ -32,6 +32,7 @@ Item {
                     dataShowCore.viewRendererMaxMinValue =! dataShowCore.viewRendererMaxMinValue
                 }
             }
+
             Rectangle{
                 width: 1
                 height: root.height-6
@@ -41,8 +42,6 @@ Item {
         }
 
         FootMsg{
-
-
         }
 
         Item{
@@ -51,7 +50,6 @@ Item {
         }
         // CoilInfoRow{}
         ToolBoxViewRow{
-
         }
         Item{
             width: 30
