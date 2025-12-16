@@ -53,7 +53,7 @@ class RedisImageCache(BaseImageCache):
         except Exception as exc:  # pragma: no cover - best-effort for Redis failures
             logging.warning("redis get failed for %s: %s", key, exc)
 
-        path_obj = self._resolve_image_path(path)
+        path_obj = _resolve_image_path(path)
         if not path_obj.exists():
             logging.error("%s does not exist", path_obj)
             return None

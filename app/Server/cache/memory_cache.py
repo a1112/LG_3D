@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 from cachetools import TTLCache, cached
 
-from .base import Base3dCache, BaseImageCache
+from .base import Base3dCache, BaseImageCache, _resolve_3d_path, _resolve_image_path
 
 
 class MemoryImageCache(BaseImageCache):
@@ -15,7 +15,7 @@ class MemoryImageCache(BaseImageCache):
     """
 
     def _load_image_bytes(self, path: str) -> Optional[bytes]:
-        path_obj = self._resolve_image_path(path)
+        path_obj = _resolve_image_path(path)
         if not path_obj.exists():
             logging.error("%s does not exist", path_obj)
             return None
@@ -37,8 +37,7 @@ class Memory3dCache(Base3dCache):
             """
             from CONFIG import isLoc, developer_mode  # 延迟导入避免循环
 
-            path_obj = Path(path)
-
+            path_obj = _resolve_image_path(path)
             if isLoc and developer_mode:
                 try:
                     # 约定：原始路径形如 .../<coil_id>/3D.npy

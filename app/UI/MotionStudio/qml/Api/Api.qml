@@ -32,7 +32,7 @@ Api_DataBase {
     }
     //全局下载器
     function downloadFile(url,save_path,success,failure){
-        return cpp.fileDownloader.downloadFile(url, save_path)
+        return fileDownloader.downloadFile(url, save_path)
     }
 
     function getWsReDetectionUrl(){

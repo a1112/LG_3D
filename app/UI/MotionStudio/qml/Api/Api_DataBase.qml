@@ -76,7 +76,13 @@ Api_Base {
     }
 
     function getHeightData(_key_,coilId_,x1,y1,x2,y2,success,failure){
-    let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightData",_key_,coilId_)+`?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`
+        x1 = Number(x1); y1 = Number(y1); x2 = Number(x2); y2 = Number(y2)
+        if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2)){
+            console.log("getHeightData: invalid coords", x1, y1, x2, y2)
+            failure && failure("invalid coords")
+            return null
+        }
+        let url = apiConfig.url(apiConfig.serverUrlData,"coilData","heightData",_key_,coilId_)+`?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`
         oldHeightDatUrl=url
 
         return ajax.get(url,success,failure)

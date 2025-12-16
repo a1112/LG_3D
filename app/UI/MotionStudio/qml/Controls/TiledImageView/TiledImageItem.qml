@@ -40,7 +40,7 @@ Item{
         fillMode: Image.PreserveAspectFit
         source: shouldLoad ? imageUrl+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_ : ""
         onStatusChanged: {
-            console.log(`[tile ${index} (${row_},${col_}) ${nowString()}] status=${statusNames[status]}`)
+            // console.log(`[tile ${index} (${row_},${col_}) ${nowString()}] status=${statusNames[status]}`)
         }
     }
 

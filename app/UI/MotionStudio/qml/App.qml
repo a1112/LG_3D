@@ -1,6 +1,7 @@
 import QtCore
 import QtQuick
 import QtQuick.Controls
+import "."
 
 import QtQuick.Controls.Material
 import "./Api"
@@ -21,8 +22,6 @@ AppBase {
     Material.accent: coreStyle.accentColor
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}
-
-
 
     MainLayout{ //    入口,界面构成 <-
         anchors.fill: parent

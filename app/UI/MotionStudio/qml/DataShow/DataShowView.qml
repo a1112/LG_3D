@@ -12,7 +12,7 @@ Item{
 
     readonly property DataShowControl controls:dataShowCore.controls
 
-    visible: dataShowCore.show_visible
+    visible: true//dataShowCore.show_visible
     SplitView.fillHeight: true
     SplitView.fillWidth: true
 

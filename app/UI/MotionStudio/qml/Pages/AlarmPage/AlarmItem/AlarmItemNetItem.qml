@@ -26,7 +26,7 @@ ItemDelegate {
     Timer{
         repeat:true
         running:true
-        interval:5000
+        interval:10000
         triggeredOnStart:true
         onTriggered:{
             api.__getDelay__(port,success_function,fail_function)

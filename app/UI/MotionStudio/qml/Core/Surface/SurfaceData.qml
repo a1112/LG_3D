@@ -95,14 +95,25 @@ Item {
         // circleTool.init(coilInfo.circleConfig)
 
         lineData = []
-        inner_circle_centre =inner_circle.circlex
+        let circlex = inner_circle.circlex ? inner_circle.circlex : []
+        inner_circle_centre = circlex
         inner_ellipse = inner_circle.ellipse
-        p1 = Qt.point(inner_circle.circlex[0],inner_circle.circlex[1])
+        if (circlex.length >= 2){
+            let x = Number(circlex[0])
+            let y = Number(circlex[1])
+            if (isFinite(x) && isFinite(y)){
+                p1 = Qt.point(x, y)
+            }
+        }
             }
     }
 
     function updataHeightData(){
-        api.getHeightData(key,coilId,p1.x,p1.y,p2.x,p2.y,
+        let x1 = Number(p1.x), y1 = Number(p1.y), x2 = Number(p2.x), y2 = Number(p2.y)
+        if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2) || !coilId || !key){
+            return
+        }
+        api.getHeightData(key,coilId,x1,y1,x2,y2,
                           (result)=>{
                               lineData = JSON.parse(result)
                           },(error)=>{
@@ -147,7 +158,13 @@ Item {
     property var inner_circle_centre: []
     property var inner_ellipse: []
     onInner_circle_centreChanged: {
-        p1 = Qt.point(inner_circle_centre[0],inner_circle_centre[1])
+        if (inner_circle_centre && inner_circle_centre.length >= 2){
+            let x = Number(inner_circle_centre[0])
+            let y = Number(inner_circle_centre[1])
+            if (isFinite(x) && isFinite(y)){
+                p1 = Qt.point(x, y)
+            }
+        }
     }
 
     property var p1: Qt.point(0,0)

@@ -33,9 +33,14 @@
 /app/UI/MotionStudio/build/
 /app/UI/MotionStudio/.qtcreator/
 /app/UI/MotionStudio/.idea/
+/app/UI/MotionStudio/py/_rcc/
+/app/UI/MotionStudio/py/_cache/
+/app/UI/MotionStudio/py/__pycache__/
+/app/UI/MotionStudio/__pycache__/
 /TestData/
 /app/log/
 /app/log/app.log
 /app/CapTrue/log/
 /.log/
 /.logs/
+/.train/

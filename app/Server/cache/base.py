@@ -39,6 +39,67 @@ class CacheComponent(ABC):
         return None
 
 
+def _resolve_image_path(original_path: str) -> Path:
+    """
+    在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
+    其余情况直接返回原路径。
+    """
+    path_obj = Path(original_path)
+
+    if not (developer_mode and isLoc):
+        return path_obj
+    if not _TESTDATA_DIR.exists():
+        return path_obj
+
+    try:
+        parts = path_obj.parts
+        if "preview" in parts:
+            type_name = path_obj.stem
+            preview_dir = _TESTDATA_DIR / "preview"
+            for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+                if not ext:
+                    continue
+                candidate = preview_dir / f"{type_name}{ext}"
+                if candidate.exists():
+                    return candidate
+            return path_obj
+        # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
+        folder_name = path_obj.parent.name
+        type_name = path_obj.stem
+        target_dir = _TESTDATA_DIR / folder_name
+
+        for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+            if not ext:
+                continue
+            candidate = target_dir / f"{type_name}{ext}"
+            if candidate.exists():
+                return candidate
+    except Exception as e:  # pragma: no cover - 映射失败时保留原路径
+        print(e)
+        return path_obj
+
+    return path_obj
+
+
+def _resolve_3d_path(original_path: str) -> Path:
+    """
+    在开发者模式 + 本地环境下，将任意 coil 的 3D 文件映射到固定 TestData/125143 的 3D 示例数据。
+
+    注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/125143/3D.npz）。
+    """
+    path_obj = Path(original_path)
+    if not (developer_mode and isLoc):
+        return path_obj
+    if not _TESTDATA_DIR.exists():
+        return path_obj
+
+    for name in ("3D.npz", "3D.npy"):
+        candidate = _TESTDATA_DIR / name
+        if candidate.exists():
+            return candidate
+    return path_obj
+
+
 class BaseImageCache(CacheComponent):
     """
     Shared image cache behavior (PIL conversion, clipping, mask merging).
@@ -88,47 +149,6 @@ class BaseImageCache(CacheComponent):
         self._mask_cache_image_byte.cache_clear()
         self._cache_image_pil.cache_clear()
         self._cache_image_clip.cache_clear()
-
-    def _resolve_image_path(self, original_path: str) -> Path:
-        """
-        在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
-        其余情况直接返回原路径。
-        """
-        path_obj = Path(original_path)
-
-        if not (developer_mode and isLoc):
-            return path_obj
-        if not _TESTDATA_DIR.exists():
-            return path_obj
-
-        try:
-            parts = path_obj.parts
-            if "preview" in parts:
-                type_name = path_obj.stem
-                preview_dir = _TESTDATA_DIR / "preview"
-                for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
-                    if not ext:
-                        continue
-                    candidate = preview_dir / f"{type_name}{ext}"
-                    if candidate.exists():
-                        return candidate
-                return path_obj
-            # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
-            folder_name = path_obj.parent.name
-            type_name = path_obj.stem
-            target_dir = _TESTDATA_DIR / folder_name
-
-            for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
-                if not ext:
-                    continue
-                candidate = target_dir / f"{type_name}{ext}"
-                if candidate.exists():
-                    return candidate
-        except Exception as e:  # pragma: no cover - 映射失败时保留原路径
-            print(e)
-            return path_obj
-
-        return path_obj
 
     def _build_image_byte_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
