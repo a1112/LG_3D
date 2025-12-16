@@ -96,6 +96,8 @@ def _resolve_3d_path(original_path: str) -> Path:
     for name in ("3D.npz", "3D.npy"):
         candidate = _TESTDATA_DIR / name
         if candidate.exists():
+            if candidate != path_obj:
+                logging.info("developer_mode: map 3D %s -> %s", path_obj, candidate)
             return candidate
     return path_obj
 

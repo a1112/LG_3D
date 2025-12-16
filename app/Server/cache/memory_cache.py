@@ -35,22 +35,8 @@ class Memory3dCache(Base3dCache):
             """
             加载 3D 数据；在开发者模式 + 本地环境下，优先从 TestData 映射路径。
             """
-            from CONFIG import isLoc, developer_mode  # 延迟导入避免循环
-
-            path_obj = _resolve_image_path(path)
-            if isLoc and developer_mode:
-                try:
-                    # 约定：原始路径形如 .../<coil_id>/3D.npy
-                    coil_id = path_obj.parent.name
-                    project_root = Path(__file__).resolve().parents[3]
-                    test_base = project_root / "TestData" / str(coil_id)
-                    for name in ("3D.npz", "3D.npy"):
-                        candidate = test_base / name
-                        if candidate.exists():
-                            path_obj = candidate
-                            break
-                except Exception:  # pragma: no cover - 解析失败直接使用原路径
-                    pass
+            # 3D 数据在开发者模式下使用固定 TestData（与 /data_has 保持一致）。
+            path_obj = _resolve_3d_path(path)
 
             if ".npy" in str(path_obj):
                 return np.load(path_obj).astype(int)
