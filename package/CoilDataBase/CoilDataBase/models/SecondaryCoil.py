@@ -10,16 +10,16 @@ class SecondaryCoil(Base):
     """
     __tablename__ = 'SecondaryCoil'
     #   extend_existing=True
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    CoilNo = Column(String(20))
-    CoilType = Column(String(20))
-    CoilInside = Column(Float)  # 内径
-    CoilDia = Column(Float)  # 卷径
-    Thickness = Column(Float)
-    Width = Column(Float)
-    Weight = Column(Float)
-    ActWidth = Column(Float)
-    CreateTime = Column(DateTime, server_default=func.now())
+    Id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
+    CoilNo = Column(String(20), comment="卷号")
+    CoilType = Column(String(20), comment="卷类型")
+    CoilInside = Column(Float, comment="内径")
+    CoilDia = Column(Float, comment="卷径")
+    Thickness = Column(Float, comment="厚度")
+    Width = Column(Float, comment="宽度")
+    Weight = Column(Float, comment="重量")
+    ActWidth = Column(Float, comment="实际宽度")
+    CreateTime = Column(DateTime, server_default=func.now(), comment="创建时间")
 
     childrenCoil = relationship("Coil", back_populates="parent")
     childrenCoilState = relationship("CoilState", back_populates="parent")
