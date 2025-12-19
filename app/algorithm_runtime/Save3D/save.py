@@ -150,6 +150,8 @@ def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05):
 
 def generate_mesh_from_point_cloud(point_cloud):
     """从点云生成三角网格。"""
+    if point_cloud.size == 0 or point_cloud.shape[0] < 3:
+        raise ValueError("empty point cloud, cannot build mesh")
     points = point_cloud[:, :2]  # 只使用x和y坐标进行Delaunay三角剖分
     print(f"point_cloud points shape: {points.shape}")
     tri = Delaunay(points, incremental=True)
@@ -232,13 +234,20 @@ def _save_3d(data, managerQueue):
     point_cloud, saveFile = _get_point_cloud_(data, managerQueue)
     t1 = time.time()
     logger.debug(f"_get_point_cloud_  {t1 - t0}")
+    if point_cloud.size == 0 or point_cloud.shape[0] < 3:
+        logger.error(f"empty point cloud for {saveFile}, skip mesh generation")
+        return
     colors = apply_jet_colormap(point_cloud[:, 2], minV=-200, maxV=200)
     t2 = time.time()
     logger.debug(f"apply_jet_colormap {t2 - t1}")
     colors = colors[:, :3]  # 只保留 RGB 通道
     # 使用Delaunay三角剖分生成三角网格
     # mesh=generate_mesh_from_point_cloud_pcl(point_cloud)
-    mesh = generate_mesh_from_point_cloud(point_cloud)
+    try:
+        mesh = generate_mesh_from_point_cloud(point_cloud)
+    except ValueError as e:
+        logger.error(f"generate_mesh_from_point_cloud failed for {saveFile}: {e}")
+        return
 
     t3 = time.time()
     logger.debug(f"generate_mesh_from_point_cloud {t3 - t2}")

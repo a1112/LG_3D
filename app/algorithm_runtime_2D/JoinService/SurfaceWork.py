@@ -74,15 +74,17 @@ class SurfaceWork(WorkBaseThread):
         return self._join_images_([camera_image_grop.join_image() for camera_image_grop in camera_image_grop_list],coil_id)
 
     def get_num_clip_by_mm(self,coil_state,median_3d_mm):
-        # c = a*x+b    b= -700  a=1
+        """
+        获取裁剪系数
+        """
         if coil_state.surface=="S":
-            b=600
-            a=1.5
+            b=2500
+            a=3
             c = (median_3d_mm-b)*a
             print(fr" coil_state {coil_state.secondaryCoilId}  {coil_state.surface} median_3d:{coil_state.median_3d} median_3d_mm{coil_state.median_3d_mm} {int(c)}")
         else:
-            b = 530
-            a = 1.5
+            b = 3800
+            a = 3
             c = (median_3d_mm - b) * a
         c=int(max(c,0))
         return c,c

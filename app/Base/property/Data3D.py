@@ -59,6 +59,8 @@ class PointData(Point3D):
         super().__init__(point[0], point[1], point[2])
 
     def pointDataModel(self, dataIntegration):
+        base_mm = dataIntegration.median_3d_mm
+        z_mm = float(dataIntegration.z_to_mm(self.z) - base_mm)
         return PointDataModel(
             secondaryCoilId=dataIntegration.secondary_coil_id,
             surface=dataIntegration.key,
@@ -66,7 +68,7 @@ class PointData(Point3D):
             x=float(self.x),
             y=float(self.y),
             z=float(self.z),
-            z_mm=float(dataIntegration.z_to_mm(self.z))
+            z_mm=z_mm
         )
 
 
@@ -283,6 +285,9 @@ class LineData:
                 ]
 
     def line_data_model(self, data_integration):
+        base_mm = data_integration.median_3d_mm
+        def rel_mm(z_value: float) -> float:
+            return data_integration.z_to_mm(z_value) - base_mm
         return LineDataModel(
             secondaryCoilId=data_integration.secondary_coil_id,
             surface=data_integration.key,
@@ -298,13 +303,13 @@ class LineData:
             y2=self.p2.y,
             data=json.dumps(self.ray_line.tolist()),
             inner_min_value=self.inner_min_point.z,
-            inner_min_value_mm=data_integration.z_to_mm(self.inner_min_point.z),
+            inner_min_value_mm=rel_mm(self.inner_min_point.z),
             inner_max_value=self.inner_max_point.z,
-            inner_max_value_mm=data_integration.z_to_mm(self.inner_max_point.z),
+            inner_max_value_mm=rel_mm(self.inner_max_point.z),
             outer_min_value=self.outer_min_point.z,
-            outer_min_value_mm=data_integration.z_to_mm(self.outer_min_point.z),
+            outer_min_value_mm=rel_mm(self.outer_min_point.z),
             outer_max_value=self.outer_max_point.z,
-            outer_max_value_mm=data_integration.z_to_mm(self.outer_max_point.z)
+            outer_max_value_mm=rel_mm(self.outer_max_point.z)
         )
 
 
