@@ -108,6 +108,9 @@ class DataIntegration:
         self.scan3dCoordinateScaleX = None
         self.scan3dCoordinateScaleY = None
         self.scan3dCoordinateScaleZ = None
+        self.scan3dCoordinateOffsetX = 0
+        self.scan3dCoordinateOffsetY = 0
+        self.scan3dCoordinateOffsetZ = 0
 
         self._npyData_: np.array = None
         self.__npyData__: np.array = None
@@ -185,14 +188,14 @@ class DataIntegration:
         return x_value * self.scan3dCoordinateScaleX
 
     def z_to_mm(self, z_value):
-        return float((z_value - self.median_non_zero) * self.scan3dCoordinateScaleZ)
+        return float(z_value * self.scan3dCoordinateScaleZ + self.scan3dCoordinateOffsetZ)
 
     def zero_mm(self):
         return self.z_to_mm(0)
 
     def point_to_mm(self, arr):
         arr = arr.copy()
-        arr[:, 2] = (arr[:, 2] - self.median_non_zero) * self.scan3dCoordinateScaleZ
+        arr[:, 2] = arr[:, 2] * self.scan3dCoordinateScaleZ + self.scan3dCoordinateOffsetZ
         return arr
 
     def get_save_url(self, *args):
@@ -249,7 +252,8 @@ class DataIntegration:
 
     @property
     def median_3d_mm(self):
-        return self.median_non_zero * self.scan3dCoordinateScaleZ
+        # 真实毫米值 = 原始值 * scale + offset
+        return self.median_non_zero * self.scan3dCoordinateScaleZ + self.scan3dCoordinateOffsetZ
 
     def get_bd_xyz(self):
         return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleZ]
@@ -269,9 +273,15 @@ class DataIntegration:
             self.scan3dCoordinateScaleX = bd_item.bdDataX.scan3dCoordinateScale
             self.scan3dCoordinateScaleY = bd_item.bdDataY.scan3dCoordinateScale
             self.scan3dCoordinateScaleZ = bd_item.bdDataZ.scan3dCoordinateScale
+            self.scan3dCoordinateOffsetX = bd_item.bdDataX.scan3dCoordinateOffset
+            self.scan3dCoordinateOffsetY = bd_item.bdDataY.scan3dCoordinateOffset
+            self.scan3dCoordinateOffsetZ = bd_item.bdDataZ.scan3dCoordinateOffset
             self.dictData["scan3dCoordinateScaleX"] = self.scan3dCoordinateScaleX
             self.dictData["scan3dCoordinateScaleY"] = self.scan3dCoordinateScaleY
             self.dictData["scan3dCoordinateScaleZ"] = self.scan3dCoordinateScaleZ
+            self.dictData["scan3dCoordinateOffsetX"] = self.scan3dCoordinateOffsetX
+            self.dictData["scan3dCoordinateOffsetY"] = self.scan3dCoordinateOffsetY
+            self.dictData["scan3dCoordinateOffsetZ"] = self.scan3dCoordinateOffsetZ
 
     def set_datas(self, datas):
         self.datas = datas
