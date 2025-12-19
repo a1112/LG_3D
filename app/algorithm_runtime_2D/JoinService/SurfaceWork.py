@@ -78,16 +78,20 @@ class SurfaceWork(WorkBaseThread):
         获取裁剪系数
         """
         if coil_state.surface=="S":
-            b=2500
+            b=2600
             a=3
-            c = (median_3d_mm-b)*a
-            print(fr" coil_state {coil_state.secondaryCoilId}  {coil_state.surface} median_3d:{coil_state.median_3d} median_3d_mm{coil_state.median_3d_mm} {int(c)}")
+            d=220
+            c = (median_3d_mm-b)*a+d
+            c2 = c+40
         else:
-            b = 3800
+            b = 4000
             a = 3
-            c = (median_3d_mm - b) * a
+            d = 220
+            c = (median_3d_mm - b) * a+d
+            c2=c+40
         c=int(max(c,0))
-        return c,c
+        c2 = int(max(c2, 0))
+        return c,c2
 
     def vstack_by_distance(self,new_image_list):
         coil_state = get_coilState(self.coil_id,self.config.surface_key)

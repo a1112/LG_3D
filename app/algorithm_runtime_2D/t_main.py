@@ -11,7 +11,7 @@ def main():
     loger = EnhancedMultiProcessLogger.get_logger()
     start_coil =  join_config.get_source_min_coil()
 
-    start_coil = int(start_coil)
+    start_coil = int(133266)
 
     max_coil = join_config.get_save_max_coil()
     loger.debug(fr"start_coil {start_coil} max_coil {max_coil}")
