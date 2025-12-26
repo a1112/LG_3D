@@ -1,4 +1,5 @@
 import time
+import os
 from threading import Thread
 import CONFIG
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
@@ -39,12 +40,14 @@ class CapTure2D(CapTureBase):
                     print(f"coil 为空: ",self.parent.coil)
                     time.sleep(0.1)
                     coil = 1
-                area_cap,last_time = self.camera.get_last_frame()
+                area_cap, last_time = self.camera.get_last_frame()
                 bf = DaHengBuffer(area_cap,last_time)
                 # bf.setBDconfig(cap.getBDconfig())
                 bf.setCoil(coil)
                 self.dataSave.put(bf)
                 lastTimeDict[self.cameraInfo.key] = time.time()
+                self.parent.last_frame_time_2d = time.time()
+                self.parent.missed_in_without_frame = 0
 
             except BaseException as e:
                 logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
@@ -103,6 +106,10 @@ class CapTure(Thread):
         self.camera_3d = None
         self.camera_2d = None
         self.camera_info = camera_info
+        self.last_frame_time_2d = 0
+        self.last_trigger_in_time = 0
+        self.missed_in_without_frame = 0
+        self.reconnect_attempts = 0
 
 
     def set_camera_3d(self):
@@ -136,6 +143,21 @@ class CapTure(Thread):
         elif sig_type == "in":
             self.dataSave.trigger_in(coil)
             self.captureRunning = True
+            now = time.time()
+            if self.last_frame_time_2d <= self.last_trigger_in_time:
+                self.missed_in_without_frame += 1
+                logger.warning(f"2D camera {self.cameraInfo.key} no frame between triggerIn, count={self.missed_in_without_frame}")
+                if self.missed_in_without_frame >= 2 and self.camera_2d:
+                    self.reconnect_attempts += 1
+                    logger.warning(f"2D camera {self.cameraInfo.key} forcing reconnect after missing frames across 2 triggerIn (attempt {self.reconnect_attempts})")
+                    self.camera_2d.request_reconnect()
+                    self.missed_in_without_frame = 0
+                    if self.reconnect_attempts > 5:
+                        logger.error(f"2D camera {self.cameraInfo.key} exceeded 5 reconnect attempts, exiting process for watchdog restart")
+                        os._exit(1)
+            else:
+                self.missed_in_without_frame = 0
+            self.last_trigger_in_time = now
         elif sig_type == "out":
             self.dataSave.trigger_out(coil)
             self.captureRunning = False
@@ -160,6 +182,8 @@ class CapTure(Thread):
 
         camera_3d = self.set_camera_3d()
         camera_2d = self.set_camera_2d()
+        self.camera_3d = camera_3d
+        self.camera_2d = camera_2d
 
         if camera_2d is not None:
             logger.debug("启动 2D CapTrue")

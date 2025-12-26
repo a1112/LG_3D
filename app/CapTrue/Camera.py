@@ -2,11 +2,13 @@ import threading
 from multiprocessing import Process, Queue
 import time
 from threading import Thread
+import queue
 
 import CONFIG
 from BKVisionCamera import crate_capter
 from harvesters.core import ImageAcquirer,Buffer
 
+from Log import logger
 from core import get_camera_by_sn
 
 
@@ -86,28 +88,83 @@ class DaHengCamera(Thread): # Process
         super().__init__()
         self.yaml_config = yaml_config
         self.last_frame = None
+        self.last_frame_time = 0
         self.frame_queue = Queue()
+        self._reconnect_event = threading.Event()
+        self.daemon = True
         if yaml_config:
             self.start()
 
-    def get_last_frame(self):
-        return self.frame_queue.get()
+    def _create_capter(self):
+        return crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
+
+    def _clear_queue(self):
+        try:
+            while True:
+                self.frame_queue.get_nowait()
+        except queue.Empty:
+            pass
+
+    def _trim_queue(self, max_size):
+        try:
+            while self.frame_queue.qsize() > max_size:
+                self.frame_queue.get_nowait()
+        except NotImplementedError:
+            try:
+                self.frame_queue.get_nowait()
+            except queue.Empty:
+                pass
+        except queue.Empty:
+            pass
+
+    def get_last_frame(self, timeout=None):
+        if timeout is None:
+            return self.frame_queue.get()
+        try:
+            return self.frame_queue.get(timeout=timeout)
+        except queue.Empty:
+            raise TimeoutError("2D camera frame timeout")
+
+    def request_reconnect(self):
+        self._reconnect_event.set()
 
     def run(self):
-        # print(self.yaml_config)
-        self.capter = crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
+        if not self.yaml_config:
+            logger.error("2D camera yaml_config missing, capture thread not started")
+            return
+
+        reconnect_delay = 1
 
         while True:
             try:
+                self._reconnect_event.clear()
+                self.capter = self._create_capter()
                 with self.capter as cap:
+                    logger.debug("2D camera connected")
+                    self._clear_queue()
+                    reconnect_delay = 1
+                    self.last_frame_time = time.time()
+                    frame_id = 0
+                    last_wait_log = 0
                     while True:
+                        if self._reconnect_event.is_set():
+                            raise RuntimeError("Manual reconnect requested")
                         frame = cap.getFrame()
+                        now = time.time()
                         if frame is None:
+                            if now - last_wait_log >= 200:
+                                wait_s = now - self.last_frame_time
+                                logger.debug(f"2D camera waiting for trigger frame (last frame {wait_s:.1f}s ago)")
+                                last_wait_log = now
+                            time.sleep(0.05)
                             continue
-                        # while self.frame_queue.qsize() > 0:
-                        #     self.frame_queue.get()
-                        self.frame_queue.put([frame,time.time()])
-                        time.sleep(0.01)
+                        self.last_frame_time = now
+                        frame_id += 1
+                        logger.debug(f"2D frame captured id={frame_id}")
+                        self._trim_queue(5)
+                        self.frame_queue.put([frame, now])
             except BaseException as e:
-                time.sleep(5)
-                print(e)
+                logger.warning(f"2D camera disconnected, retrying in {reconnect_delay}s: {e}")
+                self._clear_queue()
+                time.sleep(reconnect_delay)
+                reconnect_delay = min(reconnect_delay * 2, 5)
