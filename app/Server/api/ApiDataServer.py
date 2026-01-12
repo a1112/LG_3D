@@ -68,6 +68,7 @@ async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
     npy_data = data_get.get_3d_data()
     try:
+        print(int(npy_data[int(y)][int(x)]))
         return int(npy_data[int(y)][int(x)])
     except (BaseException,) as e:
         print(e)

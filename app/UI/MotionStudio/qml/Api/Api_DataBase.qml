@@ -84,7 +84,6 @@ Api_Base {
         }
         let url = apiConfig.url(apiConfig.serverUrlData,"coilData","heightData",_key_,coilId_)+`?x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`
         oldHeightDatUrl=url
-
         return ajax.get(url,success,failure)
     }
 
