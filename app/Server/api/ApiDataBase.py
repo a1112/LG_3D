@@ -2,13 +2,16 @@ import datetime
 import json
 from collections import defaultdict
 
+from sqlalchemy import func
+
 from fastapi import APIRouter
 
 from Base import CONFIG
 from Base.CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
+from CoilDataBase.core import Session
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
-from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect
+from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect, PlcData, CoilState
 from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
@@ -132,6 +135,140 @@ async def get_plc_data(coil_id: int):
     r = Coil.get_plc_data(coil_id)
     return tool.to_dict(r)
 
+
+
+
+
+def _query_plc_curve_rows(start_id: int = 0, end_id: int = 0, limit: int = 200):
+    limit = min(max(int(limit), 1), 2000)
+    if start_id and end_id and start_id > end_id:
+        start_id, end_id = end_id, start_id
+
+    order_desc = not start_id and not end_id
+
+    with Session() as session:
+        base_query = session.query(
+            PlcData.secondaryCoilId,
+            func.max(PlcData.Id).label("max_id")
+        )
+        if start_id:
+            base_query = base_query.filter(PlcData.secondaryCoilId >= start_id)
+        if end_id:
+            base_query = base_query.filter(PlcData.secondaryCoilId <= end_id)
+        base_query = base_query.group_by(PlcData.secondaryCoilId).subquery()
+
+        query = session.query(PlcData).join(base_query, PlcData.Id == base_query.c.max_id)
+        if order_desc:
+            query = query.order_by(PlcData.secondaryCoilId.desc())
+        else:
+            query = query.order_by(PlcData.secondaryCoilId.asc())
+        query = query.limit(limit)
+        rows = query.all()
+
+    if order_desc:
+        rows = list(reversed(rows))
+    return rows
+
+@router.get("/plc_curve/{field}")
+async def get_plc_curve(field: str, start_id: int = 0, end_id: int = 0, limit: int = 200):
+    field_map = {
+        "location_S": PlcData.location_S,
+        "location_L": PlcData.location_L,
+        "location_laser": PlcData.location_laser,
+    }
+    if field not in field_map:
+        return {"field": field, "items": [], "error": "invalid field"}
+
+    rows = _query_plc_curve_rows(start_id, end_id, limit)
+    items = []
+    for row in rows:
+        items.append({
+            "coil_id": row.secondaryCoilId,
+            "time": row.startTime.isoformat() if row.startTime else "",
+            "value": getattr(row, field),
+        })
+    return {"field": field, "items": items}
+
+    limit = min(max(int(limit), 1), 2000)
+    if start_id and end_id and start_id > end_id:
+        start_id, end_id = end_id, start_id
+
+    order_desc = not start_id and not end_id
+
+    with Session() as session:
+        base_query = session.query(
+            PlcData.secondaryCoilId,
+            func.max(PlcData.Id).label("max_id")
+        )
+        if start_id:
+            base_query = base_query.filter(PlcData.secondaryCoilId >= start_id)
+        if end_id:
+            base_query = base_query.filter(PlcData.secondaryCoilId <= end_id)
+        base_query = base_query.group_by(PlcData.secondaryCoilId).subquery()
+
+        query = session.query(PlcData).join(base_query, PlcData.Id == base_query.c.max_id)
+        if order_desc:
+            query = query.order_by(PlcData.secondaryCoilId.desc())
+        else:
+            query = query.order_by(PlcData.secondaryCoilId.asc())
+        query = query.limit(limit)
+        rows = query.all()
+
+    if order_desc:
+        rows = list(reversed(rows))
+
+    items = []
+    for row in rows:
+        items.append({
+            "coil_id": row.secondaryCoilId,
+            "time": row.startTime.isoformat() if row.startTime else "",
+            "value": getattr(row, field),
+        })
+    return {"field": field, "items": items}
+
+
+@router.get("/plc_curve_all")
+async def get_plc_curve_all(start_id: int = 0, end_id: int = 0, limit: int = 200):
+    rows = _query_plc_curve_rows(start_id, end_id, limit)
+    coil_ids = [row.secondaryCoilId for row in rows]
+    state_map = {}
+    width_map = {}
+    if coil_ids:
+        with Session() as session:
+            state_sub = session.query(
+                CoilState.secondaryCoilId.label("coil_id"),
+                CoilState.surface.label("surface"),
+                func.max(CoilState.Id).label("max_id")
+            ).filter(
+                CoilState.secondaryCoilId.in_(coil_ids),
+                CoilState.surface.in_(["S", "L"])
+            ).group_by(CoilState.secondaryCoilId, CoilState.surface).subquery()
+            state_rows = session.query(CoilState).join(state_sub, CoilState.Id == state_sub.c.max_id).all()
+            width_rows = session.query(SecondaryCoil.Id, SecondaryCoil.ActWidth).filter(SecondaryCoil.Id.in_(coil_ids)).all()
+        for state in state_rows:
+            state_map[(state.secondaryCoilId, state.surface)] = state.median_3d_mm
+        for row in width_rows:
+            width_map[row[0]] = row[1]
+
+    items = []
+    for row in rows:
+        s_mm = state_map.get((row.secondaryCoilId, "S"))
+        l_mm = state_map.get((row.secondaryCoilId, "L"))
+        avg_mm = None
+        if s_mm is not None and l_mm is not None:
+            avg_mm = (s_mm + l_mm) / 2
+        items.append({
+            "coil_id": row.secondaryCoilId,
+            "time": row.startTime.isoformat() if row.startTime else "",
+            "location_S": row.location_S,
+            "location_L": row.location_L,
+            "location_laser": row.location_laser,
+            "median_3d_mm_S": s_mm,
+            "median_3d_mm_L": l_mm,
+            "median_3d_mm_avg": avg_mm,
+            "width_": width_map.get(row.secondaryCoilId),
+        })
+    return {"items": items}
 
 @router.get("/search/defects/{coil_id:int}/{direction}")
 async def get_defects(coil_id: int, direction: str):

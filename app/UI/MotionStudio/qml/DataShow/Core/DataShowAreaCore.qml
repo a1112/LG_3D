@@ -5,6 +5,68 @@ import "../../DataShow/2dShow/ViewTool"
 Item {
         property string key: "AREA"
     id:root
+
+    property int _lastPreheatCoilId: -1
+    property int _preheatRange: 2
+
+    function _findCoilIndex(model, coilId) {
+        if (!model || model.count === undefined) {
+            return -1
+        }
+        for (let i = 0; i < model.count; i++) {
+            let item = model.get(i)
+            if (item && item.Id === coilId) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    function _collectNeighborIds(model, index, range) {
+        let ids = []
+        if (!model || model.count === undefined || index < 0) {
+            return ids
+        }
+        let start = Math.max(0, index - range)
+        let end = Math.min(model.count - 1, index + range)
+        for (let i = start; i <= end; i++) {
+            if (i === index) {
+                continue
+            }
+            let item = model.get(i)
+            if (item && item.Id !== undefined) {
+                ids.push(item.Id)
+            }
+        }
+        return ids
+    }
+
+    function _preheatAreaForKey(key, coilId) {
+        if (!coilId) {
+            return
+        }
+        let areaUrl = api.getFileSource(key, coilId, "AREA", false)
+        api.ajax.get(areaUrl, function(){}, function(){})
+        imageCache.pushCache(areaUrl)
+    }
+
+    function preheatAreaAround() {
+        if (!surfaceData || !surfaceData.coilId) {
+            return
+        }
+        if (_lastPreheatCoilId === surfaceData.coilId) {
+            return
+        }
+        _lastPreheatCoilId = surfaceData.coilId
+        let model = coreModel.currentCoilListModel
+        let index = _findCoilIndex(model, surfaceData.coilId)
+        let neighborIds = _collectNeighborIds(model, index, _preheatRange)
+        for (let i = 0; i < neighborIds.length; i++) {
+            let coilId = neighborIds[i]
+            _preheatAreaForKey("S", coilId)
+            _preheatAreaForKey("L", coilId)
+        }
+    }
     function flush(){
         surfaceData.error_visible=false
         flushDefect()

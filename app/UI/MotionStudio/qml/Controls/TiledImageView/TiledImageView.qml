@@ -6,8 +6,9 @@ import QtQuick.Layouts
 Rectangle {
     id: root
     property int tileSize: 8000
-    // Tile count per side; start with default so we never end up with 0 tiles and no requests
-    property int count_ : defaultTileCount
+    // Tile count per side; fixed to 3x3 for AREA tiles
+    property int fixedTileCount: 3
+    property int count_ : fixedTileCount
     property string imageUrl: ""
     // viewport is injected from DataShowAreaCore.flick for lazy loading in-view tiles
     property var viewport: dataAreaShowCore ? dataAreaShowCore.flick : null
@@ -21,6 +22,7 @@ Rectangle {
     property bool enableParallelLoad: true
     property int maxParallel: 16
     property int _requestToken: 0
+    signal imageInfoReady(string url)
     color: "#00000000"
     property int source_item_width: parseInt(dataAreaShowCore.sourceWidth/count_)
     property int source_item_height: parseInt(dataAreaShowCore.sourceHeight/count_)
@@ -48,10 +50,10 @@ Rectangle {
                          let json_data = JSON.parse(text)
                          dataAreaShowCore.sourceWidth = json_data["width"]
                          dataAreaShowCore.sourceHeight = json_data["height"]
-                         const dynamicCount = Math.max(get_num(json_data["width"]), get_num(json_data["height"]))
-                         if (dynamicCount !== count_) {
-                             count_ = dynamicCount
+                         if (count_ !== fixedTileCount) {
+                             count_ = fixedTileCount
                          }
+                         imageInfoReady(imageUrl)
                      },(err)=>{
                         console.log(err)
                      })

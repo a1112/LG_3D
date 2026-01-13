@@ -101,6 +101,9 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     row = int(row)
     col = int(col)
     count = int(count)
+    tile_count = 3
+    if count > 0:
+        count = tile_count
 
     if count == 1:
         return None
@@ -136,7 +139,7 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
         if size is None:
             return Response(content=noFindImageByte, media_type="image/jpeg")
         h, w = size
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=count)
+        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
         return {"width": w, "height": h}
 
     image_dict = await _get_image_async(data_get, clip_num=count)
@@ -147,7 +150,7 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
     except Exception:
         return Response(content=noFindImageByte, media_type="image/jpeg")
     if row == 0 and col == 0:
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=count)
+        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
     return Response(crop_image_byte, media_type="image/jpg")  # 注意修改为正确的MIME类型
 
 

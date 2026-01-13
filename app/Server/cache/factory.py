@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 
+from .area_cache import DiskAreaImageCache
 from .memory_cache import Memory3dCache, MemoryImageCache
 from .redis_cache import RedisImageCache
 
@@ -66,15 +67,7 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
             ttl=redis_ttl,
             prefix="image",
         )
-        area_cache = RedisImageCache(
-            host=redis_host,
-            port=redis_port,
-            db=redis_db,
-            password=redis_password,
-            cache_size=32,
-            ttl=redis_ttl,
-            prefix="area",
-        )
+        area_cache = DiskAreaImageCache(32, ttl=ttl)
         classifier_cache = RedisImageCache(
             host=redis_host,
             port=redis_port,
@@ -87,7 +80,7 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
     else:
         preview_cache = MemoryImageCache(256, ttl=ttl)
         image_cache = MemoryImageCache(128, ttl=ttl)
-        area_cache = MemoryImageCache(32, ttl=ttl)
+        area_cache = DiskAreaImageCache(32, ttl=ttl)
         classifier_cache = MemoryImageCache(100, ttl=ttl)
         cache_mode = "memory"
 

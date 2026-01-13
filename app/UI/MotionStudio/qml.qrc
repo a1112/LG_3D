@@ -367,6 +367,8 @@
         <file>qml/Graphs/GraphsBase/GraphsBaseView.qml</file>
         <file>qml/Graphs/GraphsCore.qml</file>
         <file>qml/Graphs/GraphsManage.qml</file>
+        <file>qml/Graphs/DeviceCurveManage.qml</file>
+        <file>qml/Graphs/DeviceCurveView/DeviceCurveViewMain.qml</file>
         <file>qml/Graphs/GraphsValueView/CoilTextInput.qml</file>
         <file>qml/Graphs/GraphsValueView/GraphsValueViewMain.qml</file>
         <file>qml/Graphs/GraphsValueView/HeaderView.qml</file>

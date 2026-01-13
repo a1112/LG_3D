@@ -9,9 +9,9 @@ def add_plc(coil_No):
     coil_id = get_coil_by_coil_no(coil_No).Id
     addToPlc({
         "secondaryCoilId": coil_id,
-        "location_S": read_plc("DB32.600", "int", 2),
-        "location_L": read_plc("DB32.604", "int", 2),
-        "location_laser": read_plc("DB32.0", "int", 2),
+        "location_S":  read_plc("M34", "real", 4),
+        "location_L": read_plc("M38", "real", 4),
+        "location_laser": read_plc("DB35.340", "int", 4),
     })
 
 
@@ -32,13 +32,18 @@ while True:
 
         if not oldId == data["Coil_ID"]:
             print(f"{datetime.datetime.now()} 新卷  {data['Coil_ID']}")
-            add_plc(oldId)
+            try:
+                add_plc(oldId)
+            except:
+                pass
             oldId = data["Coil_ID"]
         if not old_w == act_w:
             write_plc(addr,"int", data["act_w"])
             print(f"{datetime.datetime.now()}-> 写入 {addr}:   {data['act_w']}")
             print(data)
         time.sleep(3)
-    except:
+    except BaseException as e:
+        raise e
+        print(e)
         time.sleep(5)
         print("PLC 写入失败/  数据获取失败")

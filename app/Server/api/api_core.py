@@ -12,6 +12,15 @@ except ImportError:
 
 app = FastAPI(default_response_class=DefaultResponse)
 
+@app.on_event("startup")
+def _startup_cache() -> None:
+    startup_cache()
+
+
+@app.on_event("shutdown")
+def _shutdown_cache() -> None:
+    shutdown_cache()
+
 @app.get("/")
 async def read_root():
     return {"/docs": "请访问 /docs 查看文档"}

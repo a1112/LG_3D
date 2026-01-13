@@ -126,7 +126,30 @@ Menu{
         }
     }
 
-    MenuItem{
+    
+    Menu{
+        title:qsTr("设备曲线")
+        MenuItem{
+            text:qsTr("S端位置")
+            onClicked:{
+                device_curve_manage.open()
+            }
+        }
+        MenuItem{
+            text:qsTr("L端位置")
+            onClicked:{
+                device_curve_manage.open()
+            }
+        }
+        MenuItem{
+            text:qsTr("激光距离")
+            onClicked:{
+                device_curve_manage.open()
+            }
+        }
+    }
+
+MenuItem{
         text:qsTr("曲线工具")
         onClicked:{
             graphs_manage.open()

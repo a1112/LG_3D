@@ -275,5 +275,44 @@ Api_Base {
     function set_check_defect_name(defect_name){
         // 设置新的
     }
-}
 
+
+    function getPlcCurveData(field, startId, endId, limit, success, failure){
+        let args = []
+        if (startId !== undefined && startId !== null && startId !== "" && !isNaN(startId)){
+            args.push("start_id="+startId)
+        }
+        if (endId !== undefined && endId !== null && endId !== "" && !isNaN(endId)){
+            args.push("end_id="+endId)
+        }
+        if (limit !== undefined && limit !== null && limit !== "" && !isNaN(limit)){
+            args.push("limit="+limit)
+        }
+        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"plc_curve",field)
+        if (args.length > 0){
+            url = url + "?" + args.join("&")
+        }
+        return ajax.get(url,success,failure)
+    }
+
+
+
+    function getPlcCurveAllData(startId, endId, limit, success, failure){
+        let args = []
+        if (startId !== undefined && startId !== null && startId !== "" && !isNaN(startId)){
+            args.push("start_id="+startId)
+        }
+        if (endId !== undefined && endId !== null && endId !== "" && !isNaN(endId)){
+            args.push("end_id="+endId)
+        }
+        if (limit !== undefined && limit !== null && limit !== "" && !isNaN(limit)){
+            args.push("limit="+limit)
+        }
+        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"plc_curve_all")
+        if (args.length > 0){
+            url = url + "?" + args.join("&")
+        }
+        return ajax.get(url,success,failure)
+    }
+
+}
