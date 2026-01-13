@@ -23,6 +23,7 @@ Item {
     readonly property real scan3dScaleZ: 0.016229506582021713
     readonly property real scan3dScaleX: 0.33693358302116394
     readonly property real scan3dScaleY: 0.33693358302116394
+    property real scan3dCoordinateOffsetZ: 0
     property real medianZInt: 0
     property real medianZ: 0.0
 
@@ -90,6 +91,11 @@ Item {
     }
     property var coilInfo: {return {}}
     onCoilInfoChanged: {
+        if (coilInfo && coilInfo.scan3dCoordinateOffsetZ !== undefined) {
+            scan3dCoordinateOffsetZ = coilInfo.scan3dCoordinateOffsetZ
+        } else {
+            scan3dCoordinateOffsetZ = 0
+        }
         if (coilInfo && coilInfo.circleConfig){
         let inner_circle = coilInfo.circleConfig.inner_circle
         // circleTool.init(coilInfo.circleConfig)

@@ -19,6 +19,7 @@ ApplicationWindow {
     property bool drawLaser: true
     property bool drawWidth: true
     property ListModel curveModel: ListModel {}
+    property real totalLengthAvg: 0
 
     function openCurve(){
         visible = true
@@ -43,12 +44,24 @@ ApplicationWindow {
                 let payload = {}
                 try { payload = JSON.parse(result) } catch (e) { payload = {} }
                 curveModel.clear()
+                totalLengthAvg = 0
                 if (!payload.items){
                     updateChart()
                     return
                 }
+                let totalSum = 0
+                let totalCount = 0
                 for (let i = 0; i < payload.items.length; i++) {
                     let item = payload.items[i]
+                    let widthVal = Number(item.width_)
+                    let distS = Number(item.median_3d_mm_S)
+                    let distL = Number(item.median_3d_mm_L)
+                    let totalLen = NaN
+                    if (isFinite(widthVal) && isFinite(distS) && isFinite(distL)) {
+                        totalLen = widthVal + distS + distL
+                        totalSum += totalLen
+                        totalCount += 1
+                    }
                     curveModel.append({
                         coil_id: item.coil_id,
                         time: item.time ? item.time : "",
@@ -58,14 +71,23 @@ ApplicationWindow {
                         median_3d_mm_S: item.median_3d_mm_S,
                         median_3d_mm_L: item.median_3d_mm_L,
                         median_3d_mm_avg: item.median_3d_mm_avg,
-                        width_: item.width_
+                        width_: item.width_,
+                        total_length: totalLen,
+                        total_error: 0
                     })
+                }
+                totalLengthAvg = totalCount > 0 ? totalSum / totalCount : 0
+                for (let j = 0; j < curveModel.count; j++) {
+                    let row = curveModel.get(j)
+                    let lenVal = Number(row.total_length)
+                    curveModel.setProperty(j, "total_error", isFinite(lenVal) ? (lenVal - totalLengthAvg) : NaN)
                 }
                 updateChart()
             },
             function(err){
                 console.log("getPlcCurveAllData error", err)
                 curveModel.clear()
+                totalLengthAvg = 0
                 updateChart()
             }
         )
@@ -324,6 +346,8 @@ ApplicationWindow {
                         Label{ Layout.preferredWidth: 110; text: qsTr("激光距离"); color: "white" }
                         Label{ Layout.preferredWidth: 120; text: qsTr("S端距离(mm)"); color: "white" }
                         Label{ Layout.preferredWidth: 120; text: qsTr("L端距离(mm)"); color: "white" }
+                        Label{ Layout.preferredWidth: 140; text: qsTr("总长"); color: "white" }
+                        Label{ Layout.preferredWidth: 150; text: qsTr("平均误差"); color: "white" }
                     }
                 }
 
@@ -350,6 +374,8 @@ ApplicationWindow {
                             Label{ Layout.preferredWidth: 110; text: formatValue(location_laser); color: "white" }
                             Label{ Layout.preferredWidth: 120; text: formatValue(median_3d_mm_S); color: "white" }
                             Label{ Layout.preferredWidth: 120; text: formatValue(median_3d_mm_L); color: "white" }
+                            Label{ Layout.preferredWidth: 140; text: formatValue(total_length); color: "white" }
+                            Label{ Layout.preferredWidth: 150; text: formatValue(total_error); color: "white" }
                         }
 
                         MouseArea{

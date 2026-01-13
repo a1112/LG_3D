@@ -35,13 +35,17 @@ DataShowItemBase{
     }
 
     function getZValue(z){
-        return ((z*surfaceData.scan3dScaleZ).toFixed(2)-coreCharts.medianZ)
+        return z * surfaceData.scan3dScaleZ + surfaceData.scan3dCoordinateOffsetZ
     }
     function getXValue(x){
         return ((x-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX).toFixed(0)
     }
 
     property var line_data: []
+    property real chartsHoverdZRawMm: 0
+    property int chartsHoverdZRawInt: 0
+    property real chartsHoverdZAbsMm: 0
+    property real chartsHoverdZRelMm: 0
 
     function getDistance(x1,y1){
         let i= 1
@@ -89,8 +93,8 @@ DataShowItemBase{
     function drawMedianLine(){
         medianLine.clear()
         // dataShowCore.medianZ = lineData[0].median*surfaceData.scan3dScaleZ
-        medianLine.append(-20000, 0)
-        medianLine.append(20000, 0)
+        medianLine.append(-20000, surfaceData.medianZ)
+        medianLine.append(20000, surfaceData.medianZ)
         drawWr()
     }
 
@@ -101,17 +105,18 @@ DataShowItemBase{
 
     function drawWr(){
     up_wr.clear()
-    up_wr.append(-20000, surfaceData.tower_warning_threshold_up)
-    up_wr.append(20000, surfaceData.tower_warning_threshold_up)
+    up_wr.append(-20000, surfaceData.medianZ + surfaceData.tower_warning_threshold_up)
+    up_wr.append(20000, surfaceData.medianZ + surfaceData.tower_warning_threshold_up)
     dowm_wr.clear()
-    dowm_wr.append(-20000, surfaceData.tower_warning_threshold_down)
-    dowm_wr.append(20000, surfaceData.tower_warning_threshold_down)
+    dowm_wr.append(-20000, surfaceData.medianZ + surfaceData.tower_warning_threshold_down)
+    dowm_wr.append(20000, surfaceData.medianZ + surfaceData.tower_warning_threshold_down)
     }
 
 
 
     onLineDataChanged: {
         line_data=[]
+        coreCharts.offsetZ = surfaceData.medianZ
         drawMedianLine()
         let ij=0
         l1.clear()
@@ -229,6 +234,10 @@ DataShowItemBase{
                let findZ =  findZValue(lineData[i].points,dataShowCore.hoverdX)
                 if(findZ!==null){
                     dataShowCore.chartsHoverdZmm = getZValue(findZ)
+                    chartsHoverdZRawInt = parseInt(findZ)
+                    chartsHoverdZRawMm = findZ * surfaceData.scan3dScaleZ
+                    chartsHoverdZAbsMm = chartsHoverdZRawMm + surfaceData.scan3dCoordinateOffsetZ
+                    chartsHoverdZRelMm = chartsHoverdZAbsMm - surfaceData.medianZ
                     break
                 }
             }
@@ -250,7 +259,9 @@ DataShowItemBase{
                   opacity:0.5
         Label{
             color: "green"
-            text: dataShowCore.chartsHoverdZmm.toFixed(1)
+            text: "raw " + chartsHoverdZRawInt
+                  + " | rel " + chartsHoverdZRelMm.toFixed(2)
+                  + " | abs " + chartsHoverdZAbsMm.toFixed(2)
                     background: Rectangle{color:"#F12e2e2e"}
                     x:dragLineH.x+30
                     y:-height
