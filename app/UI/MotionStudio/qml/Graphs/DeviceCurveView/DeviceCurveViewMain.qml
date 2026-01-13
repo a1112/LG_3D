@@ -65,16 +65,16 @@ ApplicationWindow {
                     let distS = Number(item.median_3d_mm_S)
                     let distL = Number(item.median_3d_mm_L)
                     let totalLen = NaN
-                    if (isFinite(widthVal) && isFinite(distS) && isFinite(distL)) {
+                    if (isFinite(widthVal) && isFinite(distS) && isFinite(distL) && distS >= 100 && distL >= 100) {
                         totalLen = widthVal + distS + distL
                         totalSum += totalLen
                         totalCount += 1
                     }
-                    if (isFinite(distS) && distS !== 0) {
+                    if (isFinite(distS) && distS >= 100) {
                         distSSum += distS
                         distSCount += 1
                     }
-                    if (isFinite(distL) && distL !== 0) {
+                    if (isFinite(distL) && distL >= 100) {
                         distLSum += distL
                         distLCount += 1
                     }
