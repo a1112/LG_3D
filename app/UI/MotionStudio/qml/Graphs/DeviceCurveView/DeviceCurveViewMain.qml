@@ -8,7 +8,7 @@ import "../../Input"
 ApplicationWindow {
     id: root
     visible: false
-    width: 1300
+    width: 1600
     height: 720
     title: qsTr("设备曲线")
 
@@ -70,11 +70,11 @@ ApplicationWindow {
                         totalSum += totalLen
                         totalCount += 1
                     }
-                    if (isFinite(distS)) {
+                    if (isFinite(distS) && distS !== 0) {
                         distSSum += distS
                         distSCount += 1
                     }
-                    if (isFinite(distL)) {
+                    if (isFinite(distL) && distL !== 0) {
                         distLSum += distL
                         distLCount += 1
                     }
