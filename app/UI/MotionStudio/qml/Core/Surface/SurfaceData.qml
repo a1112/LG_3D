@@ -111,6 +111,7 @@ Item {
                 p1 = Qt.point(x, y)
             }
         }
+
             }
     }
 

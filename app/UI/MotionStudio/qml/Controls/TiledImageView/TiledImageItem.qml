@@ -33,11 +33,10 @@ Item{
         border.color: "red"
     }
     Image {
-        width: parent.width
-        height: parent.height
+        anchors.fill: parent
         cache: true
         asynchronous: true
-        fillMode: Image.PreserveAspectFit
+        fillMode: Image.Stretch
         source: shouldLoad ? imageUrl+ "?row=" + parseInt(index/count_) + "&col=" + parseInt(index%count_) + "&count=" +count_ : ""
         onStatusChanged: {
             // console.log(`[tile ${index} (${row_},${col_}) ${nowString()}] status=${statusNames[status]}`)

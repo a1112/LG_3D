@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 from PIL import Image
 
 from configs.CameraConfig import CameraConfig
@@ -12,12 +13,41 @@ class SaverWork(WorkBaseThread):
         self.start()
         self.config:SurfaceConfig
         self.size = (512, 512)
+        self.tile_count = 3
 
     def save_thumbnail(self,url_,image):
         image.thumbnail(self.size)
         # if CONFIG.DEBUG:
         #     image.show()
         image.save(url_)
+
+    def _tile_cache_dir(self, area_path: Path) -> Path:
+        if area_path.parent.name in {"jpg", "png"}:
+            coil_dir = area_path.parent.parent
+        else:
+            coil_dir = area_path.parent
+        return coil_dir / "cache" / "area" / "tild"
+
+    def _write_tile_cache(self, area_path: Path, image: Image.Image) -> None:
+        cache_dir = self._tile_cache_dir(area_path)
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        image_l = image.convert("L")
+        width, height = image_l.size
+        w_width = width // self.tile_count
+        h_height = height // self.tile_count
+        if w_width <= 0 or h_height <= 0:
+            return
+        for row in range(self.tile_count):
+            for col in range(self.tile_count):
+                left = row * w_width
+                top = col * h_height
+                right = left + w_width
+                bottom = top + h_height
+                tile = image_l.crop((left, top, right, bottom))
+                tile.save(cache_dir / f"{col}_{row}.jpg")
 
     def run(self):
         while self.__run__:
@@ -30,6 +60,7 @@ class SaverWork(WorkBaseThread):
                 save_t.parent.mkdir(parents=True, exist_ok=True)
                 logger.debug(fr"图像保存： {save_f}")
                 image.save(save_f)
+                self._write_tile_cache(save_f, image)
                 self.save_thumbnail(save_t,image)
             except BaseException as e:
                 print(e)

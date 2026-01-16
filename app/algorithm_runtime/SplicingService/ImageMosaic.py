@@ -97,7 +97,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self._save_(image_rgba, data_integration.get_save_url("mask", name + ".png"))
         image = image.copy()
         image.thumbnail(PreviewSize)
-        self._save_(image, data_integration.get_save_url("preview", name + ".png"))
+        self._save_(image, data_integration.get_save_url("preview", name + ".jpg"))
 
     # 保存图像
     async def save_image(self, data_integration: DataIntegration):

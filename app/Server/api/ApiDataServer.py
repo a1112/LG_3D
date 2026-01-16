@@ -1,15 +1,18 @@
 import io
 import time
+from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
 from fastapi import APIRouter, WebSocket
+from fastapi.responses import FileResponse, Response
 from starlette.responses import StreamingResponse
 
 from Base.property.Data3D import LineData
 from Base.property.Types import Point2D
-from Base.tools.DataGet import DataGet
+from Base.tools.DataGet import DataGet, noFindImageByte
+from Base.CONFIG import serverConfigProperty
 from ._tool_ import get_bool
 from .api_core import app
 
@@ -166,6 +169,40 @@ async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueF
     eT = time.time()
     print(f"Processing Time: {eT - s_t:.2f} seconds")
     # return StreamingResponse(img_bytes, media_type="image/png")
+
+
+def _clip_box(x: int, y: int, w: int, h: int, img_w: int, img_h: int):
+    x1 = max(0, x)
+    y1 = max(0, y)
+    x2 = min(img_w, x + w)
+    y2 = min(img_h, y + h)
+    if x2 <= x1 or y2 <= y1:
+        return None
+    return x1, y1, x2, y2
+
+
+@router.get("/classifier_image/{coil_id:int}/{surface_key:str}/{class_name:str}/{x:int}/{y:int}/{w:int}/{h:int}")
+async def get_classifier_image(coil_id: int, surface_key: str, class_name: str, x: int, y: int, w: int, h: int):
+    try:
+        image_path = Path(serverConfigProperty.get_classifier_image(coil_id, surface_key, class_name, x, y, w, h))
+        if image_path.exists():
+            return FileResponse(image_path, media_type="image/png")
+    except Exception:
+        image_path = None
+
+    data_get = DataGet("image", surface_key, str(coil_id), "GRAY", False)
+    image = data_get.get_image(pil=True)
+    if image is None:
+        return Response(content=noFindImageByte, media_type="image/jpeg")
+
+    box = _clip_box(x, y, w, h, image.size[0], image.size[1])
+    if box is None:
+        return Response(content=noFindImageByte, media_type="image/jpeg")
+    crop_image = image.crop(box)
+    img_byte_arr = io.BytesIO()
+    crop_image.save(img_byte_arr, format="JPEG")
+    img_byte_arr.seek(0)
+    return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
 
 
 @router.get("/coilData/Error/{surface_key:str}/{coil_id:str}")

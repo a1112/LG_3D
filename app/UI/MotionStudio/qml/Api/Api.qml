@@ -62,6 +62,21 @@ Api_DataBase {
 
     }
 
+    function setAreaClipConfig(surfaceKey, payload, success, failure){
+        let url = apiConfig.serverUrlAlg2D + "/clip_config"
+        let body = Object.assign({surface_key: surfaceKey}, payload)
+        return ajax.post(url, body, success, failure)
+    }
+
+    function rejoinArea(coilId, surfaceKey, success, failure){
+        let url = apiConfig.serverUrlAlg2D + "/area/rejoin"
+        let body = {coil_id: coilId}
+        if (surfaceKey !== undefined && surfaceKey !== null && surfaceKey !== "") {
+            body.surface_key = surfaceKey
+        }
+        return ajax.post(url, body, success, failure)
+    }
+
     function get_defect_url(suface, coil_id, defect_name, x, y, w, h){
         let url = apiConfig.url(apiConfig.serverUrlData,"classifier_image",coil_id,suface,defect_name,x,y,w,h)
         return url

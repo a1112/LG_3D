@@ -33,7 +33,20 @@ class SurfaceConfigProperty:
         return str(Path(self.saveFolder) / str(coil_id) / "meshes"/"defaultobject_mesh.mesh")
 
     def get_preview_file(self, coil_id, type_):
-        return str(Path(self.saveFolder) / str(coil_id) / "preview" /f"{type_}.png")
+        preview_dir = Path(self.saveFolder) / str(coil_id) / "preview"
+        jpg_path = preview_dir / f"{type_}.jpg"
+        if jpg_path.exists():
+            return str(jpg_path)
+        if type_ == "AREA":
+            try:
+                for candidate in sorted(preview_dir.glob("AREA.*")):
+                    return str(candidate)
+            except Exception:
+                pass
+        png_path = preview_dir / f"{type_}.png"
+        if png_path.exists():
+            return str(png_path)
+        return str(jpg_path)
 
     def get_classifier_image(self,coil_id,class_name,x,y,w,h):
         base_path = f"{self.saveFolder}/{coil_id}/classifier/{class_name}"

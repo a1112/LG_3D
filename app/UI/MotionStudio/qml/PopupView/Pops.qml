@@ -14,6 +14,7 @@ import "ServerMange"
 import "ListValueChange"
 import "HelpPop"
 import "AlgTest"
+import "ClipSetting"
 import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
     ConnectDialog{ id:connectDialog }//连接 菜單
@@ -32,6 +33,8 @@ Item {
     function openSettingPageView(){coreSetting_view.open()}
     StyleMenu{id:menuStyle} // 主题菜单
     function popupStyleMenu(){menuStyle.popup()}
+    ClipSettingView{id:clipSettingView}
+    function popupClipSettingView(){clipSettingView.openDialog()}
     BackupDataView{id:backupDataView}   // 数据备份
     function popupBackupDataView(){backupDataView.popup()}
     ReDetectionView{id:reDetectonView}  //重新识别

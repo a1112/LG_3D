@@ -7,12 +7,16 @@ Row{
         model: leftCore.preSourceModelS
         ImageItem{
             hasImage: leftCore.hovelCoilData.Status_S>=0
+            image_source: model.image_source
+            key: model.key
         }
     }
     Repeater{
         model: leftCore.preSourceModelL
         ImageItem{
             hasImage: leftCore.hovelCoilData.Status_L>=0
+            image_source: model.image_source
+            key: model.key
         }
     }
 }

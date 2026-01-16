@@ -78,11 +78,7 @@ class DiskAreaImageCache(MemoryImageCache):
             tiles = self._read_tile_cache(cache_dir, count)
             if tiles is not None:
                 return tiles
-            tiles = self._generate_tiles(path, count)
-            if tiles is None:
-                return None
-            self._write_tile_cache(cache_dir, tiles)
-            return tiles
+            return None
 
         return _load_image_clip
 
@@ -112,9 +108,6 @@ class DiskAreaImageCache(MemoryImageCache):
                     cache_dir = self._tile_cache_dir(path)
                     if self._read_tile_cache(cache_dir, self.tile_count) is not None:
                         continue
-                    tiles = self._generate_tiles(path, self.tile_count)
-                    if tiles is not None:
-                        self._write_tile_cache(cache_dir, tiles)
                 except Exception:
                     logging.debug("prefetch tile cache failed for %s %s", surface.key, coil_id, exc_info=True)
 

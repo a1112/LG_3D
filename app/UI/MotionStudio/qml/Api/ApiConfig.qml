@@ -36,6 +36,9 @@ Item {
     readonly property int imageServerPort:  coreSetting.imageServerPort
     readonly property int dataPort:  coreSetting.dataPort
     readonly property int plcPort:  coreSetting.plcPort
+    readonly property int alg2dPort: coreSetting.alg2dPort
+
+    readonly property string serverUrlAlg2D: protocol+hostname+":"+alg2dPort
 
     property bool auto_server_port:true
     property int _pre_port_value_:0

@@ -500,6 +500,7 @@
         <file>qml/Pages/LeftPage/SearchView/SwipeViewItemBase.qml</file>
         <file>qml/Pages/Pop/AlarmInfo.qml</file>
         <file>qml/Pages/Pop/AlarmInfoItem.qml</file>
+        <file>qml/Pages/Pop/AreaRow.qml</file>
         <file>qml/Pages/Pop/CoilInfo.qml</file>
         <file>qml/Pages/Pop/DefectInfo.qml</file>
         <file>qml/Pages/Pop/DefectInfoItem.qml</file>
@@ -516,6 +517,7 @@
         <file>qml/PopupView/Backup/BackupStatus.qml</file>
         <file>qml/PopupView/Base/PopupBase.qml</file>
         <file>qml/PopupView/Base/TitleLabel.qml</file>
+        <file>qml/PopupView/ClipSetting/ClipSettingView.qml</file>
         <file>qml/PopupView/Connect/ConnectDialog.qml</file>
         <file>qml/PopupView/Connect/ShowItemDelegate.qml</file>
         <file>qml/PopupView/Connect/TextFieldItem.qml</file>

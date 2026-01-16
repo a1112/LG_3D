@@ -43,8 +43,8 @@ def getNoZeero(npy, savePath, mask):
             save_png = savePath / "mask" / (name + SaveImageType)
             image_rgba.save(save_png)
 
-            save_preview = str(savePath / "preview" / (name + SaveImageType))
+            save_preview = str(savePath / "preview" / (name + ".jpg"))
             (savePath / "preview").mkdir(parents=True, exist_ok=True)
             image.thumbnail(PreviewSize)
-            image.save(save_preview)
+            image.save(save_preview, format="JPEG")
     return non_zero_elements

@@ -132,6 +132,12 @@ Menu{
                 }
         }
         MenuItem{
+            text: qsTr("重新拼接AREA图像")
+            onClicked: {
+                api.rejoinArea(coilModel.coilId)
+            }
+        }
+        MenuItem{
             text: "重新检测该卷"
             onClicked: {
                 // 打开重新识别窗口，仅针对当前卷

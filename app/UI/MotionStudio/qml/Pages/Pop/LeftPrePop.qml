@@ -47,6 +47,10 @@ Menu {
             width:parent.width
             Layout.fillWidth:true
         }
+        AreaRow{
+            width:parent.width
+            Layout.fillWidth:true
+        }
         CoilInfo{
             width:parent.width
             Layout.fillWidth:true

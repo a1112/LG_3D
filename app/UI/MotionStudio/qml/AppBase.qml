@@ -3,6 +3,7 @@ import QtQuick.Controls
 import "PopupView"
 import "fonts"
 ApplicationWindow {
+
     x:50
     y:50
    property PopManagement popManage

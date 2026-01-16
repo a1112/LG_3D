@@ -12,6 +12,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, FileResponse, Response
 
 from Base.tools.DataGet import DataGet, noFindImageByte
+from cache import areaCache
 from .api_core import app
 from Base.tools.tool import expansion_box, bound_box
 
@@ -122,6 +123,17 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
         return Response(image_bytes or noFindImageByte, media_type="image/jpeg")
 
     if count == 0:
+        try:
+            cache_dir = areaCache._tile_cache_dir(data_get.url)
+            tile_path = cache_dir / "0_0.jpg"
+            if tile_path.exists():
+                with Image.open(tile_path) as tile_img:
+                    tile_w, tile_h = tile_img.size
+                if tile_w > 0 and tile_h > 0:
+                    return {"width": tile_w * tile_count, "height": tile_h * tile_count}
+        except Exception:
+            pass
+
         image_bytes = await _get_image_async(data_get)
         if image_bytes is None:
             return Response(content=noFindImageByte, media_type="image/jpeg")
@@ -143,12 +155,36 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
         return {"width": w, "height": h}
 
     image_dict = await _get_image_async(data_get, clip_num=count)
-    if not image_dict:
+    if image_dict:
+        try:
+            crop_image_byte = image_dict[col][row]
+            if row == 0 and col == 0:
+                _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
+            return Response(crop_image_byte, media_type="image/jpg")
+        except Exception:
+            return Response(content=noFindImageByte, media_type="image/jpeg")
+
+    image_bytes = await _get_image_async(data_get)
+    if image_bytes is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
-    try:
-        crop_image_byte = image_dict[col][row]
-    except Exception:
+    np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
+    image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+    if image is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+    h, w = image.shape[:2]
+    w_width = w // count
+    h_height = h // count
+    if w_width <= 0 or h_height <= 0:
+        return Response(content=noFindImageByte, media_type="image/jpeg")
+    x1 = row * w_width
+    y1 = col * h_height
+    x2 = x1 + w_width
+    y2 = y1 + h_height
+    tile = image[y1:y2, x1:x2]
+    ok, buf = cv2.imencode(".jpg", tile)
+    if not ok:
+        return Response(content=noFindImageByte, media_type="image/jpeg")
+    crop_image_byte = buf.tobytes()
     if row == 0 and col == 0:
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
     return Response(crop_image_byte, media_type="image/jpg")  # 注意修改为正确的MIME类型
