@@ -14,11 +14,8 @@ from Base.property.ServerConfigProperty import ServerConfigProperty
 # args = parser.parse_args()
 
 
-isLoc = False
-
 # Log basic host info in ASCII to avoid encoding issues
-if socket.gethostname() in ["lcx_ace", "lcx_mov", "DESKTOP-94ADH1G", "MS-LGKRSZGOVODD", "DESKTOP-3VCH6DO"]:
-    isLoc = True
+is_local_host = socket.gethostname() in ["lcx_ace", "lcx_mov", "DESKTOP-94ADH1G", "MS-LGKRSZGOVODD", "DESKTOP-3VCH6DO"]
 base_config_folder = Path(r"D:\CONFIG_3D")
 
 try:
@@ -36,7 +33,6 @@ if offline_mode:
 
     Config.deriver = DeriverList.sqlite
     Config.file_url = str(base_config_folder / "Coil.db")
-    isLoc = True
 
 
 def _env_flag(name: str) -> bool:
@@ -45,11 +41,21 @@ def _env_flag(name: str) -> bool:
 
 
 # 开发者模式：用于本地调试时强制使用 TestData 示例数据。
+# 合并了原有的isLoc判断，统一为一个developer_mode设置
 # 1. 通过环境变量 API_DEVELOPER_MODE=true 启用
 # 2. 或在 CONFIG_3D 目录下放置文件 developer_mode=true
-developer_mode = _env_flag("API_DEVELOPER_MODE") or (Path(base_config_folder) / "developer_mode=true").exists()
+# 3. 或通过UI设置界面启用
+# 4. 本地开发环境自动启用
+developer_mode = (
+    _env_flag("API_DEVELOPER_MODE") or 
+    (Path(base_config_folder) / "developer_mode=true").exists() or
+    is_local_host  # 本地开发环境自动启用
+)
 
-print(fr" app 运行模式 developer_mode：{developer_mode} isLoc {isLoc}")
+# 兼容性：保留isLoc变量以支持现有代码
+isLoc = developer_mode
+
+print(fr" app 运行模式 developer_mode：{developer_mode} is_local_host：{is_local_host}")
 def get_file_url(base: str) -> Path:
     url = base_config_folder / base
     if not url.exists():
