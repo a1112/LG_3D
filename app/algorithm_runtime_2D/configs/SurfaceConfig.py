@@ -18,6 +18,14 @@ class SurfaceConfig(BaseConfig):
         self.image_size = 5120
 
         self.camera_configs = [CameraConfig(surface_key,c,self) for c in self.config["cameras"] ]
+        clip_config = self.get_value("clip_config", {})
+        default_clip_c = 2600 if self.surface_key == "S" else 4000
+        self.clip_mode = clip_config.get("mode", "fixed")
+        self.clip_fixed = int(clip_config.get("fixed", 200))
+        self.clip_dynamic_a = float(clip_config.get("a", 3))
+        self.clip_dynamic_b = float(clip_config.get("b", 220))
+        self.clip_dynamic_c = float(clip_config.get("c", default_clip_c))
+        self.clip_dynamic_offset = int(clip_config.get("offset", 40))
         if CONFIG.DEBUG:
             self.image_size = 1024
             self.save_folder= debug_config.save_folder/surface_key

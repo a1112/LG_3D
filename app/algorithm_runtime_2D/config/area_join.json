@@ -16,7 +16,15 @@
                 "max_len": 10
             }
         ],
-        "save_folder": "D:\\Save_S"
+        "save_folder": "D:\\Save_S",
+        "clip_config": {
+            "mode": "fixed",
+            "fixed": 200,
+            "a": 3,
+            "b": 220,
+            "c": 2600,
+            "offset": 40
+        }
     },
     "L":{
         "cameras": [
@@ -34,7 +42,15 @@
                 "max_len": 10
             }
         ],
-        "save_folder": "E:\\Save_L"
+        "save_folder": "E:\\Save_L",
+        "clip_config": {
+            "mode": "fixed",
+            "fixed": 200,
+            "a": 3,
+            "b": 220,
+            "c": 4000,
+            "offset": 40
+        }
     }
         }
 }

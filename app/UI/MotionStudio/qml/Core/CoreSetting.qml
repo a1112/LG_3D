@@ -31,6 +31,20 @@ Item {
     // AREA 视图初始分块（每边块数），加载完尺寸后会按需调整
     property int defaultAreaTileCount: 3
 
+    property string clipModeS: "fixed"
+    property int clipFixedValueS: 200
+    property real clipDynamicAS: 3.0
+    property real clipDynamicBS: 220.0
+    property real clipDynamicCS: 2600.0
+
+    property string clipModeL: "fixed"
+    property int clipFixedValueL: 200
+    property real clipDynamicAL: 3.0
+    property real clipDynamicBL: 220.0
+    property real clipDynamicCL: 4000.0
+
+    property int alg2dPort: 6020
+
     property int headDateShowModel: 0
     property int dataHeaderHeight:320
     SettingsBase{
@@ -53,6 +67,19 @@ Item {
         property alias headDateShowModel:root.headDateShowModel
         property alias dataHeaderHeight:root.dataHeaderHeight
         property alias defaultAreaTileCount: root.defaultAreaTileCount
+        property alias clipModeS: root.clipModeS
+        property alias clipFixedValueS: root.clipFixedValueS
+        property alias clipDynamicAS: root.clipDynamicAS
+        property alias clipDynamicBS: root.clipDynamicBS
+        property alias clipDynamicCS: root.clipDynamicCS
+
+        property alias clipModeL: root.clipModeL
+        property alias clipFixedValueL: root.clipFixedValueL
+        property alias clipDynamicAL: root.clipDynamicAL
+        property alias clipDynamicBL: root.clipDynamicBL
+        property alias clipDynamicCL: root.clipDynamicCL
+
+        property alias alg2dPort: root.alg2dPort
         category: "AppSettings"
         location: "settings.ini"
     }

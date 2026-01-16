@@ -41,6 +41,11 @@ Rectangle {
         if (!imageUrl || imageUrl.length === 0) {
             return
         }
+        const tileRefSize = tileSize * fixedTileCount
+        if (dataAreaShowCore && tileRefSize > 0) {
+            dataAreaShowCore.sourceWidth = tileRefSize
+            dataAreaShowCore.sourceHeight = tileRefSize
+        }
         _requestToken += 1
         const currentToken = _requestToken
         api.ajax.get(imageUrl,(text)=>{
@@ -48,8 +53,10 @@ Rectangle {
                              return
                          }
                          let json_data = JSON.parse(text)
-                         dataAreaShowCore.sourceWidth = json_data["width"]
-                         dataAreaShowCore.sourceHeight = json_data["height"]
+                         if (!tileRefSize || tileRefSize <= 0) {
+                             dataAreaShowCore.sourceWidth = json_data["width"]
+                             dataAreaShowCore.sourceHeight = json_data["height"]
+                         }
                          if (count_ !== fixedTileCount) {
                              count_ = fixedTileCount
                          }

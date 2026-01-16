@@ -86,6 +86,11 @@ Menu{
         }
     }
 
+    MenuItem{
+        text: qsTr("裁剪设置...")
+        onClicked: popManage.popupClipSettingView()
+    }
+
     Menu{
         title:qsTr("界面模式")
         Repeater{

@@ -77,27 +77,23 @@ class SurfaceWork(WorkBaseThread):
         """
         获取裁剪系数
         """
-        if coil_state.surface=="S":
-            b=2600
-            a=3
-            d=220
-            c = (median_3d_mm-b)*a+d
-            c2 = c+40
-        else:
-            b = 4000
-            a = 3
-            d = 220
-            c = (median_3d_mm - b) * a+d
-            c2=c+40
-        c=int(max(c,0))
+        if self.config.clip_mode == "fixed" or coil_state is None or median_3d_mm is None:
+            fixed = max(int(self.config.clip_fixed), 0)
+            return fixed, fixed
+
+        a = self.config.clip_dynamic_a
+        b = self.config.clip_dynamic_b
+        c_base = self.config.clip_dynamic_c
+        c = (median_3d_mm - c_base) * a + b
+        c2 = c + self.config.clip_dynamic_offset
+        c = int(max(c, 0))
         c2 = int(max(c2, 0))
-        return c,c2
+        return c, c2
 
     def vstack_by_distance(self,new_image_list):
         coil_state = get_coilState(self.coil_id,self.config.surface_key)
-        if coil_state is None:
-            return np.vstack(new_image_list)
-        clip_nums=self.get_num_clip_by_mm(coil_state,coil_state.median_3d_mm)
+        median_3d_mm = coil_state.median_3d_mm if coil_state is not None else None
+        clip_nums=self.get_num_clip_by_mm(coil_state, median_3d_mm)
 
         return np.vstack([new_image_list[0],new_image_list[1][clip_nums[0]:,:], new_image_list[2][clip_nums[1]:,:]])
 
