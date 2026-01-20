@@ -14,12 +14,38 @@ from cachetools import TTLCache, cached
 # 解除 PIL 对单张图片像素数量的安全限制，避免大幅面图像触发 DecompressionBombError。
 Image.MAX_IMAGE_PIXELS = None
 
-try:
-    # CONFIG 提供 isLoc / developer_mode，用于本地开发时走 TestData。
-    from CONFIG import isLoc, developer_mode
-except Exception:  # pragma: no cover - 保底防止导入失败影响正式环境
-    isLoc = False
-    developer_mode = False
+def _should_use_testdata() -> bool:
+    """检查是否应该使用TestData的多种方式"""
+    # 方式1: 检查CONFIG_3D目录下的developer_mode=true文件
+    config_dir = Path(r"D:\CONFIG_3D")
+    if (config_dir / "developer_mode=true").exists():
+        return True
+    
+    # 方式2: 检查测试模式配置文件
+    test_mode_config = config_dir / "test_mode_config.json"
+    if test_mode_config.exists():
+        try:
+            import json
+            with open(test_mode_config, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                if config.get("test_mode", False):
+                    return True
+        except:
+            pass
+    
+    # 方式3: 检查环境变量
+    import os
+    if os.getenv("API_DEVELOPER_MODE", "").lower() in {"1", "true", "yes", "on"}:
+        return True
+    
+    # 方式4: 尝试从CONFIG获取（如果已初始化）
+    try:
+        from CONFIG import developer_mode, isLoc
+        return developer_mode and isLoc
+    except:
+        pass
+    
+    return False
 
 
 _TESTDATA_COIL_ID = "125143"
@@ -46,7 +72,7 @@ def _resolve_image_path(original_path: str) -> Path:
     """
     path_obj = Path(original_path)
 
-    if not (developer_mode and isLoc):
+    if not _should_use_testdata():
         return path_obj
     if not _TESTDATA_DIR.exists():
         return path_obj
@@ -88,7 +114,7 @@ def _resolve_3d_path(original_path: str) -> Path:
     注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/125143/3D.npz）。
     """
     path_obj = Path(original_path)
-    if not (developer_mode and isLoc):
+    if not _should_use_testdata():
         return path_obj
     if not _TESTDATA_DIR.exists():
         return path_obj

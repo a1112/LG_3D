@@ -10,6 +10,7 @@ import "OtherSetting"
 import "D3Setting"
 import "GeneralSetting"
 import "AlarmSetting"
+import "InfoSetting"
 Popup {
     anchors.centerIn: parent
     width: 1000
@@ -22,7 +23,7 @@ Popup {
             text:"设置"
             font.pointSize:30
         }
-        TabBar{
+TabBar{
             id:tabBar
             Layout.fillWidth: true
 
@@ -34,6 +35,9 @@ Popup {
             }
             TabButton{
                 text:qsTr("3D渲染设置")
+            }
+            TabButton{
+                text:qsTr("信息")
             }
             TabButton{
                 text:qsTr("其他")
@@ -51,7 +55,10 @@ Popup {
                 AlarmSetting{
                 }
 
-                D3Setting{
+D3Setting{
+                }
+
+                InfoSetting{
                 }
 
                 OtherSetting{

@@ -12,9 +12,11 @@ Item {
         }
     }
 
-    property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
+property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
 
-    property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
+property bool developer_mode: app.coreSetting.testMode
+
+property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
 
     readonly property bool isLast:coilIndex==0
     property int coilIndex: 0

@@ -22800,3 +22800,6 @@
 /train/det/train/边部褶皱/边部褶皱_142_0_570_296.png
 /train/det/train/边部褶皱/边部褶皱_420_1_550_135.png
 /train/det/train.rar
+
+# 测试模式配置文件（不跟踪）
+CONFIG_3D/test_mode_config.json

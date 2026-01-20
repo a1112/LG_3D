@@ -13,7 +13,7 @@ Item {
 
 
     property string server_ip: "127.0.0.1"
-    property int server_port: 6010
+    property int server_port: 5010
     property int server_port_count: 1
 
     property int databasPort: 6011
@@ -43,9 +43,11 @@ Item {
     property real clipDynamicBL: 220.0
     property real clipDynamicCL: 4000.0
 
-    property int alg2dPort: 6020
+property int alg2dPort: 6020
 
-    property int headDateShowModel: 0
+property bool testMode: false
+
+property int headDateShowModel: 0
     property int dataHeaderHeight:320
     SettingsBase{
         property alias useImageCache: root.useImageCache
@@ -79,8 +81,9 @@ Item {
         property alias clipDynamicBL: root.clipDynamicBL
         property alias clipDynamicCL: root.clipDynamicCL
 
-        property alias alg2dPort: root.alg2dPort
-        category: "AppSettings"
+property alias alg2dPort: root.alg2dPort
+property alias testMode: root.testMode
+category: "AppSettings"
         location: "settings.ini"
     }
 }

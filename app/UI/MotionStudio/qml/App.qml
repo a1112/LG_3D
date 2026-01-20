@@ -18,7 +18,7 @@ AppBase {
     Material.theme: coreStyle.theme
     width: global.screenConfig.width-100
     height: global.screenConfig.height-100
-    title: qsTr("涟钢3D端面检测系统")
+    title: qsTr("涟钢3D端面检测系统") + (coreSetting.testMode ? " - [测试模式]" : "")
     Material.accent: coreStyle.accentColor
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}
