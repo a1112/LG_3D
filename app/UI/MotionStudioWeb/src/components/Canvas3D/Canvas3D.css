@@ -1,0 +1,21 @@
+.canvas-3d-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.canvas-3d-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.canvas-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+}

@@ -1,0 +1,21 @@
+.data-show-page {
+  height: 100%;
+  padding: 16px;
+}
+
+.full-height-card {
+  height: 100%;
+}
+
+.full-height-card .ant-card-body {
+  height: calc(100% - 57px);
+  overflow: auto;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 200px;
+}
