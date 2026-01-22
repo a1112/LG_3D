@@ -55,42 +55,49 @@ QtObject {
     }
 
     function init(coil){
+        // 直接读取 model 的属性，不进行深拷贝（避免循环引用问题）
+        // 注意：不修改原始数据，只读取
+        coilId = coil.Id || 0
+        coilNo = coil.CoilNo || ""
+        coilType = coil.CoilType || ""
+        coilInside = coil.CoilInside || ""
+        coilDia = coil.CoilDia || ""
+        coilThickness = coil.Thickness || ""
+        coilWidth = coil.Width || ""
+        coilWeight = coil.Weight || ""
+        coilActWidth = coil.ActWidth || ""
+        coilCheckStatus = coil.CheckStatus || 0
+        coilDefectCountS = coil.DefectCountS || 0
+        coilDefectCountL = coil.DefectCountL || 0
+        coilStatus_L = coil.Status_L || 0
+        coilGrade = coil.Grade || 0
+        coilStatus_S = coil.Status_S || 0
+        coilMsg = coil.Msg || ""
+        nextInfo = coil.NextInfo || ""
+        nextCode = coil.NextCode || ""
+
+        // 存储对 model 的引用（只读，不修改）
         coilData = coil
-        coilId = coil.Id
-        coilNo = coil.CoilNo
-        coilType = coil.CoilType
-        coilInside = coil.CoilInside
-        coilDia = coil.CoilDia
-        coilThickness = coil.Thickness
-        coilWidth = coil.Width
-        coilWeight = coil.Weight
-        coilActWidth = coil.ActWidth
-        // coilDetectionTime = coil.DetectionTime
-        // coilCreateTime = coil.CreateTime//coil.CreateTime
-        coilCheckStatus = coil.CheckStatus
-        coilDefectCountS = coil.DefectCountS
-        coilDefectCountL = coil.DefectCountL
-        coilStatus_L = coil.Status_L
-        coilGrade = coil.Grade
-        coilStatus_S = coil.Status_S
-        coilMsg = coil.Msg
-        nextInfo = coil.NextInfo
-        nextCode = coil.NextCode
-        for (let key in coil.AlarmInfo){
-            if (key=="S"){
-                alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo[key])
+
+        // 处理 AlarmInfo
+        if (coil.AlarmInfo) {
+            if (coil.AlarmInfo["S"]){
+                alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo["S"])
             }
-            if (key=="L"){
-                alarmItemInfo_L.setAlarmInfo(coil.AlarmInfo[key])
+            if (coil.AlarmInfo["L"]){
+                alarmItemInfo_L.setAlarmInfo(coil.AlarmInfo["L"])
             }
         }
 
-        defectsData = coil.childrenCoilDefect  // 全部缺陷
+        // 缺陷数据（只读引用）
+        defectsData = coil.childrenCoilDefect || []
+
+        // 时间数据
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
 
         initMaxLevelDefect()
-        coilCheck.init(coil.childrenCoilCheck)
+        coilCheck.init(coil.childrenCoilCheck || [])
     }
 
     function getDefectNameList(){

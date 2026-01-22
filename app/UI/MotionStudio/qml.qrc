@@ -508,6 +508,7 @@
         <file>qml/Pages/Pop/ImageItem.qml</file>
         <file>qml/Pages/Pop/ImageRow.qml</file>
         <file>qml/Pages/Pop/LeftPrePop.qml</file>
+        <file>qml/Pages/Pop/TaperShapeTable.qml</file>
         <file>qml/Pages/States/StatesView.qml</file>
         <file>qml/Pages/TabTool/TabToolItem.qml</file>
         <file>qml/Pages/TabTool/TabToolView.qml</file>

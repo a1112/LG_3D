@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-    property var coilCheck
+    // 不存储对原始数据的引用，只存储读取的值
     property int coilId: 0  // 二级ID
     property color statusColor:
                 status==0?"#00000000":status==2?"red":"green"
@@ -15,11 +15,11 @@ Item {
 
     function setStatus(status_){
         status = status_
-        coilCheck.status = status_
+        // 不再修改原始数据，避免影响列表
     }
     function setMsg(msg_){
         msg = msg_
-        coilCheck.msg = msg
+        // 不再修改原始数据，避免影响列表
     }
 
     property string msg:""
@@ -28,10 +28,9 @@ Item {
             return
         }
         tool.for_list_model(coilCheck_,(coilCheck__)=>{
-                                coilCheck = coilCheck__
-                                coilId = coilCheck__.secondaryCoilId
-                                status = coilCheck__.status
-                                 msg = coilCheck__.msg
+                                coilId = coilCheck__.secondaryCoilId || 0
+                                status = coilCheck__.status || 0
+                                msg = coilCheck__.msg || ""
                             })
 
                 // for (let i=0;i<coilCheck_.count;i++ ){

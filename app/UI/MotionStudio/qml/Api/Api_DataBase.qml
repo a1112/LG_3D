@@ -148,6 +148,11 @@ Api_Base {
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId),success,failure)
     }
 
+    // 获取卷材详情（完整数据：缺陷列表、塔形点等）
+    function getCoilDetail(coilId,success,failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"detail",coilId),success,failure)
+    }
+
     // search
     function getCoilState(coilId_,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","CoilState",coilId_),success,failure)

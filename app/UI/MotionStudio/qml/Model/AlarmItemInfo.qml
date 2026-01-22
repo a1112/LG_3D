@@ -71,7 +71,8 @@ Item {
         looseCoilMsg = alarmInfo.looseCoilMsg
         flatRollMsg = alarmInfo.flatRollMsg
         defectMsg = alarmInfo.defectMsg
-        createTime = alarmInfo.createTime
+        // 兼容 createTime 和 crateTime 两种字段名
+        createTime = alarmInfo.createTime || alarmInfo.crateTime
         // alarmTime = new Date(createTime["year"],createTime["month"]-1,createTime["day"],
         //                     createTime["hour"],createTime["minute"],createTime["second"])
     }

@@ -310,7 +310,7 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         return buf.tobytes() if ok else tile_bytes
 
     except Exception as e:
-        log.warning(f"Failed to resize tile: {e}")
+        log.warning("Failed to resize tile: " + str(e))
         return tile_bytes
 
 

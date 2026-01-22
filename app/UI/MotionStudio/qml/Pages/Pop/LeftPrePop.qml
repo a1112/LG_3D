@@ -60,6 +60,13 @@ Menu {
             width:parent.width
             Layout.fillWidth:true
         }
+        // 塔形数据表格（显示所有数据）
+        TaperShapeTable{
+            width:parent.width
+            Layout.fillWidth:true
+            height: 120
+            coilModel: root.coilModel
+        }
         // TextArea{
         //     text:leftCore.leftMsg
         // }

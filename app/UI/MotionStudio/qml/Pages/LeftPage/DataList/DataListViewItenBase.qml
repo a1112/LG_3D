@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import "Core"
 import "../../../Model"
+
 Item {
     id:root
     width: 300
@@ -17,8 +18,18 @@ Item {
     }
     property  CoilModel coilModel: CoilModel{}  // 数据
 
+    // 监听 index 变化（ListView delegate 重用时 index 会改变）
+    property int delegateIndex: index
+    onDelegateIndexChanged: {
+        if (model && model.Id) {
+            coilModel.init(model)
+        }
+    }
+
     Component.onCompleted:{
-        coilModel.init(model)
+        if (model && model.Id) {
+            coilModel.init(model)
+        }
     }
 
     // property CoilState coilState: CoilState{}
@@ -72,8 +83,8 @@ Item {
         onHoveredChanged: {
             if(hovered){
                 leftCore.hovedIndex = index
-                // leftCore.leftMsg = msg
-                leftCore.hovedCoilModel = coilModel
+                // 使用 init 方法而不是直接赋值，避免修改列表数据
+                leftCore.hovedCoilModel.init(model)
             }
         }
     }

@@ -83,10 +83,63 @@ Item {
 
     property  CoilModel hovedCoilModel :CoilModel{}
 
+    // ========== 悬停详情数据缓存 ==========
+    property var detailCache: ({})  // 缓存已获取的详情数据
+    property int pendingDetailCoilId: 0  // 正在请求的coilId
+
     onHovedIndexChanged: {
+        if (hovedIndex < 0) return
+
         let p = coreModel.currentCoilListModel.get(hovedIndex)
-        hovelCoilData=p
-        hovedCoilId = p.SecondaryCoilId
+        if (!p) return
+
+        let coilId = p.Id || p.SecondaryCoilId
+        hovedCoilId = coilId
+
+        // 检查缓存
+        if (detailCache[coilId]) {
+            // 使用缓存数据
+            hovelCoilData = detailCache[coilId]
+            hovedCoilModel.init(detailCache[coilId])
+            return
+        }
+
+        // 先用摘要数据显示
+        hovelCoilData = p
+        hovedCoilModel.init(p)
+
+        // 异步获取完整详情
+        fetchCoilDetail(coilId)
+    }
+
+    // ========== 获取卷材详情 ==========
+    function fetchCoilDetail(coilId) {
+        // 避免重复请求
+        if (pendingDetailCoilId === coilId) return
+        pendingDetailCoilId = coilId
+
+        api_database.getCoilDetail(coilId,
+            function success(data) {
+                // 请求成功
+                pendingDetailCoilId = 0
+
+                if (data && data.Id) {
+                    // 缓存数据 - 使用深拷贝避免引用问题
+                    detailCache[coilId] = JSON.parse(JSON.stringify(data))
+
+                    // 如果当前还是悬停在这个卷材上，更新显示
+                    if (hovedCoilId === coilId) {
+                        hovelCoilData = detailCache[coilId]
+                        hovedCoilModel.init(detailCache[coilId])
+                    }
+                }
+            },
+            function error(err) {
+                // 请求失败，保持摘要数据显示
+                pendingDetailCoilId = 0
+                console.log("Failed to fetch coil detail:", err)
+            }
+        )
     }
 
     property bool isHoved:false

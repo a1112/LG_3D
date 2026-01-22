@@ -26,7 +26,7 @@ Rectangle {
     // ========== 新增：多级加载配置 ==========
     property int originalTileSize: 5460          // 原图瓦片尺寸（3x3切分后的单个瓦片大小）
     property real scaleThreshold: 1.5            // 1.5倍阈值（超过后使用原图）
-    property real currentScale: dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0  // 当前缩放倍数
+    property real currentScale: 1.0              // 当前缩放倍数（通过updateScale函数更新）
     property int currentLevel: 0                 // 当前加载等级 (0-4)
     property bool enableMultiLevel: true         // 启用多级加载
 
@@ -48,13 +48,17 @@ Rectangle {
 
     // ========== 新增：计算当前需要的瓦片等级 ==========
     function calculateNeededLevel() {
-        if (!enableMultiLevel) {
-            return 4  // 不启用多级加载时直接用原图
+        if (!enableMultiLevel || !dataAreaShowCore) {
+            return 4  // 不启用多级加载或数据不可用时直接用原图
         }
 
+        // 获取当前缩放值
+        var scale = dataAreaShowCore.canvasScale || 1.0
+        currentScale = scale  // 更新内部属性
+
         // 单个瓦片的显示尺寸（像素）
-        var tileDisplayW = (root.width / fixedTileCount) * currentScale
-        var tileDisplayH = (root.height / fixedTileCount) * currentScale
+        var tileDisplayW = (root.width / fixedTileCount) * scale
+        var tileDisplayH = (root.height / fixedTileCount) * scale
         var displaySize = Math.max(tileDisplayW, tileDisplayH)
 
         // 计算原图相对于显示的倍数
@@ -90,8 +94,10 @@ Rectangle {
         var newLevel = calculateNeededLevel()
 
         if (newLevel !== currentLevel) {
-            console.log("[TiledView] Scale:" + currentScale.toFixed(2) + " Level:" + currentLevel + " → " + newLevel)
+            var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
+            console.log("[TiledView] Scale:" + scale.toFixed(2) + " Level:" + currentLevel + " → " + newLevel)
             currentLevel = newLevel
+            currentScale = scale
             levelChanged(newLevel)
 
             // 通知所有瓦片更新
@@ -129,8 +135,7 @@ Rectangle {
         return !(tX2 <= vpX1 || tX1 >= vpX2 || tY2 <= vpY1 || tY1 >= vpY2)
     }
 
-    // ========== 监听缩放和视口变化 ==========
-    onCurrentScaleChanged: evaluateLevel()
+    // ========== 监听视口和尺寸变化 ==========
     onViewportXChanged: evaluateLevel()
     onViewportYChanged: evaluateLevel()
     onWidthChanged: evaluateLevel()
@@ -218,6 +223,24 @@ Rectangle {
             currentLevel: root.currentLevel
             inView: root.isTileInView(x, y, width, height)
             tileLevels: root.tileLevels
+        }
+    }
+
+    // ========== 定期检查缩放变化 ==========
+    Timer {
+        id: scaleCheckTimer
+        interval: 100  // 每100ms检查一次
+        repeat: true
+        running: enableMultiLevel && dataAreaShowCore !== null
+
+        onTriggered: {
+            if (dataAreaShowCore) {
+                var newScale = dataAreaShowCore.canvasScale || 1.0
+                // 只有缩放变化超过阈值时才重新计算（避免频繁计算）
+                if (Math.abs(newScale - currentScale) > 0.05) {
+                    evaluateLevel()
+                }
+            }
         }
     }
 }

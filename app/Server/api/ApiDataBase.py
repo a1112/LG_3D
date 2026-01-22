@@ -11,6 +11,7 @@ from Base.CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.core import Session
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
+from CoilDataBase.CoilSummary import get_coil_list_hybrid, get_coil_detail, batch_sync_summaries
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect, PlcData, CoilState
 from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
@@ -81,25 +82,35 @@ def format_coil_info(secondary_coil_list):
 
 
 @router.get("/coilList/{number}")
-async def get_coil(number: int,coil_id=None,rev=True):
+async def get_coil(number: int, coil_id=None, rev=True):
     """
-        获取 n 条数据
+    获取 n 条数据（使用摘要表优化）
+    优先从摘要表查询，如果没有则自动创建摘要
     """
-    number= min(number, 1000)
-    data=Coil.get_coil_list(number,coil_id, by_coil=isLoc)
-    if rev:
-        return format_coil_info(data[::-1])
-    return format_coil_info(data)
+    number = min(number, 1000)
+    # 使用混合模式：优先摘要表，没有则用原始查询并同步
+    data = get_coil_list_hybrid(
+        limit=number,
+        coil_id=coil_id,
+        rev=rev,
+        by_coil=isLoc
+    )
+    return data
 
 
 @router.get("/flush/{coil_id:int}")
 async def get_flush(coil_id: int):
     """
-    向上刷新
+    向上刷新（使用摘要表优化）
     """
-    if coil_id>0:
+    if coil_id > 0:
         return {
-            "coilList": await get_coil(10,coil_id=coil_id,rev=True)
+            "coilList": get_coil_list_hybrid(
+                limit=10,
+                coil_id=coil_id,
+                rev=True,
+                by_coil=isLoc
+            )
         }
     return {}
 
@@ -399,6 +410,29 @@ async def get_coil_status(coil_id):
 @router.get("/check/set_coil_status/{coil_id:int}/{status:int}")
 async def set_coil_status(coil_id, status, msg=""):
     set_coil_status_by_data(coil_id, status, msg)
+
+
+@router.get("/detail/{coil_id:int}")
+async def get_coil_detail_api(coil_id: int):
+    """
+    获取卷材详情（完整数据）
+    包括：基本信息、报警详情、缺陷列表、塔形点数据、松卷/扁卷报警等
+    用于点击查看详情时调用
+    """
+    detail = get_coil_detail(coil_id)
+    if detail is None:
+        return {"error": "Coil not found"}
+    return detail
+
+
+@router.post("/sync_summaries")
+async def sync_summaries_api(limit: int = 1000):
+    """
+    手动触发批量同步摘要数据
+    用于初始化摘要表
+    """
+    count = batch_sync_summaries(limit=limit)
+    return {"synced": count, "message": f"Synced {count} summaries"}
 
 
 app.include_router(router)

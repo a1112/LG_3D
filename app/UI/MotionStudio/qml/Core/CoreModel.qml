@@ -114,6 +114,12 @@ CoreModel_ {
     }
 
     function updateData(upData){
+        // 如果正在加载初始数据，跳过更新（防止竞态条件）
+        if (app && app.init && app.init.isListLoading) {
+            console.log("List is loading, skipping updateData")
+            return
+        }
+
         while(coilListModel.count > maxCoilListModelLen){
             coilListModel.remove(coilListModel.count-1,1)
         }
@@ -122,15 +128,23 @@ CoreModel_ {
             return -2
         }
 
+        // 收集已存在的 ID，避免重复插入
+        var existingIds = {}
+        for (let i = 0; i < realCoilListModel.count; i++) {
+            existingIds[realCoilListModel.get(i).Id] = i
+        }
+
         upData["coilList"].forEach(
                 (coil)=>{
-                    if(coil.Id > getLastCoilId()){
-                        realCoilListModel.insert(0,coil)
-                    }
-                    for (let i = 1;i<10;i++){
-                        if (realCoilListModel.get(i).Id === coil.Id){
-                            realCoilListModel.set(i,coil)
-                        }
+                    var coilId = coil.Id
+                    // 检查是否已存在
+                    if (existingIds[coilId] !== undefined) {
+                        // 已存在，更新数据
+                        realCoilListModel.set(existingIds[coilId], coil)
+                    } else {
+                        // 不存在，插入到列表开头（新数据）
+                        realCoilListModel.insert(0, coil)
+                        existingIds[coilId] = 0
                     }
                 }
             )

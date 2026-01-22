@@ -4,6 +4,8 @@ Item {
     property int init_num: 150
     // CoreInfo 中路径是否已初始化（避免帮助里路径文本频繁刷新）
     property bool coreInfoPathLoaded: false
+    // 列表加载状态标志，防止并发修改
+    property bool isListLoading: false
 
     function initDefectDict(defectDictData){
         // 初始化 缺陷图谱
@@ -17,10 +19,10 @@ Item {
         let data={
             "coilList":coilData
         }
-        // coreModel.updateData(data)
+        // API 返回的数据已经是按 ID 倒序排列，直接 append 即可
         for(var i=0;i<coilData.length;i++){
             var coil = coilData[i]
-            coreModel.coilListModel.insert(0,coil)
+            coreModel.coilListModel.append(coil)
         }
     }
 
@@ -129,11 +131,20 @@ Item {
 
         coreModel.coilListModel.clear()//实时数据
 
+        // 添加加载状态保护，防止并发
+        if (isListLoading) {
+            console.log("List is already loading, skipping flushList")
+            return
+        }
+        isListLoading = true
+
         api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
+                        isListLoading = false  // 完成后重置状态
                         },(error)=>{
                             console.log("error")
+                            isListLoading = false  // 错误时也要重置状态
                         }
                     )
         core.setCoilIndex(0)
