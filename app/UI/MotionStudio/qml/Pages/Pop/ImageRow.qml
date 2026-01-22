@@ -6,7 +6,7 @@ Row{
     Repeater{
         model: leftCore.preSourceModelS
         ImageItem{
-            hasImage: leftCore.hovelCoilData.Status_S>=0
+            hasImage: leftCore.hovelCoilData && leftCore.hovelCoilData.Status_S>=0
             image_source: model.image_source
             key: model.key
         }
@@ -14,7 +14,7 @@ Row{
     Repeater{
         model: leftCore.preSourceModelL
         ImageItem{
-            hasImage: leftCore.hovelCoilData.Status_L>=0
+            hasImage: leftCore.hovelCoilData && leftCore.hovelCoilData.Status_L>=0
             image_source: model.image_source
             key: model.key
         }

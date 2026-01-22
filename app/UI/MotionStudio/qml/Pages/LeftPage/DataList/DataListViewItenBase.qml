@@ -84,7 +84,9 @@ Item {
             if(hovered){
                 leftCore.hovedIndex = index
                 // 使用 init 方法而不是直接赋值，避免修改列表数据
-                leftCore.hovedCoilModel.init(model)
+                if (model && model.Id) {
+                    leftCore.hovedCoilModel.init(model)
+                }
             }
         }
     }

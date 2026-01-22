@@ -2,9 +2,9 @@ import QtQuick
 
 Item {
     anchors.fill: parent
-    property real centreX:inner_ellipse[0][0]
-    property real centreY:inner_ellipse[0][1]
-    property real ellipseWidth:Math.min(inner_ellipse[1][0],inner_ellipse[1][1])
+    property real centreX:(inner_ellipse && inner_ellipse[0]) ? inner_ellipse[0][0] || 0 : 0
+    property real centreY:(inner_ellipse && inner_ellipse[0]) ? inner_ellipse[0][1] || 0 : 0
+    property real ellipseWidth:(inner_ellipse && inner_ellipse[1]) ? Math.min(inner_ellipse[1][0] || 0, inner_ellipse[1][1] || 0) : 0
 
     function findPoint(px, py, point_type) {
         // 计算方向向量

@@ -1,12 +1,12 @@
 import QtQuick
 
 QtObject {
-    property string defectName : name ?? ""
-    property int defectLevel: level ?? 0
-    property color defectColor:color ?? ""
-    property bool defectShow:show ??  false
-    property int defectNum:num ?? 0
-    property bool filterShow:filter ??  true
+    property string defectName : ""
+    property int defectLevel: 0
+    property color defectColor: "#00000000"
+    property bool defectShow: false
+    property int defectNum: 0
+    property bool filterShow: true
 
     property var data
 
@@ -16,11 +16,11 @@ QtObject {
             return false
         }
 
-        defectName = itemData["name"]
-        defectLevel = itemData["level"]
-        defectColor = itemData["color"]
-        defectShow = itemData["show"]
-        defectNum = itemData["num"]
+        defectName = itemData["name"] || ""
+        defectLevel = itemData["level"] || 0
+        defectColor = itemData["color"] || "#00000000"
+        defectShow = itemData["show"] || false
+        defectNum = itemData["num"] || 0
     }
 
 

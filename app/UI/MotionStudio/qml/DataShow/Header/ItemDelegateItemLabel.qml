@@ -12,7 +12,7 @@ ItemDelegateItem {
     //     anchors.top: parent.bottom
     // }
     enabled: has_data
-    property bool has_data: coreModel.has_data[surfaceData.key][key]
+    property bool has_data: coreModel && coreModel.has_data && surfaceData && surfaceData.key ? coreModel.has_data[surfaceData.key][key] || false : false
     // Rectangle{
     //     visible: has_data
     //     border.color: "gray"

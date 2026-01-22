@@ -37,7 +37,7 @@ Menu {
         spacing:0
         TitleLabel{
             Layout.fillWidth:true
-            text:coilModel.coilNo
+            text:coilModel ? coilModel.coilNo || "" : ""
             color:Material.color(Material.Blue)
             Layout.alignment:Qt.AlignHCenter
             anchors.horizontalCenter:parent.horizontalCenter
@@ -55,6 +55,7 @@ Menu {
             width:parent.width
             Layout.fillWidth:true
             height: 100
+            coilModel: root.coilModel
         }
         AlarmInfo{
             width:parent.width

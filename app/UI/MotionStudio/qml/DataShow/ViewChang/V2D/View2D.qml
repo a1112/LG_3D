@@ -18,7 +18,7 @@ Item {
         fillMode: Image.PreserveAspectFit
         sourceSize.width: parent.width
         sourceSize.height: parent.height
-        source:surfaceData.getSouceByKey(next_key,true)
+        source:surfaceData.coilId > 0 ? surfaceData.getSouceByKey(next_key,true) : ""
         asynchronous:true
     }
     MouseArea{

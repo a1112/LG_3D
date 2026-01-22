@@ -92,8 +92,16 @@ Item {
                                            coreModel.defectDictAll[item["name"]]=item["show"]
                                        }
 
+                                       // 过滤掉 null 值
+                                       let cleanItem = {}
+                                       for (let key in item) {
+                                           if (item[key] !== null && item[key] !== undefined) {
+                                               cleanItem[key] = item[key]
+                                           }
+                                       }
+
                                        if (name in defectDict){
-                                           defecClassListModel.append(item)
+                                           defecClassListModel.append(cleanItem)
                                        }
                                    })
 
@@ -107,6 +115,7 @@ Item {
 
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
+                                    if (!item) return
                                     let defectName = item.defectName
                                     if (defectName in defectDict){
                                         defectDict[defectName].push(item)
@@ -115,18 +124,26 @@ Item {
                                         defectDict[defectName] = [item]
                                     }
 
+                                    // 过滤掉 null 值
+                                    let cleanItem = {}
+                                    for (let key in item) {
+                                        if (item[key] !== null && item[key] !== undefined) {
+                                            cleanItem[key] = item[key]
+                                        }
+                                    }
+
                                     if(defectName.indexOf("2D_")>=0){
-                                        areaDefectModel.append(item)
-                                        item["is_area"]=true
-                                        item.defectName=item.defectName.slice(3)
+                                        cleanItem["is_area"]=true
+                                        cleanItem.defectName=cleanItem.defectName.slice(3)
+                                        areaDefectModel.append(cleanItem)
                                     }
                                     else{
-                                        item["is_area"]=false
+                                        cleanItem["is_area"]=false
                                     }
                                     // else{
-                                    //     defectAllModel.append(item)
+                                    //     defectAllModel.append(cleanItem)
                                     // }
-                                    defectAllModel.append(item)
+                                    defectAllModel.append(cleanItem)
 
                                 })
         }

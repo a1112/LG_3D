@@ -118,7 +118,7 @@ Item {
         if (pendingDetailCoilId === coilId) return
         pendingDetailCoilId = coilId
 
-        api_database.getCoilDetail(coilId,
+        app.api.getCoilDetail(coilId,
             function success(data) {
                 // 请求成功
                 pendingDetailCoilId = 0

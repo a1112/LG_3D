@@ -97,18 +97,18 @@ Menu{
 
                 text: qsTr("返修")
                 selectdColor:Material.color(Material.Red)
-                selectd:coilModel.coilCheck.status == 2
+                selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 2
 
         }
         SelectMenuItem{
                 text: qsTr("未确认")
                 selectdColor:Material.color(Material.Yellow)
-                selectd:coilModel.coilCheck.status == 0
+                selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 0
         }
         SelectMenuItem{
                     text: qsTr("通过")
                     selectdColor:Material.color(Material.Green)
-                    selectd:coilModel.coilCheck.status == 1
+                    selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 1
         }
     }
 

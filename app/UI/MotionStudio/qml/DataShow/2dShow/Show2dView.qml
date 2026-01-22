@@ -70,6 +70,8 @@ Item {
     }
 
     Component.onCompleted:{
-        dataShowCore.view2DTool = root.view2DTool
+        if (typeof dataShowCore.view2DTool !== 'undefined') {
+            dataShowCore.view2DTool = root.view2DTool
+        }
     }
 }

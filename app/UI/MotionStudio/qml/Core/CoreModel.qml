@@ -53,12 +53,14 @@ CoreModel_ {
     }
 
     function getCurrentCoilListModelMinMaxId(){
+        if (currentCoilListModel.count === 0) return [0, 0]
         return [currentCoilListModel.get(currentCoilListModel.count-1).Id,currentCoilListModel.get(0).Id]
     }
     function getCurrentCoilListModelMinMaxDateTime(){
+        if (currentCoilListModel.count === 0) return [null, null]
         return [currentCoilListModel.get(currentCoilListModel.count-1).DateTime,currentCoilListModel.get(0).DateTime]
     }
-    readonly property int lastCoilId: realCoilListModel.get(0).Id
+    readonly property int lastCoilId: realCoilListModel.count > 0 ? realCoilListModel.get(0).Id || 0 : 0
 
     property ListModel surfaceModel: ListModel{
     }

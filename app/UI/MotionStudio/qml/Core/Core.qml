@@ -30,21 +30,21 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
     function flushListItem(){
         let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
 
+        if (!c_data) {
+            return
+        }
         if (c_data.SecondaryCoilId === currentCoilModel.coilId) {
             return
         }
         currentCoilModel.init(c_data)
         coreControl.init_data_has()
-        if (currentCoilModel.coilStatus_L>=0) {
+        // 使用 hasCoil 字段判断是否有检测数据（摘要表中的 HasCoil）
+        if (c_data.hasCoil) {
             coreModel.surfaceL.hasData = true
-        }
-        else {
-            coreModel.surfaceL.hasData = false
-        }
-        if (currentCoilModel.coilStatus_S>=0) {
             coreModel.surfaceS.hasData = true
         }
         else {
+            coreModel.surfaceL.hasData = false
             coreModel.surfaceS.hasData = false
         }
         coreModel.surfaceS.setCoilId(currentCoilModel.coilId)

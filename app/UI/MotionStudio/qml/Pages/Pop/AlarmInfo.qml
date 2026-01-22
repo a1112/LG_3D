@@ -4,13 +4,14 @@ import QtQuick
 Row {
     id:root
     spacing:0
+    visible: leftCore.hovedCoilModel !== undefined
 
     AlarmInfoItem{
-        alarmItemInfo: leftCore.hovedCoilModel.alarmItemInfo_L
+        alarmItemInfo: leftCore.hovedCoilModel ? leftCore.hovedCoilModel.alarmItemInfo_L : null
         width:root.width/2
     }
     AlarmInfoItem{
         width:root.width/2
-        alarmItemInfo: leftCore.hovedCoilModel.alarmItemInfo_S
+        alarmItemInfo: leftCore.hovedCoilModel ? leftCore.hovedCoilModel.alarmItemInfo_S : null
     }
 }

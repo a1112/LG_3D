@@ -15,13 +15,13 @@ Item {
 
 
     property var ellipse: {
-        "center": {"x": inner_ellipse[0][0]*dataShowCore.canvasScale-inner_ellipse[1][1]*dataShowCore.canvasScale/2
+        "center": {"x": ((inner_ellipse[0] && inner_ellipse[0][0]) || 0)*dataShowCore.canvasScale-((inner_ellipse[1] && inner_ellipse[1][1]) || 0)*dataShowCore.canvasScale/2
             ,
-            "y": inner_ellipse[0][1]*dataShowCore.canvasScale
+            "y": ((inner_ellipse[0] && inner_ellipse[0][1]) || 0)*dataShowCore.canvasScale
         },
-        "axes": {"major_axis": inner_ellipse[1][1]*dataShowCore.canvasScale,
-            "minor_axis": inner_ellipse[1][0]*dataShowCore.canvasScale},
-        "angle": inner_ellipse[2]
+        "axes": {"major_axis": ((inner_ellipse[1] && inner_ellipse[1][1]) || 0)*dataShowCore.canvasScale,
+            "minor_axis": ((inner_ellipse[1] && inner_ellipse[1][0]) || 0)*dataShowCore.canvasScale},
+        "angle": inner_ellipse[2] || 0
     }
     property var lineData: surfaceData.lineData || []
 
@@ -134,7 +134,7 @@ Item {
     Label{
         x:ellipse.center.x+ellipse.axes.major_axis/2+5
         y:ellipse.center.y - ellipse.axes.minor_axis * (1/3)
-        text:surfaceData.ix_to_mm( inner_ellipse[1][1])
+        text:surfaceData.ix_to_mm((inner_ellipse[1] && inner_ellipse[1][1]) || 0)
         color: "green"
         font.bold: true
         font.pointSize: 14
@@ -143,7 +143,7 @@ Item {
     Label{
         x:ellipse["center"].x+ellipse.axes.major_axis*(2/3)
         y:ellipse["center"].y+5
-        text:surfaceData.ix_to_mm( inner_ellipse[1][0])
+        text:surfaceData.ix_to_mm((inner_ellipse[1] && inner_ellipse[1][0]) || 0)
         color: "green"
         font.bold: true
         font.pointSize: 14
@@ -155,6 +155,7 @@ Item {
         color:"#00000000"
         border.width: 2
         border.color: "orange"
+        visible: dataShowCore.perpendicularPoint !== undefined
         x:dataShowCore.perpendicularPoint.x*dataShowCore.canvasScale-2
         y:dataShowCore.perpendicularPoint.y*dataShowCore.canvasScale-2
     }

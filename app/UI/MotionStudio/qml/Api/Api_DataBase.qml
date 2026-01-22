@@ -144,7 +144,6 @@ Api_Base {
     }
 
     function getDataFlush(coilId,success,failure){
-        console.log(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId))
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"flush",coilId),success,failure)
     }
 

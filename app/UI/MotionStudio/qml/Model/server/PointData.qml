@@ -13,9 +13,9 @@ QtObject {
     property DateTimeProject crateTime_:DateTimeProject{}
     property var allTypes : ["user","min_inner","max_inner","min_outer","max_outer"]
 
-    property int px_x:dataShowCore.toPx(x_)
+    property int px_x: typeof dataShowCore !== 'undefined' && dataShowCore && dataShowCore.toPx ? dataShowCore.toPx(x_) : x_
 
-    property int px_y:dataShowCore.toPx(y_)
+    property int px_y: typeof dataShowCore !== 'undefined' && dataShowCore && dataShowCore.toPx ? dataShowCore.toPx(y_) : y_
 
     property var defaultPoint: {
         "type": "user",
@@ -34,7 +34,6 @@ QtObject {
             "second": 15
         },
         "surface": "L",
-        "z": 30435,
-        "data": null
+        "z": 30435
     }
 }

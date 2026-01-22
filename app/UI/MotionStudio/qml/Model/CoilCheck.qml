@@ -28,6 +28,7 @@ Item {
             return
         }
         tool.for_list_model(coilCheck_,(coilCheck__)=>{
+                                if (!coilCheck__) return
                                 coilId = coilCheck__.secondaryCoilId || 0
                                 status = coilCheck__.status || 0
                                 msg = coilCheck__.msg || ""

@@ -56,23 +56,24 @@ Item {
 
     */
     function setAlarmInfo(alarmInfo){
+        if (!alarmInfo) return
         hasData=true
-        secondaryCoilId = alarmInfo.secondaryCoilId
-        nextCode = alarmInfo.nextCode
-        nextName = alarmInfo.nextName
-        taperShapeGrad = alarmInfo.taperShapeGrad
-        looseCoilGrad = alarmInfo.looseCoilGrad
-        flatRollGrad = alarmInfo.flatRollGrad
-        defectGrad = alarmInfo.defectGrad
-        grad = alarmInfo.grad
-        data = alarmInfo.data
-        surface = alarmInfo.surface
-        taperShapeMsg = alarmInfo.taperShapeMsg
-        looseCoilMsg = alarmInfo.looseCoilMsg
-        flatRollMsg = alarmInfo.flatRollMsg
-        defectMsg = alarmInfo.defectMsg
+        secondaryCoilId = alarmInfo.secondaryCoilId || 0
+        nextCode = alarmInfo.nextCode || ""
+        nextName = alarmInfo.nextName || ""
+        taperShapeGrad = alarmInfo.taperShapeGrad || 0
+        looseCoilGrad = alarmInfo.looseCoilGrad || 0
+        flatRollGrad = alarmInfo.flatRollGrad || 0
+        defectGrad = alarmInfo.defectGrad || 0
+        grad = alarmInfo.grad || 0
+        data = alarmInfo.data || ""
+        surface = alarmInfo.surface || ""
+        taperShapeMsg = alarmInfo.taperShapeMsg || ""
+        looseCoilMsg = alarmInfo.looseCoilMsg || ""
+        flatRollMsg = alarmInfo.flatRollMsg || ""
+        defectMsg = alarmInfo.defectMsg || ""
         // 兼容 createTime 和 crateTime 两种字段名
-        createTime = alarmInfo.createTime || alarmInfo.crateTime
+        createTime = alarmInfo.createTime || alarmInfo.crateTime || {}
         // alarmTime = new Date(createTime["year"],createTime["month"]-1,createTime["day"],
         //                     createTime["hour"],createTime["minute"],createTime["second"])
     }

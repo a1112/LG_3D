@@ -28,6 +28,7 @@ QtObject {
     property int coilGrade: 0
     property int coilStatus_S: 0
     property string coilMsg: ""
+    property bool hasCoil: true  // 是否有检测数据
 
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
@@ -57,6 +58,11 @@ QtObject {
     function init(coil){
         // 直接读取 model 的属性，不进行深拷贝（避免循环引用问题）
         // 注意：不修改原始数据，只读取
+        if (!coil) {
+            console.log("CoilModel.init: coil is undefined!")
+            return
+        }
+
         coilId = coil.Id || 0
         coilNo = coil.CoilNo || ""
         coilType = coil.CoilType || ""
@@ -75,6 +81,7 @@ QtObject {
         coilMsg = coil.Msg || ""
         nextInfo = coil.NextInfo || ""
         nextCode = coil.NextCode || ""
+        hasCoil = coil.hasCoil || false  // 是否有检测数据
 
         // 存储对 model 的引用（只读，不修改）
         coilData = coil

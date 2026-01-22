@@ -18,6 +18,7 @@ Item {
 
     function for_list_model(list_model,func){
         //    for 循环 ListModel
+        if (!list_model || !list_model.count) return
         for (let i=0;i<list_model.count;i++){
             if (func(list_model.get(i),i) === true)return
         }

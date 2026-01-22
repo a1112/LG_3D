@@ -19,16 +19,30 @@ Item {
         def["p_y"] = py
         def["p_z"] = 0
         def["type"]="user"
-        pointUserData.append(def)
+        // 创建副本，避免修改原始对象，并过滤掉 null 值
+        var cleanDef = {}
+        for (var key in def) {
+            if (def[key] !== null && def[key] !== undefined) {
+                cleanDef[key] = def[key]
+            }
+        }
+        pointUserData.append(cleanDef)
     }
 
     function addDbPoint(dataItem){
+        if (!dataItem) return
         dataItem["p_x"]=dataItem["x"]
         dataItem["p_y"]=dataItem["y"]
         dataItem["p_z"]=dataItem["z"]
         if (dataItem["z_mm"]<15) return
-        // if (dataItem["z_mm"]>-15 && dataItem["z_mm"]<15) return
-        pointDbData.append(dataItem)
+        // 创建副本，过滤掉 null 值
+        var cleanItem = {}
+        for (var key in dataItem) {
+            if (dataItem[key] !== null && dataItem[key] !== undefined) {
+                cleanItem[key] = dataItem[key]
+            }
+        }
+        pointDbData.append(cleanItem)
     }
 
     property PointData pointDataItem:PointData{}

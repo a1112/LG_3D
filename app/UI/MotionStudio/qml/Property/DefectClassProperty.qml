@@ -32,21 +32,33 @@ Item {
 
     function upDefectDictModelByDefectDictData(){
         defectDictModel.clear()
+        // 第一次循环：显示的缺陷
         for(let key in defectDictData){
             let value = defectDictData[key]
-            value["name"] = key
-            value["num"] = 0
+            // 创建副本避免修改原始数据
+            let item = {}
+            item["name"] = key
+            item["num"] = 0
+            item["level"] = value["level"]
+            item["color"] = value["color"]
+            item["show"] = value["show"]
             if (value["show"]){
-                defectDictModel.append(value)
+                defectDictModel.append(item)
             }
         }
 
+        // 第二次循环：不显示的缺陷
         for(let key in defectDictData){
             let value = defectDictData[key]
-            value["name"] = key
-            value["num"] = 0
+            // 创建副本避免修改原始数据
+            let item = {}
+            item["name"] = key
+            item["num"] = 0
+            item["level"] = value["level"]
+            item["color"] = value["color"]
+            item["show"] = value["show"]
             if (!value["show"]){
-                defectDictModel.append(value)
+                defectDictModel.append(item)
             }
         }
     }

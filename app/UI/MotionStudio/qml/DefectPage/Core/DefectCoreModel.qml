@@ -15,7 +15,14 @@ Item {
         tool.for_list_model(
                     globDefectDictModel,(item)=>{
                         let  it =  globalDefectClassItemModel.itemTodict(item)
-                        defectDictModel.append(it)
+                        // 过滤掉 null 值
+                        let cleanIt = {}
+                        for (let key in it) {
+                            if (it[key] !== null && it[key] !== undefined) {
+                                cleanIt[key] = it[key]
+                            }
+                        }
+                        defectDictModel.append(cleanIt)
                     })
         filterCore.resetFilterDict()
     }
@@ -54,7 +61,14 @@ Item {
                                 //     }
                                 // }
                                 if (filterCore.itemIsShow(item)){
-                                        defectsModel.append(item)
+                                        // 过滤掉 null 值
+                                        let cleanItem = {}
+                                        for (let key in item) {
+                                            if (item[key] !== null && item[key] !== undefined) {
+                                                cleanItem[key] = item[key]
+                                            }
+                                        }
+                                        defectsModel.append(cleanItem)
                                     }
 
                             })
@@ -66,14 +80,16 @@ Item {
 
         defectJson.forEach(
                     (value)=>{
-                        root.defectsModelAll.append(value)
+                        if (value && value.data !== null) {
+                            root.defectsModelAll.append(value)
+                        }
                     }
                     )
         flushModel()
     }
 
     property string defectText: ""
-    property var defectJson: JSON.parse(defectText)
+    property var defectJson: defectText ? JSON.parse(defectText) : []
     onDefectJsonChanged: {
 
         flushModelAll()

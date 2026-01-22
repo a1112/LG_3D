@@ -7,13 +7,17 @@ Item {
     height:flow.height
     Layout.fillWidth:true
     Layout.fillHeight:true
+    property var coilModel
+    visible: coilModel !== undefined
     property ListModel defectModel:ListModel{}
-    property var defectsData:coilModel.defectsData
+    property var defectsData:coilModel ? coilModel.defectsData : null
     onDefectsDataChanged:{
         defectModel.clear()
-        tool.for_list_model(defectsData,(defect)=>{
-                    defectModel.append(defect)
-                            })
+        if (defectsData) {
+            tool.for_list_model(defectsData,(defect)=>{
+                        defectModel.append(defect)
+                                })
+        }
     }
 
 

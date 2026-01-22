@@ -196,7 +196,7 @@ ApplicationWindow {
     FileDialog {
         id: targetFolderDialog
         title: qsTr("选择目标文件夹")
-        fileMode: FileDialog.OpenDirectory
+        fileMode: FileDialog.OpenDirectory !== undefined ? FileDialog.OpenDirectory : 0
         onAccepted: {
             if (selectedFiles && selectedFiles.length > 0)
                 targetFolder = cleanFolderPath(selectedFiles[0])
@@ -206,7 +206,7 @@ ApplicationWindow {
     FileDialog {
         id: outputFolderDialog
         title: qsTr("选择输出文件夹")
-        fileMode: FileDialog.OpenDirectory
+        fileMode: FileDialog.OpenDirectory !== undefined ? FileDialog.OpenDirectory : 0
         onAccepted: {
             if (selectedFiles && selectedFiles.length > 0)
                 outputFolder = cleanFolderPath(selectedFiles[0])

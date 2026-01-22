@@ -105,22 +105,22 @@ Item {
         }
     }
 
-    property int canvasWidth: flick.width
-    property int canvasHeight: flick.height
-    readonly property real canvasWidthAspectRatio: canvasWidth/canvasContentWidth
-    readonly property real canvasHeightAspectRatio: canvasHeight/canvasContentHeight
+    property int canvasWidth: flick ? flick.width || 0 : 0
+    property int canvasHeight: flick ? flick.height || 0 : 0
+    readonly property real canvasWidthAspectRatio: canvasContentWidth > 0 ? canvasWidth/canvasContentWidth : 0
+    readonly property real canvasHeightAspectRatio: canvasContentHeight > 0 ? canvasHeight/canvasContentHeight : 0
 
-    property int showLeft: flick.contentX/canvasScale
-    property int showTop: flick.contentY/canvasScale
-    property int showRight: (flick.contentX+flick.width)/canvasScale
-    property int showBottom: (flick.contentY+flick.height)/canvasScale
+    property int showLeft: flick && canvasScale > 0 ? (flick.contentX || 0)/canvasScale : 0
+    property int showTop: flick && canvasScale > 0 ? (flick.contentY || 0)/canvasScale : 0
+    property int showRight: flick && canvasScale > 0 ? ((flick.contentX || 0)+(flick.width || 0))/canvasScale : 0
+    property int showBottom: flick && canvasScale > 0 ? ((flick.contentY || 0)+(flick.height || 0))/canvasScale : 0
 
     property real max_mm: sourceWidth*surfaceData.scan3dScaleX
     property real showLeftmm: (showLeft-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
     property real showRightmm: (showRight-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
 
-    readonly property int canvasContentX: flick.contentX
-    readonly property int canvasContentY: flick.contentY
+    readonly property int canvasContentX: flick ? flick.contentX || 0 : 0
+    readonly property int canvasContentY: flick ? flick.contentY || 0 : 0
     readonly property real canvasContentXaspectRatio: canvasContentX/canvasContentWidth
     readonly property real canvasContentYaspectRatio: canvasContentY/canvasContentHeight
 
@@ -189,8 +189,8 @@ Item {
 
 
     property point hoverPoint: Qt.point(0,0) // 榧犳爣鎮仠鐐?
-    property int hoverdX: (hoverPoint.x+flick.contentX)/canvasScale
-    property int hoverdY: (hoverPoint.y+flick.contentY)/canvasScale
+    property int hoverdX: flick && canvasScale > 0 ? (hoverPoint.x+(flick.contentX || 0))/canvasScale : 0
+    property int hoverdY: flick && canvasScale > 0 ? (hoverPoint.y+(flick.contentY || 0))/canvasScale : 0
     property real hoverdXmm: pxtoPos(hoverdX).toFixed(1)
     property real hoverdYmm: pxtoPos(hoverdY).toFixed(1)
     property real hoverdZmm : 0
