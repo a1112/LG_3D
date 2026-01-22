@@ -5,7 +5,7 @@ from typing import Optional
 
 import redis
 
-from .base import BaseImageCache
+from .base import BaseImageCache, _resolve_image_path
 
 
 class RedisImageCache(BaseImageCache):

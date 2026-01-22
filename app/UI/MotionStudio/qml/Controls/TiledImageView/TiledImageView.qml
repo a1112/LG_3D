@@ -94,9 +94,8 @@ Rectangle {
         var newLevel = calculateNeededLevel()
 
         if (newLevel !== currentLevel) {
-            var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
-            console.log("[TiledView] Scale:" + scale.toFixed(2) + " Level:" + currentLevel + " → " + newLevel)
             currentLevel = newLevel
+            var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
             currentScale = scale
             levelChanged(newLevel)
 
@@ -176,7 +175,8 @@ Rectangle {
                          }
                          imageInfoReady(imageUrl)
                      },(err)=>{
-                        console.log(err)
+                        // 保留错误日志用于调试
+                        console.log("[TiledView] Image info error:", err)
                      })
     }
 
@@ -229,7 +229,7 @@ Rectangle {
     // ========== 定期检查缩放变化 ==========
     Timer {
         id: scaleCheckTimer
-        interval: 100  // 每100ms检查一次
+        interval: 300  // 每300ms检查一次，减少CPU占用
         repeat: true
         running: enableMultiLevel && dataAreaShowCore !== null
 
@@ -237,7 +237,7 @@ Rectangle {
             if (dataAreaShowCore) {
                 var newScale = dataAreaShowCore.canvasScale || 1.0
                 // 只有缩放变化超过阈值时才重新计算（避免频繁计算）
-                if (Math.abs(newScale - currentScale) > 0.05) {
+                if (Math.abs(newScale - currentScale) > 0.2) {
                     evaluateLevel()
                 }
             }

@@ -134,7 +134,7 @@ class BaseImageCache(CacheComponent):
     Subclasses only implement `_load_image_bytes`.
     """
 
-    def __init__(self, cache_size: int = 128, ttl: int = 200) -> None:
+    def __init__(self, cache_size: int = 128, ttl: int = 600) -> None:
         self.cache_size = cache_size
         self.ttl = ttl
         self._cache_image_byte = self._build_image_byte_cache()
@@ -187,7 +187,12 @@ class BaseImageCache(CacheComponent):
             logging.info("cache miss image byte %s took %.2fs", path, elapsed)
             return data
 
-        return _load_image_byte
+        def _load_image_byte_wrapper(path: str) -> Optional[bytes]:
+            # 规范化路径以确保缓存一致性（解决路径大小写/分隔符问题）
+            normalized_path = str(Path(path).resolve())
+            return _load_image_byte(normalized_path)
+
+        return _load_image_byte_wrapper
 
     def _build_pil_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))

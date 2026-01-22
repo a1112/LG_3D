@@ -105,11 +105,8 @@ Item{
         opacity: 1.0
 
         onStatusChanged: {
-            if (status === Image.Ready) {
-                // 图像加载完成，记录等级
-                console.log("[Tile " + row_ + "," + col_ + " " + nowString() + "] Level " + currentLevel + " loaded ✓")
-            } else if (status === Image.Error) {
-                console.log("[Tile " + row_ + "," + col_ + " " + nowString() + "] Level " + currentLevel + " error ✗")
+            if (status === Image.Error) {
+                console.log("[Tile " + row_ + "," + col_ + "] Level " + currentLevel + " error")
             }
         }
 
@@ -141,16 +138,6 @@ Item{
 
     // ========== 更新等级（外部调用）==========
     function updateLevel(newLevel) {
-        // 不在视口内，卸载图像释放内存
-        if (!isInViewport) {
-            if (currentSource !== "") {
-                console.log("[Tile " + row_ + "," + col_ + "] Unload (out of view)")
-                currentSource = ""
-                loadedLevel = -1
-            }
-            return
-        }
-
         // 已经是目标等级或更高，不需要升级
         if (loadedLevel >= newLevel) {
             return
@@ -161,14 +148,10 @@ Item{
 
         // 还没有加载过任何图像，直接加载
         if (loadedLevel < 0) {
-            console.log("[Tile " + row_ + "," + col_ + "] Initial load Level " + newLevel)
             currentSource = newSource
             loadedLevel = newLevel
         } else if (newLevel > loadedLevel) {
             // 升级到更高质量
-            console.log("[Tile " + row_ + "," + col_ + "] Upgrade Level " + loadedLevel + " → " + newLevel)
-
-            // 直接切换（QML的Image组件会自动处理缓存）
             currentSource = newSource
             loadedLevel = newLevel
         }
@@ -176,12 +159,9 @@ Item{
 
     // ========== 监听视口变化 ==========
     onIsInViewportChanged: {
-        if (!isInViewport && currentSource !== "") {
-            // 离开视口，卸载图像
-            currentSource = ""
-            loadedLevel = -1
-        } else if (isInViewport && currentSource === "" && currentLevel >= 0) {
-            // 进入视口，加载图像
+        // 移除卸载逻辑，保留缓存以提升性能
+        // 只在进入视口且未加载时加载
+        if (isInViewport && currentSource === "" && currentLevel >= 0) {
             updateLevel(currentLevel)
         }
     }

@@ -63,7 +63,7 @@ Item {
     }
 
     Timer{
-        interval: 3000
+        interval: 8000
         repeat:true
         running: true
         id: delayTimer

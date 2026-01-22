@@ -41,7 +41,7 @@ def _get_cache_mode(mode: Optional[str]) -> str:
 
 def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
     cache_mode = _get_cache_mode(mode)
-    ttl = int(os.getenv("CACHE_TTL", "60"))
+    ttl = int(os.getenv("CACHE_TTL", "600"))  # 默认 10 分钟
     redis_ttl = int(os.getenv("CACHE_REDIS_TTL", str(ttl)))
     redis_host = os.getenv("CACHE_REDIS_HOST", "localhost")
     redis_port = int(os.getenv("CACHE_REDIS_PORT", "6379"))
@@ -78,9 +78,9 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
             prefix="classifier",
         )
     else:
-        preview_cache = MemoryImageCache(256, ttl=ttl)
-        image_cache = MemoryImageCache(128, ttl=ttl)
-        area_cache = DiskAreaImageCache(32, ttl=ttl)
+        preview_cache = MemoryImageCache(512, ttl=ttl)  # 增加预览缓存
+        image_cache = MemoryImageCache(256, ttl=ttl)    # 增加图像缓存
+        area_cache = DiskAreaImageCache(64, ttl=ttl)    # 增加 AREA 缓存
         classifier_cache = MemoryImageCache(100, ttl=ttl)
         cache_mode = "memory"
 
