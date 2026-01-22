@@ -54,7 +54,7 @@ function DataShowPage() {
       <Row gutter={16} style={{ height: '100%' }}>
         {/* 左侧卷材列表 */}
         <Col span={6}>
-          <Card title="卷材列表" className="full-height-card" bodyStyle={{ padding: 0 }}>
+          <Card title="卷材列表" className="full-height-card" styles={{ body: { padding: 0 } }}>
             {listLoading ? (
               <div className="loading-container">
                 <Spin indicator={<LoadingOutlined spin />} />
@@ -102,7 +102,7 @@ function DataShowPage() {
               <Card
                 title="3D数据可视化"
                 className="full-height-card"
-                bodyStyle={{ padding: 0, height: '100%' }}
+                styles={{ body: { padding: 0, height: '100%' } }}
               >
                 {!currentCoil ? (
                   <Empty description="请选择卷材" />
@@ -121,7 +121,7 @@ function DataShowPage() {
               <Col span={24}>
                 <Card
                   title="高度曲线"
-                  bodyStyle={{ height: 200 }}
+                  styles={{ body: { height: 200 } }}
                 >
                   {heightLoading ? (
                     <div className="loading-container">

@@ -76,21 +76,82 @@ export const heightDataApi = {
     }),
 }
 
+/**
+ * 图像尺寸参数
+ */
+export interface ImageSizeParams {
+  width?: number
+  height?: number
+  quality?: number
+  format?: 'jpg' | 'png' | 'webp'
+}
+
+/**
+ * 构建带尺寸参数的图像URL
+ */
+function buildImageUrl(baseUrl: string, params?: ImageSizeParams): string {
+  if (!params) return baseUrl
+
+  const url = new URL(baseUrl, window.location.origin)
+
+  if (params.width) url.searchParams.set('width', params.width.toString())
+  if (params.height) url.searchParams.set('height', params.height.toString())
+  if (params.quality) url.searchParams.set('quality', params.quality.toString())
+  if (params.format) url.searchParams.set('format', params.format)
+
+  return url.toString()
+}
+
 // 图像API
 export const imageApi = {
-  // 获取预览图像
+  // 获取预览图像（固定URL）
   getPreview: (surfaceKey: string, coilId: number, type: string) =>
     `/api/image/preview/${surfaceKey}/${coilId}/${type}`,
 
-  // 获取源图像
+  // 获取预览图像（支持动态尺寸）
+  getPreviewSized: (
+    surfaceKey: string,
+    coilId: number,
+    type: string,
+    size?: ImageSizeParams
+  ) =>
+    buildImageUrl(
+      `/api/image/preview/${surfaceKey}/${coilId}/${type}`,
+      size
+    ),
+
+  // 获取源图像（固定URL）
   getSource: (surfaceKey: string, coilId: number, type: string) =>
     `/api/image/source/${surfaceKey}/${coilId}/${type}`,
+
+  // 获取源图像（支持动态尺寸）
+  getSourceSized: (
+    surfaceKey: string,
+    coilId: number,
+    type: string,
+    size?: ImageSizeParams
+  ) =>
+    buildImageUrl(
+      `/api/image/source/${surfaceKey}/${coilId}/${type}`,
+      size
+    ),
 
   // 获取区域图像
   getArea: (surfaceKey: string, coilId: number) =>
     `/api/image/area/${surfaceKey}/${coilId}`,
 
-  // 获取缺陷区域图像
+  // 获取区域图像（支持动态尺寸）
+  getAreaSized: (
+    surfaceKey: string,
+    coilId: number,
+    size?: ImageSizeParams
+  ) =>
+    buildImageUrl(
+      `/api/image/area/${surfaceKey}/${coilId}`,
+      size
+    ),
+
+  // 获取缺陷区域图像（固定URL）
   getDefectImage: (
     surfaceKey: string,
     coilId: number,
@@ -101,6 +162,22 @@ export const imageApi = {
     h: number
   ) =>
     `/api/defect_image/${surfaceKey}/${coilId}/${type}/${x}/${y}/${w}/${h}`,
+
+  // 获取缺陷区域图像（支持动态尺寸）
+  getDefectImageSized: (
+    surfaceKey: string,
+    coilId: number,
+    type: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    size?: ImageSizeParams
+  ) =>
+    buildImageUrl(
+      `/api/defect_image/${surfaceKey}/${coilId}/${type}/${x}/${y}/${w}/${h}`,
+      size
+    ),
 }
 
 // PLC数据API

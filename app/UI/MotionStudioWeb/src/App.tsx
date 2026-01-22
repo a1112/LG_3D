@@ -6,7 +6,7 @@ import DefectShowPage from './pages/DefectShow'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Layout style={{ height: '100vh' }}>
         <Routes>
           <Route path="/" element={<MainLayout />}>

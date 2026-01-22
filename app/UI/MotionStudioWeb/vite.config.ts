@@ -13,13 +13,14 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // 代理到现有的 FastAPI 后端
+      // 代理到 FastAPI 后端（端口 5010）
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:5010',
         changeOrigin: true,
+        rewrite: (path) => path, // 保持路径不变
       },
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: 'ws://localhost:5010',
         ws: true,
       },
     },

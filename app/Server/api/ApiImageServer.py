@@ -8,7 +8,7 @@ from typing import List
 import cv2
 import numpy as np
 from PIL import Image
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse, FileResponse, Response
 
 from Base.tools.DataGet import DataGet, noFindImageByte
@@ -23,6 +23,19 @@ router = APIRouter(tags=["图像访问服务"])
 # 线程池用于IO密集型操作
 thread_pool = ThreadPoolExecutor(max_workers=10)
 log = logging.getLogger(__name__)
+
+# 多级瓦片加载配置
+# 瓦片等级定义：size为瓦片目标尺寸，quality为JPEG质量(1-100)
+TILE_LEVELS = {
+    0: {"size": 340, "quality": 60},    # Level 0: 1/16 缩略图 (~20KB)
+    1: {"size": 682, "quality": 70},    # Level 1: 1/8 (~50KB)
+    2: {"size": 1364, "quality": 80},   # Level 2: 1/4 (~120KB)
+    3: {"size": 2728, "quality": 90},   # Level 3: 1/2 (~250KB)
+    4: {"size": 5460, "quality": 95},   # Level 4: 原图瓦片 (~500KB)
+}
+
+# 默认原图瓦片尺寸（3x3切分时单个瓦片的大小）
+DEFAULT_TILE_SIZE = 5460
 
 
 def get_pool():
@@ -92,22 +105,43 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
 
 
 @router.get("/image/area/{surface_key:str}/{coil_id:str}")
-async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
+async def get_area_tiled(
+    surface_key: str,
+    coil_id: str,
+    row: int = Query(0, ge=-2, le=2, description="瓦片行索引"),
+    col: int = Query(0, ge=0, le=2, description="瓦片列索引"),
+    count: int = Query(0, ge=0, le=3, description="瓦片行列数"),
+    level: int = Query(4, ge=0, le=4, description="瓦片质量等级 0-4")
+):
     """
-    并发处理图像分块请求
-    row == -1 返回完整图像
-    count == 0 返回宽高
-    按照 count 分割返回图像
+    多级瓦片加载接口
+
+    参数说明:
+    - row=-1: 返回完整图像
+    - row=-2: 返回预览图像
+    - count=0: 返回图像宽高信息
+    - level: 瓦片质量等级 (0=缩略图 1/16, 1=1/8, 2=1/4, 3=1/2, 4=原图)
+
+    瓦片等级:
+    - Level 0: 340x340, JPEG 60 (~20KB)
+    - Level 1: 682x682, JPEG 70 (~50KB)
+    - Level 2: 1364x1364, JPEG 80 (~120KB)
+    - Level 3: 2728x2728, JPEG 90 (~250KB)
+    - Level 4: 5460x5460, JPEG 95 (~500KB)
     """
     row = int(row)
     col = int(col)
     count = int(count)
+    level = int(level)
     tile_count = 3
+
     if count > 0:
         count = tile_count
 
     if count == 1:
         return None
+
+    # 处理预览图像请求
     if row == -2:
         data_get = DataGet("preview", surface_key, coil_id, "AREA", False)
         image_bytes = await _get_image_async(data_get)
@@ -122,6 +156,7 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
         return Response(image_bytes or noFindImageByte, media_type="image/jpeg")
 
+    # 返回图像宽高信息
     if count == 0:
         try:
             cache_dir = areaCache._tile_cache_dir(data_get.url)
@@ -154,40 +189,129 @@ async def get_area_tiled(surface_key: str, coil_id: str, row=0, col=0, count=0):
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
         return {"width": w, "height": h}
 
+    # 获取指定等级的配置
+    level_config = TILE_LEVELS.get(level, TILE_LEVELS[4])
+    target_tile_size = level_config["size"]
+    quality = level_config["quality"]
+
+    # 先尝试从缓存获取已切分的瓦片
     image_dict = await _get_image_async(data_get, clip_num=count)
     if image_dict:
         try:
             crop_image_byte = image_dict[col][row]
+
+            # 如果不是最高等级，需要调整尺寸
+            if level < 4:
+                crop_image_byte = _resize_tile(crop_image_byte, target_tile_size, quality)
+
             if row == 0 and col == 0:
                 _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
-            return Response(crop_image_byte, media_type="image/jpg")
+
+            # 返回响应头包含等级信息
+            return Response(
+                crop_image_byte,
+                media_type="image/jpeg",
+                headers={
+                    "X-Tile-Level": str(level),
+                    "X-Tile-Size": str(target_tile_size),
+                    "X-Tile-Quality": str(quality)
+                }
+            )
         except Exception:
             return Response(content=noFindImageByte, media_type="image/jpeg")
 
+    # 从原始图像切分
     image_bytes = await _get_image_async(data_get)
     if image_bytes is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+
     np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
     image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
     if image is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+
     h, w = image.shape[:2]
     w_width = w // count
     h_height = h // count
+
     if w_width <= 0 or h_height <= 0:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+
+    # 切分瓦片
     x1 = row * w_width
     y1 = col * h_height
     x2 = x1 + w_width
     y2 = y1 + h_height
     tile = image[y1:y2, x1:x2]
-    ok, buf = cv2.imencode(".jpg", tile)
+
+    # 根据等级调整尺寸和质量
+    if level < 4 and (tile.shape[0] > target_tile_size or tile.shape[1] > target_tile_size):
+        # 需要缩小
+        scale = target_tile_size / max(tile.shape[0], tile.shape[1])
+        new_w = int(tile.shape[1] * scale)
+        new_h = int(tile.shape[0] * scale)
+        tile = cv2.resize(tile, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    # 编码为JPEG
+    ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, quality])
     if not ok:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+
     crop_image_byte = buf.tobytes()
+
     if row == 0 and col == 0:
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
-    return Response(crop_image_byte, media_type="image/jpg")  # 注意修改为正确的MIME类型
+
+    return Response(
+        crop_image_byte,
+        media_type="image/jpeg",
+        headers={
+            "X-Tile-Level": str(level),
+            "X-Tile-Size": str(target_tile_size),
+            "X-Tile-Quality": str(quality)
+        }
+    )
+
+
+def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
+    """
+    调整瓦片尺寸
+
+    Args:
+        tile_bytes: 原始瓦片字节数据
+        target_size: 目标尺寸（长边）
+        quality: JPEG质量
+
+    Returns:
+        调整后的瓦片字节数据
+    """
+    try:
+        np_arr = np.frombuffer(tile_bytes, dtype=np.uint8)
+        tile = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+
+        if tile is None:
+            return tile_bytes
+
+        # 计算缩放比例
+        scale = target_size / max(tile.shape[0], tile.shape[1])
+
+        if scale >= 1.0:
+            # 不需要缩小，直接返回（略微降低质量以减小文件）
+            ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, quality])
+            return buf.tobytes() if ok else tile_bytes
+
+        # 缩小图像
+        new_w = int(tile.shape[1] * scale)
+        new_h = int(tile.shape[0] * scale)
+        resized = cv2.resize(tile, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+        # 编码
+        ok, buf = cv2.imencode(".jpg", resized, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        return buf.tobytes() if ok else tile_bytes
+
+    except Exception as e:
+        log.warning(f"Failed to resize tile: {e}")
+        return tile_bytes
 
 
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
