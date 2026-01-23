@@ -5,9 +5,8 @@ import QtQuick.Layouts
 // TiledImageViewer.qml - 多级瓦片加载
 Rectangle {
     id: root
-    property int tileSize: 8000
-    // Tile count per side; fixed to 3x3 for AREA tiles
-    property int fixedTileCount: 3
+    property int tileSize: 5460              // 单个瓦片的目标尺寸
+    property int fixedTileCount: 3           // 3x3 瓦片布局
     property int count_ : fixedTileCount
     property string imageUrl: ""
     // viewport is injected from DataShowAreaCore.flick for lazy loading in-view tiles
@@ -23,7 +22,7 @@ Rectangle {
     property int maxParallel: 16
     property int _requestToken: 0
 
-    // ========== 新增：多级加载配置 ==========
+    // ========== 多级加载配置 ==========
     property int originalTileSize: 5460          // 原图瓦片尺寸（3x3切分后的单个瓦片大小）
     property real scaleThreshold: 1.5            // 1.5倍阈值（超过后使用原图）
     property real currentScale: 1.0              // 当前缩放倍数（通过updateScale函数更新）
@@ -38,6 +37,10 @@ Rectangle {
         {size: 2728, quality: 90},   // Level 3: 1/2
         {size: 5460, quality: 95}    // Level 4: 原图
     ]
+
+    // 单个瓦片的实际尺寸（从服务端获取后计算）
+    readonly property int actualTileWidth: dataAreaShowCore.sourceWidth > 0 ? parseInt(dataAreaShowCore.sourceWidth / fixedTileCount) : 0
+    readonly property int actualTileHeight: dataAreaShowCore.sourceHeight > 0 ? parseInt(dataAreaShowCore.sourceHeight / fixedTileCount) : 0
 
     signal imageInfoReady(string url)
     signal levelChanged(int newLevel)
@@ -56,10 +59,17 @@ Rectangle {
         var scale = dataAreaShowCore.canvasScale || 1.0
         currentScale = scale  // 更新内部属性
 
-        // 单个瓦片的显示尺寸（像素）
-        var tileDisplayW = (root.width / fixedTileCount) * scale
-        var tileDisplayH = (root.height / fixedTileCount) * scale
+        // 单个瓦片的显示尺寸（像素）- 使用画布内容尺寸计算
+        var actualTileWidth = dataAreaShowCore.sourceWidth / fixedTileCount
+        var actualTileHeight = dataAreaShowCore.sourceHeight / fixedTileCount
+        var tileDisplayW = actualTileWidth * scale
+        var tileDisplayH = actualTileHeight * scale
         var displaySize = Math.max(tileDisplayW, tileDisplayH)
+
+        // 如果显示尺寸无效（初始化中或数值异常），使用默认值
+        if (displaySize <= 0 || isNaN(displaySize)) {
+            return 2  // 默认使用中等质量
+        }
 
         // 计算原图相对于显示的倍数
         var ratio = originalTileSize / displaySize
@@ -67,16 +77,16 @@ Rectangle {
         // 根据倍数选择等级
         var level = 0
         if (ratio >= 16) {
-            level = 0  // 1/16 原图
+            level = 0  // 1/16 原图 (340x340)
         } else if (ratio >= 8) {
-            level = 1  // 1/8 原图
+            level = 1  // 1/8 原图 (682x682)
         } else if (ratio >= 4) {
-            level = 2  // 1/4 原图
+            level = 2  // 1/4 原图 (1364x1364)
         } else if (ratio >= 2) {
-            level = 3  // 1/2 原图
+            level = 3  // 1/2 原图 (2728x2728)
         } else {
-            // 小于2倍或超过1.5倍阈值，使用原图
-            level = 4
+            // 小于2倍，使用原图
+            level = 4  // 原图瓦片 (5460x5460)
         }
 
         return level
@@ -85,7 +95,7 @@ Rectangle {
     // ========== 新增：评估并更新等级 ==========
     property bool isEvaluating: false
 
-    function evaluateLevel() {
+    function evaluateLevel(forceUpdate) {
         if (isEvaluating || !enableMultiLevel) {
             return
         }
@@ -93,7 +103,7 @@ Rectangle {
         isEvaluating = true
         var newLevel = calculateNeededLevel()
 
-        if (newLevel !== currentLevel) {
+        if (newLevel !== currentLevel || forceUpdate) {
             currentLevel = newLevel
             var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
             currentScale = scale
@@ -154,21 +164,22 @@ Rectangle {
         if (!imageUrl || imageUrl.length === 0) {
             return
         }
-        const tileRefSize = tileSize * fixedTileCount
-        if (dataAreaShowCore && tileRefSize > 0) {
-            dataAreaShowCore.sourceWidth = tileRefSize
-            dataAreaShowCore.sourceHeight = tileRefSize
-        }
         _requestToken += 1
         const currentToken = _requestToken
-        api.ajax.get(imageUrl,(text)=>{
+        // 添加 count=0 参数获取图像尺寸信息
+        let infoUrl = imageUrl + "?count=0"
+        api.ajax.get(infoUrl,(text)=>{
                          if (currentToken !== _requestToken){
                              return
                          }
                          let json_data = JSON.parse(text)
-                         if (!tileRefSize || tileRefSize <= 0) {
+                         // 使用服务端返回的真实尺寸
+                         if (json_data["width"] && json_data["height"]) {
                              dataAreaShowCore.sourceWidth = json_data["width"]
                              dataAreaShowCore.sourceHeight = json_data["height"]
+
+                             // 获取尺寸后重新评估等级并强制更新瓦片
+                             evaluateLevel(true)
                          }
                          if (count_ !== fixedTileCount) {
                              count_ = fixedTileCount
@@ -209,6 +220,7 @@ Rectangle {
 
             // 传递给瓦片项的属性
             imageUrl: root.imageUrl
+            previewUrl: root.previewUrl
             row_: parseInt(index/count_)
             col_: parseInt(index%count_)
             count_: root.count_
@@ -218,11 +230,9 @@ Rectangle {
             viewportH: root.viewportH
             enableParallelLoad: root.enableParallelLoad
 
-            // 新增：多级加载相关属性
+            // 多级加载相关属性
             currentScale: root.currentScale
             currentLevel: root.currentLevel
-            inView: root.isTileInView(x, y, width, height)
-            tileLevels: root.tileLevels
         }
     }
 

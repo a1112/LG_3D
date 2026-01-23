@@ -47,6 +47,8 @@ property int alg2dPort: 6020
 
 property bool testMode: false
 
+property bool showErrorOverlay: true  // 是否显示错误叠加层（3D Error 图像）
+
 property int headDateShowModel: 0
     property int dataHeaderHeight:320
     SettingsBase{
@@ -83,6 +85,7 @@ property int headDateShowModel: 0
 
 property alias alg2dPort: root.alg2dPort
 property alias testMode: root.testMode
+property alias showErrorOverlay: root.showErrorOverlay
 category: "AppSettings"
         location: "settings.ini"
     }

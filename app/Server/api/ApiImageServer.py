@@ -135,6 +135,9 @@ async def get_area_tiled(
     level = int(level)
     tile_count = 3
 
+    # 记录瓦片请求（调试用）
+    log.info(f"[Tile L{level}] coil={coil_id} row={row} col={col} count={count}")
+
     if count > 0:
         count = tile_count
 
@@ -290,15 +293,19 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         tile = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
 
         if tile is None:
+            log.warning(f"Resize failed: imdecode returned None, target_size={target_size}")
             return tile_bytes
 
         # 计算缩放比例
-        scale = target_size / max(tile.shape[0], tile.shape[1])
+        original_size = max(tile.shape[0], tile.shape[1])
+        scale = target_size / original_size
 
         if scale >= 1.0:
             # 不需要缩小，直接返回（略微降低质量以减小文件）
             ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, quality])
-            return buf.tobytes() if ok else tile_bytes
+            result = buf.tobytes() if ok else tile_bytes
+            log.debug(f"Resize: scale={scale:.2f}>=1.0, no resize needed, returning {len(result)} bytes")
+            return result
 
         # 缩小图像
         new_w = int(tile.shape[1] * scale)
@@ -307,10 +314,15 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
 
         # 编码
         ok, buf = cv2.imencode(".jpg", resized, [cv2.IMWRITE_JPEG_QUALITY, quality])
-        return buf.tobytes() if ok else tile_bytes
+        result = buf.tobytes() if ok else tile_bytes
+        if ok:
+            log.debug(f"Resize: {tile.shape} -> ({new_w},{new_h}), {len(result)} bytes at quality={quality}")
+        else:
+            log.warning(f"Resize: imencode failed for resized image ({new_w},{new_h})")
+        return result
 
     except Exception as e:
-        log.warning("Failed to resize tile: " + str(e))
+        log.error(f"Failed to resize tile: {e}", exc_info=True)
         return tile_bytes
 
 

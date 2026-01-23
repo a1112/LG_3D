@@ -225,6 +225,16 @@ async def get_error(
 
     data_get = DataGet("image", surface_key, coil_id, "MASK", mask)
     npy_data = data_get.get_3d_data()
+
+    # 检查数据是否有效
+    if npy_data is None:
+        logging.warning(f"3D data not found for coil_id={coil_id}, surface={surface_key}")
+        # 返回空白图像
+        blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
+        _, img_encoded = cv2.imencode('.png', blank_image)
+        img_bytes = io.BytesIO(img_encoded.tobytes())
+        return StreamingResponse(img_bytes, media_type="image/png")
+
     # mask_image = Image.open(io.BytesIO(data_get.get_mask_source()))
     # 数据处理
     # mask_image = np.array(mask_image)

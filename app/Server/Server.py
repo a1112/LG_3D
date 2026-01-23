@@ -37,6 +37,11 @@ def create_app(enable_runtime: bool = True) -> FastAPI:
 
 def run():
     import os
+    import logging
+
+    # 抑制 asyncio 的 socket.send() 警告（客户端断开连接时的正常现象）
+    logging.getLogger("asyncio").setLevel(logging.ERROR)
+
     # 使用 Redis 缓存以支持多进程
     os.environ["IMAGE_CACHE_BACKEND"] = "redis"
     # Redis 配置（可选，使用默认值：localhost:6379 db=0）
@@ -50,6 +55,7 @@ def run():
         port=5010,
         workers=5,  # Redis 缓存支持多进程
         factory=True,
+        log_level="warning",  # 减少日志输出
     )
 
 if __name__ == "__main__":
