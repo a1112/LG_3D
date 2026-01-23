@@ -48,6 +48,7 @@ property int alg2dPort: 6020
 property bool testMode: false
 
 property bool showErrorOverlay: true  // 是否显示错误叠加层（3D Error 图像）
+property bool showTileDebugBorders: false  // 是否显示瓦片调试边框（AREA 视图）
 
 property int headDateShowModel: 0
     property int dataHeaderHeight:320
@@ -86,6 +87,7 @@ property int headDateShowModel: 0
 property alias alg2dPort: root.alg2dPort
 property alias testMode: root.testMode
 property alias showErrorOverlay: root.showErrorOverlay
+property alias showTileDebugBorders: root.showTileDebugBorders
 category: "AppSettings"
         location: "settings.ini"
     }

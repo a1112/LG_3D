@@ -52,6 +52,7 @@ Item {
         border.width: 1
         color: "#00000000"
         z: 1000
+        visible: coreSetting.showTileDebugBorders  // 由设置控制显示
 
         border.color: {
             if (!isInViewport) return "#33000000"

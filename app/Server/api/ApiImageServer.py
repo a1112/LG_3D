@@ -128,6 +128,10 @@ async def get_area_tiled(
     - Level 2: 1364x1364, JPEG 80 (~120KB)
     - Level 3: 2728x2728, JPEG 90 (~250KB)
     - Level 4: 5460x5460, JPEG 95 (~500KB)
+
+    缓存策略:
+    - 优先从缓存读取对应级别的瓦片（直接返回，速度最快）
+    - 缓存不存在时，生成所有级别的瓦片并保存
     """
     row = int(row)
     col = int(col)
@@ -135,23 +139,20 @@ async def get_area_tiled(
     level = int(level)
     tile_count = 3
 
-    # 记录瓦片请求（调试用）
-    log.info(f"[Tile L{level}] coil={coil_id} row={row} col={col} count={count}")
-
     if count > 0:
         count = tile_count
 
     if count == 1:
         return None
 
+    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+
     # 处理预览图像请求
     if row == -2:
-        data_get = DataGet("preview", surface_key, coil_id, "AREA", False)
-        image_bytes = await _get_image_async(data_get)
+        preview_get = DataGet("preview", surface_key, coil_id, "AREA", False)
+        image_bytes = await _get_image_async(preview_get)
         _schedule_prefetch("preview", surface_key, coil_id, "AREA", mask=False)
         return Response(image_bytes or noFindImageByte, media_type="image/jpeg")
-
-    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
 
     # 返回完整图像
     if row == -1:
@@ -162,7 +163,8 @@ async def get_area_tiled(
     # 返回图像宽高信息
     if count == 0:
         try:
-            cache_dir = areaCache._tile_cache_dir(data_get.url)
+            # 尝试从 L4 缓存获取尺寸
+            cache_dir = areaCache._tile_cache_dir(data_get.url, 4)
             tile_path = cache_dir / "0_0.jpg"
             if tile_path.exists():
                 with Image.open(tile_path) as tile_img:
@@ -192,12 +194,26 @@ async def get_area_tiled(
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
         return {"width": w, "height": h}
 
-    # 获取指定等级的配置
-    level_config = TILE_LEVELS.get(level, TILE_LEVELS[4])
-    target_tile_size = level_config["size"]
-    quality = level_config["quality"]
+    # ========== 核心逻辑：优先从缓存读取指定级别的瓦片 ==========
+    # 1. 尝试从缓存直接读取对应级别的瓦片（最快）
+    tile_bytes = areaCache.get_tile(data_get.url, row, col, count, level)
+    if tile_bytes:
+        # 缓存命中，直接返回
+        if row == 0 and col == 0:
+            _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
+        return Response(
+            tile_bytes,
+            media_type="image/jpeg",
+            headers={
+                "X-Tile-Level": str(level),
+                "X-Cache": "hit"
+            }
+        )
 
-    # 先尝试从缓存获取已切分的瓦片
+    # 2. 缓存未命中，回退到原来的实时生成模式
+    log.info(f"Cache miss L{level} ({col},{row}), falling back to real-time generation")
+
+    # 获取所有瓦片（会触发多级缓存生成）
     image_dict = await _get_image_async(data_get, clip_num=count)
     if image_dict:
         try:
@@ -205,25 +221,23 @@ async def get_area_tiled(
 
             # 如果不是最高等级，需要调整尺寸
             if level < 4:
-                crop_image_byte = _resize_tile(crop_image_byte, target_tile_size, quality)
+                crop_image_byte = _resize_tile(crop_image_byte, TILE_LEVELS[level][0], TILE_LEVELS[level][1])
 
             if row == 0 and col == 0:
                 _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
 
-            # 返回响应头包含等级信息
             return Response(
                 crop_image_byte,
                 media_type="image/jpeg",
                 headers={
                     "X-Tile-Level": str(level),
-                    "X-Tile-Size": str(target_tile_size),
-                    "X-Tile-Quality": str(quality)
+                    "X-Cache": "miss"
                 }
             )
         except Exception:
             return Response(content=noFindImageByte, media_type="image/jpeg")
 
-    # 从原始图像切分
+    # 3. 从原始图像切分（最后的备选方案）
     image_bytes = await _get_image_async(data_get)
     if image_bytes is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
@@ -248,9 +262,9 @@ async def get_area_tiled(
     tile = image[y1:y2, x1:x2]
 
     # 根据等级调整尺寸和质量
-    if level < 4 and (tile.shape[0] > target_tile_size or tile.shape[1] > target_tile_size):
-        # 需要缩小
-        scale = target_tile_size / max(tile.shape[0], tile.shape[1])
+    target_size, quality = TILE_LEVELS[level]
+    if level < 4 and (tile.shape[0] > target_size or tile.shape[1] > target_size):
+        scale = target_size / max(tile.shape[0], tile.shape[1])
         new_w = int(tile.shape[1] * scale)
         new_h = int(tile.shape[0] * scale)
         tile = cv2.resize(tile, (new_w, new_h), interpolation=cv2.INTER_AREA)
@@ -270,8 +284,7 @@ async def get_area_tiled(
         media_type="image/jpeg",
         headers={
             "X-Tile-Level": str(level),
-            "X-Tile-Size": str(target_tile_size),
-            "X-Tile-Quality": str(quality)
+            "X-Cache": "fallback"
         }
     )
 
