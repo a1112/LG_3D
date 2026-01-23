@@ -1,11 +1,12 @@
 import io
+import logging
 import time
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, Query, WebSocket
 from fastapi.responses import FileResponse, Response
 from starlette.responses import StreamingResponse
 
@@ -15,8 +16,10 @@ from Base.tools.DataGet import DataGet, noFindImageByte
 from Base.CONFIG import serverConfigProperty
 from ._tool_ import get_bool
 from .api_core import app
+from cache import cacheProvider
 
 router = APIRouter(tags=["深度数据访问服务"])
+log = logging.getLogger(__name__)
 
 
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
@@ -111,36 +114,85 @@ async def ws_height_point(websocket: WebSocket):
 
 
 @router.get("/coilData/Render/{surfaceKey:str}/{coil_id:str}")
-async def getRender(surfaceKey, coil_id: str, scale=1, mask: bool = True, min_value=0, max_value=255):
+async def getRender(
+    surfaceKey: str,
+    coil_id: str,
+    scale: float = Query(1.0, description="缩放比例"),
+    mask: bool = Query(True, description="是否应用掩码"),
+    min_value: int = Query(0, description="最小值"),
+    max_value: int = Query(255, description="最大值"),
+    thumbnail: bool = Query(False, description="是否返回缩略图（1024x1024）")
+):
+    """
+    获取伪彩色渲染图像（JET 颜色映射）
+
+    参数:
+    - thumbnail=true: 返回缓存的缩略图（快速加载）
+    - thumbnail=false: 返回完整渲染图像
+    """
     mask = get_bool(mask)
     scale = float(scale)
-    s_t = time.time()
     min_value = int(min_value)
     max_value = int(max_value)
+
     data_get = DataGet("image", surfaceKey, coil_id, "MASK", False)
     npy_data = data_get.get_3d_data()
+
+    if npy_data is None:
+        return Response(content=noFindImageByte, media_type="image/jpeg")
+
+    # ========== 缩略图模式（优先从缓存读取）==========
+    if thumbnail:
+        s_t = time.time()
+        mask_array = None
+        if mask:
+            mask_image = data_get.get_image()
+            if mask_image:
+                mask_array = np.array(Image.open(io.BytesIO(mask_image)))
+
+        # 尝试从缓存获取或生成缩略图
+        if cacheProvider.falsecolor_cache:
+            thumb_data, from_cache = cacheProvider.falsecolor_cache.get_or_generate(
+                data_get.url,
+                npy_data,
+                mask_array,
+                cv2.COLORMAP_JET,
+                min_value,
+                max_value
+            )
+            if thumb_data:
+                log.info(f"Thumbnail: {'from cache' if from_cache else 'generated'} in {time.time()-s_t:.3f}s")
+                return Response(thumb_data, media_type="image/jpeg", headers={
+                    "X-Thumbnail": "true",
+                    "X-From-Cache": str(from_cache)
+                })
+
+    # ========== 完整渲染模式 ==========
+    s_t = time.time()
     mask_image = data_get.get_image()
-    mask_image = Image.open(io.BytesIO(mask_image))
-    mask_image = np.array(mask_image)
+    if mask_image:
+        mask_image = Image.open(io.BytesIO(mask_image))
+        mask_image = np.array(mask_image)
+
     r_size = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
     clip_npy = np.clip(npy_data, min_value, max_value)
     clip_npy = (clip_npy - min_value) / (max_value - min_value) * 255
     clip_npy = clip_npy.astype(np.uint8)
+
     if scale < 0.99:
-        print(r_size)
         clip_npy = cv2.resize(clip_npy, r_size)
-        mask_image = cv2.resize(mask_image, r_size)
+        if mask_image is not None and mask_image.size:
+            mask_image = cv2.resize(mask_image, r_size)
 
     colored_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
-    if mask:
+    if mask and mask_image is not None:
         colored_image = cv2.bitwise_and(colored_image, colored_image, mask=mask_image)
-    _, img_encoded = cv2.imencode('.png', colored_image)
-    # 将编码后的图像转换为字节流
-    img_bytes = io.BytesIO(img_encoded.tobytes())
-    # 返回图像作为响应
-    e_t = time.time()
-    print(e_t - s_t)
-    # return StreamingResponse(img_bytes, media_type="image/png")
+
+    _, img_encoded = cv2.imencode('.jpg', colored_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    img_bytes = img_encoded.tobytes()
+
+    log.info(f"Full render: {time.time()-s_t:.3f}s")
+    return Response(img_bytes, media_type="image/jpeg", headers={"X-Thumbnail": "false"})
 
 
 @router.get("/coilData/Area/{surface_key:str}/{coil_id:str}")

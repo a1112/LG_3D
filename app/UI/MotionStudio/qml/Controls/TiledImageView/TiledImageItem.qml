@@ -1,7 +1,6 @@
 import QtQuick
 
-// TiledImageItem.qml - 多级瓦片叠加加载
-// 5个独立的 Image 层（L0-L4）叠加显示，新层加载完成后叠加在旧层上面
+// TiledImageItem.qml - 简化版：直接加载目标级别瓦片
 Item {
     // 基础属性
     property int row_: 0
@@ -9,6 +8,7 @@ Item {
     property int count_: 3
     property string imageUrl: ""
     property string previewUrl: ""
+    property string coilNo: ""  // 钢卷编号
 
     // 视口属性
     property real viewportX: 0
@@ -20,12 +20,8 @@ Item {
     // ========== 多级加载属性 ==========
     property real currentScale: 1.0
     property int currentLevel: 0
-    property int loadedLevel: -1  // 当前已加载的最高级别
-    property int targetLevel: 0   // 目标级别（根据缩放计算）
-
-    // ========== 渐进升级配置 ==========
-    property bool enableProgressiveUpgrade: true
-    property int quickLoadLevel: 0
+    property int loadedLevel: -1
+    property int targetLevel: 0
 
     // ========== 视口检测 ==========
     readonly property bool isInViewport: {
@@ -41,8 +37,12 @@ Item {
     }
 
     readonly property bool shouldLoad: {
-        if (!isInViewport) return false
-        if (enableParallelLoad) return true
+        if (!isInViewport) {
+            return false
+        }
+        if (enableParallelLoad) {
+            return true
+        }
         return isInViewport
     }
 
@@ -65,8 +65,11 @@ Item {
             anchors.centerIn: parent
             text: {
                 var txt = "[" + row_ + "," + col_ + "]"
+                if (coilNo) {
+                    txt += "\n" + coilNo
+                }
                 if (loadedLevel >= 0) {
-                    txt += "\nL" + loadedLevel + "/" + targetLevel
+                    txt += "\nL" + loadedLevel
                 }
                 return txt
             }
@@ -79,37 +82,7 @@ Item {
         }
     }
 
-    // ========== 预览图背景 ==========
-    Image {
-        id: previewImage
-        anchors.fill: parent
-        cache: true
-        asynchronous: true
-        fillMode: Image.PreserveAspectCrop
-        source: previewUrl
-        visible: loadedLevel < 0
-        z: 0
-
-        property rect sourceRect: {
-            if (previewUrl === "" || !dataAreaShowCore || dataAreaShowCore.sourceWidth === 0) {
-                return Qt.rect(0, 0, 0, 0)
-            }
-            var tileW = dataAreaShowCore.sourceWidth / count_
-            var tileH = dataAreaShowCore.sourceHeight / count_
-            var x = col_ * tileW
-            var y = row_ * tileH
-            return Qt.rect(
-                x / dataAreaShowCore.sourceWidth,
-                y / dataAreaShowCore.sourceHeight,
-                tileW / dataAreaShowCore.sourceWidth,
-                tileH / dataAreaShowCore.sourceHeight
-            )
-        }
-    }
-
     // ========== 5个叠加的 Image 层（L0-L4）==========
-    // 每层独立加载，新层叠加在旧层上面
-
     // Level 0
     Image {
         id: levelImage0
@@ -118,13 +91,14 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource0
-        visible: levelSource0 !== "" && loadedLevel >= 0
-        opacity: (targetLevel > 0 && loadedLevel > 0) ? 0.3 : 1.0  // 有更高层时变淡
+        visible: levelSource0 !== "" && targetLevel === 0
         z: 1
 
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-
-        onStatusChanged: if (status === Image.Ready) onLevelLoaded(0)
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                loadedLevel = 0
+            }
+        }
     }
 
     // Level 1
@@ -135,13 +109,14 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource1
-        visible: levelSource1 !== "" && loadedLevel >= 1
-        opacity: (targetLevel > 1 && loadedLevel > 1) ? 0.3 : 1.0
+        visible: levelSource1 !== "" && targetLevel === 1
         z: 2
 
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-
-        onStatusChanged: if (status === Image.Ready) onLevelLoaded(1)
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                loadedLevel = 1
+            }
+        }
     }
 
     // Level 2
@@ -152,13 +127,14 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource2
-        visible: levelSource2 !== "" && loadedLevel >= 2
-        opacity: (targetLevel > 2 && loadedLevel > 2) ? 0.3 : 1.0
+        visible: levelSource2 !== "" && targetLevel === 2
         z: 3
 
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-
-        onStatusChanged: if (status === Image.Ready) onLevelLoaded(2)
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                loadedLevel = 2
+            }
+        }
     }
 
     // Level 3
@@ -169,13 +145,14 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource3
-        visible: levelSource3 !== "" && loadedLevel >= 3
-        opacity: (targetLevel > 3 && loadedLevel > 3) ? 0.3 : 1.0
+        visible: levelSource3 !== "" && targetLevel === 3
         z: 4
 
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-
-        onStatusChanged: if (status === Image.Ready) onLevelLoaded(3)
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                loadedLevel = 3
+            }
+        }
     }
 
     // Level 4 (最高质量)
@@ -186,11 +163,14 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource4
-        visible: levelSource4 !== "" && loadedLevel >= 4
-        opacity: 1.0
+        visible: levelSource4 !== "" && targetLevel === 4
         z: 5
 
-        onStatusChanged: if (status === Image.Ready) onLevelLoaded(4)
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                loadedLevel = 4
+            }
+        }
     }
 
     // ========== 图像源属性 ==========
@@ -213,90 +193,40 @@ Item {
         return url
     }
 
-    // ========== 级别加载完成回调 ==========
-    function onLevelLoaded(level) {
-        if (level > loadedLevel) {
-            console.log("[Tile " + row_ + "," + col_ + "] L" + level + " loaded, updating loadedLevel: " + loadedLevel + " -> " + level)
-            loadedLevel = level
-
-            // 继续加载下一级
-            if (enableProgressiveUpgrade && loadedLevel < targetLevel) {
-                loadNextLevel.start()
-            }
-        }
-    }
-
-    // ========== 渐进升级定时器 ==========
-    Timer {
-        id: loadNextLevel
-        interval: 100  // 100ms 后加载下一级
-        repeat: false
-        onTriggered: {
-            if (loadedLevel < targetLevel) {
-                var nextLevel = loadedLevel + 1
-                console.log("[Tile " + row_ + "," + col_ + "] Loading L" + nextLevel + " (target=L" + targetLevel + ")")
-                setLevelSource(nextLevel, buildImageUrl(nextLevel))
-            }
-        }
-    }
-
-    // ========== 设置指定级别的图像源 ==========
-    function setLevelSource(level, url) {
-        if (level === 0) levelSource0 = url
-        else if (level === 1) levelSource1 = url
-        else if (level === 2) levelSource2 = url
-        else if (level === 3) levelSource3 = url
-        else if (level === 4) levelSource4 = url
-    }
-
-    // ========== 清空所有级别 ==========
-    function clearAllLevels() {
-        levelSource0 = ""
-        levelSource1 = ""
-        levelSource2 = ""
-        levelSource3 = ""
-        levelSource4 = ""
-        loadedLevel = -1
-        loadNextLevel.stop()
-    }
-
     // ========== 更新等级 ==========
     function updateLevel(newLevel) {
+        // 如果imageUrl为空，不进行加载
+        if (imageUrl === "" || imageUrl === undefined) {
+            return
+        }
+
         var oldTargetLevel = targetLevel
-        targetLevel = Math.max(0, Math.min(4, newLevel))  // 限制在 0-4 范围内
+        targetLevel = Math.max(0, Math.min(4, newLevel))
 
         // URL 改变，重新加载
         var urlChanged = false
         if (lastLoadedUrl !== imageUrl) {
             urlChanged = true
             lastLoadedUrl = imageUrl
-            clearAllLevels()
+            // 清空所有级别
+            levelSource0 = ""
+            levelSource1 = ""
+            levelSource2 = ""
+            levelSource3 = ""
+            levelSource4 = ""
+            loadedLevel = -1
         }
 
-        // 目标级别改变
-        if (oldTargetLevel !== targetLevel) {
-            // console.log("[Tile " + row_ + "," + col_ + "] targetLevel: L" + oldTargetLevel + " -> L" + targetLevel)
-        }
+        // 目标级别改变，直接加载目标级别
+        if (oldTargetLevel !== targetLevel || urlChanged) {
+            // 直接设置目标级别的源
+            if (targetLevel === 0) levelSource0 = buildImageUrl(0)
+            else if (targetLevel === 1) levelSource1 = buildImageUrl(1)
+            else if (targetLevel === 2) levelSource2 = buildImageUrl(2)
+            else if (targetLevel === 3) levelSource3 = buildImageUrl(3)
+            else levelSource4 = buildImageUrl(4)
 
-        // 还没有加载任何瓦片
-        if (loadedLevel < 0) {
-            var startLevel = enableProgressiveUpgrade ? quickLoadLevel : targetLevel
-            console.log("[Tile " + row_ + "," + col_ + "] Quick load L" + startLevel + " (target=L" + targetLevel + ")")
-            setLevelSource(startLevel, buildImageUrl(startLevel))
-            loadedLevel = startLevel
-
-            // 如果需要升级，启动预加载
-            if (enableProgressiveUpgrade && loadedLevel < targetLevel) {
-                loadNextLevel.start()
-            }
-        } else if (loadedLevel < targetLevel) {
-            // 需要升级，启动预加载
-            if (!loadNextLevel.running) {
-                loadNextLevel.start()
-            }
-        } else if (loadedLevel > targetLevel) {
-            // 降级 - 隐藏高于目标级别的层
-            // 不需要清空，只是隐藏而已
+            console.log("[Tile " + row_ + "," + col_ + "] CoilNo:" + coilNo + " Loading L" + targetLevel)
         }
     }
 
@@ -334,8 +264,6 @@ Item {
 
     // ========== 监听 previewUrl 变化 ==========
     onPreviewUrlChanged: {
-        if (previewUrl !== "") {
-            clearAllLevels()
-        }
+        // 不再使用预览图，直接加载瓦片
     }
 }

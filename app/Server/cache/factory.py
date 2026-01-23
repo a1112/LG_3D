@@ -2,18 +2,20 @@ import os
 from typing import Optional
 
 from .area_cache import DiskAreaImageCache
+from .falsecolor_cache import FalseColorCache
 from .memory_cache import Memory3dCache, MemoryImageCache
 from .redis_cache import RedisImageCache
 
 
 class CacheProvider:
-    def __init__(self, mode: str, preview_cache, image_cache, area_cache, classifier_cache, d3_cache) -> None:
+    def __init__(self, mode: str, preview_cache, image_cache, area_cache, classifier_cache, d3_cache, falsecolor_cache=None) -> None:
         self.mode = mode
         self.preview_cache = preview_cache
         self.image_cache = image_cache
         self.area_cache = area_cache
         self.classifier_cache = classifier_cache
         self.d3_cache = d3_cache
+        self.falsecolor_cache = falsecolor_cache
         self._components = [
             preview_cache,
             image_cache,
@@ -21,6 +23,8 @@ class CacheProvider:
             classifier_cache,
             d3_cache,
         ]
+        if falsecolor_cache:
+            self._components.append(falsecolor_cache)
 
     def startup(self) -> None:
         for component in self._components:
@@ -86,6 +90,9 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
 
     d3_cache = Memory3dCache(16, ttl=ttl)
 
+    # 伪彩色图像缓存
+    falsecolor_cache = FalseColorCache(cache_size=64, ttl=ttl, thumbnail_size=1024)
+
     return CacheProvider(
         cache_mode,
         preview_cache=preview_cache,
@@ -93,4 +100,5 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
         area_cache=area_cache,
         classifier_cache=classifier_cache,
         d3_cache=d3_cache,
+        falsecolor_cache=falsecolor_cache,
     )

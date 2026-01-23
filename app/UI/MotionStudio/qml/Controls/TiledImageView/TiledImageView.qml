@@ -52,6 +52,7 @@ Rectangle {
     // ========== 新增：计算当前需要的瓦片等级 ==========
     function calculateNeededLevel() {
         if (!enableMultiLevel || !dataAreaShowCore) {
+            console.log("[TiledView] calculateNeededLevel: dataAreaShowCore not available, returning 4")
             return 4  // 不启用多级加载或数据不可用时直接用原图
         }
 
@@ -66,8 +67,14 @@ Rectangle {
         var tileDisplayH = actualTileHeight * scale
         var displaySize = Math.max(tileDisplayW, tileDisplayH)
 
+        console.log("[TiledView] calculateNeededLevel: sourceW=" + dataAreaShowCore.sourceWidth +
+                    ", sourceH=" + dataAreaShowCore.sourceHeight +
+                    ", scale=" + scale.toFixed(4) +
+                    ", displaySize=" + displaySize.toFixed(0))
+
         // 如果显示尺寸无效（初始化中或数值异常），使用默认值
         if (displaySize <= 0 || isNaN(displaySize)) {
+            console.log("[TiledView] calculateNeededLevel: displaySize invalid, returning 2")
             return 2  // 默认使用中等质量
         }
 
@@ -89,6 +96,7 @@ Rectangle {
             level = 4  // 原图瓦片 (5460x5460)
         }
 
+        console.log("[TiledView] calculateNeededLevel: ratio=" + ratio.toFixed(2) + ", returning level=" + level)
         return level
     }
 
@@ -104,6 +112,7 @@ Rectangle {
         var newLevel = calculateNeededLevel()
 
         if (newLevel !== currentLevel || forceUpdate) {
+            console.log("[TiledView] Level change: " + currentLevel + " -> " + newLevel + (forceUpdate ? " (forced)" : ""))
             currentLevel = newLevel
             var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
             currentScale = scale
@@ -118,6 +127,7 @@ Rectangle {
 
     // ========== 新增：更新所有瓦片 ==========
     function updateAllTiles() {
+        console.log("[TiledView] updateAllTiles: level=" + currentLevel + ", count=" + tiledImage.count)
         for (var i = 0; i < tiledImage.count; i++) {
             var item = tiledImage.itemAt(i)
             if (item && item.updateLevel) {
@@ -168,15 +178,18 @@ Rectangle {
         const currentToken = _requestToken
         // 添加 count=0 参数获取图像尺寸信息
         let infoUrl = imageUrl + "?count=0"
+        console.log("[TiledView] requestImageInfo: " + infoUrl)
         api.ajax.get(infoUrl,(text)=>{
                          if (currentToken !== _requestToken){
                              return
                          }
+                         console.log("[TiledView] Image info response: " + text)
                          let json_data = JSON.parse(text)
                          // 使用服务端返回的真实尺寸
                          if (json_data["width"] && json_data["height"]) {
                              dataAreaShowCore.sourceWidth = json_data["width"]
                              dataAreaShowCore.sourceHeight = json_data["height"]
+                             console.log("[TiledView] Set sourceWidth=" + dataAreaShowCore.sourceWidth + ", sourceHeight=" + dataAreaShowCore.sourceHeight)
 
                              // 获取尺寸后重新评估等级并强制更新瓦片
                              evaluateLevel(true)
@@ -198,15 +211,6 @@ Rectangle {
     }
 
     onImageUrlChanged: requestImageInfo()
-
-    // Preview background so the area view is not blank while tiles load
-    Image {
-        anchors.fill: parent
-        cache: true
-        asynchronous: true
-        fillMode: Image.PreserveAspectFit
-        source: previewUrl
-    }
 
     Repeater {
         id: tiledImage
@@ -233,6 +237,9 @@ Rectangle {
             // 多级加载相关属性
             currentScale: root.currentScale
             currentLevel: root.currentLevel
+
+            // 钢卷编号
+            coilNo: surfaceData && surfaceData.currentCoilModel ? surfaceData.currentCoilModel.coilNo : ""
         }
     }
 

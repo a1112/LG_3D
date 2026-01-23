@@ -19,12 +19,18 @@ areaCache = _provider.area_cache
 classifierCache = _provider.classifier_cache
 d3DataCache = _provider.d3_cache
 
+# 直接导出
+cacheProvider = _provider
+falsecolorCache = _provider.falsecolor_cache
+
 __all__: Tuple[str, ...] = (
     "previewCache",
     "imageCache",
     "areaCache",
     "classifierCache",
     "d3DataCache",
+    "cacheProvider",
+    "falsecolorCache",
     "cache_provider",
     "startup_cache",
     "shutdown_cache",
