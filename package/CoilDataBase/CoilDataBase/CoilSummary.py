@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from .core import Session as SessionFactory
 from .models import (
@@ -33,6 +34,9 @@ def sync_coil_summary(session: Session, coil_id: int) -> Optional[CoilSummary]:
     同步单个卷材的摘要数据
     如果摘要不存在则创建，如果存在则更新
 
+    处理多进程竞态条件：当多个进程同时创建同一摘要时，
+    捕获重复键错误，重新查询后更新
+
     Args:
         session: 数据库会话
         coil_id: 卷材ID
@@ -40,115 +44,154 @@ def sync_coil_summary(session: Session, coil_id: int) -> Optional[CoilSummary]:
     Returns:
         CoilSummary: 摘要对象
     """
-    # 获取原始数据
-    coil = session.query(SecondaryCoil).filter_by(Id=coil_id).first()
-    if not coil:
-        log.warning(f"Coil {coil_id} not found for summary sync")
-        return None
+    return _sync_coil_summary_impl(session, coil_id, retry_on_duplicate=True)
 
-    # 查找或创建摘要
-    summary = session.query(CoilSummary).filter_by(Id=coil_id).first()
-    if not summary:
-        summary = CoilSummary(Id=coil_id)
-        session.add(summary)
 
-    # 更新基本字段
-    summary.CoilNo = coil.CoilNo
-    summary.CreateTime = coil.CreateTime
-    summary.CoilType = coil.CoilType
-    summary.CoilInside = coil.CoilInside
-    summary.CoilDia = coil.CoilDia
-    summary.Thickness = coil.Thickness
-    summary.Width = coil.Width
-    summary.Weight = coil.Weight
-    summary.ActWidth = coil.ActWidth
+def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: bool = False) -> Optional[CoilSummary]:
+    """
+    同步单个卷材的摘要数据（内部实现）
 
-    # 解码 NextCode
-    next_code = _decode_next_code(coil.Weight)
-    summary.NextCode = next_code
+    Args:
+        session: 数据库会话
+        coil_id: 卷材ID
+        retry_on_duplicate: 是否在重复键错误时重试
+    """
+    # 使用 no_autoflush 避免在查询时触发自动 flush
+    with session.no_autoflush:
+        # 先查找摘要是否已存在
+        summary = session.query(CoilSummary).filter_by(Id=coil_id).first()
+        is_new = summary is None
 
-    # 获取检测数据 (Coil)
-    check_data = session.query(Coil).filter_by(SecondaryCoilId=coil_id).first()
-    if check_data:
-        summary.HasCoil = True
-        summary.DefectCountS = check_data.DefectCountS or 0
-        summary.DefectCountL = check_data.DefectCountL or 0
-        summary.DetectionTime = check_data.DetectionTime
-        summary.CheckStatus = check_data.CheckStatus or 0
-        summary.Status_L = check_data.Status_L or 0
-        summary.Status_S = check_data.Status_S or 0
-        summary.Grade = check_data.Grade or 0
-        # 从检测数据的 Weight 解码 NextCode
-        if not next_code:
-            summary.NextCode = _decode_next_code(check_data.DefectCountS)  # 原逻辑用Weight
-    else:
-        summary.HasCoil = False
-        summary.DefectCountS = 0
-        summary.DefectCountL = 0
-        summary.CheckStatus = 0
-        summary.Status_L = 0
-        summary.Status_S = 0
-        summary.Grade = 0
+        if is_new:
+            # 不存在，创建新实例
+            summary = CoilSummary(Id=coil_id)
 
-    # 获取 S 面报警
-    alarm_s = session.query(AlarmInfo).filter_by(
-        secondaryCoilId=coil_id, surface='S'
-    ).first()
+        # 获取原始数据
+        coil = session.query(SecondaryCoil).filter_by(Id=coil_id).first()
+        if not coil:
+            log.warning(f"Coil {coil_id} not found for summary sync")
+            return None
 
-    if alarm_s:
-        summary.S_HasAlarm = True
-        summary.S_DefectGrad = alarm_s.defectGrad or 1
-        summary.S_TaperShapeGrad = alarm_s.taperShapeGrad or 1
-        summary.S_LooseCoilGrad = alarm_s.looseCoilGrad or 1
-        summary.S_FlatRollGrad = alarm_s.flatRollGrad or 1
-        summary.S_Grad = alarm_s.grad or max(
-            summary.S_DefectGrad, summary.S_TaperShapeGrad,
-            summary.S_LooseCoilGrad, summary.S_FlatRollGrad
-        )
-        summary.S_NextCode = alarm_s.nextCode or ""
-        summary.S_NextName = alarm_s.nextName or ""
-        # 覆盖 NextCode
-        if alarm_s.nextCode:
-            summary.NextCode = alarm_s.nextCode
-            summary.NextInfo = alarm_s.nextName or ""
-    else:
-        summary.S_HasAlarm = False
-        summary.S_DefectGrad = 1
-        summary.S_TaperShapeGrad = 1
-        summary.S_LooseCoilGrad = 1
-        summary.S_FlatRollGrad = 1
-        summary.S_Grad = 1
+        # 只在创建新记录时添加到会话
+        if is_new:
+            session.add(summary)
 
-    # 获取 L 面报警
-    alarm_l = session.query(AlarmInfo).filter_by(
-        secondaryCoilId=coil_id, surface='L'
-    ).first()
+        # 更新基本字段
+        summary.CoilNo = coil.CoilNo
+        summary.CreateTime = coil.CreateTime
+        summary.CoilType = coil.CoilType
+        summary.CoilInside = coil.CoilInside
+        summary.CoilDia = coil.CoilDia
+        summary.Thickness = coil.Thickness
+        summary.Width = coil.Width
+        summary.Weight = coil.Weight
+        summary.ActWidth = coil.ActWidth
 
-    if alarm_l:
-        summary.L_HasAlarm = True
-        summary.L_DefectGrad = alarm_l.defectGrad or 1
-        summary.L_TaperShapeGrad = alarm_l.taperShapeGrad or 1
-        summary.L_LooseCoilGrad = alarm_l.looseCoilGrad or 1
-        summary.L_FlatRollGrad = alarm_l.flatRollGrad or 1
-        summary.L_Grad = alarm_l.grad or max(
-            summary.L_DefectGrad, summary.L_TaperShapeGrad,
-            summary.L_LooseCoilGrad, summary.L_FlatRollGrad
-        )
-        summary.L_NextCode = alarm_l.nextCode or ""
-        summary.L_NextName = alarm_l.nextName or ""
-        # 覆盖 NextCode
-        if alarm_l.nextCode and not summary.NextInfo:
-            summary.NextCode = alarm_l.nextCode
-            summary.NextInfo = alarm_l.nextName or ""
-    else:
-        summary.L_HasAlarm = False
-        summary.L_DefectGrad = 1
-        summary.L_TaperShapeGrad = 1
-        summary.L_LooseCoilGrad = 1
-        summary.L_FlatRollGrad = 1
-        summary.L_Grad = 1
+        # 解码 NextCode
+        next_code = _decode_next_code(coil.Weight)
+        summary.NextCode = next_code
 
-    session.commit()
+        # 获取检测数据 (Coil)
+        check_data = session.query(Coil).filter_by(SecondaryCoilId=coil_id).first()
+        if check_data:
+            summary.HasCoil = True
+            summary.DefectCountS = check_data.DefectCountS or 0
+            summary.DefectCountL = check_data.DefectCountL or 0
+            summary.DetectionTime = check_data.DetectionTime
+            summary.CheckStatus = check_data.CheckStatus or 0
+            summary.Status_L = check_data.Status_L or 0
+            summary.Status_S = check_data.Status_S or 0
+            summary.Grade = check_data.Grade or 0
+            # 从检测数据的 Weight 解码 NextCode
+            if not next_code:
+                summary.NextCode = _decode_next_code(check_data.DefectCountS)  # 原逻辑用Weight
+        else:
+            summary.HasCoil = False
+            summary.DefectCountS = 0
+            summary.DefectCountL = 0
+            summary.CheckStatus = 0
+            summary.Status_L = 0
+            summary.Status_S = 0
+            summary.Grade = 0
+
+        # 获取 S 面报警
+        alarm_s = session.query(AlarmInfo).filter_by(
+            secondaryCoilId=coil_id, surface='S'
+        ).first()
+
+        if alarm_s:
+            summary.S_HasAlarm = True
+            summary.S_DefectGrad = alarm_s.defectGrad or 1
+            summary.S_TaperShapeGrad = alarm_s.taperShapeGrad or 1
+            summary.S_LooseCoilGrad = alarm_s.looseCoilGrad or 1
+            summary.S_FlatRollGrad = alarm_s.flatRollGrad or 1
+            summary.S_Grad = alarm_s.grad or max(
+                summary.S_DefectGrad, summary.S_TaperShapeGrad,
+                summary.S_LooseCoilGrad, summary.S_FlatRollGrad
+            )
+            summary.S_NextCode = alarm_s.nextCode or ""
+            summary.S_NextName = alarm_s.nextName or ""
+            # 覆盖 NextCode
+            if alarm_s.nextCode:
+                summary.NextCode = alarm_s.nextCode
+                summary.NextInfo = alarm_s.nextName or ""
+        else:
+            summary.S_HasAlarm = False
+            summary.S_DefectGrad = 1
+            summary.S_TaperShapeGrad = 1
+            summary.S_LooseCoilGrad = 1
+            summary.S_FlatRollGrad = 1
+            summary.S_Grad = 1
+
+        # 获取 L 面报警
+        alarm_l = session.query(AlarmInfo).filter_by(
+            secondaryCoilId=coil_id, surface='L'
+        ).first()
+
+        if alarm_l:
+            summary.L_HasAlarm = True
+            summary.L_DefectGrad = alarm_l.defectGrad or 1
+            summary.L_TaperShapeGrad = alarm_l.taperShapeGrad or 1
+            summary.L_LooseCoilGrad = alarm_l.looseCoilGrad or 1
+            summary.L_FlatRollGrad = alarm_l.flatRollGrad or 1
+            summary.L_Grad = alarm_l.grad or max(
+                summary.L_DefectGrad, summary.L_TaperShapeGrad,
+                summary.L_LooseCoilGrad, summary.L_FlatRollGrad
+            )
+            summary.L_NextCode = alarm_l.nextCode or ""
+            summary.L_NextName = alarm_l.nextName or ""
+            # 覆盖 NextCode
+            if alarm_l.nextCode and not summary.NextInfo:
+                summary.NextCode = alarm_l.nextCode
+                summary.NextInfo = alarm_l.nextName or ""
+        else:
+            summary.L_HasAlarm = False
+            summary.L_DefectGrad = 1
+            summary.L_TaperShapeGrad = 1
+            summary.L_LooseCoilGrad = 1
+            summary.L_FlatRollGrad = 1
+            summary.L_Grad = 1
+
+    # 在 no_autoflush 块外执行 flush/commit
+    try:
+        session.commit()
+    except IntegrityError as e:
+        # 多进程竞态条件：其他进程已经创建了这条记录
+        if retry_on_duplicate and 'Duplicate entry' in str(e):
+            session.rollback()
+            log.debug(f"Duplicate entry detected for coil {coil_id}, re-querying and updating...")
+            # 重新查询已存在的记录
+            summary = session.query(CoilSummary).filter_by(Id=coil_id).first()
+            if summary:
+                # 重新填充数据（不设置 is_new，所以不会 add）
+                return _sync_coil_summary_impl(session, coil_id, retry_on_duplicate=False)
+            # 如果还是找不到，说明有其他问题
+            log.warning(f"Coil {coil_id} still not found after duplicate error")
+            return None
+        else:
+            # 其他类型的完整性错误，重新抛出
+            raise
+
     log.info(f"Synced coil summary for {coil_id}: {summary.CoilNo}")
     return summary
 
@@ -276,6 +319,8 @@ def get_coil_list_original(
                     sync_coil_summary(session, coil.Id)
                 except Exception as e:
                     log.error(f"Failed to sync summary for coil {coil.Id}: {e}")
+                    # 回滚当前事务，确保后续操作可以继续
+                    session.rollback()
 
             result.append(coil_data)
 
@@ -369,6 +414,8 @@ def batch_sync_summaries(limit: int = 1000) -> int:
                     synced_count += 1
             except Exception as e:
                 log.error(f"Failed to sync summary for coil {coil_id}: {e}")
+                # 回滚当前事务，确保后续操作可以继续
+                session.rollback()
 
         log.info(f"Batch synced {synced_count} coil summaries")
         return synced_count
@@ -378,42 +425,81 @@ def get_coil_list_hybrid(
     limit: int = 10,
     coil_id: Optional[int] = None,
     rev: bool = True,
-    by_coil: bool = True
+    by_coil: bool = True,
+    auto_sync_latest: bool = True
 ) -> List[dict]:
     """
-    混合模式：优先使用摘要表，如果没有摘要则使用原始查询并自动创建摘要
+    混合模式：先查询 coil 表获取数据，然后同步到摘要表
+
+    新逻辑：
+    1. 先查询 Coil 表获取数据列表
+    2. 对每个 coil，检查 coil_summary 是否存在
+    3. 如果不存在，创建摘要
+    4. 返回 coil_summary 的数据
 
     Args:
         limit: 返回数量
         coil_id: 起始ID
         rev: 是否倒序
         by_coil: 是否过滤已检测的卷材
+        auto_sync_latest: 是否自动同步摘要（保留参数兼容性）
 
     Returns:
         List[dict]: 格式化后的卷材列表
     """
-    # 先尝试从摘要表获取
-    result = get_coil_list_with_summary(
-        limit=limit,
-        coil_id=coil_id,
-        rev=rev,
-        by_coil=by_coil,
-        auto_sync=False
-    )
+    from sqlalchemy.orm import subqueryload
 
-    # 如果摘要表有数据，直接返回
-    if result:
+    with SessionFactory() as session:
+        # 构建 SecondaryCoil 查询
+        query = session.query(SecondaryCoil.Id)
+
+        # 过滤条件
+        if coil_id:
+            if rev:
+                query = query.filter(SecondaryCoil.Id > coil_id)
+            else:
+                query = query.filter(SecondaryCoil.Id < coil_id)
+
+        # 如果只查询已检测的卷材
+        if by_coil:
+            last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
+            if last_coil:
+                query = query.filter(SecondaryCoil.Id <= last_coil.SecondaryCoilId)
+
+        # 排序
+        if rev:
+            query = query.order_by(SecondaryCoil.Id.desc())
+        else:
+            query = query.order_by(SecondaryCoil.Id.asc())
+
+        query = query.limit(limit)
+
+        # 获取 coil IDs
+        coil_ids = [row[0] for row in query.all()]
+
+        if not coil_ids:
+            return []
+
+        # 确保所有 coil 的摘要都存在
+        for cid in coil_ids:
+            try:
+                # sync_coil_summary 内部会检查是否已存在，不存在才创建
+                sync_coil_summary(session, cid)
+            except Exception as e:
+                log.error(f"Failed to sync summary for coil {cid}: {e}")
+                session.rollback()
+
+        # 从摘要表获取最终数据
+        summaries = session.query(CoilSummary).filter(
+            CoilSummary.Id.in_(coil_ids)
+        ).order_by(CoilSummary.Id.desc() if rev else CoilSummary.Id.asc()).all()
+
+        # 转换为前端格式
+        result = []
+        for summary in summaries:
+            result.append(summary.get_json())
+
         return result
-
-    # 摘要表没有数据，使用原始查询并同步
-    log.info("Summary table empty, using original query with sync")
-    return get_coil_list_original(
-        limit=limit,
-        coil_id=coil_id,
-        rev=rev,
-        by_coil=by_coil,
-        sync_summary=True
-    )
 
 
 def get_coil_detail(coil_id: int) -> dict:

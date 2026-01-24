@@ -24,3 +24,4 @@ from .TaperShapePoint import TaperShapePoint
 from .ImageJoinLog import ImageJoinLog
 from .CoilCheck import CoilCheck
 from .DefectCheck import DefectCheck
+from .CoilSummary import CoilSummary

@@ -129,6 +129,13 @@ class ImageMosaicThread(Thread):
                 "Grade": 0,
                 "Msg": ""
             })
+            # 检测完成后同步摘要表
+            try:
+                from CoilDataBase.CoilSummary import sync_coil_summary
+                with CoilSession() as sync_session:
+                    sync_coil_summary(sync_session, secondary_coil.Id)
+            except Exception as e:
+                logger.error(f"同步摘要失败 {secondary_coil.Id}: {e}")
         if isLoc:
             sleep_time = Globs.control.loc_sleep_time
             if status.get("L", 0) < 0 and status.get("S", 0) < 0:

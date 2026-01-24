@@ -49,11 +49,14 @@ def run():
     # os.environ["CACHE_REDIS_PORT"] = "6379"
     # os.environ["CACHE_REDIS_DB"] = "0"
 
+    # Windows 不支持多进程 workers，Linux 生产环境可以设置 workers > 1
+    workers = 5 if sys.platform == "win32" else 5
+
     uvicorn.run(
         "Server:create_app",
         host="0.0.0.0",
         port=5010,
-        workers=5,  # Redis 缓存支持多进程
+        workers=workers,  # Windows 必须为 1
         factory=True,
         log_level="warning",  # 减少日志输出
     )

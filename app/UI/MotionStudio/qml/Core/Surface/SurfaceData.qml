@@ -239,29 +239,43 @@ Item {
         viewDataModel.clear()
         coreModel.allViewKeys.forEach(function(viewKey){
             viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
-            imageCache.pushCache(getSource(coilId,viewKey,false))
         })
 
-        api.getCoilInfo(coilId_,key,
-                        (result)=>{
-                            setCoilInfo(JSON.parse(result))
+        // 延迟加载其他数据，优先保证图像加载
+        delayDataLoadTimer.restart()
+    }
+
+    // 延迟加载其他数据的定时器
+    Timer {
+        id: delayDataLoadTimer
+        interval: 500  // 图像加载开始后500ms再加载其他数据
+        onTriggered: {
+            // 预缓存所有视图（延迟）
+            coreModel.allViewKeys.forEach(function(viewKey){
+                imageCache.pushCache(getSource(coilId,viewKey,false))
+            })
+
+            // 获取钢卷信息
+            api.getCoilInfo(coilId,key,
+                            (result)=>{
+                                setCoilInfo(JSON.parse(result))
+                            },
+                            (error)=>{
+                                console.log("error")
+                            }
+                            )
+
+            // 获取点数据
+            pointTool.clear()
+            api.getPointDatas(
+                        coilId,key,(result)=>{
+                            pointTool.setDatas(JSON.parse(result))
                         },
                         (error)=>{
-                            console.log("error")
+                            console.log("getPointDatas error")
                         }
                         )
-
-        pointTool.clear()
-        api.getPointDatas(
-                    coilId_,key,(result)=>{
-                        pointTool.setDatas(JSON.parse(result))
-                    },
-                    (error)=>{
-                        console.log("getPointDatas error")
-                        console.log("error")
-                    }
-                    )
-
+        }
     }
 
 

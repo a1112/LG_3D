@@ -11,7 +11,7 @@ from Base.CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.core import Session
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
-from CoilDataBase.CoilSummary import get_coil_list_hybrid, get_coil_detail, batch_sync_summaries
+from CoilDataBase.CoilSummary import get_coil_list_with_summary, get_coil_list_hybrid, get_coil_detail, batch_sync_summaries
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect, PlcData, CoilState
 from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
@@ -84,16 +84,18 @@ def format_coil_info(secondary_coil_list):
 @router.get("/coilList/{number}")
 async def get_coil(number: int, coil_id=None, rev=True):
     """
-    获取 n 条数据（使用摘要表优化）
-    优先从摘要表查询，如果没有则自动创建摘要
+    获取 n 条数据（仅查询摘要表，不自动同步）
+
+    摘要表由算法检测结束时自动更新，确保数据一致性
     """
     number = min(number, 1000)
-    # 使用混合模式：优先摘要表，没有则用原始查询并同步
-    data = get_coil_list_hybrid(
+    # 直接查询摘要表，不进行自动同步
+    data = get_coil_list_with_summary(
         limit=number,
         coil_id=coil_id,
         rev=rev,
-        by_coil=isLoc
+        by_coil=isLoc,
+        auto_sync=False  # 禁用自动同步
     )
     return data
 
@@ -101,15 +103,16 @@ async def get_coil(number: int, coil_id=None, rev=True):
 @router.get("/flush/{coil_id:int}")
 async def get_flush(coil_id: int):
     """
-    向上刷新（使用摘要表优化）
+    向上刷新（仅查询摘要表）
     """
     if coil_id > 0:
         return {
-            "coilList": get_coil_list_hybrid(
+            "coilList": get_coil_list_with_summary(
                 limit=10,
                 coil_id=coil_id,
                 rev=True,
-                by_coil=isLoc
+                by_coil=isLoc,
+                auto_sync=False  # 禁用自动同步
             )
         }
     return {}

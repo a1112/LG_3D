@@ -69,7 +69,14 @@ Item {
     }
     function flush(){
         surfaceData.error_visible=false
-        flushDefect()
+        // 延迟加载缺陷数据，优先保证图像加载
+        defectLoadTimer.restart()
+    }
+
+    Timer {
+        id: defectLoadTimer
+        interval: 800  // 比其他数据再晚一些加载
+        onTriggered: flushDefect()
     }
       // 鍥炬爣鐨勬樉绀烘柟寮?
     property int chartShowType: 0
