@@ -287,17 +287,60 @@ async def get_error(
         scale: float = 1.0,
         mask: bool = True,
         minValue: int = 0,
-        maxValue: int = 255
+        maxValue: int = 255,
+        force_cache: bool = False  # 强制使用缓存，如果缓存不存在则返回空白
 ):
+    """
+    获取 Error 塔形报警图像
 
+    计算方法（与预生成缓存一致）：
+    - 蓝色：低于 中位数 - minValue mm（塔形过小，远离侧）
+    - 红色：高于 中位数 + maxValue mm（塔形过大，靠近侧）
 
+    优先从 AlgServer 预生成的缓存读取 (png/Error.png)
+    如果缓存不存在且 force_cache=False，则动态生成
+    """
     mask = get_bool(mask)
     scale = float(scale)
-    min_value, max_value = int(minValue), int(maxValue)
+    threshold_down_mm = int(minValue)
+    threshold_up_mm = int(maxValue)
     sT = time.time()
-    # 数据获取
-    print(fr"min_value : {min_value}, max_value : {max_value}")
 
+    # ========== 优先读取预生成的缓存 ==========
+    try:
+        data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+        image_path = data_get.url  # 获取图像路径
+
+        # 构造 Error.png 路径: {saveFolder}/{surface_key}/{coil_id}/png/Error.png
+        from pathlib import Path
+        path_obj = Path(image_path)
+        if path_obj.parent.name in {"jpg", "png"}:
+            coil_dir = path_obj.parent.parent
+        else:
+            coil_dir = path_obj.parent
+
+        error_cache_path = coil_dir / "png" / "Error.png"
+
+        if error_cache_path.exists():
+            # 读取缓存的 Error.png
+            with open(error_cache_path, "rb") as f:
+                img_bytes = f.read()
+            e_t = time.time()
+            print(f"Error cache hit: {e_t - sT:.3f}s")
+            return Response(content=img_bytes, media_type="image/png")
+
+    except Exception as e:
+        logging.debug(f"Failed to read Error cache: {e}")
+
+    # ========== 缓存不存在时的处理 ==========
+    if force_cache:
+        # 强制缓存模式：返回空白图像
+        blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
+        _, img_encoded = cv2.imencode('.png', blank_image)
+        img_bytes = io.BytesIO(img_encoded.tobytes())
+        return StreamingResponse(img_bytes, media_type="image/png")
+
+    # ========== 动态生成（降级方案） ==========
     data_get = DataGet("image", surface_key, coil_id, "MASK", mask)
     npy_data = data_get.get_3d_data()
 
@@ -310,28 +353,48 @@ async def get_error(
         img_bytes = io.BytesIO(img_encoded.tobytes())
         return StreamingResponse(img_bytes, media_type="image/png")
 
-    # mask_image = Image.open(io.BytesIO(data_get.get_mask_source()))
+    # mm 到原始单位的转换系数（与 ImageMosaic.py 中一致）
+    scale_factor = 0.016229506582021713
+
+    # 计算 median（中位数）
+    valid_data = npy_data[npy_data > 1000]  # 只使用有效数据
+    if len(valid_data) == 0:
+        logging.warning(f"No valid 3D data for coil_id={coil_id}, surface={surface_key}")
+        blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
+        _, img_encoded = cv2.imencode('.png', blank_image)
+        img_bytes = io.BytesIO(img_encoded.tobytes())
+        return StreamingResponse(img_bytes, media_type="image/png")
+    median_z_int = int(np.median(valid_data))
+
+    # 将 mm 阈值转换为原始单位
+    threshold_down_units = int(threshold_down_mm / scale_factor)
+    threshold_up_units = int(threshold_up_mm / scale_factor)
+
+    # 计算实际阈值（原始单位）
+    min_value = median_z_int - threshold_down_units
+    max_value = median_z_int + threshold_up_units
+
+    median_mm = median_z_int * scale_factor
+    print(f"Error dynamic: median={median_mm:.1f}mm, range=[{median_mm - threshold_down_mm:.1f}, {median_mm + threshold_up_mm:.1f}]mm")
+
     # 数据处理
-    # mask_image = np.array(mask_image)
     rSize = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
     if scale < 0.99:
         npy_data = cv2.resize(npy_data, rSize, interpolation=cv2.INTER_AREA)
-        # mask_image = cv2.resize(mask_image, rSize, interpolation=cv2.INTER_AREA)
 
     height, width = npy_data.shape
     output_image = np.zeros((height, width, 4), dtype=np.uint8)  # BGRA 格式 透明
 
-    # 蓝色区域
+    # 蓝色区域：低于中位数 - threshold_down mm（塔形过小，远离侧）
     output_image[(npy_data > 1000) & (npy_data < min_value)] = [255, 0, 0, 255]  # B, G, R, A
 
-    # 红色区域
+    # 红色区域：高于中位数 + threshold_up mm（塔形过大，靠近侧）
     output_image[npy_data > max_value] = [0, 0, 255, 255]  # B, G, R, A
-    # 缩放处理
-    # 应用伪彩色和透明通道
+
     _, img_encoded = cv2.imencode('.png', output_image)
     img_bytes = io.BytesIO(img_encoded.tobytes())
     e_t = time.time()
-    print(f"Processing Time: {e_t - sT:.2f} seconds")
+    print(f"Error generated dynamically: {e_t - sT:.3f}s (cache not found)")
     return StreamingResponse(img_bytes, media_type="image/png")
 
 app.include_router(router)

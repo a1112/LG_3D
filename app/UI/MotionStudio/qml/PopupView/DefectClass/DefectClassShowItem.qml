@@ -5,14 +5,23 @@ import "../../Model/server"
 ItemDelegate{
     id:root
 
+    // 直接使用 model 数据，而不是通过 defectClassItem
+    property string defectName: model.name || ""
+    property int defectLevel: model.level || 0
+    property bool defectShow: model.show !== undefined ? model.show : true
+    property string defectColor: model.color || "#FFFFFF"
 
     function setColor(color_){
-        set_defect_dict_property(index,"color",color_)
-        // defectClassItem.defectColor = color_
-
+        set_defect_dict_property(index, "color", color_)
     }
 
-    property DefectClassItemModel defectClassItem: DefectClassItemModel{}
+    function setLevel(level_){
+        set_defect_dict_property(index, "level", level_)
+    }
+
+    function setShow(show_){
+        set_defect_dict_property(index, "show", show_)
+    }
 
     Frame{
         anchors.fill:parent
@@ -29,7 +38,7 @@ ItemDelegate{
             }
 
             Label{
-                text: defectClassItem.defectName
+                text: defectName
                 font.pointSize:12
                 font.bold:true
             }
@@ -45,8 +54,11 @@ ItemDelegate{
                 height:30
                 scale:0.9
                 width:75
-                currentIndex:defectClassItem.defectLevel
-                model:6
+                currentIndex:defectLevel
+                model:["0", "1", "2", "3", "4", "5"]
+                onActivated: {
+                    setLevel(currentIndex)
+                }
             }
         }
         Row{
@@ -55,7 +67,10 @@ ItemDelegate{
             CheckDelegate{
                 text: qsTr("屏蔽: ")
                 height:20
-                checked:!defectClassItem.defectShow
+                checked:!defectShow
+                onToggled: {
+                    setShow(!checked)
+                }
             }
         }
         Item{
@@ -65,14 +80,14 @@ ItemDelegate{
 
 
         Label{
-            text: defectClassItem.defectColor
+            text: defectColor
             font.pointSize:15
-            color:defectClassItem.defectColor
+            color:defectColor
         }
         Rectangle{
             height:20
             width:height
-            color:defectClassItem.defectColor
+            color:defectColor
             ItemDelegate{
                 anchors.fill:parent
                 onClicked:{

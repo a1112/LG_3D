@@ -348,7 +348,31 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str
     if image is None:
         return Response(noFindImageByte, media_type="image/jpeg")
 
-    x, y, w, h = expansion_box([x, y, w, h], image.size, expand_factor=0)
+    img_w, img_h = image.size
+
+    # Validate and clip coordinates to image bounds
+    # Ensure x and y are within image bounds
+    if x < 0:
+        w += x  # Reduce width by the negative offset
+        x = 0
+    if y < 0:
+        h += y  # Reduce height by the negative offset
+        y = 0
+    if x >= img_w:
+        x = img_w - 1
+    if y >= img_h:
+        y = img_h - 1
+    # Ensure width and height don't exceed image bounds
+    if x + w > img_w:
+        w = img_w - x
+    if y + h > img_h:
+        h = img_h - y
+    # Ensure minimum dimensions
+    if w <= 0:
+        w = 1
+    if h <= 0:
+        h = 1
+
     crop_image = image.crop((x, y, x + w, y + h))
     img_byte_arr = io.BytesIO()
 

@@ -2,6 +2,7 @@ import QtQuick
 import "_base_"
 import "../../Core/Surface"
 import "../../DataShow/2dShow/ViewTool"
+import "../../Model"
 Item {
         property string key: "AREA"
     id:root
@@ -85,6 +86,7 @@ Item {
 
     readonly property int coilId: surfaceData.coilId
     readonly property string currentViewKey:surfaceData.currentViewKey
+    property CoilModel currentCoilModel: surfaceData.currentCoilModel
     onCoilIdChanged: {
         flush()
     }
@@ -260,11 +262,16 @@ Item {
     property int tower_warning_threshold_downValue: surfaceData.tower_warning_threshold_down/surfaceData.scan3dScaleZ
     function errorDrawer()
     {
+        // 检查设置中的叠加图层开关
+        if (!coreSetting.showErrorOverlay) {
+            surfaceData.error_visible=false
+            return
+        }
         surfaceData.error_source = api.geErrorDrawerSource(surfaceData.key,
                                                            surfaceData.coilId,
                                                            1,
-                                                           parseInt(medianZValue+tower_warning_threshold_downValue)
-                                                           ,parseInt(medianZValue+tower_warning_threshold_upValue)
+                                                           surfaceData.tower_warning_threshold_down  // mm 值：蓝色阈值
+                                                           , surfaceData.tower_warning_threshold_up     // mm 值：红色阈值
                                                            )
         surfaceData.error_visible=true
     }
@@ -283,9 +290,10 @@ Item {
         onTriggered: {
             if (coreModel.pendingDefect && flick) {
                 let pending = coreModel.pendingDefect
-                console.log("DataShowAreaCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, surfaceData.coilId)
-                // 检查是否匹配当前表面和卷材
-                if (pending.surface === surfaceData.key && pending.coilId === surfaceData.coilId) {
+                let currentCoilId = currentCoilModel ? currentCoilModel.coilId : surfaceData.coilId
+                console.log("DataShowAreaCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, currentCoilId)
+                // 检查是否匹配当前表面和卷材（使用 currentCoilModel.coilId）
+                if (pending.surface === surfaceData.key && pending.coilId === currentCoilId) {
                     setDefectShowView(pending)
                     console.log("定位到缺陷 (AREA)")
                 }

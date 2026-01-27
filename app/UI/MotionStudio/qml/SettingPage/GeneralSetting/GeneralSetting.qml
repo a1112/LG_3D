@@ -25,4 +25,29 @@ ColumnLayout{
             font.pixelSize: 14
         }
     }
+
+    // ========== 分隔线 ==========
+    Rectangle{
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: "#40000000"
+    }
+
+    // ========== 显示叠加图层设置 ==========
+    Label{
+        text: qsTr("显示设置")
+        font.pixelSize: 16
+    }
+    RowLayout{
+        spacing: 8
+        CheckBox{
+            id: errorOverlayCheckBox
+            checked: coreSetting.showErrorOverlay
+            onCheckedChanged: coreSetting.showErrorOverlay = checked
+        }
+        Label{
+            text: qsTr("显示叠加图层（塔形报警 Error 图层）")
+            font.pixelSize: 14
+        }
+    }
 }
