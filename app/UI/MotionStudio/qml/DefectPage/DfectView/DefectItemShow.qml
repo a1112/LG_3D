@@ -49,6 +49,8 @@ Item {
         acceptedButtons: Qt.RightButton|Qt.LeftButton
         onClicked: (mouse) => {
                        if (mouse.button===Qt.RightButton){
+                           // 将当前缺陷项传递给菜单
+                           defectDataViewMenu.defectItem = defectItem
                            defectDataViewMenu.popup()
                        }
 

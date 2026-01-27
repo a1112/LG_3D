@@ -91,8 +91,8 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
         next_code = _decode_next_code(coil.Weight)
         summary.NextCode = next_code
 
-        # 获取检测数据 (Coil)
-        check_data = session.query(Coil).filter_by(SecondaryCoilId=coil_id).first()
+        # 获取检测数据 (Coil) - 取最新的检测记录（按 DetectionTime 降序）
+        check_data = session.query(Coil).filter_by(SecondaryCoilId=coil_id).order_by(Coil.DetectionTime.desc()).first()
         if check_data:
             summary.HasCoil = True
             summary.DefectCountS = check_data.DefectCountS or 0

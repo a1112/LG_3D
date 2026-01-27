@@ -82,6 +82,25 @@ Item {
         }
     }
 
+    // ========== 预览图像（灰度，快速加载）==========
+    Image {
+        id: previewImage
+        anchors.fill: parent
+        asynchronous: true
+        fillMode: Image.Stretch
+        source: grayscaleSource
+        cache: true
+        z: 0
+        visible: grayscaleSource !== "" && loadedLevel < 0
+
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                // 预览图加载完成后，开始加载目标级别的图像
+                updateLevel(currentLevel)
+            }
+        }
+    }
+
     // ========== 5个叠加的 Image 层（L0-L4）==========
     // Level 0
     Image {
@@ -180,6 +199,9 @@ Item {
     property url levelSource3: ""
     property url levelSource4: ""
 
+    // 灰度预览图（快速加载）
+    property url grayscaleSource: ""
+
     // ========== 构建图像URL ==========
     function buildImageUrl(level) {
         if (imageUrl === "" || imageUrl === undefined) {
@@ -191,6 +213,16 @@ Item {
         url += "&count=" + count_
         url += "&level=" + level
         return url
+    }
+
+    // ========== 加载灰度预览图（快速显示）==========
+    function loadGrayscalePreview() {
+        if (imageUrl === "" || imageUrl === undefined) {
+            return
+        }
+        // 添加 thumbnail=true 和 grayscale=true
+        var url = imageUrl + "?thumbnail=true&grayscale=true"
+        grayscaleSource = url
     }
 
     // ========== 更新等级 ==========
@@ -244,7 +276,8 @@ Item {
     Component.onCompleted: {
         lastLoadedUrl = imageUrl
         if (shouldLoad) {
-            updateLevel(currentLevel)
+            // 先加载灰度预览图
+            loadGrayscalePreview()
         }
     }
 
@@ -257,8 +290,21 @@ Item {
 
     // ========== 监听 imageUrl 变化 ==========
     onImageUrlChanged: {
+        // URL 变化时，重置 lastLoadedUrl 强制检测为变化
+        lastLoadedUrl = ""
+        // 清空所有级别源，确保重新加载
+        levelSource0 = ""
+        levelSource1 = ""
+        levelSource2 = ""
+        levelSource3 = ""
+        levelSource4 = ""
+        grayscaleSource = ""
+        loadedLevel = -1
+
         if (isInViewport) {
-            updateLevel(currentLevel)
+            // 先加载灰度预览图（快速显示）
+            loadGrayscalePreview()
+            // 然后由 previewImage 的 onStatusChanged 触发目标级别加载
         }
     }
 

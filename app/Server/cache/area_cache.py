@@ -4,8 +4,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-import cv2
-import numpy as np
 from cachetools import TTLCache, cached
 
 from Base.CONFIG import serverConfigProperty
@@ -13,17 +11,14 @@ from .base import _resolve_image_path
 from .memory_cache import MemoryImageCache
 
 
-# 多级瓦片配置：级别 -> (目标尺寸, JPEG质量)
-TILE_LEVELS = {
-    0: (340, 60),    # Level 0: 1/16 缩略图 (~20KB)
-    1: (682, 70),    # Level 1: 1/8 (~50KB)
-    2: (1364, 80),   # Level 2: 1/4 (~120KB)
-    3: (2728, 90),   # Level 3: 1/2 (~250KB)
-    4: (5460, 95),   # Level 4: 原图瓦片 (~500KB)
-}
-
-
 class DiskAreaImageCache(MemoryImageCache):
+    """
+    AREA 瓦片缓存读取类
+
+    注意：瓦片缓存由 Alg2DServer/SaverWork 在保存 AREA 图像时生成。
+    Server 端只负责读取，不再生成瓦片缓存。
+    """
+
     def __init__(self, cache_size: int = 32, ttl: int = 200, tile_count: int = 3, max_coils: int = 100) -> None:
         self.tile_count = tile_count
         self.max_coils = max_coils
@@ -58,91 +53,12 @@ class DiskAreaImageCache(MemoryImageCache):
                 re_dict[col][row] = tile_path.read_bytes()
         return re_dict
 
-    def _write_tile_cache(self, cache_dir: Path, tiles: dict) -> None:
-        """写入瓦片到指定目录"""
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        for col in tiles:
-            for row in tiles[col]:
-                tile_path = self._tile_path(cache_dir, col, row)
-                if not tile_path.exists():
-                    tile_path.write_bytes(tiles[col][row])
-
-    def _resize_tile_bytes(self, tile_bytes: bytes, target_size: int, quality: int) -> bytes:
-        """调整瓦片尺寸"""
-        np_arr = np.frombuffer(tile_bytes, dtype=np.uint8)
-        tile = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
-        if tile is None:
-            return tile_bytes
-
-        h, w = tile.shape[:2]
-        max_dim = max(h, w)
-
-        if max_dim <= target_size:
-            # 不需要缩小，只调整质量
-            ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, quality])
-            return buf.tobytes() if ok else tile_bytes
-
-        # 缩小图像
-        scale = target_size / max_dim
-        new_w = int(w * scale)
-        new_h = int(h * scale)
-        resized = cv2.resize(tile, (new_w, new_h), interpolation=cv2.INTER_AREA)
-
-        ok, buf = cv2.imencode(".jpg", resized, [cv2.IMWRITE_JPEG_QUALITY, quality])
-        return buf.tobytes() if ok else tile_bytes
-
-    def _generate_tiles(self, path: str, count: int) -> Optional[dict]:
-        """生成 L4 原图瓦片，并同时生成 L0-L3 的瓦片"""
-        image_bytes = self._cache_image_byte(path)
-        if image_bytes is None:
-            return None
-
-        np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
-        image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
-        if image is None:
-            logging.error("cv2 imdecode failed for %s", path)
-            return None
-
-        h, w = image.shape[:2]
-        w_width = w // count
-        h_height = h // count
-
-        # 生成 L4 原图瓦片
-        l4_tiles = defaultdict(dict)
-        for row in range(count):
-            for col in range(count):
-                tile = image[col * h_height:(col + 1) * h_height, row * w_width:(row + 1) * w_width]
-                ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, TILE_LEVELS[4][1]])
-                if not ok:
-                    logging.error("cv2 imencode failed for %s row=%s col=%s", path, row, col)
-                    return None
-                l4_tiles[col][row] = buf.tobytes()
-
-        # 保存 L4 瓦片
-        l4_cache_dir = self._tile_cache_dir(path, 4)
-        self._write_tile_cache(l4_cache_dir, l4_tiles)
-        logging.info(f"Saved L4 tiles to {l4_cache_dir}")
-
-        # 同时生成并保存 L0-L3 瓦片（空间换时间）
-        for level in range(4):
-            target_size, quality = TILE_LEVELS[level]
-            level_tiles = defaultdict(dict)
-            for col in l4_tiles:
-                for row in l4_tiles[col]:
-                    resized_bytes = self._resize_tile_bytes(l4_tiles[col][row], target_size, quality)
-                    level_tiles[col][row] = resized_bytes
-
-            level_cache_dir = self._tile_cache_dir(path, level)
-            self._write_tile_cache(level_cache_dir, level_tiles)
-            logging.info(f"Saved L{level} tiles to {level_cache_dir}")
-
-        return l4_tiles
-
     def get_tile(self, path: str, row: int, col: int, count: int, level: int = 4) -> Optional[bytes]:
         """
         获取指定位置和级别的瓦片
 
-        优先从缓存读取，如果没有则回退到生成模式
+        瓦片缓存由 Alg2DServer 生成，这里只读取。
+        如果缓存不存在，返回 None（不再自动生成）。
         """
         if count <= 0:
             return None
@@ -150,22 +66,13 @@ class DiskAreaImageCache(MemoryImageCache):
         count = self.tile_count
         cache_dir = self._tile_cache_dir(path, level)
 
-        # 尝试从缓存读取
+        # 从缓存读取
         tile_path = self._tile_path(cache_dir, col, row)
         if tile_path.exists():
             return tile_path.read_bytes()
 
-        # 缓存不存在，尝试生成所有级别的瓦片
-        logging.info(f"Cache miss for L{level} tile ({col},{row}), generating all levels...")
-        tiles = self._generate_tiles(path, count)
-        if tiles is None:
-            return None
-
-        # 重新读取
-        tile_path = self._tile_path(cache_dir, col, row)
-        if tile_path.exists():
-            return tile_path.read_bytes()
-
+        # 缓存不存在，记录日志并返回 None
+        logging.debug(f"Tile cache not found: L{level} tile ({col},{row}) for {path}")
         return None
 
     def get_all_tiles(self, path: str, count: int) -> Optional[dict]:
@@ -174,15 +81,9 @@ class DiskAreaImageCache(MemoryImageCache):
             return None
         count = self.tile_count
 
-        # 优先读取 L4
+        # 读取 L4
         cache_dir = self._tile_cache_dir(path, 4)
-        tiles = self._read_tile_cache(cache_dir, count)
-
-        if tiles is None:
-            # 缓存不存在，生成所有级别
-            tiles = self._generate_tiles(path, count)
-
-        return tiles
+        return self._read_tile_cache(cache_dir, count)
 
     def _build_clip_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
@@ -192,38 +93,6 @@ class DiskAreaImageCache(MemoryImageCache):
             count = self.tile_count
             return self.get_all_tiles(path, count)
         return _load_image_clip
-
-    def _prefetch_latest_tiles(self) -> None:
-        try:
-            surfaces = serverConfigProperty.surfaceConfigPropertyDict.values()
-        except Exception:
-            return
-        for surface in surfaces:
-            save_dir = Path(surface.saveFolder)
-            if not save_dir.exists():
-                continue
-            coil_ids = []
-            for child in save_dir.iterdir():
-                if not child.is_dir():
-                    continue
-                try:
-                    coil_ids.append(int(child.name))
-                except ValueError:
-                    continue
-            coil_ids.sort()
-            if len(coil_ids) > self.max_coils:
-                coil_ids = coil_ids[-self.max_coils:]
-            for coil_id in coil_ids:
-                try:
-                    path = surface.get_file(str(coil_id), "AREA")
-                    cache_dir = self._tile_cache_dir(path, 4)
-                    if self._read_tile_cache(cache_dir, self.tile_count) is not None:
-                        continue
-                    # 预生成所有级别
-                    logging.info(f"Prefetching all levels for {surface.key} coil {coil_id}")
-                    self._generate_tiles(str(path), self.tile_count)
-                except Exception:
-                    logging.debug("prefetch tile cache failed for %s %s", surface.key, coil_id, exc_info=True)
 
     def cleanup_old_cache(self) -> None:
         """清理旧版本的瓦片缓存（根目录下的 0_0.jpg 等文件）"""
@@ -261,8 +130,5 @@ class DiskAreaImageCache(MemoryImageCache):
             logging.info(f"Cleaned up {cleaned} old tile cache files (legacy format)")
 
     def startup(self) -> None:
-        # 先清理旧缓存
+        # 清理旧缓存
         self.cleanup_old_cache()
-        # 然后启动预加载线程
-        thread = threading.Thread(target=self._prefetch_latest_tiles, name="area-tile-cache", daemon=True)
-        thread.start()

@@ -117,7 +117,7 @@ def get_secondary_coil(num: int, desc=True) -> List[SecondaryCoil]:
 
 def addCoil(coil):
     """
-        添加检测数据
+    添加检测数据（去重：如果已存在则更新）
     Args:
         coil:
 
@@ -125,18 +125,36 @@ def addCoil(coil):
 
     """
     with Session() as session:
-        session.add(Coil(
-            SecondaryCoilId=coil["SecondaryCoilId"],
-            DetectionTime=datetime.datetime.now(),
-            DefectCountS=coil["DefectCountS"],
-            DefectCountL=coil["DefectCountL"],
-            CheckStatus=coil["CheckStatus"],
-            Status_L=coil["Status_L"],
-            Status_S=coil["Status_S"],
-            Grade=coil["Grade"],
-            Msg=coil["Msg"]
-        ))
+        secondary_coil_id = coil["SecondaryCoilId"]
+
+        # 查询是否已存在该 secondary_coil_id 的记录
+        existing = session.query(Coil).filter_by(SecondaryCoilId=secondary_coil_id).first()
+
+        if existing:
+            # 已存在，更新记录
+            existing.DetectionTime = datetime.datetime.now()
+            existing.DefectCountS = coil.get("DefectCountS", 0)
+            existing.DefectCountL = coil.get("DefectCountL", 0)
+            existing.CheckStatus = coil.get("CheckStatus", 0)
+            existing.Status_L = coil.get("Status_L", 0)
+            existing.Status_S = coil.get("Status_S", 0)
+            existing.Grade = coil.get("Grade", 0)
+            existing.Msg = coil.get("Msg", "")
+        else:
+            # 不存在，新增记录
+            session.add(Coil(
+                SecondaryCoilId=secondary_coil_id,
+                DetectionTime=datetime.datetime.now(),
+                DefectCountS=coil["DefectCountS"],
+                DefectCountL=coil["DefectCountL"],
+                CheckStatus=coil["CheckStatus"],
+                Status_L=coil["Status_L"],
+                Status_S=coil["Status_S"],
+                Grade=coil["Grade"],
+                Msg=coil["Msg"]
+            ))
         session.commit()
+        return existing if existing else session.query(Coil).filter_by(SecondaryCoilId=secondary_coil_id).first()
 
 
 def delete_defects_by_secondary_coil_id(secondary_coil_id, surface):

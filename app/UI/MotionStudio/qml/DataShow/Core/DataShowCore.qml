@@ -17,14 +17,19 @@ DataShowCore_ {
 
     function flush(){
         surfaceData.error_visible=false
-        // 延迟加载缺陷数据，优先保证图像加载
+        // 第一阶段：立即触发图像渲染
+        renderDrawer()
+        // 第二阶段：延迟加载缺陷数据，优先保证图像加载完成
         defectLoadTimer.restart()
     }
 
     Timer {
         id: defectLoadTimer
-        interval: 800  // 比其他数据再晚一些加载
-        onTriggered: flushDefect()
+        interval: 1200  // 确保图像加载完成后再加载缺陷（增加延迟）
+        onTriggered: {
+            // 第三阶段：加载缺陷数据和缺陷图像
+            flushDefect()
+        }
     }
       // 图标的显示方式
     property int chartShowType: 0
@@ -210,18 +215,52 @@ DataShowCore_ {
     property real renderScale: 1
     property bool autoRender: false
 
+    // ========== 新增：图像类型状态 ==========
+    property string currentImageType: "none"  // "gray", "jet", "none"
+    property string imageTypeText: "未加载"
+    property color imageTypeColor: "#999999"
+
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
 
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
-        surfaceData.source = api.geRenderDrawerSource(surfaceData.key,
-                                                      surfaceData.coilId,
-                                                      renderScale.toFixed(2),
-                                                      parseInt(medianZValue-rangeZValue)
-                                                      ,parseInt(medianZValue+rangeZValue)
-                                                      )
+        // 第一阶段：加载 GRAY 缓存图（快速显示）
+        surfaceData.source = api.geRenderDrawerSource(
+            surfaceData.key,
+            surfaceData.coilId,
+            renderScale.toFixed(2),
+            parseInt(medianZValue-rangeZValue),
+            parseInt(medianZValue+rangeZValue),
+            mask=true,
+            grayscale=true  // GRAY 模式，使用 GRAY 缓存
+        )
+        currentImageType = "gray"
+        imageTypeText = "灰度预览"
+        imageTypeColor = "#999999"
+
+        // 第二阶段：延迟加载 JET 图像（更高质量）
+        renderTimer.restart()
+    }
+
+    Timer {
+        id: renderTimer
+        interval: 500  // 500ms 后切换到 JET 图像
+        onTriggered: {
+            surfaceData.source = api.geRenderDrawerSource(
+                surfaceData.key,
+                surfaceData.coilId,
+                renderScale.toFixed(2),
+                parseInt(medianZValue-rangeZValue),
+                parseInt(medianZValue+rangeZValue),
+                mask=true,
+                grayscale=false  // JET 模式，使用 JET 缓存
+            )
+            currentImageType = "jet"
+            imageTypeText = "彩色显示"
+            imageTypeColor = "#52c41a"
+        }
     }
     property int tower_warning_threshold_upValue: surfaceData.tower_warning_threshold_up/surfaceData.scan3dScaleZ
     property int tower_warning_threshold_downValue: surfaceData.tower_warning_threshold_down/surfaceData.scan3dScaleZ
@@ -240,6 +279,34 @@ DataShowCore_ {
         setToMaxScale()
         flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
         flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+    }
+
+    // 监听从缺陷页面跳转时的待定位缺陷
+    Timer {
+        id: pendingDefectTimer
+        interval: 500
+        onTriggered: {
+            if (coreModel.pendingDefect && flick) {
+                let pending = coreModel.pendingDefect
+                console.log("DataShowCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, surfaceData.coilId)
+                // 检查是否匹配当前表面和卷材
+                if (pending.surface === surfaceData.key && pending.coilId === surfaceData.coilId) {
+                    setDefectShowView(pending)
+                    console.log("定位到缺陷")
+                }
+                // 清除待定位缺陷
+                coreModel.pendingDefect = null
+            }
+        }
+    }
+
+    Connections {
+        target: coreModel
+        function onPendingDefectChanged() {
+            if (coreModel.pendingDefect) {
+                pendingDefectTimer.restart()
+            }
+        }
     }
 
     // property View2DTool view2DTool:View2DTool{

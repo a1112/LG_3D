@@ -438,4 +438,103 @@ async def sync_summaries_api(limit: int = 1000):
     return {"synced": count, "message": f"Synced {count} summaries"}
 
 
+@router.post("/export_defects")
+async def export_defects(request: dict):
+    """
+    导出当前显示的缺陷图像到本地文件夹
+
+    Args:
+        request: 包含 defects（缺陷列表）和 folder_path（导出路径）的字典
+
+    Returns:
+        导出结果统计
+    """
+    from pathlib import Path
+    from Base.tools.DataGet import get_pil_image_by_defect
+    from CoilDataBase.models.CoilDefect import CoilDefect
+
+    # 安全检查：只允许本地路径
+    if not isLoc:
+        return {"error": "仅支持本地服务器导出", "exported": 0}
+
+    # 获取参数
+    defects = request.get("defects", [])
+    folder_path = request.get("folder_path", "")
+
+    if not folder_path:
+        return {"error": "请指定导出文件夹路径", "exported": 0}
+
+    if not defects:
+        return {"error": "没有可导出的缺陷数据", "exported": 0}
+
+    # 创建导出目录
+    export_base = Path(folder_path)
+    try:
+        export_base.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return {"error": f"无法创建目录: {e}", "exported": 0}
+
+    # 按缺陷类别分组
+    defect_groups = {}
+    for defect in defects:
+        defect_name = defect.get("defectName", "Unknown")
+        if defect_name not in defect_groups:
+            defect_groups[defect_name] = []
+        defect_groups[defect_name].append(defect)
+
+    exported_count = 0
+    error_count = 0
+
+    # 导出每个缺陷
+    for defect_name, defect_list in defect_groups.items():
+        # 为每个类别创建子文件夹
+        category_folder = export_base / defect_name
+        category_folder.mkdir(exist_ok=True)
+
+        for idx, defect_data in enumerate(defect_list):
+            try:
+                # 获取缺陷参数
+                coil_id = defect_data.get("secondaryCoilId", 0)
+                surface = defect_data.get("surface", "S")
+                defect_x = defect_data.get("defectX", 0)
+                defect_y = defect_data.get("defectY", 0)
+                defect_w = defect_data.get("defectW", 100)
+                defect_h = defect_data.get("defectH", 100)
+
+                # 创建 CoilDefect 对象
+                coil_defect = CoilDefect()
+                coil_defect.secondaryCoilId = coil_id
+                coil_defect.surface = surface
+                coil_defect.defectName = defect_name
+                coil_defect.defectX = defect_x
+                coil_defect.defectY = defect_y
+                coil_defect.defectW = defect_w
+                coil_defect.defectH = defect_h
+
+                # 获取缺陷图像
+                defect_image = get_pil_image_by_defect(coil_defect)
+
+                # 生成文件名：coil_id_类别_位置_序号.jpg
+                x_pos = int(defect_x)
+                y_pos = int(defect_y)
+                filename = f"{coil_id}_{defect_name}_x{x_pos}_y{y_pos}_{idx+1}.jpg"
+
+                # 保存图像
+                save_path = category_folder / filename
+                defect_image.save(save_path, quality=95)
+                exported_count += 1
+
+            except Exception as e:
+                error_count += 1
+                print(f"导出缺陷失败: {e}")
+
+    return {
+        "exported": exported_count,
+        "errors": error_count,
+        "categories": len(defect_groups),
+        "total": len(defects),
+        "message": f"成功导出 {exported_count} 个缺陷图像到 {folder_path}"
+    }
+
+
 app.include_router(router)

@@ -121,14 +121,17 @@ async def getRender(
     mask: bool = Query(True, description="是否应用掩码"),
     min_value: int = Query(0, description="最小值"),
     max_value: int = Query(255, description="最大值"),
-    thumbnail: bool = Query(False, description="是否返回缩略图（1024x1024）")
-):
+    thumbnail: bool = Query(False, description="是否返回缩略图（1024x1024）"),
+    grayscale: bool = Query(False, description="是否使用灰度模式（GRAY）而非伪彩色（JET）"),
+) -> Response:
     """
-    获取伪彩色渲染图像（JET 颜色映射）
+    获取渲染图像（支持伪彩色 JET 和灰度 GRAY）
 
     参数:
     - thumbnail=true: 返回缓存的缩略图（快速加载）
     - thumbnail=false: 返回完整渲染图像
+    - grayscale=true: 返回灰度图像（GRAY.jpg 缓存）
+    - grayscale=false: 返回伪彩色图像（JET.jpg 缓存）
     """
     mask = get_bool(mask)
     scale = float(scale)
@@ -140,6 +143,10 @@ async def getRender(
 
     if npy_data is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
+
+    # 选择颜色映射
+    colormap = -1 if grayscale else cv2.COLORMAP_JET
+    colormap_name = "GRAY" if grayscale else "JET"
 
     # ========== 缩略图模式（优先从缓存读取）==========
     if thumbnail:
@@ -156,15 +163,16 @@ async def getRender(
                 data_get.url,
                 npy_data,
                 mask_array,
-                cv2.COLORMAP_JET,
+                colormap,
                 min_value,
                 max_value
             )
             if thumb_data:
-                log.info(f"Thumbnail: {'from cache' if from_cache else 'generated'} in {time.time()-s_t:.3f}s")
+                log.info(f"Thumbnail ({colormap_name}): {'from cache' if from_cache else 'generated'} in {time.time()-s_t:.3f}s")
                 return Response(thumb_data, media_type="image/jpeg", headers={
                     "X-Thumbnail": "true",
-                    "X-From-Cache": str(from_cache)
+                    "X-From-Cache": str(from_cache),
+                    "X-Colormap": colormap_name
                 })
 
     # ========== 完整渲染模式 ==========
@@ -184,15 +192,30 @@ async def getRender(
         if mask_image is not None and mask_image.size:
             mask_image = cv2.resize(mask_image, r_size)
 
-    colored_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
-    if mask and mask_image is not None:
-        colored_image = cv2.bitwise_and(colored_image, colored_image, mask=mask_image)
+    # 根据模式选择输出
+    if grayscale:
+        # GRAY 模式：转换为 BGR 以便 JPEG 编码
+        rendered_image = cv2.cvtColor(clip_npy, cv2.COLOR_GRAY2BGR)
+    else:
+        # JET 模式：应用伪彩色
+        rendered_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
 
-    _, img_encoded = cv2.imencode('.jpg', colored_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    if mask and mask_image is not None:
+        if grayscale:
+            # GRAY 模式掩码需要 3 通道
+            mask_3ch = cv2.merge([mask_image, mask_image, mask_image])
+            rendered_image = cv2.bitwise_and(rendered_image, rendered_image, mask=mask_3ch)
+        else:
+            rendered_image = cv2.bitwise_and(rendered_image, rendered_image, mask=mask_image)
+
+    _, img_encoded = cv2.imencode('.jpg', rendered_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
     img_bytes = img_encoded.tobytes()
 
-    log.info(f"Full render: {time.time()-s_t:.3f}s")
-    return Response(img_bytes, media_type="image/jpeg", headers={"X-Thumbnail": "false"})
+    log.info(f"Full render ({colormap_name}): {time.time()-s_t:.3f}s")
+    return Response(img_bytes, media_type="image/jpeg", headers={
+        "X-Thumbnail": "false",
+        "X-Colormap": colormap_name
+    })
 
 
 @router.get("/coilData/Area/{surface_key:str}/{coil_id:str}")

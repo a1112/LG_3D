@@ -276,6 +276,34 @@ Item {
         flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
     }
 
+    // 监听从缺陷页面跳转时的待定位缺陷
+    Timer {
+        id: pendingDefectTimer
+        interval: 500
+        onTriggered: {
+            if (coreModel.pendingDefect && flick) {
+                let pending = coreModel.pendingDefect
+                console.log("DataShowAreaCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, surfaceData.coilId)
+                // 检查是否匹配当前表面和卷材
+                if (pending.surface === surfaceData.key && pending.coilId === surfaceData.coilId) {
+                    setDefectShowView(pending)
+                    console.log("定位到缺陷 (AREA)")
+                }
+                // 清除待定位缺陷
+                coreModel.pendingDefect = null
+            }
+        }
+    }
+
+    Connections {
+        target: coreModel
+        function onPendingDefectChanged() {
+            if (coreModel.pendingDefect) {
+                pendingDefectTimer.restart()
+            }
+        }
+    }
+
 
     // property View2DTool view2DTool:View2DTool{
 

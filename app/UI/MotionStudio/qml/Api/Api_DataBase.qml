@@ -108,10 +108,10 @@ Api_Base {
                           })
     }
 
-    function geRenderDrawerSource(key,coil_id,scale,minValue,maxValue,mask=false){
-        //  http://127.0.0.1:6013/coilData/L/1924?mask=true&minValue=0&maxValue=255
-        let url_= apiConfig.url(apiConfig.serverUrlData,"coilData","Render",key,coil_id)+`?scale=${scale}&mask=${mask}&minValue=${minValue}&maxValue=${maxValue}`
-
+    function geRenderDrawerSource(key,coil_id,scale,minValue,maxValue,mask=false,grayscale=false){
+        //  http://127.0.0.1:6013/coilData/L/1924?scale=xxx&mask=xxx&minValue=xxx&maxValue=xxx&grayscale=xxx
+        let url_= apiConfig.url(apiConfig.serverUrlData,"coilData","Render",key,coil_id)
+        url_ += `?scale=${scale}&mask=${mask}&minValue=${minValue}&maxValue=${maxValue}&grayscale=${grayscale}`
         return url_
     }
 

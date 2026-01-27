@@ -6,9 +6,17 @@ Item {
     id:root
     clip: true
 
+    ScrollView {
+        anchors.fill: parent
+        clip: true
+
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+        ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+
         GridView {
-            anchors.fill: parent
             id : grid
+            width: parent.width
+            height: parent.height
             // flow:Flow.TopToBottom
             cellHeight: 200
             cellWidth: 200
@@ -22,8 +30,7 @@ Item {
                 asynchronous: true
                 sourceComponent: DefectItemShow{}
             }
-
-
         }
     }
+}
 

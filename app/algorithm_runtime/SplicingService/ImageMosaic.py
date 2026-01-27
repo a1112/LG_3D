@@ -141,6 +141,38 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             image = Image.fromarray(depth_map_color)
             self._save_image_(data_integration, image, name)
             self.colorImageDict[name] = image
+
+        # ========== 生成 GRAY 和 JET 缓存 ==========
+        try:
+            from Base.utils.cache_generator import generate_gray_thumbnail, generate_jet_thumbnail, get_gray_cache_dir
+
+            npy_file = self.saveFolder / coil_id / "3D.npy"
+
+            # 获取 GRAY 缓存目录
+            gray_cache_dir = get_gray_cache_dir(str(npy_file))
+
+            # 生成 GRAY 缓存
+            generate_gray_thumbnail(
+                npy_data=npy__,
+                cache_dir=gray_cache_dir,
+                size=1024
+            )
+
+            # 生成 JET 缓存（使用默认的 min/max 值）
+            jet_cache_dir = gray_cache_dir.parent / "jet"
+            generate_jet_thumbnail(
+                npy_data=npy__,
+                cache_dir=jet_cache_dir,
+                mask=None,
+                size=1024,
+                min_value=0,
+                max_value=255
+            )
+
+            logger.info(f"Generated GRAY and JET cache for coil {coil_id}")
+        except Exception as e:
+            logger.error(f"Failed to generate cache for coil {coil_id}: {e}")
+
         obj_file = self.saveFolder / coil_id / "3D.obj"
         self.d3Saver.add_([coil_id, npy__, mask_image, config_datas, circle_config, obj_file, data_integration.median_3d_mm,
                            data_integration.get_bd_xyz()])
