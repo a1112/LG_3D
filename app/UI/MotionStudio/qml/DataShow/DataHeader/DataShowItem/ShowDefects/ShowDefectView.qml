@@ -8,7 +8,7 @@ ColumnLayout {
         Layout.fillWidth : true
         Layout.fillHeight : true
         Label{
-            visible : dataShowCore_.show_num
+            visible : false  // 不再显示"无缺陷报警"文字
             font.bold : true
             anchors.centerIn : parent
             text:qsTr("无缺陷报警！")

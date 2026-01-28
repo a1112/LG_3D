@@ -69,6 +69,8 @@ def _resolve_image_path(original_path: str) -> Path:
     """
     在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
     其余情况直接返回原路径。
+
+    注意：现在所有文件都保存为 .jpg 格式，优先尝试 .jpg
     """
     path_obj = Path(original_path)
 
@@ -82,7 +84,8 @@ def _resolve_image_path(original_path: str) -> Path:
         if "preview" in parts:
             type_name = path_obj.stem
             preview_dir = _TESTDATA_DIR / "preview"
-            for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+            # 优先尝试 .jpg（当前保存格式），然后才是其他格式
+            for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
                 if not ext:
                     continue
                 candidate = preview_dir / f"{type_name}{ext}"
@@ -94,7 +97,8 @@ def _resolve_image_path(original_path: str) -> Path:
         type_name = path_obj.stem
         target_dir = _TESTDATA_DIR / folder_name
 
-        for ext in (path_obj.suffix, ".png", ".jpg", ".jpeg"):
+        # 优先尝试 .jpg（当前保存格式）
+        for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
             if not ext:
                 continue
             candidate = target_dir / f"{type_name}{ext}"

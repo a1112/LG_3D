@@ -113,8 +113,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         try:
             from Base.utils.cache_generator import generate_gray_thumbnail, generate_jet_thumbnail
 
-            coil_id = data_integration.coil_id
-            surface_key = data_integration.key
+            coil_id = data_integration.coilId
+            surface_key = data_integration.surface
 
             # 缓存目录：{saveFolder}/{surface_key}/{coil_id}/jpg/cache/
             cache_base = Path(data_integration.get_save_url("jpg", "")) / "cache"

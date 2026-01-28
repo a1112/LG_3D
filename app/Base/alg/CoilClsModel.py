@@ -38,7 +38,9 @@ class CoilClsModel:
             self.names = config_data["names"]
 
 
-        self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=None, in_chans=self.in_chans)
+        # 确定类别数：优先使用配置文件中的类别数量，否则让 timm 从检查点自动推断
+        num_classes = len(self.names) if self.names else None
+        self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=num_classes, in_chans=self.in_chans)
         self.model.eval()
 
         self.device = 'cpu'

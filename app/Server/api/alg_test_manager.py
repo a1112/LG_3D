@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import shutil
 import time
 import uuid
@@ -15,6 +16,8 @@ from ultralytics import YOLO
 
 from Base.CONFIG import base_config_folder
 from Base.alg.CoilClsModel import CoilClsModel
+
+logger = logging.getLogger(__name__)
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 IOU_THRESHOLD = 0.5
@@ -282,15 +285,30 @@ class AlgTestManager:
 
     def _refresh_models(self) -> None:
         models: Dict[str, AlgModelEntry] = {}
+
+        # 确保模型文件夹存在
+        MODEL_FOLDER.mkdir(parents=True, exist_ok=True)
+        CLASSIFIER_FOLDER.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"扫描模型文件夹: {MODEL_FOLDER}")
         if MODEL_FOLDER.is_dir():
-            for path in MODEL_FOLDER.iterdir():
+            all_files = list(MODEL_FOLDER.iterdir())
+            logger.info(f"找到 {len(all_files)} 个文件/文件夹")
+            for path in all_files:
                 if not path.is_file():
+                    logger.debug(f"跳过 (非文件): {path.name}")
                     continue
                 suffix = path.suffix.lower()
                 if suffix not in {".pt", ".onnx"}:
+                    logger.debug(f"跳过 (不支持的后缀 {suffix}): {path.name}")
                     continue
                 model_type = self._guess_model_type(path)
                 models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
+                logger.info(f"添加模型: {path.name} (类型: {model_type})")
+        else:
+            logger.warning(f"模型文件夹不存在: {MODEL_FOLDER}")
+
+        logger.info(f"扫描分类器文件夹: {CLASSIFIER_FOLDER}")
         if CLASSIFIER_FOLDER.is_dir():
             for path in CLASSIFIER_FOLDER.iterdir():
                 if not path.is_file():
@@ -302,6 +320,9 @@ class AlgTestManager:
                 if model_type != "classifier":
                     continue
                 models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
+                logger.info(f"添加分类器: {path.name}")
+
+        logger.info(f"共找到 {len(models)} 个模型")
         self._models = models
 
     def list_models(self) -> List[dict]:

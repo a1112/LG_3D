@@ -174,6 +174,8 @@ async def getRender(
                     "X-From-Cache": str(from_cache),
                     "X-Colormap": colormap_name
                 })
+        else:
+            log.warning(f"falsecolor_cache is not available for {colormap_name} thumbnail")
 
     # ========== 完整渲染模式 ==========
     s_t = time.time()

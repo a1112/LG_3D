@@ -25,13 +25,13 @@ thread_pool = ThreadPoolExecutor(max_workers=10)
 log = logging.getLogger(__name__)
 
 # 多级瓦片加载配置
-# 瓦片等级定义：size为瓦片目标尺寸，quality为JPEG质量(1-100)
+# 瓦片等级定义：(目标尺寸, JPEG质量)
 TILE_LEVELS = {
-    0: {"size": 340, "quality": 60},    # Level 0: 1/16 缩略图 (~20KB)
-    1: {"size": 682, "quality": 70},    # Level 1: 1/8 (~50KB)
-    2: {"size": 1364, "quality": 80},   # Level 2: 1/4 (~120KB)
-    3: {"size": 2728, "quality": 90},   # Level 3: 1/2 (~250KB)
-    4: {"size": 5460, "quality": 95},   # Level 4: 原图瓦片 (~500KB)
+    0: (340, 60),    # Level 0: 1/16 缩略图 (~20KB)
+    1: (682, 70),    # Level 1: 1/8 (~50KB)
+    2: (1364, 80),   # Level 2: 1/4 (~120KB)
+    3: (2728, 90),   # Level 3: 1/2 (~250KB)
+    4: (5460, 95),   # Level 4: 原图瓦片 (~500KB)
 }
 
 # 默认原图瓦片尺寸（3x3切分时单个瓦片的大小）
@@ -341,7 +341,15 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
 
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
 async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str, w: str, h: str):
-    x, y, w, h = int(x), int(y), int(w), int(h)
+    # 处理 NaN 或无效值
+    try:
+        x = int(x) if x and x.lower() != 'nan' else 0
+        y = int(y) if y and y.lower() != 'nan' else 0
+        w = int(w) if w and w.lower() != 'nan' else 100
+        h = int(h) if h and h.lower() != 'nan' else 100
+    except (ValueError, TypeError):
+        return Response(noFindImageByte, media_type="image/jpeg")
+
     old_box = [x, y, w, h]
     image = DataGet("image", surface_key, coil_id, type_, False).get_image(pil=True)
     image: Image.Image

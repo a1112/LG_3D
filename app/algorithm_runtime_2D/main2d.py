@@ -15,12 +15,21 @@ def main():
     start_coil = int(start_coil)
     print(start_coil)
     max_coil = join_config.get_save_max_coil()
+
+    # 控制日志输出频率（5分钟一次）
+    last_log_time = 0
+    LOG_INTERVAL = 300  # 5分钟 = 300秒
+
     while True:
         can = join_config.can_(start_coil)
         if ( not can ) and start_coil >= (max_coil-2) :
             time.sleep(5)
             max_coil = join_config.get_save_max_coil()
-            print(fr"not can {start_coil}  max_coil {max_coil}")
+            # 只在每5分钟输出一次日志
+            current_time = time.time()
+            if current_time - last_log_time >= LOG_INTERVAL:
+                print(fr"not can {start_coil}  max_coil {max_coil}")
+                last_log_time = current_time
             continue
         start_coil += 1
         print(f"coil_id: {start_coil}")

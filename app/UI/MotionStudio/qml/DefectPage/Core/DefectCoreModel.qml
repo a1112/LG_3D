@@ -24,7 +24,32 @@ Item {
                         }
                         defectDictModel.append(cleanIt)
                     })
+        updateDefectCounts()
         filterCore.resetFilterDict()
+    }
+
+    // 更新每个缺陷类别的数量
+    function updateDefectCounts(){
+        // 先重置所有数量为 0
+        let counts = {}
+        tool.for_list_model(defectDictModel, (item)=>{
+            counts[item["name"]] = 0
+        })
+
+        // 统计 defectsModelAll 中每个类别的数量
+        tool.for_list_model(defectsModelAll, (item)=>{
+            let name = item["defectName"]
+            if (name && counts[name] !== undefined) {
+                counts[name]++
+            }
+        })
+
+        // 更新 defectDictModel 中的 num
+        for (let i = 0; i < defectDictModel.count; i++) {
+            let item = defectDictModel.get(i)
+            item["num"] = counts[item["name"]] || 0
+            defectDictModel.set(i, item)
+        }
     }
 
     property ListModel  currentListModel: coreModel.currentCoilListModel
@@ -85,6 +110,8 @@ Item {
                         }
                     }
                     )
+        // 更新缺陷统计数量
+        updateDefectCounts()
         flushModel()
     }
 

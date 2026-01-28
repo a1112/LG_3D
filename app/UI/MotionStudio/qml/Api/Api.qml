@@ -40,19 +40,23 @@ Api_DataBase {
     }
 
     function getAlgModels(success,failure){
-        return ajax.get(apiConfig.url(apiConfig.serverUrl,"alg","models"),success,failure)
+        // 使用 serverUrl (port 5010) 和正确的路径 /alg_2d/models
+        return ajax.get(apiConfig.serverUrl + "/alg_2d/models", success, failure)
     }
 
     function startAlgTest(payload,success,failure){
-        return ajax.post(apiConfig.url(apiConfig.serverUrl,"alg","test","start"),payload,success,failure)
+        // 使用 serverUrl (port 5010) 和正确的路径 /alg_2d/test/start
+        return ajax.post(apiConfig.serverUrl + "/alg_2d/test/start", payload, success, failure)
     }
 
     function stopAlgTest(payload,success,failure){
-        return ajax.post(apiConfig.url(apiConfig.serverUrl,"alg","test","stop"),payload,success,failure)
+        // 使用 serverUrl (port 5010) 和正确的路径 /alg_2d/test/stop
+        return ajax.post(apiConfig.serverUrl + "/alg_2d/test/stop", payload, success, failure)
     }
 
     function getAlgTestWsUrl(){
-        return apiConfig.url(apiConfig.wsServerUrl,"ws","alg","test","progress")
+        // 修复：使用正确的 ws 路径 ws/alg_2d/test/progress
+        return apiConfig.url(apiConfig.wsServerUrl, "ws", "alg_2d", "test", "progress")
     }
 
 

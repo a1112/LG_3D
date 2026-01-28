@@ -24,14 +24,20 @@ class FalseColorCache(MemoryImageCache):
     def _cache_dir(self, path: str, colormap: str = "JET") -> Path:
         """获取缓存目录"""
         path_obj = _resolve_image_path(path)
-        if path_obj.parent.name in {"jpg", "png"}:
+        # 改进：向上查找 coil_id 目录，避免因为父目录名称不同而导致缓存位置错误
+        # 常见的父目录名称：jpg, png, image, source, preview 等
+        if path_obj.parent.name in {"jpg", "png", "image", "source", "preview"}:
+            # 如果父目录是这些已知的类型目录，则取其父目录作为 coil_dir
             coil_dir = path_obj.parent.parent
         else:
+            # 否则假设当前目录就是 coil 目录
             coil_dir = path_obj.parent
 
         # 统一使用小写的目录名
         colormap_name = colormap.lower()
-        return coil_dir / "cache" / "falsecolor" / colormap_name
+        cache_dir = coil_dir / "cache" / "falsecolor" / colormap_name
+        logging.debug(f"Cache dir for {path}: {cache_dir}")
+        return cache_dir
 
     def _cache_path(self, cache_dir: Path) -> Path:
         """获取缓存文件路径"""
@@ -137,17 +143,21 @@ class FalseColorCache(MemoryImageCache):
         """
         # 确定颜色映射名称
         colormap_name = "GRAY" if colormap == -1 else "JET"
-        
+
         # 尝试从缓存读取
         cached = self.get_thumbnail(path, colormap_name)
         if cached:
+            logging.debug(f"Cache HIT for {colormap_name}: {path}")
             return cached, True
+
+        logging.debug(f"Cache MISS for {colormap_name}, generating...")
 
         # 生成新的缩略图
         with self._lock:
             # 双检查，避免重复生成
             cached = self.get_thumbnail(path, colormap_name)
             if cached:
+                logging.debug(f"Cache HIT after double-check for {colormap_name}")
                 return cached, True
 
             # 生成并缓存
@@ -156,8 +166,13 @@ class FalseColorCache(MemoryImageCache):
                 cache_dir = self._cache_dir(path, colormap_name)
                 cache_dir.mkdir(parents=True, exist_ok=True)
                 cache_path = self._cache_path(cache_dir)
-                cache_path.write_bytes(thumbnail)
-                logging.debug(f"Cached {colormap_name} thumbnail: {cache_path}")
+                try:
+                    cache_path.write_bytes(thumbnail)
+                    logging.info(f"Cached {colormap_name} thumbnail ({len(thumbnail)} bytes): {cache_path}")
+                except Exception as e:
+                    logging.error(f"Failed to write cache to {cache_path}: {e}")
                 return thumbnail, False
+            else:
+                logging.warning(f"Failed to generate {colormap_name} thumbnail for {path}")
 
         return None, False
