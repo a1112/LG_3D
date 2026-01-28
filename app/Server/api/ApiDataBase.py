@@ -438,6 +438,105 @@ async def sync_summaries_api(limit: int = 1000):
     return {"synced": count, "message": f"Synced {count} summaries"}
 
 
+@router.get("/search/defects_all/{coil_id:int}/{direction}")
+async def get_defects_all_including_manual(coil_id: int, direction: str):
+    """
+    获取所有缺陷（包括自动检测和手动标注）
+
+    Args:
+        coil_id: 二级卷ID
+        direction: 表面标识（S/L）
+
+    Returns:
+        包含自动检测缺陷和手动标注缺陷的列表
+    """
+    return Coil.get_all_defects_including_manual(coil_id, direction)
+
+
+@router.get("/manual_defects/{coil_id:int}/{direction}")
+async def get_manual_defects_api(coil_id: int, direction: str):
+    """
+    获取手动标注的缺陷列表
+
+    Args:
+        coil_id: 二级卷ID
+        direction: 表面标识（S/L）
+
+    Returns:
+        手动标注缺陷列表
+    """
+    return tool.to_dict(Coil.get_manual_defects(coil_id, direction))
+
+
+@router.post("/manual_defect/add")
+async def add_manual_defect_api(request: dict):
+    """
+    添加手动标注的缺陷
+
+    Args:
+        request: 缺陷数据字典，包含：
+            - secondaryCoilId: 二级卷ID
+            - surface: 表面标识（S/L）
+            - defectName: 缺陷名称
+            - defectX: X坐标
+            - defectY: Y坐标
+            - defectW: 宽度
+            - defectH: 高度
+            - remark: 备注（可选）
+            - annotator: 标注人（可选）
+
+    Returns:
+        创建的缺陷数据
+    """
+    try:
+        manual_defect = Coil.add_manual_defect(request)
+        return tool.to_dict(manual_defect)
+    except Exception as e:
+        return {"error": str(e), "success": False}
+
+
+@router.put("/manual_defect/update/{defect_id:int}")
+async def update_manual_defect_api(defect_id: int, request: dict):
+    """
+    更新手动标注的缺陷
+
+    Args:
+        defect_id: 缺陷ID
+        request: 更新的数据字典
+
+    Returns:
+        更新后的缺陷数据，如果不存在返回错误
+    """
+    try:
+        manual_defect = Coil.update_manual_defect(defect_id, request)
+        if manual_defect is None:
+            return {"error": "缺陷不存在", "success": False}
+        return tool.to_dict(manual_defect)
+    except Exception as e:
+        return {"error": str(e), "success": False}
+
+
+@router.delete("/manual_defect/delete/{defect_id:int}")
+async def delete_manual_defect_api(defect_id: int):
+    """
+    删除手动标注的缺陷
+
+    Args:
+        defect_id: 缺陷ID
+
+    Returns:
+        删除结果
+    """
+    try:
+        success = Coil.delete_manual_defect(defect_id)
+        if success:
+            return {"success": True, "message": "删除成功"}
+        else:
+            return {"error": "缺陷不存在", "success": False}
+    except Exception as e:
+        return {"error": str(e), "success": False}
+
+
 @router.post("/export_defects")
 async def export_defects(request: dict):
     """

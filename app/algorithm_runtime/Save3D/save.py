@@ -224,8 +224,28 @@ def _get_point_cloud_(data, managerQueue):
     # print("point_cloud.mean")
     # print(point_cloud.mean(axis=0))
 
-    point_cloud = point_cloud[point_cloud[:, 2] >= - 150]
-    point_cloud = point_cloud[point_cloud[:, 2] <= 500]
+    # 调试：记录过滤前的点云统计
+    logger.debug(f"point_cloud before filter: shape={point_cloud.shape}, z_range=({point_cloud[:, 2].min():.2f}, {point_cloud[:, 2].max():.2f}), median_non_mm={median_non_mm:.2f}")
+
+    # 扩大过滤范围：从 [-150, 500] 改为 [-500, 1000]
+    point_cloud = point_cloud[point_cloud[:, 2] >= - 500]
+    point_cloud = point_cloud[point_cloud[:, 2] <= 1000]
+
+    # 调试：记录过滤后的点云统计
+    if point_cloud.shape[0] < 100:
+        logger.warning(f"point_cloud after filter: shape={point_cloud.shape}, z_range=({point_cloud[:, 2].min() if point_cloud.size > 0 else 'N/A':.2f}, {point_cloud[:, 2].max() if point_cloud.size > 0 else 'N/A':.2f})")
+
+    # 兜底：如果过滤后点云为空或太少，使用未过滤的点云
+    original_count = point_cloud.shape[0]
+    if original_count < 1000:
+        logger.warning(f"point_cloud has only {original_count} points after filtering, using unfiltered data")
+        # 重新生成未过滤的点云
+        point_cloud = np.stack((x_coords, y_coords, z_coords), axis=-1).reshape(-1, 3)
+        mean_values2 = point_cloud.mean(axis=0)
+        mean_values2[2] = median_non_mm
+        point_cloud[:, :] -= mean_values2
+        logger.debug(f"using unfiltered point_cloud: shape={point_cloud.shape}")
+
     return point_cloud, saveFile
 
 

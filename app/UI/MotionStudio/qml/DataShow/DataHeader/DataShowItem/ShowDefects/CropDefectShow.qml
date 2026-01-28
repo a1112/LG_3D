@@ -37,33 +37,61 @@ ItemDelegate {
                     source: {
                         let x_ = defect.defect_x
                         let w_ = defect.defect_w
-                        // if (defect.defect_w<body.width){
-                        //     let out_w = (body.width - defect.defect_w)
-                        //     console.log("out_w ",out_w," ", body.width)
-                        //     x_=parseInt(x_-out_w/2)
-                        //     w_=parseInt(w_+out_w)
-                        // }
+                        let imgW = dataShowCore.sourceWidth || 5000
+
                         if ( px_width * defectW < body.width ){
                             let out_w = body.width/px_width-defectW
-                            x_ = parseInt(x_-out_w/2)
-                            w_ = parseInt(w_+out_w)
+                            let left_expand = out_w/2
+                            let right_expand = out_w/2
+
+                            // 边界检查：左侧扩展不超过 0
+                            if (x_ - left_expand < 0) {
+                                right_expand += left_expand - x_  // 将左侧多余的扩展量加到右侧
+                                left_expand = x_
+                            }
+                            // 边界检查：右侧扩展不超过图像宽度
+                            if (x_ + w_ + right_expand > imgW) {
+                                let excess = (x_ + w_ + right_expand) - imgW
+                                if (left_expand >= excess) {
+                                    left_expand -= excess
+                                    right_expand = 0
+                                } else {
+                                    right_expand = imgW - (x_ + w_)
+                                }
+                            }
+
+                            x_ = parseInt(x_-left_expand)
+                            w_ = parseInt(w_+left_expand+right_expand)
                         }
 
                         let y_ = defect.defect_y
                         let h_ = defect.defect_h
-                        // if (defect.defect_h<body.height){
-                        //     let out_h = (body.height - defect.defect_h)
-                        //     y_=parseInt(y_-out_h/2 )
-                        //     h_=parseInt(h_+out_h )
-                        // }
+                        let imgH = dataShowCore.sourceHeight || 5000
 
                         if (px_width*defectH <body.height){
                             let out_h = body.height / px_width - defectH
-                            y_=parseInt(y_ - out_h/2)
-                            h_=parseInt(h_+out_h)
-                        }
+                            let top_expand = out_h/2
+                            let bottom_expand = out_h/2
 
-                        // 外扩
+                            // 边界检查：顶部扩展不超过 0
+                            if (y_ - top_expand < 0) {
+                                bottom_expand += top_expand - y_
+                                top_expand = y_
+                            }
+                            // 边界检查：底部扩展不超过图像高度
+                            if (y_ + h_ + bottom_expand > imgH) {
+                                let excess = (y_ + h_ + bottom_expand) - imgH
+                                if (top_expand >= excess) {
+                                    top_expand -= excess
+                                    bottom_expand = 0
+                                } else {
+                                    bottom_expand = imgH - (y_ + h_)
+                                }
+                            }
+
+                            y_=parseInt(y_ - top_expand)
+                            h_=parseInt(h_+top_expand+bottom_expand)
+                        }
 
                         return api.defect_url(dataShowCore.coilId, dataShowCore.key,
                                               dataShowCore.currentViewKey,

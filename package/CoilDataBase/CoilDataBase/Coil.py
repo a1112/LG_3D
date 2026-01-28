@@ -414,3 +414,218 @@ list_data_keys = {
     "识别速度": "",
     "生产间隔": ""
 }
+
+
+# ==================== 手动标注缺陷 CRUD 操作 ====================
+
+def add_manual_defect(defect_data: dict):
+    """
+    添加手动标注的缺陷
+
+    Args:
+        defect_data: 缺陷数据字典，包含：
+            - secondaryCoilId: 二级卷ID
+            - surface: 表面标识（S/L）
+            - defectName: 缺陷名称
+            - defectX: X坐标
+            - defectY: Y坐标
+            - defectW: 宽度
+            - defectH: 高度
+            - remark: 备注（可选）
+            - annotator: 标注人（可选）
+
+    Returns:
+        创建的 ManualDefect 对象
+    """
+    from .models import DefectClassDict
+
+    with Session() as session:
+        # 获取缺陷类别信息
+        defect_class = 0
+        defect_name = defect_data.get("defectName", "未知缺陷")
+        defect_dict = session.query(DefectClassDict).filter(
+            DefectClassDict.defectName == defect_name
+        ).first()
+        if defect_dict:
+            defect_class = defect_dict.defectClass
+
+        # 创建手动标注缺陷
+        manual_defect = ManualDefect(
+            secondaryCoilId=defect_data["secondaryCoilId"],
+            surface=defect_data["surface"],
+            defectClass=defect_class,
+            defectName=defect_name,
+            defectStatus=1,
+            defectX=defect_data["defectX"],
+            defectY=defect_data["defectY"],
+            defectW=defect_data["defectW"],
+            defectH=defect_data["defectH"],
+            defectSource=0,
+            defectData=defect_data.get("defectData", ""),
+            remark=defect_data.get("remark", ""),
+            annotator=defect_data.get("annotator", "系统用户")
+        )
+        session.add(manual_defect)
+        session.commit()
+        session.refresh(manual_defect)
+        return manual_defect
+
+
+def update_manual_defect(defect_id: int, defect_data: dict):
+    """
+    更新手动标注的缺陷
+
+    Args:
+        defect_id: 缺陷ID
+        defect_data: 更新的数据字典
+
+    Returns:
+        更新后的 ManualDefect 对象，如果不存在返回 None
+    """
+    from .models import DefectClassDict
+
+    with Session() as session:
+        manual_defect = session.query(ManualDefect).filter(
+            ManualDefect.Id == defect_id
+        ).first()
+
+        if not manual_defect:
+            return None
+
+        # 更新字段
+        if "defectName" in defect_data:
+            defect_name = defect_data["defectName"]
+            defect_dict = session.query(DefectClassDict).filter(
+                DefectClassDict.defectName == defect_name
+            ).first()
+            if defect_dict:
+                manual_defect.defectClass = defect_dict.defectClass
+            manual_defect.defectName = defect_name
+
+        if "defectStatus" in defect_data:
+            manual_defect.defectStatus = defect_data["defectStatus"]
+        if "defectX" in defect_data:
+            manual_defect.defectX = defect_data["defectX"]
+        if "defectY" in defect_data:
+            manual_defect.defectY = defect_data["defectY"]
+        if "defectW" in defect_data:
+            manual_defect.defectW = defect_data["defectW"]
+        if "defectH" in defect_data:
+            manual_defect.defectH = defect_data["defectH"]
+        if "remark" in defect_data:
+            manual_defect.remark = defect_data["remark"]
+        if "annotator" in defect_data:
+            manual_defect.annotator = defect_data["annotator"]
+
+        session.commit()
+        session.refresh(manual_defect)
+        return manual_defect
+
+
+def delete_manual_defect(defect_id: int):
+    """
+    删除手动标注的缺陷
+
+    Args:
+        defect_id: 缺陷ID
+
+    Returns:
+        是否删除成功
+    """
+    with Session() as session:
+        manual_defect = session.query(ManualDefect).filter(
+            ManualDefect.Id == defect_id
+        ).first()
+
+        if not manual_defect:
+            return False
+
+        session.delete(manual_defect)
+        session.commit()
+        return True
+
+
+def get_manual_defects(coil_id: int, surface: str = None):
+    """
+    获取手动标注的缺陷列表
+
+    Args:
+        coil_id: 二级卷ID
+        surface: 表面标识（可选）
+
+    Returns:
+        ManualDefect 列表
+    """
+    with Session() as session:
+        query = session.query(ManualDefect).filter(
+            ManualDefect.secondaryCoilId == coil_id
+        )
+        if surface:
+            query = query.filter(ManualDefect.surface == surface)
+        return query.all()
+
+
+def get_all_defects_including_manual(coil_id: int, surface: str):
+    """
+    获取所有缺陷（包括自动检测和手动标注）
+
+    Args:
+        coil_id: 二级卷ID
+        surface: 表面标识
+
+    Returns:
+        包含自动检测缺陷和手动标注缺陷的列表
+    """
+    with Session() as session:
+        # 获取自动检测的缺陷
+        auto_defects = session.query(CoilDefect).filter(
+            CoilDefect.secondaryCoilId == coil_id,
+            CoilDefect.surface == surface
+        ).all()
+
+        # 获取手动标注的缺陷
+        manual_defects = session.query(ManualDefect).filter(
+            ManualDefect.secondaryCoilId == coil_id,
+            ManualDefect.surface == surface
+        ).all()
+
+        # 合并结果
+        result = []
+        for d in auto_defects:
+            result.append({
+                "Id": d.Id,
+                "type": "auto",
+                "secondaryCoilId": d.secondaryCoilId,
+                "surface": d.surface,
+                "defectClass": d.defectClass,
+                "defectName": d.defectName,
+                "defectStatus": d.defectStatus,
+                "defectTime": d.defectTime.isoformat() if d.defectTime else None,
+                "defectX": d.defectX,
+                "defectY": d.defectY,
+                "defectW": d.defectW,
+                "defectH": d.defectH,
+                "defectSource": d.defectSource,
+                "defectData": d.defectData,
+            })
+        for d in manual_defects:
+            result.append({
+                "Id": d.Id,
+                "type": "manual",
+                "secondaryCoilId": d.secondaryCoilId,
+                "surface": d.surface,
+                "defectClass": d.defectClass,
+                "defectName": d.defectName,
+                "defectStatus": d.defectStatus,
+                "defectTime": d.createTime.isoformat() if d.createTime else None,
+                "defectX": d.defectX,
+                "defectY": d.defectY,
+                "defectW": d.defectW,
+                "defectH": d.defectH,
+                "defectSource": d.defectSource,
+                "defectData": d.defectData,
+                "remark": d.remark,
+                "annotator": d.annotator,
+            })
+
+        return result

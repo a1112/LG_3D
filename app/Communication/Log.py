@@ -3,6 +3,11 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 import datetime
 
+# 屏蔽 PIL 的 DEBUG 日志
+logging.getLogger('PIL').setLevel(logging.WARNING)
+logging.getLogger('PIL.PngImagePlugin').setLevel(logging.WARNING)
+logging.getLogger('PIL.Image').setLevel(logging.WARNING)
+
 # 创建 logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

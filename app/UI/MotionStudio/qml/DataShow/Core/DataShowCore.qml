@@ -40,6 +40,7 @@ DataShowCore_ {
     readonly property string key:surfaceData.key
     readonly property string currentViewKey:surfaceData.currentViewKey
     onCoilIdChanged: {
+        resetView()
         flush()
     }
 

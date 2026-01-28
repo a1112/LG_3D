@@ -130,26 +130,40 @@ CoreModel_ {
             return -2
         }
 
-        // 收集已存在的 ID，避免重复插入
-        var existingIds = {}
+        // 防重复策略：先收集所有需要更新的数据，区分新增和更新
+        var toUpdate = {}   // Id -> {index: position, data: coil}
+        var toInsert = []   // 新增的 coils
+
+        // 1. 遍历现有列表，建立 ID 到索引的映射
         for (let i = 0; i < realCoilListModel.count; i++) {
-            existingIds[realCoilListModel.get(i).Id] = i
+            var item = realCoilListModel.get(i)
+            toUpdate[item.Id] = {index: i, data: item}
         }
 
-        upData["coilList"].forEach(
-                (coil)=>{
-                    var coilId = coil.Id
-                    // 检查是否已存在
-                    if (existingIds[coilId] !== undefined) {
-                        // 已存在，更新数据
-                        realCoilListModel.set(existingIds[coilId], coil)
-                    } else {
-                        // 不存在，插入到列表开头（新数据）
-                        realCoilListModel.insert(0, coil)
-                        existingIds[coilId] = 0
-                    }
-                }
-            )
+        // 2. 遍历新数据，分类为更新或新增
+        upData["coilList"].forEach(function(coil){
+            var coilId = coil.Id
+            if (toUpdate[coilId] !== undefined) {
+                // 已存在，标记为需要更新（暂不修改列表）
+                toUpdate[coilId].newData = coil
+            } else {
+                // 不存在，标记为新增
+                toInsert.push(coil)
+            }
+        })
+
+        // 3. 先执行更新（使用旧索引，因为 set 需要正确的索引）
+        for (var id in toUpdate) {
+            if (toUpdate[id].newData !== undefined) {
+                realCoilListModel.set(toUpdate[id].index, toUpdate[id].newData)
+            }
+        }
+
+        // 4. 再执行新增（批量插入到列表开头）
+        for (let i = toInsert.length - 1; i >= 0; i--) {
+            realCoilListModel.insert(0, toInsert[i])
+        }
+
         if (keepLatest){
             core.setCoilIndex(0)
         }

@@ -319,4 +319,37 @@ Api_Base {
         return ajax.get(url,success,failure)
     }
 
+
+    // ==================== 手动标注缺陷 API ====================
+
+    // 获取所有缺陷（包括自动检测和手动标注）
+    function getDefectsAll(coilId, key, success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"search","defects_all",coilId,key),success,failure)
+    }
+
+    // 获取手动标注的缺陷列表
+    function getManualDefects(coilId, key, success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"manual_defects",coilId,key),success,failure)
+    }
+
+    // 添加手动标注的缺陷
+    function addManualDefect(data, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"manual_defect","add"),data,success,failure)
+    }
+
+    // 更新手动标注的缺陷
+    function updateManualDefect(defectId, data, success, failure){
+        return ajax.put(apiConfig.url(apiConfig.serverUrlDaaBase,"manual_defect","update",defectId),data,success,failure)
+    }
+
+    // 删除手动标注的缺陷
+    function deleteManualDefect(defectId, success, failure){
+        return ajax.delete_(apiConfig.url(apiConfig.serverUrlDaaBase,"manual_defect","delete",defectId),success,failure)
+    }
+
+    // 导出标记缺陷图像
+    function exportManualDefects(data, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"export_defects"),data,success,failure)
+    }
+
 }
