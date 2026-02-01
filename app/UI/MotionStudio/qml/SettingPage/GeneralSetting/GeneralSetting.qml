@@ -33,6 +33,31 @@ ColumnLayout{
         color: "#40000000"
     }
 
+    // ========== 缓存设置 ==========
+    Label{
+        text: qsTr("缓存设置")
+        font.pixelSize: 16
+    }
+    RowLayout{
+        spacing: 8
+        CheckBox{
+            id: enable1024CacheCheckBox
+            checked: coreSetting.enable1024CacheMode
+            onCheckedChanged: coreSetting.enable1024CacheMode = checked
+        }
+        Label{
+            text: qsTr("启用1024缓冲模式（falsecolor缩略图）")
+            font.pixelSize: 14
+        }
+    }
+
+    // ========== 分隔线 ==========
+    Rectangle{
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: "#40000000"
+    }
+
     // ========== 显示叠加图层设置 ==========
     Label{
         text: qsTr("显示设置")

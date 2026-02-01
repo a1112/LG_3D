@@ -49,6 +49,7 @@ property bool testMode: false
 
 property bool showErrorOverlay: true  // 是否显示错误叠加层（3D Error 图像）
 property bool showTileDebugBorders: false  // 是否显示瓦片调试边框（AREA 视图）
+property bool enable1024CacheMode: false  // 是否启用 1024 缓冲模式（falsecolor 缩略图）- 默认关闭，直接加载彩色图像
 
 property int headDateShowModel: 0
     property int dataHeaderHeight:320
@@ -88,6 +89,7 @@ property alias alg2dPort: root.alg2dPort
 property alias testMode: root.testMode
 property alias showErrorOverlay: root.showErrorOverlay
 property alias showTileDebugBorders: root.showTileDebugBorders
+property alias enable1024CacheMode: root.enable1024CacheMode
 category: "AppSettings"
         location: "settings.ini"
     }

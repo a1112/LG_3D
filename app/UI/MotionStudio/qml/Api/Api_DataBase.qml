@@ -240,6 +240,21 @@ Api_Base {
         return apiConfig.url(apiConfig.serverUrlDaaBase,"export_xlsx")
     }
 
+    function getExport1hUrl(){
+        // 快速导出最近1小时数据（使用主服务器端口5010）
+        return "http://"+apiConfig.hostname+":"+apiConfig.port+"/export_1h"
+    }
+
+    function getExport24hUrl(){
+        // 快速导出最近24小时数据（使用主服务器端口5010）
+        return "http://"+apiConfig.hostname+":"+apiConfig.port+"/export_24h"
+    }
+
+    function getExportTodayUrl(){
+        // 快速导出今天数据（使用主服务器端口5010）
+        return "http://"+apiConfig.hostname+":"+apiConfig.port+"/export_today"
+    }
+
 
     function getPointDatas(coilId,key,success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"get_point_data",coilId,key),success,failure)
@@ -350,6 +365,34 @@ Api_Base {
     // 导出标记缺陷图像
     function exportManualDefects(data, success, failure){
         return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"export_defects"),data,success,failure)
+    }
+
+    // ==================== 一键导出功能 ====================
+
+    // 导出最近1小时的数据
+    function export1h(exportType, success, failure){
+        let args = exportType ? "?export_type=" + exportType : ""
+        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_1h") + args
+        // 直接下载，通过window.open或iframe
+        return url
+    }
+
+    // 导出最近24小时的数据
+    function export24h(exportType, success, failure){
+        let args = exportType ? "?export_type=" + exportType : ""
+        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_24h") + args
+        return url
+    }
+
+    // 执行浏览器下载
+    function downloadExport(url){
+        let iframe = document.createElement("iframe")
+        iframe.style.display = "none"
+        iframe.src = url
+        document.body.appendChild(iframe)
+        setTimeout(function(){
+            document.body.removeChild(iframe)
+        }, 1000)
     }
 
 }

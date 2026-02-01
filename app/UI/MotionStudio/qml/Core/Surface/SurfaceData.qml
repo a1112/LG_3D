@@ -237,9 +237,13 @@ Item {
         area_source = getSource(coilId_,"AREA",false)
 
         viewDataModel.clear()
-        coreModel.allViewKeys.forEach(function(viewKey){
-            viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
-        })
+        // 检查是否启用 1024 缓冲模式
+        if (coreSetting.enable1024CacheMode) {
+            // 启用时加载预览图
+            coreModel.allViewKeys.forEach(function(viewKey){
+                viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
+            })
+        }
 
         // 延迟加载其他数据，优先保证图像加载
         delayDataLoadTimer.restart()

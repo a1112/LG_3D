@@ -220,6 +220,12 @@ Item {
         if (imageUrl === "" || imageUrl === undefined) {
             return
         }
+        // 检查是否启用 1024 缓冲模式
+        if (!coreSetting.enable1024CacheMode) {
+            // 禁用时跳过预览图，直接加载目标级别
+            updateLevel(currentLevel)
+            return
+        }
         // 添加 thumbnail=true 和 grayscale=true
         var url = imageUrl + "?thumbnail=true&grayscale=true"
         grayscaleSource = url
@@ -276,8 +282,14 @@ Item {
     Component.onCompleted: {
         lastLoadedUrl = imageUrl
         if (shouldLoad) {
-            // 先加载灰度预览图
-            loadGrayscalePreview()
+            // 检查是否启用 1024 缓冲模式
+            if (!coreSetting.enable1024CacheMode) {
+                // 禁用时直接加载目标级别
+                updateLevel(currentLevel)
+            } else {
+                // 启用时先加载灰度预览图
+                loadGrayscalePreview()
+            }
         }
     }
 
@@ -302,9 +314,15 @@ Item {
         loadedLevel = -1
 
         if (isInViewport) {
-            // 先加载灰度预览图（快速显示）
-            loadGrayscalePreview()
-            // 然后由 previewImage 的 onStatusChanged 触发目标级别加载
+            // 检查是否启用 1024 缓冲模式
+            if (!coreSetting.enable1024CacheMode) {
+                // 禁用时直接加载目标级别
+                updateLevel(currentLevel)
+            } else {
+                // 启用时先加载灰度预览图（快速显示）
+                loadGrayscalePreview()
+                // 然后由 previewImage 的 onStatusChanged 触发目标级别加载
+            }
         }
     }
 

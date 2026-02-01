@@ -2,7 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import Qt.labs.platform
 import QtQuick.Dialogs
+
+import "../../Core"
 
 Item{
     id:root
@@ -59,7 +62,7 @@ Item{
             icon.source: coreStyle.getIcon("uploading")
             text: qsTr("导出")
             implicitHeight: root.height-5
-            enabled: surfaceData.serverIsLocal && defectViewCore.defectCoreModel.defectsModelAll.count > 0
+            enabled: defectViewCore.defectCoreModel.defectsModelAll.count > 0
             onClicked: {
                 exportFolderDialog.open()
             }
@@ -81,9 +84,13 @@ Item{
     FolderDialog {
         id: exportFolderDialog
         title: qsTr("选择导出文件夹")
-        currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+        currentFolder: StandardPaths.writableLocation(StandardPaths.PicturesLocation)
         onAccepted: {
-            let folderPath = tool.url_to_str(selectedFolder)
+            let folderPath = selectedFolder.toString()
+            // 移除 file:/// 前缀
+            if (folderPath.startsWith("file:///")) {
+                folderPath = folderPath.substring(8)
+            }
             exportDefects(folderPath)
         }
     }

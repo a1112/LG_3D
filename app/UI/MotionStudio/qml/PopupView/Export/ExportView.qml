@@ -2,9 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-// import Qt.labs.platform
 import QtCore
-// import FileDownloader 1.0
+import QtQuick.Dialogs
 
 import "../../Pages/LeftPage/SearchView"
 import "../../types"
@@ -12,48 +11,76 @@ import "../../Labels"
 import "../../Input"
 import "../../Pages/Header"
 import "../Base"
-PopupBase {
-    dim:true
-    id:menu
-    width: 600
-    height:  menu.exportStatus.isNotDownload?360:400
-    onOpened:{
-        console.log("onOpened")
-        let mmList = coreModel.getCurrentCoilListModelMinMaxId()
-        let frist_item = coreModel.currentCoilListModel.get(0)
-        let end_item = coreModel.currentCoilListModel.get(coreModel.currentCoilListModel.count-1)
-        console.log(tool.getDataByJson(end_item.CreateTime))
-        console.log(tool.getDataByJson(frist_item.CreateTime))
-        start_dt.dateTime = tool.getDataByJson(end_item.CreateTime)
-        end_dt.dateTime =  tool.getDataByJson(frist_item.CreateTime)
-        // start_dt.dateTime=
-        // from_id.value=mmList[0]
-        // to_id.value=mmList[1]
-        // outputName=Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
-        // ws_id.active=true
+
+ApplicationWindow {
+    id: root
+    width: 650
+    height: 500
+    visible: false
+    title: qsTr("报表导出")
+    modality: Qt.ApplicationModal
+    flags: Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowTitleHint
+
+    // 屏幕居中
+    x: (Screen.width - width) / 2
+    y: (Screen.height - height) / 2
+
+    function openDialog() {
+        visible = true
+        // 重新计算居中位置
+        x = (Screen.width - width) / 2
+        y = (Screen.height - height) / 2
+        raise()
+        requestActivate()
+        // 初始化日期时间
+        try {
+            let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+            if (coreModel.currentCoilListModel.count > 0) {
+                let frist_item = coreModel.currentCoilListModel.get(0)
+                let end_item = coreModel.currentCoilListModel.get(coreModel.currentCoilListModel.count-1)
+                // 安全地设置日期时间
+                if (end_item && end_item.CreateTime) {
+                    let startDate = tool.getDataByJson(end_item.CreateTime)
+                    if (startDate && startDate instanceof Date && !isNaN(startDate)) {
+                        start_dt.dateTime = startDate
+                    }
+                }
+                if (frist_item && frist_item.CreateTime) {
+                    let endDate = tool.getDataByJson(frist_item.CreateTime)
+                    if (endDate && endDate instanceof Date && !isNaN(endDate)) {
+                        end_dt.dateTime = endDate
+                    }
+                }
+            }
+        } catch(e) {
+            console.log("Error initializing export dialog dates:", e)
+        }
     }
 
-    property string outputFolder:(""+StandardPaths.writableLocation(StandardPaths.DesktopLocation)).substring(8)
-    property string outputName:Qt.formatDateTime(new Date(), "yyyy_MM_dd hh_mm_ss")+".xlsx"
+    function closeDialog() {
+        visible = false
+    }
 
-    property string exportUrl:""
-    property string outputBaseUrl:outputFolder+"/"+outputName
-
-
+    property string outputFolder: (""+StandardPaths.writableLocation(StandardPaths.DesktopLocation)).substring(8)
+    property string outputName: Qt.formatDateTime(new Date(), "yyyy_MM_dd hh_mm_ss")+".xlsx"
+    property string exportUrl: ""
+    property string outputBaseUrl: outputFolder+"/"+outputName
 
     property ExportStatus exportStatus: ExportStatus{}
-    ListModel{
-        id:coreCoilModel
+
+    background: Rectangle {
+        color: Material.backgroundColor
     }
 
-    ColumnLayout{
-        Layout.fillHeight: true
-        width:parent.width-20
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 12
 
         BaseLabel{
             text:"报表导出"
             color:Material.color(Material.Green)
-            font.pointSize: 30
+            font.pointSize: 24
             font.bold:true
             Layout.alignment: Qt.AlignHCenter
         }
@@ -65,11 +92,13 @@ PopupBase {
                 id:start_dt
             }
         }
+
         Rectangle{
             Layout.fillWidth: true
             implicitHeight: 1
             color:Material.color(Material.Blue)
         }
+
         DateTimeSelectItem{
             id:endDate
             title_:"结束导出日期:"
@@ -77,129 +106,161 @@ PopupBase {
                 id:end_dt
             }
         }
+
         SimpleFileInput{
             id:saveFileInput
             text:"导出文件"
-            currentFolder:menu.outputFolder
-            acceptLabel:menu.outputName
-            placeholderText:"桌面/"+ menu.outputName
+            currentFolder:root.outputFolder
+            acceptLabel:root.outputName
+            placeholderText:"桌面/"+ root.outputName
             nameFilters:[".xlsx"]
             onValueChanged:{
-                menu.exportStatus.setNone()
+                root.exportStatus.setNone()
+            }
+        }
+
+        ExportConfigView{
+            id:export_data_id
+            Layout.fillWidth: true
+            implicitHeight:50
+        }
+
+        // ========== 快速导出按钮 ==========
+        RowLayout{
+            Layout.fillWidth: true
+            spacing: 10
+
+            BaseLabel{
+                text:"快速导出:"
+                font.pointSize: 14
+            }
+
+            CheckRec{
+                text:"今天"
+                font.pointSize: 12
+                checkColor:Material.color(Material.Green)
+                Material.elevation: 6
+                Layout.preferredWidth: 100
+                enabled:!root.exportStatus.isDownloading
+                onClicked:{
+                    root.exportStatus.stratExport()
+                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_today.xlsx")
+                    root.exportUrl = saveFileInput.value || outputUrl
+                    fileDownloader.downloadFile(api.getExportTodayUrl(),root.exportUrl,"")
+                }
+            }
+
+            CheckRec{
+                text:"1小时"
+                font.pointSize: 12
+                checkColor:Material.color(Material.Cyan)
+                Material.elevation: 6
+                Layout.preferredWidth: 100
+                enabled:!root.exportStatus.isDownloading
+                onClicked:{
+                    root.exportStatus.stratExport()
+                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_1h.xlsx")
+                    root.exportUrl = saveFileInput.value || outputUrl
+                    fileDownloader.downloadFile(api.getExport1hUrl(),root.exportUrl,"")
+                }
+            }
+
+            CheckRec{
+                text:"24小时"
+                font.pointSize: 12
+                checkColor:Material.color(Material.Blue)
+                Material.elevation: 6
+                Layout.preferredWidth: 100
+                enabled:!root.exportStatus.isDownloading
+                onClicked:{
+                    root.exportStatus.stratExport()
+                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_24h.xlsx")
+                    root.exportUrl = saveFileInput.value || outputUrl
+                    fileDownloader.downloadFile(api.getExport24hUrl(),root.exportUrl,"")
+                }
             }
         }
 
         Item{
-            Layout.fillWidth: true
             Layout.fillHeight: true
         }
-        ExportConfigView{
-            id:export_data_id
-         Layout.fillWidth: true
-         implicitHeight:50
-        }
-
-
 
         RowLayout{
-            // DownloadingRow{
-            //     finshed:menu.exportStatus.isDownloadFinished
-            //     visible: menu.exportStatus.isDownloadFinished || menu.exportStatus.isDownloading
-            //     progress:menu.exportStatus.progress
-            //     exportUrl:menu.exportUrl
-            // }
-            // ErrorRow{
-            //     visible: menu.exportStatus.isDownloadError
-            //     errorStr:menu.exportStatus.errorStr
-            // }
             Layout.fillWidth: true
+            spacing: 10
+
             Item{
                 Layout.fillWidth: true
-                implicitHeight:1
-            }
-            // Row{
-            //     spacing: 2
-            //     Label{
-            //         text:"导出类型:"
-            //         anchors.verticalCenter: parent.verticalCenter
-            //     }
-            //     ComboBox{
-            //         id:combox_export_type
-            //         model: coreModel.exportTypeList
-            //         implicitHeight: 30
-            //         height: 30
-            //     }
-            // }
-            Item{
-                implicitHeight: 5
-                implicitWidth: 1
             }
 
             CheckRec{
-                text:menu.exportStatus.isDownloading?"导出中...":"导出"
-                font.pointSize: 18
+                text:root.exportStatus.isDownloading?"导出中...":"导出"
+                font.pointSize: 16
                 fillWidth: true
+                Layout.preferredWidth: 150
                 checkColor:Material.color(Material.Orange)
-                enabled:!menu.exportStatus.isDownloading
+                enabled:!root.exportStatus.isDownloading
                 Material.elevation: 12
                 onClicked:{
-                    menu.exportStatus.stratExport()
+                    root.exportStatus.stratExport()
                     if (!saveFileInput.value){
-                        menu.exportUrl = menu.outputBaseUrl
+                        root.exportUrl = root.outputBaseUrl
                     }
                     else{
-                        menu.exportUrl = saveFileInput.value
+                        root.exportUrl = saveFileInput.value
                     }
                     let export_data_config=export_data_id.getExportConfig()
                     export_data_config["startDate"] = startDate.dateTime_.dateTimeString
                     export_data_config["endDate"] = endDate.dateTime_.dateTimeString
                     var jsonString = JSON.stringify(export_data_config)
-                                  // 将 JSON 对象转换为字符串
-                                  // var jsonString = JSON.stringify(jsonObj);
 
+                    fileDownloader.downloadFile(api.getPostExportUrl(),root.exportUrl,jsonString)
+                }
+            }
 
-                    fileDownloader.downloadFile(api.getPostExportUrl(),menu.exportUrl,jsonString
-                                                )
-                    // fileDownloader.downloadFile(api.getExportByDateTimeUrl(startDate.dateTime_.dateTimeString,
-                    //                                                        endDate.dateTime_.dateTimeString
-                    //                                                        ),menu.exportUrl)
-
-
+            CheckRec{
+                text:"关闭"
+                font.pointSize: 16
+                Layout.preferredWidth: 80
+                checkColor:Material.color(Material.Grey)
+                Material.elevation: 6
+                onClicked:{
+                    root.closeDialog()
                 }
             }
         }
+
+        // 下载进度行
         RowLayout{
-            visible: !menu.exportStatus.isNotDownload
+            visible: !root.exportStatus.isNotDownload
             Layout.fillWidth: true
+
             DownloadingRow{
-                finshed:menu.exportStatus.isDownloadFinished
-                visible: menu.exportStatus.isDownloadFinished || menu.exportStatus.isDownloading
-                progress:menu.exportStatus.progress
-                exportUrl:menu.exportUrl
+                finshed:root.exportStatus.isDownloadFinished
+                visible: root.exportStatus.isDownloadFinished || root.exportStatus.isDownloading
+                progress:root.exportStatus.progress
+                exportUrl:root.exportUrl
+                Layout.fillWidth: true
             }
             ErrorRow{
-                visible: menu.exportStatus.isDownloadError
-                errorStr:menu.exportStatus.errorStr
+                visible: root.exportStatus.isDownloadError
+                errorStr:root.exportStatus.errorStr
+                Layout.fillWidth: true
             }
         }
-
     }
+
     Connections {
         target: fileDownloader
         function onDownloadProgress(bytesReceived,bytesTotal) {
-            console.log("Download progress:", bytesReceived, "/", bytesTotal)
-            menu.exportStatus.progress = bytesReceived / bytesTotal
-
+            root.exportStatus.progress = bytesReceived / bytesTotal
         }
         function onDownloadFinished(){
-            console.log("Download finished")
-            menu.exportStatus.setFinished()
-            Qt.openUrlExternally("file:///"+menu.exportUrl)
-
+            root.exportStatus.setFinished()
+            Qt.openUrlExternally("file:///"+root.exportUrl)
         }
         function onDownloadError(errorString){
-            console.log("Download error:", errorString)
-            menu.exportStatus.setError(errorString)
+            root.exportStatus.setError(errorString)
         }
     }
 }

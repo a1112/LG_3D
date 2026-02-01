@@ -92,7 +92,8 @@ DataShowCore_ {
     property int sourceWidth: 0
     property int sourceHeight: 0
 
-    property real aspectRatio: sourceWidth/sourceHeight
+    // 防止除零错误
+    property real aspectRatio: (sourceHeight > 0) ? (sourceWidth/sourceHeight) : 1.0
 
 
     property bool viewRendererListView: false
@@ -101,7 +102,9 @@ DataShowCore_ {
 
     property int checkRendererIndex:0
 
-    property real minScale:Math.min(canvasHeight/sourceWidth,canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 最小缩放比例
+    // 防止除零错误，当尺寸未知时返回 1.0
+    property real minScale: (sourceWidth > 0 && sourceHeight > 0) ?
+        Math.min(canvasWidth/sourceWidth, canvasHeight/sourceHeight) : 1.0
     property real maxScale: 1 // 最大缩放比例
     property point scaleTempPoint: Qt.point(0,0)
 
@@ -194,6 +197,33 @@ DataShowCore_ {
 
     property bool chartHovered: false
 
+    // ========== 当图像尺寸加载后，自动更新缩放比例 ==========
+    property int _lastKnownSourceWidth: 0
+    property int _lastKnownSourceHeight: 0
+
+    onSourceWidthChanged: {
+        if (sourceWidth > 0 && _lastKnownSourceWidth === 0) {
+            // 图像宽度刚加载，更新缩放
+            _updateScaleAfterImageLoad()
+        }
+        _lastKnownSourceWidth = sourceWidth
+    }
+
+    onSourceHeightChanged: {
+        if (sourceHeight > 0 && _lastKnownSourceHeight === 0) {
+            // 图像高度刚加载，更新缩放
+            _updateScaleAfterImageLoad()
+        }
+        _lastKnownSourceHeight = sourceHeight
+    }
+
+    function _updateScaleAfterImageLoad() {
+        // 当图像尺寸首次加载时，设置正确的缩放比例
+        if (sourceWidth > 0 && sourceHeight > 0) {
+            canvasScale = minScale
+        }
+    }
+
 
     Timer {
         id: errorDrawerTimer
@@ -227,22 +257,39 @@ DataShowCore_ {
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
-        // 第一阶段：加载 GRAY 缓存图（快速显示）
-        surfaceData.source = api.geRenderDrawerSource(
-            surfaceData.key,
-            surfaceData.coilId,
-            renderScale.toFixed(2),
-            parseInt(medianZValue-rangeZValue),
-            parseInt(medianZValue+rangeZValue),
-            mask=true,
-            grayscale=true  // GRAY 模式，使用 GRAY 缓存
-        )
-        currentImageType = "gray"
-        imageTypeText = "灰度预览"
-        imageTypeColor = "#999999"
+        // 检查是否启用 1024 缓冲模式
+        if (coreSetting.enable1024CacheMode) {
+            // 启用时：第一阶段加载 GRAY 缓存图（快速显示）
+            surfaceData.source = api.geRenderDrawerSource(
+                surfaceData.key,
+                surfaceData.coilId,
+                renderScale.toFixed(2),
+                parseInt(medianZValue-rangeZValue),
+                parseInt(medianZValue+rangeZValue),
+                mask=true,
+                grayscale=true  // GRAY 模式，使用 GRAY 缓存
+            )
+            currentImageType = "gray"
+            imageTypeText = "灰度预览"
+            imageTypeColor = "#999999"
 
-        // 第二阶段：延迟加载 JET 图像（更高质量）
-        renderTimer.restart()
+            // 第二阶段：延迟加载 JET 图像（更高质量）
+            renderTimer.restart()
+        } else {
+            // 禁用时：直接加载 JET 图像，跳过灰度预览
+            surfaceData.source = api.geRenderDrawerSource(
+                surfaceData.key,
+                surfaceData.coilId,
+                renderScale.toFixed(2),
+                parseInt(medianZValue-rangeZValue),
+                parseInt(medianZValue+rangeZValue),
+                mask=true,
+                grayscale=false  // JET 模式，直接加载彩色图像
+            )
+            currentImageType = "jet"
+            imageTypeText = "彩色显示"
+            imageTypeColor = "#52c41a"
+        }
     }
 
     Timer {
@@ -325,4 +372,21 @@ DataShowCore_ {
     //                }
 
     // }
+
+    // ========== 初始加载：确保图像在界面打开时加载 ==========
+    Component.onCompleted: {
+        // 延迟检查，确保所有组件都已初始化
+        initLoadTimer.restart()
+    }
+
+    Timer {
+        id: initLoadTimer
+        interval: 100
+        onTriggered: {
+            // 如果 coilId 已设置但图像未加载，触发加载
+            if (surfaceData.coilId > 0 && surfaceData.source === "") {
+                flush()
+            }
+        }
+    }
 }

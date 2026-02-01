@@ -20,7 +20,7 @@ Item {
     ConnectDialog{ id:connectDialog }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
     ExportView{id:exportView}   //导出菜单
-    function popupExportView(){exportView.popup()}
+    function popupExportView(){exportView.openDialog()}
     ToolsMenuView{id:toolsMenu} // 右侧功能菜单
     function popupToolsMenuView(){toolsMenu.popup()}
     DefectClassPop{id:defectClassPop}// 缺陷列表

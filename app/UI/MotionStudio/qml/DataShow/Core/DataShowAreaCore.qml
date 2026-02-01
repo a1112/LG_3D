@@ -324,4 +324,21 @@ Item {
 
     // }
 
+    // ========== 初始加载：确保图像在界面打开时加载 ==========
+    Component.onCompleted: {
+        // 延迟检查，确保所有组件都已初始化
+        initLoadTimer.restart()
+    }
+
+    Timer {
+        id: initLoadTimer
+        interval: 100
+        onTriggered: {
+            // 如果 coilId 已设置但图像未加载，触发加载
+            if (surfaceData.coilId > 0 && surfaceData.area_source === "") {
+                flush()
+            }
+        }
+    }
+
 }

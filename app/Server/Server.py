@@ -58,7 +58,8 @@ def run():
         port=5010,
         workers=workers,  # Windows 必须为 1
         factory=True,
-        log_level="warning",  # 减少日志输出
+        log_level="info",  # 显示信息级别日志
+        access_log=True,  # 显示访问日志
     )
 
 if __name__ == "__main__":

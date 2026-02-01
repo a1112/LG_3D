@@ -191,4 +191,30 @@ export const plcApi = {
     apiClient.get('/hardware'),
 }
 
+// 导出数据API
+export const exportApi = {
+  // 导出最近1小时的数据
+  export1h: (exportType?: string) => {
+    const params = exportType ? `?export_type=${exportType}` : ''
+    return `/api/export_1h${params}`
+  },
+
+  // 导出最近24小时的数据
+  export24h: (exportType?: string) => {
+    const params = exportType ? `?export_type=${exportType}` : ''
+    return `/api/export_24h${params}`
+  },
+
+  // 触发浏览器下载
+  downloadExport: (url: string) => {
+    const iframe = document.createElement('iframe')
+    iframe.style.display = 'none'
+    iframe.src = url
+    document.body.appendChild(iframe)
+    setTimeout(() => {
+      document.body.removeChild(iframe)
+    }, 1000)
+  },
+}
+
 export default apiClient

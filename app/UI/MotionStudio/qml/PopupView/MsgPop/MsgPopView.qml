@@ -9,78 +9,91 @@ Menu {
         id:coreCoilModel
     }
     function initcoreCoil(){
+        // 检查 currentCoilModel 是否存在
+        if (!core.currentCoilModel) {
+            return
+        }
         coreCoilModel.clear()
         coreCoilModel.append({
                                  "key": "流水号",
-                                 "value": core.currentCoilModel.coilId+""
+                                 "value": (core.currentCoilModel.coilId || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "卷号",
-                                 "value": core.currentCoilModel.coilNo+""
+                                 "value": (core.currentCoilModel.coilNo || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "钢种",
-                                 "value": core.currentCoilModel.coilType+""
+                                 "value": (core.currentCoilModel.coilType || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "内径",
-                                 "value": core.currentCoilModel.coilInside+""
+                                 "value": (core.currentCoilModel.coilInside || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "外径",
-                                 "value": core.currentCoilModel.coilDia+""
+                                 "value": (core.currentCoilModel.coilDia || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "厚度",
-                                 "value": core.currentCoilModel.coilThickness+""
+                                 "value": (core.currentCoilModel.coilThickness || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "生产宽度",
-                                 "value": core.currentCoilModel.coilWidth+""
+                                 "value": (core.currentCoilModel.coilWidth || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "实际宽度",
-                                 "value": core.currentCoilModel.coilActWidth+""
+                                 "value": (core.currentCoilModel.coilActWidth || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "去向",
-                                 "value": core.currentCoilModel.nextInfo+""
+                                 "value": (core.currentCoilModel.nextInfo || "")+""
                              }
                             )
     }
 
-    property string currentCoilNo: core.currentCoilModel.coilNo
+    property string currentCoilNo: core.currentCoilModel ? core.currentCoilModel.coilNo : ""
     onCurrentCoilNoChanged: {
         initcoreCoil()
+        if (!core.currentCoilModel || !core.currentCoilModel.coilId) {
+            return
+        }
         api.getPlcData(core.currentCoilModel.coilId,
                        (result)=>{
                         var plcData=JSON.parse(result)
-                           coreCoilModel.append({
-                                                    "key": "设备位置_S",
-                                                    "value": plcData.location_S+""
-                                                }
-                                               )
-                           coreCoilModel.append({
-                                                    "key": "设备位置_L",
-                                                    "value": plcData.location_L+""
-                                                }
-                                               )
-                           coreCoilModel.append({
-                                                    "key": "激光",
-                                                    "value": plcData.location_laser+""
-                                                }
-                                               )
+                        // 检查数据是否存在再添加
+                        if (plcData) {
+                            if (plcData.location_S !== undefined && plcData.location_S !== null) {
+                                coreCoilModel.append({
+                                    "key": "设备位置_S",
+                                    "value": plcData.location_S+""
+                                })
+                            }
+                            if (plcData.location_L !== undefined && plcData.location_L !== null) {
+                                coreCoilModel.append({
+                                    "key": "设备位置_L",
+                                    "value": plcData.location_L+""
+                                })
+                            }
+                            if (plcData.location_laser !== undefined && plcData.location_laser !== null) {
+                                coreCoilModel.append({
+                                    "key": "激光",
+                                    "value": plcData.location_laser+""
+                                })
+                            }
+                        }
                        },
                        (error)=>{
-
+                           console.log("getPlcData error:", error)
                        }
                        )
         api.getCoilState(core.currentCoilModel.coilId,(result)=>{
