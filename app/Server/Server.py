@@ -43,7 +43,7 @@ def run():
     logging.getLogger("asyncio").setLevel(logging.ERROR)
 
     # 使用 Redis 缓存以支持多进程
-    os.environ["IMAGE_CACHE_BACKEND"] = "redis"
+    os.environ["IMAGE_CACHE_BACKEND"] = "memory"  #
     # Redis 配置（可选，使用默认值：localhost:6379 db=0）
     # os.environ["CACHE_REDIS_HOST"] = "localhost"
     # os.environ["CACHE_REDIS_PORT"] = "6379"

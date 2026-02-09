@@ -97,8 +97,8 @@ Item {
     // 棰勮鍥撅細鐩存帴浣跨敤鏈嶅姟绔?preview 鎺ュ彛锛岄伩鍏?row=-2 杩斿洖浠呭楂?    property string pre_source: surfaceData.getSouceByKey("AREA", true)
 
 
-    // 鐢诲竷鏁版嵁
-    property real canvasScale: minScale // 鐢诲竷缂╂斁姣斾緥
+    // 琢诲竷鏁版嵁
+    property real canvasScale: 1.0 // 鐢诲竷缂╂斁姣斾緥锛屽垵濮嬪€璁句负 1.0锛屽悗缁皢鑷姭璁★級
 
     function setToMaxScale(){
         canvasScale = maxScale
@@ -140,7 +140,8 @@ Item {
     property int sourceWidth: 0
     property int sourceHeight: 0
 
-    property real aspectRatio: sourceWidth/sourceHeight
+    // 防止除零错误
+    property real aspectRatio: (sourceHeight > 0) ? (sourceWidth/sourceHeight) : 1.0
 
 
     property bool viewRendererListView: false
@@ -149,9 +150,19 @@ Item {
 
     property int checkRendererIndex:0
 
-    property real minScale:Math.min(canvasHeight/sourceWidth, canvasHeight/sourceHeight) //Math.min(canvasWidth/sourceWidth,canvasWidth/sourceHeight) // 鏈€灏忕缉鏀炬瘮渚?
+    // 防止除零错误，当尺寸未知时返回 1.0
+    property real minScale: (sourceWidth > 0 && sourceHeight > 0 && canvasWidth > 0 && canvasHeight > 0) ?
+        Math.min(canvasWidth/sourceWidth, canvasHeight/sourceHeight) : 1.0
     property real maxScale: 1 // 鏈€澶х缉鏀炬瘮渚?
     property point scaleTempPoint: Qt.point(0,0)
+
+    // ========== 当 minScale 变化且 canvasScale 为初始值时，自动设置缩放 ==========
+    onMinScaleChanged: {
+        // 只有当 minScale 有效（<1，说明图像大于视口）且 canvasScale 未被用户手动设置时才自动更新
+        if (minScale < 1.0 && canvasScale === 1.0) {
+            canvasScale = minScale
+        }
+    }
 
     function getAspectRatioByPoint(point){
         let asX =(point.x+canvasContentX)/canvasContentWidth

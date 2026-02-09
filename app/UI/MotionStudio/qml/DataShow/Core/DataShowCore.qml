@@ -51,7 +51,7 @@ DataShowCore_ {
     property string source: surfaceData.source
 
     // 画布数据
-    property real canvasScale: minScale // 画布缩放比例
+    property real canvasScale: 1.0 // 画布缩放比例，初始值设为 1.0，后续会自动计算
 
     function setToMaxScale(){
         canvasScale = maxScale
@@ -103,10 +103,19 @@ DataShowCore_ {
     property int checkRendererIndex:0
 
     // 防止除零错误，当尺寸未知时返回 1.0
-    property real minScale: (sourceWidth > 0 && sourceHeight > 0) ?
+    property real minScale: (sourceWidth > 0 && sourceHeight > 0 && canvasWidth > 0 && canvasHeight > 0) ?
         Math.min(canvasWidth/sourceWidth, canvasHeight/sourceHeight) : 1.0
+
     property real maxScale: 1 // 最大缩放比例
     property point scaleTempPoint: Qt.point(0,0)
+
+    // ========== 当 minScale 变化且 canvasScale 为初始值时，自动设置缩放 ==========
+    onMinScaleChanged: {
+        // 只有当 minScale 有效（<1，说明图像大于视口）且 canvasScale 未被用户手动设置时才自动更新
+        if (minScale < 1.0 && canvasScale === 1.0) {
+            canvasScale = minScale
+        }
+    }
 
     function getAspectRatioByPoint(point){
         let asX =(point.x+canvasContentX)/canvasContentWidth
@@ -196,33 +205,6 @@ DataShowCore_ {
     property bool imageShowHovered: false
 
     property bool chartHovered: false
-
-    // ========== 当图像尺寸加载后，自动更新缩放比例 ==========
-    property int _lastKnownSourceWidth: 0
-    property int _lastKnownSourceHeight: 0
-
-    onSourceWidthChanged: {
-        if (sourceWidth > 0 && _lastKnownSourceWidth === 0) {
-            // 图像宽度刚加载，更新缩放
-            _updateScaleAfterImageLoad()
-        }
-        _lastKnownSourceWidth = sourceWidth
-    }
-
-    onSourceHeightChanged: {
-        if (sourceHeight > 0 && _lastKnownSourceHeight === 0) {
-            // 图像高度刚加载，更新缩放
-            _updateScaleAfterImageLoad()
-        }
-        _lastKnownSourceHeight = sourceHeight
-    }
-
-    function _updateScaleAfterImageLoad() {
-        // 当图像尺寸首次加载时，设置正确的缩放比例
-        if (sourceWidth > 0 && sourceHeight > 0) {
-            canvasScale = minScale
-        }
-    }
 
 
     Timer {
