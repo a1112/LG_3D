@@ -137,14 +137,24 @@ QtObject {
     }
 
     function initMaxLevelDefect(){
+        let maxLevel = 0  // 从 0 开始比较
+        let foundDefect = null
+
         tool.for_list_model(defectsData,(defect)=>{
                     let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
-                    if (defectLevel>=defectMaxErrorLevel){
-                                    if (leftCore.isShowDefect(defect.defectName)){
-                                        maxDefect.init(defect)
-                                    }
-                                }
-                            })
+                    // 检查缺陷是否被屏蔽（show=false 表示屏蔽）
+                    let defectData = global.defectClassProperty.defectDictData[defect.defectName]
+                    let isDefectShown = (defectData !== undefined) ? (defectData["show"] !== false) : true
+
+                    if (isDefectShown && defectLevel > maxLevel){
+                        maxLevel = defectLevel
+                        foundDefect = defect
+                    }
+                })
+
+        if (foundDefect) {
+            maxDefect.init(foundDefect)
+        }
         return maxDefect.defectName
     }
 
