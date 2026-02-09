@@ -141,7 +141,8 @@ class BaseImageCache(CacheComponent):
     def __init__(self, cache_size: int = 128, ttl: int = 600) -> None:
         self.cache_size = cache_size
         self.ttl = ttl
-        self._cache_image_byte = self._build_image_byte_cache()
+        # 存储元组：(wrapper函数, 实际的cached函数用于统计信息)
+        self._cache_image_byte, self._cache_image_byte_cached = self._build_image_byte_cache()
         self._mask_cache_image_byte = self._build_mask_image_cache()
         self._cache_image_pil = self._build_pil_cache()
         self._cache_image_clip = self._build_clip_cache()
@@ -155,15 +156,23 @@ class BaseImageCache(CacheComponent):
     def get_image(self, path: str, pil: bool = False, clip_num: int = 0) -> Optional[Any]:
         start = time.perf_counter()
         try:
+            # 检查缓存命中状态
+            cache_info = self._cache_image_byte_cached.cache_info()
+            before_hits = cache_info.hits
+
             if pil:
                 result = self._cache_image_pil(path)
             elif clip_num:
                 result = self._cache_image_clip(path, clip_num)
             else:
                 result = self._cache_image_byte(path)
+
+            cache_info = self._cache_image_byte_cached.cache_info()
+            is_hit = cache_info.hits > before_hits
+
             elapsed = time.perf_counter() - start
             if elapsed >= 0.01:
-                logging.info("get_image %s took %.2fs", path, elapsed)
+                logging.info("[CACHE-%s] get_image %s took %.3fs", "HIT" if is_hit else "MISS", path, elapsed)
             return result
         except Exception as exc:  # pragma: no cover - defensive, keep same behavior as before
             logging.exception("Error loading image: %s", exc)
@@ -177,7 +186,7 @@ class BaseImageCache(CacheComponent):
             return None
 
     def clear_cache(self) -> None:
-        self._cache_image_byte.cache_clear()
+        self._cache_image_byte_cached.cache_clear()
         self._mask_cache_image_byte.cache_clear()
         self._cache_image_pil.cache_clear()
         self._cache_image_clip.cache_clear()
@@ -196,7 +205,7 @@ class BaseImageCache(CacheComponent):
             normalized_path = str(Path(path).resolve())
             return _load_image_byte(normalized_path)
 
-        return _load_image_byte_wrapper
+        return _load_image_byte_wrapper, _load_image_byte
 
     def _build_pil_cache(self):
         @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))

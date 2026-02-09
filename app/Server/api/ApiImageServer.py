@@ -1,6 +1,7 @@
 import asyncio
 import io
 import logging
+import os
 import time
 from pathlib import Path
 from typing import List
@@ -20,9 +21,13 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 router = APIRouter(tags=["图像访问服务"])
 
-# 线程池用于IO密集型操作
-thread_pool = ThreadPoolExecutor(max_workers=10)
+# 线程池用于IO密集型操作 - 根据 CPU 核心数动态调整
+cpu_count = os.cpu_count() or 4
+thread_pool = ThreadPoolExecutor(max_workers=cpu_count * 3)
 log = logging.getLogger(__name__)
+
+# 预取开关 - 默认禁用以减少后台负载
+ENABLE_PREFETCH = os.getenv("ENABLE_IMAGE_PREFETCH", "false").lower() == "true"
 
 # 多级瓦片加载配置
 # 瓦片等级定义：(目标尺寸, JPEG质量)
@@ -61,7 +66,10 @@ def _neighbor_ids(coil_id):
 
 
 def _schedule_prefetch(source_type: str, surface_key: str, coil_id, type_: str, *, mask: bool = False, clip_num: int = 0):
-    """预加载相邻卷的同类型图像以加速切换。"""
+    """预加载相邻卷的同类型图像以加速切换。可通过环境变量 ENABLE_IMAGE_PREFETCH 启用。"""
+    if not ENABLE_PREFETCH:
+        return
+
     neighbors = _neighbor_ids(coil_id)
     if not neighbors:
         return

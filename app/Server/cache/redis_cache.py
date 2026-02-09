@@ -1,11 +1,15 @@
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Optional
 
 import redis
 
 from .base import BaseImageCache, _resolve_image_path
+
+# 独立的 Redis 写入线程池，用于异步缓存写入，避免阻塞请求
+_write_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="redis_write")
 
 
 class RedisImageCache(BaseImageCache):
@@ -42,12 +46,12 @@ class RedisImageCache(BaseImageCache):
         return f"{self.prefix}:{path}"
 
     def _load_image_bytes(self, path: str) -> Optional[bytes]:
-        print(f"redis loading image from {path}")
+        logging.debug("redis loading image from %s", path)
         key = self._key(path)
         try:
             sT=time.time()
             cached_bytes = self.client.get(key)
-            print(f"redis loading image  {path}  time: {time.time()-sT}")
+            logging.debug("redis loading image %s time: %.3fs", path, time.time()-sT)
             if cached_bytes:
                 return cached_bytes
         except Exception as exc:  # pragma: no cover - best-effort for Redis failures
@@ -59,13 +63,16 @@ class RedisImageCache(BaseImageCache):
             return None
         sT=time.time()
         binary = path_obj.read_bytes()
-        print(f"io loading image  {path}  time: {time.time()-sT}")
-        try:
-            sT=time.time()
-            self.client.setex(key, self.redis_ttl, binary)
-            print(f"redis save image  {path}  time: {time.time()-sT}")
-        except Exception as exc:  # pragma: no cover
-            logging.warning("redis setex failed for %s: %s", key, exc)
+        logging.debug("io loading image %s time: %.3fs", path, time.time()-sT)
+
+        # 异步写入 Redis，不阻塞当前请求响应
+        def _write_to_redis():
+            try:
+                self.client.setex(key, self.redis_ttl, binary)
+            except Exception as exc:
+                logging.warning("redis setex failed for %s: %s", key, exc)
+
+        _write_executor.submit(_write_to_redis)
         return binary
 
     def startup(self) -> None:
@@ -77,6 +84,11 @@ class RedisImageCache(BaseImageCache):
     def shutdown(self) -> None:
         try:
             self.client.close()
+        except Exception:  # pragma: no cover
+            pass
+        # 关闭异步写入线程池
+        try:
+            _write_executor.shutdown(wait=False)
         except Exception:  # pragma: no cover
             pass
 

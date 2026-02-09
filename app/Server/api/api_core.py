@@ -1,4 +1,5 @@
 import logging
+import time
 
 from fastapi import FastAPI
 from cache import get_cache_mode, shutdown_cache, startup_cache
@@ -11,6 +12,28 @@ except ImportError:
     logging.getLogger(__name__).warning("orjson not installed; falling back to JSONResponse")
 
 app = FastAPI(default_response_class=DefaultResponse)
+
+
+@app.middleware("http")
+async def performance_middleware(request, call_next):
+    """性能监控中间件：追踪 API 响应时间"""
+    start_time = time.perf_counter()
+
+    # 只监控图像 API
+    if "/image/" in request.url.path:
+        response = await call_next(request)
+        process_time = time.perf_counter() - start_time
+
+        # 记录慢请求
+        if process_time > 0.1:  # 100ms
+            logging.warning("[PERF] SLOW: %s took %.3fs", request.url.path, process_time)
+        elif process_time > 0.05:  # 50ms
+            logging.info("[PERF] %s took %.3fs", request.url.path, process_time)
+
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+
+    return await call_next(request)
 
 @app.on_event("startup")
 def _startup_cache() -> None:
