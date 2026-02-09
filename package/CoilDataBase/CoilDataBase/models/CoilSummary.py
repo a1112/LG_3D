@@ -62,6 +62,13 @@ class CoilSummary(Base):
     Grade = Column(Integer, default=0, comment="质量等级")
     HasCoil = Column(Boolean, default=False, comment="是否有检测数据")
 
+    # ========== 最严重缺陷摘要 (来自 CoilDefect，用于列表状态列显示) ==========
+    # 存储最严重的非屏蔽缺陷信息，按缺陷等级排序
+    MaxDefectName = Column(String(50), default="", comment="最严重缺陷名称")
+    MaxDefectLevel = Column(Integer, default=0, comment="最严重缺陷等级（0表示无缺陷）")
+    MaxDefectSurface = Column(String(2), default="", comment="最严重缺陷所在表面（S/L）")
+    MaxDefectIsShown = Column(Boolean, default=True, comment="最严重缺陷是否显示（未被屏蔽）")
+
     # ========== 同步时间戳 ==========
     UpdateTime = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新时间")
 
@@ -123,6 +130,20 @@ class CoilSummary(Base):
             "defectMsg": "",
         }
 
+        # 构造最严重缺陷的简化数据，用于列表状态列显示
+        max_defect_data = None
+        if self.MaxDefectName:
+            max_defect_data = {
+                "Id": 0,  # 摘要表中不存储具体缺陷ID
+                "secondaryCoilId": self.Id,
+                "surface": self.MaxDefectSurface or "S",
+                "defectName": self.MaxDefectName,
+                "defectLevel": self.MaxDefectLevel,
+            }
+            childrenCoilDefect = [max_defect_data] if max_defect_data else []
+        else:
+            childrenCoilDefect = []
+
         return {
             "Id": self.Id,
             "CoilNo": self.CoilNo,
@@ -150,9 +171,8 @@ class CoilSummary(Base):
             "Status_S": self.Status_S,
             "Grade": self.Grade,
             "Msg": "",
-            # 列表显示不需要缺陷和检查数据，需要时调用 detail API
-            "defects": {},
-            "childrenCoilDefect": [],
+            # 返回最严重缺陷数据（用于列表状态列显示）
+            "childrenCoilDefect": childrenCoilDefect,
             "childrenCoilCheck": [],
         }
 

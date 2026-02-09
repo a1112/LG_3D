@@ -172,6 +172,53 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
             summary.L_FlatRollGrad = 1
             summary.L_Grad = 1
 
+        # ========== 计算最严重缺陷（用于列表状态列显示） ==========
+        # 获取所有缺陷数据，按缺陷等级排序，取最高的非屏蔽缺陷
+        defects = session.query(CoilDefect).filter_by(secondaryCoilId=coil_id).all()
+
+        if defects:
+            # 从配置文件获取缺陷等级映射
+            try:
+                from Base.CONFIG import defectClassesProperty
+                defect_config = defectClassesProperty.data
+            except Exception:
+                defect_config = {}
+
+            max_level = 0
+            max_defect = None
+
+            for defect in defects:
+                defect_name = defect.defectName
+                # 从配置获取缺陷等级和显示状态
+                if defect_name in defect_config:
+                    defect_level = defect_config[defect_name].get("level", 1)
+                    is_shown = defect_config[defect_name].get("show", True)
+                else:
+                    # 未知缺陷，默认等级1，显示
+                    defect_level = 1
+                    is_shown = True
+
+                # 只考虑显示中的缺陷
+                if is_shown and defect_level > max_level:
+                    max_level = defect_level
+                    max_defect = defect
+
+            if max_defect:
+                summary.MaxDefectName = max_defect.defectName or ""
+                summary.MaxDefectLevel = max_level
+                summary.MaxDefectSurface = max_defect.surface or "S"
+                summary.MaxDefectIsShown = True
+            else:
+                summary.MaxDefectName = ""
+                summary.MaxDefectLevel = 0
+                summary.MaxDefectSurface = ""
+                summary.MaxDefectIsShown = True
+        else:
+            summary.MaxDefectName = ""
+            summary.MaxDefectLevel = 0
+            summary.MaxDefectSurface = ""
+            summary.MaxDefectIsShown = True
+
     # 在 no_autoflush 块外执行 flush/commit
     try:
         session.commit()

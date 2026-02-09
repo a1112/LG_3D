@@ -96,63 +96,15 @@ QtObject {
             }
         }
 
-        // 缺陷数据（只读引用）
+        // 缺陷数据（从 coil_summary 表直接返回最严重缺陷）
         defectsData = coil.childrenCoilDefect || []
 
         // 时间数据
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
 
-        // 如果缺陷数据为空，异步获取缺陷数据
-        if (!defectsData || defectsData.length === 0) {
-            fetchDefectsData()
-        }
-
         initMaxLevelDefect()
         coilCheck.init(coil.childrenCoilCheck || [])
-    }
-
-    // 异步获取缺陷数据
-    function fetchDefectsData() {
-        if (!coilId || coilId === 0) {
-            return
-        }
-
-        // 获取 S 面缺陷
-        api.getDefects(coilId, "S",
-            function(success) {
-                let defects = JSON.parse(success)
-                // 合并 S 面缺陷数据
-                if (defects && defects.length > 0) {
-                    for (let i = 0; i < defects.length; i++) {
-                        defectsData.push(defects[i])
-                    }
-                    // 更新完成后重新计算最高等级缺陷
-                    initMaxLevelDefect()
-                }
-            },
-            function(error) {
-                console.log("Failed to fetch defects for S surface:", error)
-            }
-        )
-
-        // 获取 L 面缺陷
-        api.getDefects(coilId, "L",
-            function(success) {
-                let defects = JSON.parse(success)
-                // 合并 L 面缺陷数据
-                if (defects && defects.length > 0) {
-                    for (let i = 0; i < defects.length; i++) {
-                        defectsData.push(defects[i])
-                    }
-                    // 更新完成后重新计算最高等级缺陷
-                    initMaxLevelDefect()
-                }
-            },
-            function(error) {
-                console.log("Failed to fetch defects for L surface:", error)
-            }
-        )
     }
 
     function getDefectNameList(){
