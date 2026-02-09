@@ -3,8 +3,9 @@ import io
 import logging
 import os
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -12,6 +13,7 @@ from PIL import Image
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse, FileResponse, Response
 
+from Base.CONFIG import serverConfigProperty
 from Base.tools.DataGet import DataGet, noFindImageByte
 from cache import areaCache
 from .api_core import app
@@ -347,6 +349,89 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         return tile_bytes
 
 
+def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int, y: int, w: int, h: int) -> Optional[Image.Image]:
+    """
+    从 detection 目录优先读取缺陷图片
+
+    Detection 目录结构: D:\Save_S\{coil_id}\detection\{defect_name}\{coil_id}_{surface}_{surface}_{index}.png
+    XML 文件包含原图中的绝对坐标信息
+
+    注意：detection 目录保存的是检测瓦片图片，XML 中的坐标是原图绝对坐标
+    由于坐标转换问题，这里简化为返回整个瓦片图片（已包含缺陷区域）
+
+    Args:
+        coil_id: 卷材 ID
+        surface_key: 表面标识 (S/L)
+        x, y, w, h: 缺陷在原图中的坐标
+
+    Returns:
+        PIL.Image 或 None
+    """
+    try:
+        # 获取保存目录基础路径
+        save_folder = list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder
+        save_base = Path(save_folder).parent  # D:\Save_S
+
+        coil_folder = save_base / str(coil_id)
+        detection_folder = coil_folder / "detection"
+
+        if not detection_folder.exists():
+            log.debug(f"Detection folder not found: {detection_folder}")
+            return None
+
+        # 计算请求框的中心点
+        requested_center_x = x + w / 2
+        requested_center_y = y + h / 2
+
+        # 遍历所有缺陷类型目录
+        for defect_type_folder in detection_folder.iterdir():
+            if not defect_type_folder.is_dir():
+                continue
+
+            # 遍历该类型下的所有图片和 XML 文件
+            for xml_file in defect_type_folder.glob("*.xml"):
+                try:
+                    # 解析 XML 获取坐标信息
+                    tree = ET.parse(xml_file)
+                    root = tree.getroot()
+
+                    # 查找所有 object
+                    for obj in root.findall("object"):
+                        bbox = obj.find("bndbox")
+                        if bbox is None:
+                            continue
+
+                        xml_xmin = int(bbox.find("xmin").text)
+                        xml_ymin = int(bbox.find("ymin").text)
+                        xml_xmax = int(bbox.find("xmax").text)
+                        xml_ymax = int(bbox.find("ymax").text)
+
+                        # 检查请求的缺陷框是否与 XML 中的框匹配（使用中心点匹配）
+                        if (xml_xmin <= requested_center_x <= xml_xmax and
+                            xml_ymin <= requested_center_y <= xml_ymax):
+                            # 找到匹配的图片
+                            png_file = xml_file.with_suffix(".png")
+                            if png_file.exists():
+                                log.debug(f"Found defect image in detection: {png_file}")
+                                tile_image = Image.open(png_file)
+
+                                # 简化方案：直接返回瓦片图片
+                                # 瓦片图片通常是 546x546 左右，已经包含了缺陷区域
+                                # 这样可以避免复杂的坐标转换，并且速度更快
+                                return tile_image
+
+                except Exception as e:
+                    log.debug(f"Error parsing XML {xml_file}: {e}")
+                    continue
+
+        log.debug(f"No matching defect image found in detection folder for coil {coil_id}")
+        return None
+
+    except Exception as e:
+        log.debug(f"Error reading from detection folder: {e}")
+        return None
+
+
 @router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
 async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str, w: str, h: str):
     # 处理 NaN 或无效值
@@ -359,6 +444,18 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str
         return Response(noFindImageByte, media_type="image/jpeg")
 
     old_box = [x, y, w, h]
+
+    # 优先从 detection 目录读取缺陷图片（更快）
+    detection_image = _get_defect_image_from_detection(coil_id, surface_key, x, y, w, h)
+    if detection_image is not None:
+        # detection 目录中的图片已经是裁剪好的瓦片
+        # 直接返回（或根据需要进行额外裁剪）
+        img_byte_arr = io.BytesIO()
+        detection_image.save(img_byte_arr, format='jpeg')
+        img_byte_arr.seek(0)
+        return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
+
+    # 回退到原图裁剪
     image = DataGet("image", surface_key, coil_id, type_, False).get_image(pil=True)
     image: Image.Image
     if image is None:
