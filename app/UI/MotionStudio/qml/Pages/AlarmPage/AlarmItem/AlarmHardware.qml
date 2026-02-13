@@ -24,11 +24,16 @@ Item {
             api.getHardware(
                         (res)=>{
                             hardwareData=JSON.parse(res)
-                            // hardwareModel.clear()
-                            let i=0
+                            // 清空并重新填充模型
+                            hardwareModel.clear()
                             for(var key in hardwareData){
-                                hardwareModel.set(i,hardwareData[key])
-                                i++
+                                let item = hardwareData[key]
+                                // 确保 value 字段是字符串类型（与默认类型一致）
+                                hardwareModel.append({
+                                    "key": item.key || "",
+                                    "value": String(item.value || ""),
+                                    "msg": item.msg || ""
+                                })
                             }
                         },
                         (err)=>{

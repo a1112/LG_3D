@@ -132,15 +132,27 @@ class CoilSummary(Base):
 
         # 构造最严重缺陷的简化数据，用于列表状态列显示
         max_defect_data = None
-        if self.MaxDefectName:
+        # 检查 MaxDefectName 是否存在且非空
+        if self.MaxDefectName and self.MaxDefectName.strip():
             max_defect_data = {
                 "Id": 0,  # 摘要表中不存储具体缺陷ID
                 "secondaryCoilId": self.Id,
                 "surface": self.MaxDefectSurface or "S",
                 "defectName": self.MaxDefectName,
                 "defectLevel": self.MaxDefectLevel,
+                # 添加 DefectItemModel.init() 需要的其他字段（使用默认值）
+                "defectClass": 0,
+                "defectStatus": 0,
+                "defectX": 0,
+                "defectY": 0,
+                "defectW": 0,
+                "defectH": 0,
+                "defectSource": 0,
+                # 不使用 None，使用空对象避免 QML 报错
+                # "defectData": {},
+                "is_area": False,
             }
-            childrenCoilDefect = [max_defect_data] if max_defect_data else []
+            childrenCoilDefect = [max_defect_data]
         else:
             childrenCoilDefect = []
 
@@ -173,6 +185,9 @@ class CoilSummary(Base):
             "Msg": "",
             # 返回最严重缺陷数据（用于列表状态列显示）
             "childrenCoilDefect": childrenCoilDefect,
+            # 添加 maxDefectName 和 maxDefectLevel 字段，用于状态列直接显示
+            "maxDefectName": self.MaxDefectName or "",
+            "maxDefectLevel": self.MaxDefectLevel or 0,
             "childrenCoilCheck": [],
         }
 

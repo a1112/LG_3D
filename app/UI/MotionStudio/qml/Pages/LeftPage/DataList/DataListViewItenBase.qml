@@ -34,7 +34,12 @@ Item {
 
     // property CoilState coilState: CoilState{}
 
-    property ListItemCoil listItemCoil:ListItemCoil{}
+    property ListItemCoil listItemCoil: ListItemCoil{
+        hasCoil: coilModel.hasCoil
+        alarmInfo: coilModel.coilData ? coilModel.coilData.AlarmInfo : null
+        maxDefectName: coilModel.maxDefectName || ""
+        maxDefectLevel: coilModel.maxDefectLevel || 0
+    }
 
     Pane{
         Material.elevation: 7

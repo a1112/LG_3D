@@ -1,9 +1,10 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Controls.Material
 Row {
+    // 直接绑定到 listItemCoil.maxDefectName，避免手动同步
+    property string maxDefectName: listItemCoil.maxDefectName || ""
 
-    spacing:5
+    spacing:1
     Label{
         visible:!listItemCoil.hasCoilData
         text: listItemCoil.nullCoilString
@@ -21,14 +22,13 @@ Row {
     }
 
     Row{
-            spacing:10
-            visible:listItemCoil.hasCoilData && listItemCoil.hasAlarmData
-
+        spacing:1
+            // 显示条件：有缺陷名称（从 API 的 maxDefectName 字段
             Label{
-                text: coilModel.maxDefect.defectName
-                width:60
+                visible: maxDefectName !== ""
+                text: maxDefectName !== "" ? maxDefectName : ""
                 font.pointSize: 9
-                color:  coilModel.defectErrorColor  //Material.color(Material.Green)
+                color: listItemCoil.defectNameColor  // 根据缺陷等级动态计算颜色
                 font.bold: true
                 font.family: "Microsoft YaHei"
             }
@@ -40,19 +40,6 @@ Row {
                       listItemCoil.looseCoilGrad,
                       listItemCoil.defectGrad
                       )
-
         }
-
-    // AlarmRectangleItem{
-    //     level:listItemCoil.flatRollGrad
-    // }
-    // AlarmRectangleItem{
-    // level:listItemCoil.taperShapeGrad
-    // }AlarmRectangleItem{
-    // level:listItemCoil.looseCoilGrad
-    // }AlarmRectangleItem{
-    // level:listItemCoil.defectGrad
-    // }
-
     }
 }

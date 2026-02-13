@@ -27,7 +27,7 @@ DataListViewItenBase {
                         color: listItemCoil.detectionStatuColor
                     }
                     Item {
-                        Layout.fillWidth: true
+                        width: 20
                         implicitHeight: 1
                     }
                     Label{
@@ -51,7 +51,7 @@ DataListViewItenBase {
                     }
 
                     Item {
-                        Layout.fillWidth: true
+                        width: 5
                         implicitHeight: 1
                     }
                     Label{

@@ -248,8 +248,8 @@ DataShowCore_ {
                 renderScale.toFixed(2),
                 parseInt(medianZValue-rangeZValue),
                 parseInt(medianZValue+rangeZValue),
-                mask=true,
-                grayscale=true  // GRAY 模式，使用 GRAY 缓存
+                true,  // mask
+                true   // grayscale - GRAY 模式，使用 GRAY 缓存
             )
             currentImageType = "gray"
             imageTypeText = "灰度预览"
@@ -265,8 +265,8 @@ DataShowCore_ {
                 renderScale.toFixed(2),
                 parseInt(medianZValue-rangeZValue),
                 parseInt(medianZValue+rangeZValue),
-                mask=true,
-                grayscale=false  // JET 模式，直接加载彩色图像
+                true,  // mask
+                false  // grayscale - JET 模式，直接加载彩色图像
             )
             currentImageType = "jet"
             imageTypeText = "彩色显示"
@@ -284,8 +284,8 @@ DataShowCore_ {
                 renderScale.toFixed(2),
                 parseInt(medianZValue-rangeZValue),
                 parseInt(medianZValue+rangeZValue),
-                mask=true,
-                grayscale=false  // JET 模式，使用 JET 缓存
+                true,  // mask
+                false  // grayscale - JET 模式，使用 JET 缓存
             )
             currentImageType = "jet"
             imageTypeText = "彩色显示"

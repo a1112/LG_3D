@@ -3,8 +3,28 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 Item {
 
-    property bool hasAlarmData:true// hasAlarmInfo
+    property bool hasCoil: true  // 从 coilModel.hasCoil 传入
+    property var alarmInfo: null  // 从 coilModel.coilData.alarmInfo 传入（QML属性名不能用大写开头）
+    property string maxDefectName: ""  // 从 coilModel.maxDefectName 传入
+    property int maxDefectLevel: 0  // 从 coilModel.maxDefectLevel 传入
+
+    property bool hasAlarmData:true// hasalarmInfo
     property bool hasCoilData: hasCoil
+
+    // 根据缺陷等级计算颜色
+    function defectLevel2Color(level){
+        if(level<=2){
+            return Material.color(Material.LightBlue)
+        }else if(level<=3){
+            return Material.color(Material.Yellow)
+        }else if(level<=4){
+            return Material.color(Material.Orange)
+        }else{
+            return Material.color(Material.Red)
+        }
+    }
+
+    property color defectNameColor: defectLevel2Color(maxDefectLevel)
 
     function level2Color(level){
         if(level<=1){
@@ -56,21 +76,21 @@ Item {
     property string errorMsg: "扁卷:\n"+flatRollMsg+"\n塔形\n"+taperShapeMsg+"\n松卷:\n"+looseCoilMsg+"\n缺陷:\n"+defectMsg
 
     property AlarmInfoItem alarmInfoItemS: AlarmInfoItem{
-        data:AlarmInfo["S"]
+        data:alarmInfo["S"]
     }
 
     property AlarmInfoItem alarmInfoItemL: AlarmInfoItem{
-        data:AlarmInfo["L"]
+        data:alarmInfo["L"]
     }
     Component.onCompleted:{
         alarmNodel.clear()
         let keyList=[]
-        for (let key in AlarmInfo) {
+        for (let key in alarmInfo) {
             keyList.push(key)
         }
 
-        for (let key in AlarmInfo) {
-            let item=AlarmInfo[key]
+        for (let key in alarmInfo) {
+            let item=alarmInfo[key]
             for(let itemKey in item){
                 keyList.forEach((key_)=>{
                                 })
@@ -83,7 +103,7 @@ Item {
 
     // property var testData:    {
     //     "hasCoil": true,
-    //     "hasAlarmInfo": true,
+    //     "hasalarmInfo": true,
     //     "DefectCountS": 0,
     //     "Id": 23053,
     //     "DefectCountL": 0,
@@ -102,7 +122,7 @@ Item {
     //     "CheckStatus": 0,
     //     "Status_S": 0,
     //     "Msg": "",
-    //     "AlarmInfo": {
+    //     "alarmInfo": {
     //         "L": {
     //             "nextCode": "2",
     //             "secondaryCoilId": 23053,
@@ -195,7 +215,7 @@ Item {
     //             "Msg": ""
     //         }
     //     ],
-    //     "childrenAlarmInfo": [
+    //     "childrenalarmInfo": [
     //         {
     //             "nextCode": "2",
     //             "secondaryCoilId": 23053,

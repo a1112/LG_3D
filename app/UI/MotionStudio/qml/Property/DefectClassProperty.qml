@@ -41,8 +41,9 @@ Item {
             item["num"] = 0
             item["level"] = value["level"]
             item["color"] = value["color"]
-            item["show"] = value["show"]
-            if (value["show"]){
+            // 确保 show 是布尔值类型
+            item["show"] = value["show"] === true || value["show"] === "true"
+            if (item["show"]){
                 defectDictModel.append(item)
             }
         }
@@ -56,8 +57,9 @@ Item {
             item["num"] = 0
             item["level"] = value["level"]
             item["color"] = value["color"]
-            item["show"] = value["show"]
-            if (!value["show"]){
+            // 确保 show 是布尔值类型
+            item["show"] = value["show"] === true || value["show"] === "true"
+            if (!item["show"]){
                 defectDictModel.append(item)
             }
         }

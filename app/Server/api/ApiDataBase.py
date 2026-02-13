@@ -84,18 +84,18 @@ def format_coil_info(secondary_coil_list):
 @router.get("/coilList/{number}")
 async def get_coil(number: int, coil_id=None, rev=True):
     """
-    获取 n 条数据（仅查询摘要表，不自动同步）
+    获取 n 条数据（优先查询摘要表，快速返回）
 
     摘要表由算法检测结束时自动更新，确保数据一致性
     """
     number = min(number, 1000)
-    # 直接查询摘要表，不进行自动同步
+    # 直接查询摘要表，不进行同步（快速返回）
     data = get_coil_list_with_summary(
         limit=number,
         coil_id=coil_id,
         rev=rev,
         by_coil=isLoc,
-        auto_sync=False  # 禁用自动同步
+        auto_sync=False
     )
     return data
 
@@ -103,7 +103,7 @@ async def get_coil(number: int, coil_id=None, rev=True):
 @router.get("/flush/{coil_id:int}")
 async def get_flush(coil_id: int):
     """
-    向上刷新（仅查询摘要表）
+    向上刷新（仅查询摘要表，快速返回）
     """
     if coil_id > 0:
         return {
@@ -111,8 +111,7 @@ async def get_flush(coil_id: int):
                 limit=10,
                 coil_id=coil_id,
                 rev=True,
-                by_coil=isLoc,
-                auto_sync=False  # 禁用自动同步
+                by_coil=isLoc
             )
         }
     return {}
@@ -436,6 +435,21 @@ async def sync_summaries_api(limit: int = 1000):
     """
     count = batch_sync_summaries(limit=limit)
     return {"synced": count, "message": f"Synced {count} summaries"}
+
+
+@router.post("/sync_summaries_range")
+async def sync_summaries_range_api(request: dict):
+    """
+    快速同步指定 ID 范围的摘要数据
+    只更新已存在的记录，不创建新记录
+    主要用于更新 DefectCountS/L 和 MaxDefect 字段
+    """
+    from CoilDataBase.CoilSummary import sync_summaries_range
+    coil_ids = request.get("coil_ids", [])
+    if not coil_ids:
+        return {"error": "coil_ids is required", "synced": 0}
+    count = sync_summaries_range(coil_ids)
+    return {"synced": count, "message": f"Updated {count} summaries"}
 
 
 @router.get("/search/defects_all/{coil_id:int}/{direction}")

@@ -50,7 +50,7 @@ def run():
     # os.environ["CACHE_REDIS_DB"] = "0"
 
     # Windows 不支持多进程 workers，Linux 生产环境可以设置 workers > 1
-    workers = 5 if sys.platform == "win32" else 5
+    workers = 10 if sys.platform == "win32" else 10
 
     uvicorn.run(
         "Server:create_app",

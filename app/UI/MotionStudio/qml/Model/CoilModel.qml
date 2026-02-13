@@ -5,7 +5,7 @@ QtObject {
 
     property var coilData
 
-    property int coilId: 0  // 二级ID
+    property int coilId: 0
     property string coilNo: ""
     property string coilType: ""
     property string coilInside: ""
@@ -28,7 +28,9 @@ QtObject {
     property int coilGrade: 0
     property int coilStatus_S: 0
     property string coilMsg: ""
-    property bool hasCoil: true  // 是否有检测数据
+    property bool hasCoil: true
+    property string maxDefectName: ""
+    property int maxDefectLevel: 0
 
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo{}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo{}
@@ -39,11 +41,9 @@ QtObject {
 
     property var defectsData
 
-
     function checkDefectShow(fliterDict){
         for (let i=0;i<defectsData.count;i++ ){
             let item_defect =defectsData.get(i)
-            // console.log("isShowDefect",Object.keys(item_defect))
             if(fliterDict[item_defect.defectName]){
                                 return true
                                 }
@@ -56,10 +56,7 @@ QtObject {
     }
 
     function init(coil){
-        // 直接读取 model 的属性，不进行深拷贝（避免循环引用问题）
-        // 注意：不修改原始数据，只读取
         if (!coil) {
-            console.log("CoilModel.init: coil is undefined!")
             return
         }
 
@@ -81,12 +78,12 @@ QtObject {
         coilMsg = coil.Msg || ""
         nextInfo = coil.NextInfo || ""
         nextCode = coil.NextCode || ""
-        hasCoil = coil.hasCoil || false  // 是否有检测数据
+        hasCoil = coil.hasCoil || false
+        maxDefectName = coil.maxDefectName || ""
+        maxDefectLevel = coil.maxDefectLevel || 0
 
-        // 存储对 model 的引用（只读，不修改）
         coilData = coil
 
-        // 处理 AlarmInfo
         if (coil.AlarmInfo) {
             if (coil.AlarmInfo["S"]){
                 alarmItemInfo_S.setAlarmInfo(coil.AlarmInfo["S"])
@@ -96,10 +93,20 @@ QtObject {
             }
         }
 
-        // 缺陷数据（从 coil_summary 表直接返回最严重缺陷）
-        defectsData = coil.childrenCoilDefect || []
+        // 缺陷数据处理：确保是数组格式
+        if (coil.childrenCoilDefect && coil.childrenCoilDefect.length) {
+            console.log("[CoilModel.init] childrenCoilDefect type:", typeof coil.childrenCoilDefect, "length:", coil.childrenCoilDefect.length)
+            console.log("[CoilModel.init] childrenCoilDefect first item:", coil.childrenCoilDefect[0])
+            console.log("[CoilModel.init] childrenCoilDefect JSON:", JSON.stringify(coil.childrenCoilDefect))
+            defectsData = coil.childrenCoilDefect
+        } else if (coil.childrenCoilDefect && typeof coil.childrenCoilDefect === 'object') {
+            console.log("[CoilModel.init] childrenCoilDefect is single object, wrapping in array")
+            defectsData = [coil.childrenCoilDefect]
+        } else {
+            console.log("[CoilModel.init] childrenCoilDefect is null/undefined/empty, using empty array")
+            defectsData = []
+        }
 
-        // 时间数据
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
 
@@ -137,23 +144,44 @@ QtObject {
     }
 
     function initMaxLevelDefect(){
-        let maxLevel = 0  // 从 0 开始比较
         let foundDefect = null
+        let maxLevel = -1
 
-        tool.for_list_model(defectsData,(defect)=>{
-                    let defectLevel=global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
-                    // 检查缺陷是否被屏蔽（show=false 表示屏蔽）
-                    let defectData = global.defectClassProperty.defectDictData[defect.defectName]
-                    let isDefectShown = (defectData !== undefined) ? (defectData["show"] !== false) : true
+        // 遍历所有缺陷，找到等级最高的
 
-                    if (isDefectShown && defectLevel > maxLevel){
-                        maxLevel = defectLevel
-                        foundDefect = defect
-                    }
-                })
+        if (defectsData && defectsData.length > 0) {
+                    console.log(defectsData)
+            for (let i = 0; i < defectsData.length; i++) {
+                let defect = null
+                if (typeof defectsData.get === 'function') {
+                    defect = defectsData.get(i)
+                } else {
+                    defect = defectsData[i]
+                }
 
+                if (!defect) continue
+
+                // 获取缺陷等级
+                let level = defect.defectLevel || 0
+                // 如果没有 defectLevel，从配置获取
+                console.log("defect.defectName",defect.defectName)
+                if (!defect.defectLevel && defect.defectName) {
+                    level = global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
+                }
+
+                // 找到最高等级的缺陷
+                if (level > maxLevel) {
+                    maxLevel = level
+                    foundDefect = defect
+                }
+            }
+        }
+        console.log("foundDefect ",foundDefect)
         if (foundDefect) {
             maxDefect.init(foundDefect)
+        } else {
+            // 没有缺陷时，不调用 init（保持默认空值）
+            // 或者可以调用 maxDefect.init({}) 来重置
         }
         return maxDefect.defectName
     }
