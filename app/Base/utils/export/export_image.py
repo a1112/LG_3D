@@ -94,6 +94,7 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     res_data={}
     alarm_info_dict={"S":None,"L":None}
     defects = get_defects(secondary_coil)
+    print(f"[Export] get_item_data: coil_id={secondary_coil.Id}, defects count={len(defects) if defects else 0}")
 
     if export_config.export_header_data:
         res_data.update(get_header_data(secondary_coil))   # 添加 二级数据信息
@@ -108,12 +109,15 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     return res_data
 
 def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportConfig=None, names=None,in_list=True,format_=None):
+    print(f"[Export] export_defect_image_by_names called, names={names}, in_list={in_list}")
     if names is None:
         names = []
     data_all = []
     head_key_list = []
     skipped_images = []  # 记录跳过的图像
-    print(f"coil_id_list: {len(coil_id_list)}")
+    defect_count_total = 0  # 统计总缺陷数
+    image_found_count = 0  # 统计找到的图像数
+    print(f"[Export] coil_id_list: {len(coil_id_list)}")
     for secondaryCoil in coil_id_list:
         item_dict = get_item_data(secondaryCoil,export_config)
         if item_dict is None:
@@ -139,6 +143,7 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
             continue
 
         defects = row_data[-1]
+        defect_count_total += len(defects)  # 统计总缺陷数
         text_row = row_data[:-1]
         for index,data_item in enumerate(text_row):
             worksheet.write(row_num, index, data_item)
@@ -163,10 +168,14 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
                 })
                 continue
 
+            image_found_count += 1  # 统计找到的图像数
             defect:CoilDefect
             text = f"{defect.defectName}\n宽：{int((defect.defectW*0.34))}\n高：{int(defect.defectH*0.34)}"
             insert_image_and_name(worksheet,row_num, offset,text, image,format_)
             offset+=2
+
+    # 输出统计信息
+    print(f"[Export] Total defects: {defect_count_total}, Images found: {image_found_count}, Skipped: {len(skipped_images)}")
 
     # 输出跳过的图像统计
     if skipped_images:
@@ -177,6 +186,8 @@ def export_defect_image_by_names(coil_id_list, worksheet, export_config:ExportCo
             print(f"  ... and {len(skipped_images) - 5} more")
 
 def export_defect_show_image(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
+    print(f"[Export] export_defect_show_image called with {len(coil_id_list)} coils")
+    print(f"[Export] show_name_list: {CONFIG.defectClassesProperty.show_name_list}")
 
     worksheet = workbook.add_worksheet(export_config.worksheet_defect_image_name+"_显示")
     export_defect_image_by_names(coil_id_list, worksheet, export_config, CONFIG.defectClassesProperty.show_name_list, format_=format_)

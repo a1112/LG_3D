@@ -15,8 +15,13 @@ def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D",export_
 
     if export_config.export_defect_image:
         # 数据导出
+        print(f"[Export] export_defect_image={export_config.export_defect_image}, defect_show_info={export_config.defect_show_info}")
         if export_config.defect_show_info:
+            print(f"[Export] Calling export_defect_show_image with {len(coil_id_list)} coils")
             export_defect_show_image(coil_id_list, workbook, export_config,format_)
+        if export_config.defect_un_show_info:
+            print(f"[Export] Calling export_defect_un_show_image")
+            export_defect_un_show_image(coil_id_list, workbook, export_config, format_)
         if export_config.defect_un_show_info:
             export_defect_un_show_image(coil_id_list, workbook, export_config, format_)
 
