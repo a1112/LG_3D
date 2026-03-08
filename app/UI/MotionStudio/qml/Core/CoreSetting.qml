@@ -18,6 +18,8 @@ Item {
 
     property int databasPort: 6011
     property int imageServerPort: 6012
+    property bool useRustImageServer: false
+    property int rustImageServerPort: 6013
     property int dataPort: 6013
     property int plcPort: 6014
 
@@ -67,6 +69,8 @@ property int headDateShowModel: 0
         property alias server_port_count: root.server_port_count
         property alias databasPort: root.databasPort
         property alias imageServerPort: root.imageServerPort
+        property alias useRustImageServer: root.useRustImageServer
+        property alias rustImageServerPort: root.rustImageServerPort
         property alias dataPort: root.dataPort
         property alias plcPort: root.plcPort
 

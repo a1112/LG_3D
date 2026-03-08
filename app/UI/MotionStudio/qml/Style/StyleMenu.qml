@@ -86,6 +86,27 @@ Menu{
         }
     }
 
+    Menu{
+        title:qsTr("图像服务")
+        SelectMenuItem{
+            text: qsTr("Python 服务 (6012)")
+            selectd:!coreSetting.useRustImageServer
+            onClicked: coreSetting.useRustImageServer=false
+        }
+        SelectMenuItem{
+            text: qsTr("Rust 服务 (6013)")
+            selectd:coreSetting.useRustImageServer
+            onClicked: coreSetting.useRustImageServer=true
+        }
+        MenuSeparator{}
+        MenuItem{
+            enabled:false
+            text: coreSetting.useRustImageServer ?
+                      qsTr("当前: Rust / 端口 ")+coreSetting.rustImageServerPort :
+                      qsTr("当前: Python / 端口 ")+coreSetting.imageServerPort
+        }
+    }
+
     MenuItem{
         text: qsTr("裁剪设置...")
         onClicked: popManage.popupClipSettingView()

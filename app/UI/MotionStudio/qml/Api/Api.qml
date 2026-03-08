@@ -21,14 +21,33 @@ Api_DataBase {
                     )
     }
 
+    function buildImageUrl(...args){
+        let url = apiConfig.serverUrlImage
+        for (let argIndex in args){
+            url += "/" + args[argIndex]
+        }
+        return url
+    }
+
     function getFileSource(_key_,_coilId_,_viewKey_,preView=false,mask=true){
         if(preView){
-                return apiConfig.url(apiConfig.serverUrlImage,"image/preview/"+_key_,_coilId_,_viewKey_)
+                return buildImageUrl("image/preview/"+_key_,_coilId_,_viewKey_)
         }
         if (_viewKey_ === "AREA"){
-            return apiConfig.url(apiConfig.serverUrlImage,"image/area/"+_key_,_coilId_)
+            return buildImageUrl("image/area/"+_key_,_coilId_)
         }
-        return apiConfig.url(apiConfig.serverUrlImage,"image", "source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
+        return buildImageUrl("image", "source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
+    }
+
+    function setImageServerBackend(useRust, rustPort=6013){
+        coreSetting.useRustImageServer = useRust
+        if (rustPort > 0){
+            coreSetting.rustImageServerPort = rustPort
+        }
+    }
+
+    function getImageServerBackend(){
+        return coreSetting.useRustImageServer ? "rust" : "python"
     }
     //全局下载器
     function downloadFile(url,save_path,success,failure){

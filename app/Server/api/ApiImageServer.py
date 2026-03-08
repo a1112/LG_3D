@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import xml.etree.ElementTree as ET
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -16,6 +17,7 @@ from fastapi.responses import StreamingResponse, FileResponse, Response
 from Base.CONFIG import serverConfigProperty
 from Base.tools.DataGet import DataGet, noFindImageByte
 from cache import areaCache
+from cache.base import _resolve_image_path
 from .api_core import app
 from Base.tools.tool import expansion_box, bound_box
 
@@ -47,6 +49,34 @@ DEFAULT_TILE_SIZE = 5460
 
 def get_pool():
     return thread_pool
+
+
+def _resolved_path(path: str) -> Path:
+    return _resolve_image_path(path)
+
+
+def _file_response(path: str, media_type: str = "image/jpeg") -> Optional[FileResponse]:
+    resolved = _resolved_path(path)
+    if not resolved.exists():
+        return None
+    suffix = resolved.suffix.lower()
+    if suffix == ".png":
+        media_type = "image/png"
+    elif suffix in {".jpg", ".jpeg"}:
+        media_type = "image/jpeg"
+    return FileResponse(resolved, media_type=media_type)
+
+
+def _get_image_size_from_path(path: str) -> Optional[Tuple[int, int]]:
+    resolved = _resolved_path(path)
+    if not resolved.exists():
+        return None
+    try:
+        with Image.open(resolved) as img:
+            return img.size
+    except Exception:
+        log.debug("failed to read image size from %s", resolved, exc_info=True)
+        return None
 
 
 async def _get_image_async(data_get: DataGet, *, pil: bool = False, clip_num: int = 0):
@@ -93,6 +123,10 @@ def _schedule_prefetch(source_type: str, surface_key: str, coil_id, type_: str, 
 async def get_preview_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     try:
         data_get = DataGet("preview", surface_key, coil_id, type_, mask)
+        file_response = _file_response(data_get.url)
+        if file_response is not None:
+            _schedule_prefetch("preview", surface_key, coil_id, type_, mask=mask)
+            return file_response
         image_bytes = await _get_image_async(data_get)
         _schedule_prefetch("preview", surface_key, coil_id, type_, mask=mask)
         return Response(image_bytes, media_type="image/jpeg")
@@ -107,6 +141,10 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     增加 2D 影像
     """
     data_get = DataGet("source", surface_key, coil_id, type_, mask)
+    file_response = _file_response(data_get.url)
+    if file_response is not None:
+        _schedule_prefetch("source", surface_key, coil_id, type_, mask=mask)
+        return file_response
     image_bytes = await _get_image_async(data_get)
     if image_bytes is None:
         return Response(content=noFindImageByte, media_type="image/jpeg")
@@ -184,23 +222,12 @@ async def get_area_tiled(
         except Exception:
             pass
 
-        image_bytes = await _get_image_async(data_get)
-        if image_bytes is None:
-            return Response(content=noFindImageByte, media_type="image/jpeg")
-        loop = asyncio.get_event_loop()
-
-        def _calc_wh():
-            np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
-            image = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
-            if image is None:
-                return None
-            h, w = image.shape[:2]
-            return h, w
-
-        size = await loop.run_in_executor(get_pool(), _calc_wh)
+        size = await asyncio.get_event_loop().run_in_executor(
+            get_pool(), lambda: _get_image_size_from_path(data_get.url)
+        )
         if size is None:
             return Response(content=noFindImageByte, media_type="image/jpeg")
-        h, w = size
+        w, h = size
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
         return {"width": w, "height": h}
 
@@ -349,80 +376,54 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         return tile_bytes
 
 
-def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int, y: int, w: int, h: int) -> Optional[Image.Image]:
-    """
-    从 detection 目录优先读取缺陷图片
+@lru_cache(maxsize=256)
+def _load_detection_candidates(coil_id: int) -> Tuple[Tuple[int, int, int, int, str], ...]:
+    candidates = []
+    save_folder = list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder
+    save_base = Path(save_folder).parent
+    detection_folder = save_base / str(coil_id) / "detection"
 
-    Detection 目录结构: D:\Save_S\{coil_id}\detection\{defect_name}\{coil_id}_{surface}_{surface}_{index}.png
-    XML 文件包含原图中的绝对坐标信息
+    if not detection_folder.exists():
+        return tuple()
 
-    注意：detection 目录保存的是检测瓦片图片，XML 中的坐标是原图绝对坐标
-    由于坐标转换问题，这里简化为返回整个瓦片图片（已包含缺陷区域）
+    for defect_type_folder in detection_folder.iterdir():
+        if not defect_type_folder.is_dir():
+            continue
 
-    Args:
-        coil_id: 卷材 ID
-        surface_key: 表面标识 (S/L)
-        x, y, w, h: 缺陷在原图中的坐标
+        for xml_file in defect_type_folder.glob("*.xml"):
+            png_file = xml_file.with_suffix(".png")
+            if not png_file.exists():
+                continue
+            try:
+                tree = ET.parse(xml_file)
+                root = tree.getroot()
+                for obj in root.findall("object"):
+                    bbox = obj.find("bndbox")
+                    if bbox is None:
+                        continue
+                    candidates.append((
+                        int(bbox.find("xmin").text),
+                        int(bbox.find("ymin").text),
+                        int(bbox.find("xmax").text),
+                        int(bbox.find("ymax").text),
+                        str(png_file),
+                    ))
+            except Exception:
+                log.debug("Error parsing XML %s", xml_file, exc_info=True)
 
-    Returns:
-        PIL.Image 或 None
-    """
+    return tuple(candidates)
+
+
+def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int, y: int, w: int, h: int) -> Optional[Path]:
     try:
-        # 获取保存目录基础路径
-        save_folder = list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder
-        save_base = Path(save_folder).parent  # D:\Save_S
-
-        coil_folder = save_base / str(coil_id)
-        detection_folder = coil_folder / "detection"
-
-        if not detection_folder.exists():
-            log.debug(f"Detection folder not found: {detection_folder}")
-            return None
-
-        # 计算请求框的中心点
         requested_center_x = x + w / 2
         requested_center_y = y + h / 2
 
-        # 遍历所有缺陷类型目录
-        for defect_type_folder in detection_folder.iterdir():
-            if not defect_type_folder.is_dir():
-                continue
-
-            # 遍历该类型下的所有图片和 XML 文件
-            for xml_file in defect_type_folder.glob("*.xml"):
-                try:
-                    # 解析 XML 获取坐标信息
-                    tree = ET.parse(xml_file)
-                    root = tree.getroot()
-
-                    # 查找所有 object
-                    for obj in root.findall("object"):
-                        bbox = obj.find("bndbox")
-                        if bbox is None:
-                            continue
-
-                        xml_xmin = int(bbox.find("xmin").text)
-                        xml_ymin = int(bbox.find("ymin").text)
-                        xml_xmax = int(bbox.find("xmax").text)
-                        xml_ymax = int(bbox.find("ymax").text)
-
-                        # 检查请求的缺陷框是否与 XML 中的框匹配（使用中心点匹配）
-                        if (xml_xmin <= requested_center_x <= xml_xmax and
-                            xml_ymin <= requested_center_y <= xml_ymax):
-                            # 找到匹配的图片
-                            png_file = xml_file.with_suffix(".png")
-                            if png_file.exists():
-                                log.debug(f"Found defect image in detection: {png_file}")
-                                tile_image = Image.open(png_file)
-
-                                # 简化方案：直接返回瓦片图片
-                                # 瓦片图片通常是 546x546 左右，已经包含了缺陷区域
-                                # 这样可以避免复杂的坐标转换，并且速度更快
-                                return tile_image
-
-                except Exception as e:
-                    log.debug(f"Error parsing XML {xml_file}: {e}")
-                    continue
+        for xml_xmin, xml_ymin, xml_xmax, xml_ymax, png_path in _load_detection_candidates(coil_id):
+            if xml_xmin <= requested_center_x <= xml_xmax and xml_ymin <= requested_center_y <= xml_ymax:
+                path = Path(png_path)
+                if path.exists():
+                    return path
 
         log.debug(f"No matching defect image found in detection folder for coil {coil_id}")
         return None
@@ -446,17 +447,14 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str
     old_box = [x, y, w, h]
 
     # 优先从 detection 目录读取缺陷图片（更快）
-    detection_image = _get_defect_image_from_detection(coil_id, surface_key, x, y, w, h)
+    detection_image = await asyncio.get_event_loop().run_in_executor(
+        get_pool(), lambda: _get_defect_image_from_detection(coil_id, surface_key, x, y, w, h)
+    )
     if detection_image is not None:
-        # detection 目录中的图片已经是裁剪好的瓦片
-        # 直接返回（或根据需要进行额外裁剪）
-        img_byte_arr = io.BytesIO()
-        detection_image.save(img_byte_arr, format='jpeg')
-        img_byte_arr.seek(0)
-        return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
+        return FileResponse(detection_image, media_type="image/png")
 
     # 回退到原图裁剪
-    image = DataGet("image", surface_key, coil_id, type_, False).get_image(pil=True)
+    image = await _get_image_async(DataGet("image", surface_key, coil_id, type_, False), pil=True)
     image: Image.Image
     if image is None:
         return Response(noFindImageByte, media_type="image/jpeg")

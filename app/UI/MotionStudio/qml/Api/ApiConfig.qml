@@ -25,7 +25,8 @@ Item {
     readonly property string serverUrlDaaBase: protocol+hostname+":"+databasPort
     readonly property string wsServerUrlDaaBase: ws_protocol+hostname+":"+databasPort
 
-    readonly property string serverUrlImage: protocol+hostname+":"+imageServerPort
+    readonly property int activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : port
+    readonly property string serverUrlImage: protocol+hostname+":"+activeImageServerPort
     readonly property string serverUrlData: protocol+hostname+":"+dataPort
 
 
@@ -34,11 +35,13 @@ Item {
 
     readonly property int databasPort:  coreSetting.databasPort
     readonly property int imageServerPort:  coreSetting.imageServerPort
+    readonly property int rustImageServerPort:  coreSetting.rustImageServerPort
     readonly property int dataPort:  coreSetting.dataPort
     readonly property int plcPort:  coreSetting.plcPort
     readonly property int alg2dPort: coreSetting.alg2dPort
 
     readonly property string serverUrlAlg2D: protocol+hostname+":"+alg2dPort
+    readonly property bool usingRustImageServer: coreSetting.useRustImageServer
 
     property bool auto_server_port:true
     property int _pre_port_value_:0

@@ -217,7 +217,7 @@ Item {
 
     // ========== 加载灰度预览图（快速显示）==========
     function loadGrayscalePreview() {
-        if (imageUrl === "" || imageUrl === undefined) {
+        if ((previewUrl === "" || previewUrl === undefined) && (imageUrl === "" || imageUrl === undefined)) {
             return
         }
         // 检查是否启用 1024 缓冲模式
@@ -226,9 +226,7 @@ Item {
             updateLevel(currentLevel)
             return
         }
-        // 添加 thumbnail=true 和 grayscale=true
-        var url = imageUrl + "?thumbnail=true&grayscale=true"
-        grayscaleSource = url
+        grayscaleSource = previewUrl && previewUrl !== "" ? previewUrl : imageUrl + "?row=-2"
     }
 
     // ========== 更新等级 ==========
