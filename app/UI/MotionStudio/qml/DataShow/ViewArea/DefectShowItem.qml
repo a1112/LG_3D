@@ -4,10 +4,10 @@ import "../../Model/server"
 Rectangle{
     property DefectItemModel defectItem: DefectItemModel{
     }
+    visible: dataShowCore_.defect_show(defectItem.configDefectName || defectItem.defectName)
     // property ServerDefectModel srverDefectModel: ServerDefectModel{
     // }
 
-    // visible: dataShowCore_.defect_show(defectName) //dataAreaShowCore
     x: defectItem.defectX*dataShowCore_.canvasScale
     y: defectItem.defectY*dataShowCore_.canvasScale
     width: defectItem.defectW*dataShowCore_.canvasScale

@@ -1,27 +1,47 @@
 import QtQuick
-
+import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import "../../Labels"
 
-RowLayout{
-    id:root
+RowLayout {
+    id: root
     Layout.fillWidth: true
-    property string errorStr:""
+    property string errorStr: ""
     spacing: 10
-    Item{
+
+    Label {
+        text: "数据导出错误:"
+        color: Material.color(Material.Red)
+        font.bold: true
+        Layout.alignment: Qt.AlignTop
+    }
+
+    TextArea {
+        id: errorArea
         Layout.fillWidth: true
-        implicitHeight: 1
-    }
-    BaseLabel{
-        text:"数据导出错误："
-    }
-    BaseLabel{
+        Layout.preferredHeight: Math.max(80, implicitHeight)
+        readOnly: true
+        selectByMouse: true
+        wrapMode: TextEdit.WrapAnywhere
+        textFormat: TextEdit.PlainText
         text: root.errorStr
-        color:Material.color(Material.Red)
+        color: Material.color(Material.Red)
+        background: Rectangle {
+            radius: 4
+            border.width: 1
+            border.color: Material.color(Material.Red)
+            color: "transparent"
+        }
     }
-    Item{
-        Layout.fillWidth: true
-        implicitHeight: 1
+
+    Button {
+        text: "复制"
+        enabled: root.errorStr.length > 0
+        Layout.alignment: Qt.AlignTop
+        onClicked: {
+            errorArea.selectAll()
+            errorArea.copy()
+            errorArea.deselect()
+        }
     }
 }

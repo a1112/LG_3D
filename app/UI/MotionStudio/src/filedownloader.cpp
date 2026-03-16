@@ -4,7 +4,29 @@
 
 FileDownloader::FileDownloader(QObject *parent) : QObject(parent), reply(nullptr) {}
 
+static QString buildReplyError(QNetworkReply *reply) {
+    if (!reply) {
+        return "Download reply is null";
+    }
+    const QString networkError = reply->errorString();
+    const QByteArray body = reply->readAll();
+    const QString bodyText = QString::fromUtf8(body).trimmed();
+    if (bodyText.isEmpty()) {
+        return networkError;
+    }
+    return networkError + "\n" + bodyText;
+}
+
 void FileDownloader::downloadFile(const QString &url, const QString &filePath) {
+    if (reply) {
+        disconnect(reply, nullptr, this, nullptr);
+        reply->deleteLater();
+        reply = nullptr;
+    }
+    if (file.isOpen()) {
+        file.close();
+    }
+
     QUrl qurl(url);
     QNetworkRequest request(qurl);
     reply = manager.get(request);
@@ -20,6 +42,15 @@ void FileDownloader::downloadFile(const QString &url, const QString &filePath) {
 }
 
 void FileDownloader::downloadFile(const QString &url, const QString &filePath, const QString &postData) {
+    if (reply) {
+        disconnect(reply, nullptr, this, nullptr);
+        reply->deleteLater();
+        reply = nullptr;
+    }
+    if (file.isOpen()) {
+        file.close();
+    }
+
     QUrl qurl(url);
     QNetworkRequest request(qurl);
     // 将 QString 转换为 QByteArray
@@ -49,19 +80,47 @@ void FileDownloader::onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 }
 
 void FileDownloader::onDownloadFinished() {
-    if (reply->error() == QNetworkReply::NoError) {
-        file.write(reply->readAll());
+    QNetworkReply *currentReply = qobject_cast<QNetworkReply *>(sender());
+    if (!currentReply) {
+        currentReply = reply;
+    }
+    if (!currentReply) {
+        if (file.isOpen()) {
+            file.close();
+        }
+        emit downloadError("Download reply was cleared before finish");
+        return;
+    }
+
+    if (currentReply->error() == QNetworkReply::NoError) {
+        file.write(currentReply->readAll());
         file.close();
         emit downloadFinished();
     } else {
-        emit downloadError(reply->errorString());
+        if (file.isOpen()) {
+            file.close();
+        }
+        emit downloadError(buildReplyError(currentReply));
     }
-    reply->deleteLater();
-    reply = nullptr;
+    currentReply->deleteLater();
+    if (reply == currentReply) {
+        reply = nullptr;
+    }
 }
 
 void FileDownloader::onErrorOccurred(QNetworkReply::NetworkError code) {
-    emit downloadError(reply->errorString());
-    reply->deleteLater();
-    reply = nullptr;
+    Q_UNUSED(code);
+    QNetworkReply *currentReply = qobject_cast<QNetworkReply *>(sender());
+    if (!currentReply) {
+        currentReply = reply;
+    }
+    if (!currentReply) {
+        emit downloadError("Download reply is null");
+        return;
+    }
+
+    if (file.isOpen()) {
+        file.close();
+    }
+    emit downloadError(buildReplyError(currentReply));
 }

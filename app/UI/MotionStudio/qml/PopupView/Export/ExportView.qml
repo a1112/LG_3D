@@ -253,7 +253,7 @@ ApplicationWindow {
     Connections {
         target: fileDownloader
         function onDownloadProgress(bytesReceived,bytesTotal) {
-            root.exportStatus.progress = bytesReceived / bytesTotal
+            root.exportStatus.progress = bytesTotal > 0 ? bytesReceived / bytesTotal : 0
         }
         function onDownloadFinished(){
             root.exportStatus.setFinished()
