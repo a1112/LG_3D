@@ -5,7 +5,7 @@ import concurrent.futures
 from Base.alg import detection
 from Base.alg.CoilMaskModel import CoilDetectionModel
 
-cdm = CoilDetectionModel(base_name="CoilDetection_JC.pt")
+cdm = CoilDetectionModel(base_name="yolo26best.pt")
 
 res = cdm.predict(r"E:\train\train\Dataset\images\train\35550_S_4540_4500_590_585.png")
 print(res)
