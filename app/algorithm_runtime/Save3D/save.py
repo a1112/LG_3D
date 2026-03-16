@@ -195,6 +195,11 @@ def toMesh(obj, managerQueue):
 
 
 def _get_point_cloud_(data, managerQueue):
+    def _format_z_range(points):
+        if points.size == 0 or points.shape[0] == 0:
+            return "N/A", "N/A"
+        return f"{points[:, 2].min():.2f}", f"{points[:, 2].max():.2f}"
+
     from scipy.ndimage import median_filter
     coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm, [pixel_x_precision, pixel_y_precision,
                                                                                 pixel_z_precision] = data
@@ -233,7 +238,8 @@ def _get_point_cloud_(data, managerQueue):
 
     # 调试：记录过滤后的点云统计
     if point_cloud.shape[0] < 100:
-        logger.warning(f"point_cloud after filter: shape={point_cloud.shape}, z_range=({point_cloud[:, 2].min() if point_cloud.size > 0 else 'N/A':.2f}, {point_cloud[:, 2].max() if point_cloud.size > 0 else 'N/A':.2f})")
+        z_min, z_max = _format_z_range(point_cloud)
+        logger.warning(f"point_cloud after filter: shape={point_cloud.shape}, z_range=({z_min}, {z_max})")
 
     # 兜底：如果过滤后点云为空或太少，使用未过滤的点云
     original_count = point_cloud.shape[0]
