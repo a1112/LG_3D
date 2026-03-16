@@ -106,6 +106,9 @@ Item {
         defectJson.forEach(
                     (value)=>{
                         if (value && value.data !== null) {
+                            if (global.defectClassProperty.is_area_defect_name(value.defectName)){
+                                global.defectClassProperty.ensure_defect_class_item(value.defectName)
+                            }
                             root.defectsModelAll.append(value)
                         }
                     }

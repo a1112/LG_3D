@@ -22,8 +22,6 @@ def export_data_by_coil_id_list(coil_id_list, workbook, export_type="3D",export_
         if export_config.defect_un_show_info:
             print(f"[Export] Calling export_defect_un_show_image")
             export_defect_un_show_image(coil_id_list, workbook, export_config, format_)
-        if export_config.defect_un_show_info:
-            export_defect_un_show_image(coil_id_list, workbook, export_config, format_)
 
 
 

@@ -117,6 +117,9 @@ Item {
             defectsData.forEach((item)=>{
                                     if (!item) return
                                     let defectName = item.defectName
+                                    if (global.defectClassProperty.is_area_defect_name(defectName)){
+                                        global.defectClassProperty.ensure_defect_class_item(defectName)
+                                    }
                                     if (defectName in defectDict){
                                         defectDict[defectName].push(item)
                                     }
@@ -134,6 +137,7 @@ Item {
 
                                     if(defectName.indexOf("2D_")>=0){
                                         cleanItem["is_area"]=true
+                                        cleanItem["configDefectName"] = defectName
                                         cleanItem.defectName=cleanItem.defectName.slice(3)
                                         areaDefectModel.append(cleanItem)
                                     }

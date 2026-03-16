@@ -1,151 +1,173 @@
 import QtQuick
 import "../Model/server"
 import "../Base"
+
 Item {
-    id:root
-    property var defectDictData:{return {}}
-    property ListModel defectDictModel : ListModel{
-        // 全部的缺陷类别数据
+    id: root
+
+    property var defectDictData: { return {} }
+    property ListModel defectDictModel: ListModel {
     }
 
-    property string unDefectClassItemName:qsTr("无缺陷")
+    property string unDefectClassItemName: qsTr("无缺陷")
 
-    property DefectClassItemModel defaultDefectClass:DefectClassItemModel{}   //  默认的缺陷列表
-    property DefectClassItemModel unDefectClassItemModel:DefectClassItemModel{
+    property DefectClassItemModel defaultDefectClass: DefectClassItemModel {
+    }
+    property DefectClassItemModel unDefectClassItemModel: DefectClassItemModel {
         defectName: root.unDefectClassItemName
-        defectLevel:0
-        defectColor:coreStyle.labelColor
+        defectLevel: 0
+        defectColor: coreStyle.labelColor
     }
 
+    property var defectDictAll: { return {} }
+    property var defecShowTabel: defectDictAll
+    property bool defeftDrawShowLasbel: true
 
+    SettingsBase {
+        property alias defeftDrawShowLasbel: root.defeftDrawShowLasbel
+    }
 
-    // 记录缺陷显示
-    property var defectDictAll: {return {}}
-
-    property var defecShowTabel:defectDictAll
-
-    function flushDefectDictAll(){
+    function flushDefectDictAll() {
         let temp = defectDictAll
         defectDictAll = {}
         defectDictAll = temp
     }
 
-    function upDefectDictModelByDefectDictData(){
+    function is_defect_show(value) {
+        return value === true || value === "true"
+    }
+
+    function is_area_defect_name(defectName) {
+        return defectName !== undefined
+                && defectName !== null
+                && defectName.indexOf("2D_") === 0
+    }
+
+    function upDefectDictModelByDefectDictData() {
         defectDictModel.clear()
-        // 第一次循环：显示的缺陷
-        for(let key in defectDictData){
+
+        for (let key in defectDictData) {
             let value = defectDictData[key]
-            // 创建副本避免修改原始数据
             let item = {}
             item["name"] = key
             item["num"] = 0
             item["level"] = value["level"]
             item["color"] = value["color"]
-            // 确保 show 是布尔值类型
-            item["show"] = value["show"] === true || value["show"] === "true"
-            if (item["show"]){
+            item["show"] = is_defect_show(value["show"])
+            if (item["show"]) {
                 defectDictModel.append(item)
             }
         }
 
-        // 第二次循环：不显示的缺陷
-        for(let key in defectDictData){
+        for (let key in defectDictData) {
             let value = defectDictData[key]
-            // 创建副本避免修改原始数据
             let item = {}
             item["name"] = key
             item["num"] = 0
             item["level"] = value["level"]
             item["color"] = value["color"]
-            // 确保 show 是布尔值类型
-            item["show"] = value["show"] === true || value["show"] === "true"
-            if (!item["show"]){
+            item["show"] = is_defect_show(value["show"])
+            if (!item["show"]) {
                 defectDictModel.append(item)
             }
         }
     }
 
-    function setDefectDict(defectData){
+    function setDefectDict(defectData) {
         defectDictData = defectData["data"]
         upDefectDictModelByDefectDictData()
         defaultDefectClass.init(defectData["default"])
     }
 
-    function getDefectLevelByDefectName(defectName){
-        if(defectName in defectDictData){
-            return defectDictData[defectName]["level"]??defaultDefectClass.defectLevel
+    function ensure_defect_class_item(defectName) {
+        if (!defectName || (defectName in defectDictData)) {
+            return false
+        }
+
+        let isAreaDefect = is_area_defect_name(defectName)
+        let defaultLevel = defaultDefectClass.defectLevel || 1
+        let defaultColor = defaultDefectClass.defectColor || "#FFA500"
+        let item = {
+            "name": defectName,
+            "level": isAreaDefect ? defaultLevel : 1,
+            "color": isAreaDefect ? defaultColor : "#FFA500",
+            "show": isAreaDefect,
+            "num": 0
+        }
+
+        defectDictData[defectName] = item
+        if (!(defectName in defectDictAll)) {
+            defectDictAll[defectName] = is_defect_show(item["show"])
+        }
+        upDefectDictModelByDefectDictData()
+        flushDefectDictAll()
+        return true
+    }
+
+    function getDefectLevelByDefectName(defectName) {
+        if (defectName in defectDictData) {
+            return defectDictData[defectName]["level"] ?? defaultDefectClass.defectLevel
         }
         return 1
     }
-    function getColorByName(name){
-        if (defectDictData[name] === undefined){
+
+    function getColorByName(name) {
+        if (defectDictData[name] === undefined) {
             return "#FFF"
         }
         return defectDictData[name]["color"]
     }
 
-    function getColorByLevel(level){
-        if (level>=3){
+    function getColorByLevel(level) {
+        if (level >= 3) {
             return "red"
         }
-        if (level>=2){
+        if (level >= 2) {
             return "yellow"
         }
-        if (level>=1){
+        if (level >= 1) {
             return "gray"
         }
         return "#00000000"
     }
 
-    property bool defeftDrawShowLasbel:true
-
-
-    SettingsBase{
-        property alias defeftDrawShowLasbel:root.defeftDrawShowLasbel
-
-    }
-
-    function selecct_all_un_defect_show(){
-        // 设置显示 屏蔽的缺陷
-        for(let key in defectDictData){
+    function selecct_all_un_defect_show() {
+        for (let key in defectDictData) {
             let value = defectDictData[key]
-            if(!value["show"]){
-            defectDictAll[value["name"]]=true
+            if (!is_defect_show(value["show"])) {
+                defectDictAll[value["name"]] = true
             }
         }
         coreModel.flushDefectDictAll()
     }
 
-    function un_selecct_all_un_defect_show(){
-        // 设置不显示屏蔽的缺陷
-        for(let key in defectDictData){
+    function un_selecct_all_un_defect_show() {
+        for (let key in defectDictData) {
             let value = defectDictData[key]
-            if(!value["show"]){
-            defectDictAll[value["name"]]=false
-                }
+            if (!is_defect_show(value["show"])) {
+                defectDictAll[value["name"]] = false
+            }
         }
         coreModel.flushDefectDictAll()
     }
 
-    function select_area_defect(){
-        // 显示2D类别缺陷
-        // for(let key in defectDictData){
-        //     let value = defectDictData[key]
-        //     if(!value["area"]){
-        //     defectDictAll[value["name"]]=false
-        //         }
-        // }
-        // coreModel.flushDefectDictAll()
+    function select_area_defect() {
+        for (let key in defectDictData) {
+            let value = defectDictData[key]
+            if (is_area_defect_name(value["name"])) {
+                defectDictAll[value["name"]] = true
+            }
+        }
+        coreModel.flushDefectDictAll()
     }
 
-    function un_select_area_defect(){
-        // 不显示2D类别缺陷
-        // for(let key in defectDictData){
-        //     let value = defectDictData[key]
-        //     if(!value["area"]){
-        //     defectDictAll[value["name"]]=false
-        //         }
-        // }
-        // coreModel.flushDefectDictAll()
+    function un_select_area_defect() {
+        for (let key in defectDictData) {
+            let value = defectDictData[key]
+            if (is_area_defect_name(value["name"])) {
+                defectDictAll[value["name"]] = false
+            }
+        }
+        coreModel.flushDefectDictAll()
     }
 }
