@@ -7,6 +7,14 @@ import QtQuick3D.Helpers
 
 import QtQuick.Controls.Material
 Item {
+    function getOppositeKey(currentKey) {
+        if (currentKey === "S")
+            return "L"
+        if (currentKey === "L")
+            return "S"
+        return currentKey
+    }
+
     Layout.fillWidth:true
     Layout.fillHeight:true
     anchors.fill:parent
@@ -69,15 +77,29 @@ Item {
             }
         }
 
-        Node3D {
+        Node {
             id:modelNode
-            // eulerRotation.z: core3D.objectRotationZ
-            // eulerRotation.y: core3D.objectRotationY
-            // eulerRotation.x: core3D.objectRotationX
             z: core3D.objectOffsetZ
             x: core3D.objectOffsetX
             y: core3D.objectOffsetY
             scale: core3D.objectScale
+
+            Node3D {
+                id: primaryModelNode
+                meshKey: surfaceData.key
+            }
+
+            Node3D {
+                id: secondaryModelNode
+                visible: core3D.stitchDualMesh && getOppositeKey(surfaceData.key) !== surfaceData.key
+                meshKey: getOppositeKey(surfaceData.key)
+                modelOffsetX: ((primaryModelNode.modelSize.x + modelSize.x) / 2.0) + core3D.stitchGapX + core3D.secondaryOffsetX
+                modelOffsetY: core3D.stitchGapY + core3D.secondaryOffsetY
+                modelOffsetZ: core3D.stitchGapZ + core3D.secondaryOffsetZ
+                modelRotationX: core3D.secondaryRotationX
+                modelRotationY: core3D.secondaryRotationY
+                modelRotationZ: core3D.secondaryRotationZ
+            }
         }
 
     }
