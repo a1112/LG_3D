@@ -41,7 +41,7 @@ Item {
 
     }
     OrbitCameraController {
-        origin: scene
+        origin: modelNode
         camera: sceneCamera
     }
 }

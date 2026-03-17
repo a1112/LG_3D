@@ -314,6 +314,61 @@ def get_coil_list_with_summary(
         return result
 
 
+def search_coils_by_coil_no_summary(
+    coil_no: str,
+    limit: int = 200,
+    by_coil: bool = True,
+) -> List[dict]:
+    """按卷号模糊查询摘要数据，避免拉取完整缺陷列表。"""
+    limit = min(max(int(limit), 1), 1000)
+    with SessionFactory() as session:
+        query = session.query(CoilSummary).filter(CoilSummary.CoilNo.like(f"%{coil_no}%"))
+        if by_coil:
+            query = query.filter(CoilSummary.HasCoil == True)
+        summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
+        return [summary.get_json() for summary in summaries]
+
+
+def search_coils_by_id_summary(
+    start_coil_id: int,
+    end_coil_id: Optional[int] = None,
+    limit: int = 200,
+    by_coil: bool = True,
+) -> List[dict]:
+    """按卷ID查询摘要数据，支持单个 ID 或区间。"""
+    limit = min(max(int(limit), 1), 1000)
+    with SessionFactory() as session:
+        query = session.query(CoilSummary)
+        if end_coil_id is not None:
+            start_coil_id, end_coil_id = sorted((start_coil_id, end_coil_id))
+            query = query.filter(CoilSummary.Id >= start_coil_id, CoilSummary.Id <= end_coil_id)
+        else:
+            query = query.filter(CoilSummary.Id == start_coil_id)
+        if by_coil:
+            query = query.filter(CoilSummary.HasCoil == True)
+        summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
+        return [summary.get_json() for summary in summaries]
+
+
+def search_coils_by_datetime_summary(
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    limit: int = 500,
+    by_coil: bool = True,
+) -> List[dict]:
+    """按时间范围查询摘要数据，供列表搜索使用。"""
+    limit = min(max(int(limit), 1), 2000)
+    with SessionFactory() as session:
+        query = session.query(CoilSummary).filter(
+            CoilSummary.CreateTime >= start_time,
+            CoilSummary.CreateTime <= end_time,
+        )
+        if by_coil:
+            query = query.filter(CoilSummary.HasCoil == True)
+        summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
+        return [summary.get_json() for summary in summaries]
+
+
 def get_coil_list_with_max_defect(
     limit: int = 10,
     coil_id: Optional[int] = None,

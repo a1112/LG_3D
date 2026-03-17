@@ -1,35 +1,57 @@
 import QtQuick
-//  控制按钮
+
 Item {
-    property int app_index:app_core.appIndex
-    onApp_indexChanged: flush_defects()
+    property int app_index: app_core.appIndex
+    property ListModel currentListModel: defectCoreModel.currentListModel
+    property string lastRangeKey: ""
+    property bool loading: false
 
-    property ListModel  currentListModel:  defectCoreModel.currentListModel
-
-    function flush_defects(){
-        console.log("flush_defects")
-        api.getDefectsByCoilId(
-                    defectCoreModel.currentListStartIndex,
-                    defectCoreModel.currentListEndIndex,
-                    (text)=>{
-                        // let  t = [
-                        //     {"surface":"S","defectName":"边部褶皱",
-                        //     "def ectStatus":0,"defectX":3250,"defectW":214,
-                        //     "defectSource":0.839722,"secondaryCoilId":40864,
-                        //     "Id":284530,"defectClass":1,
-                        //     "defectTime":{"year":2024,"month":12,"weekday":0,"day":30,"hour":18,"minute":12,"second":21},"
-                        //     defectY":5231,"defectH":99,"defectData":""}
-                        // ]
-
-                        defectCoreModel.defectText = text
-                        defectCoreModel.defectJson = JSON.parse(text)
-                    },
-                    (err)=>{
-                        console.log("")
-                    }
-
-                    )
+    onApp_indexChanged: requestRefresh()
+    Connections {
+        target: defectCoreModel
+        function onCurrentListStartIndexChanged() { requestRefresh() }
+        function onCurrentListEndIndexChanged() { requestRefresh() }
     }
 
+    Timer {
+        id: refreshTimer
+        interval: 120
+        repeat: false
+        onTriggered: flush_defects()
+    }
 
+    function requestRefresh() {
+        refreshTimer.restart()
+    }
+
+    function flush_defects() {
+        if (!currentListModel || currentListModel.count <= 0) {
+            defectCoreModel.setDefectJson([])
+            lastRangeKey = ""
+            return
+        }
+
+        let startId = defectCoreModel.currentListStartIndex
+        let endId = defectCoreModel.currentListEndIndex
+        let rangeKey = `${startId}_${endId}`
+
+        if (loading || rangeKey === lastRangeKey) {
+            return
+        }
+
+        loading = true
+        api.getDefectsByCoilId(
+            startId,
+            endId,
+            (text) => {
+                lastRangeKey = rangeKey
+                loading = false
+                defectCoreModel.setDefectJson(JSON.parse(text))
+            },
+            (err) => {
+                loading = false
+                console.log("flush_defects error", err)
+            }
+        )
+    }
 }

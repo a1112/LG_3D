@@ -1,6 +1,7 @@
 import datetime
 from typing import List
 
+from sqlalchemy import select
 from sqlalchemy.orm import subqueryload
 
 from . import tool
@@ -277,20 +278,69 @@ def get_plc_data(coil_id):
 
 def get_all_defects(coil_id):
     with Session() as session:
-        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id).all()
+        stmt = select(
+            CoilDefect.Id,
+            CoilDefect.secondaryCoilId,
+            CoilDefect.surface,
+            CoilDefect.defectClass,
+            CoilDefect.defectName,
+            CoilDefect.defectStatus,
+            CoilDefect.defectTime,
+            CoilDefect.defectX,
+            CoilDefect.defectY,
+            CoilDefect.defectW,
+            CoilDefect.defectH,
+            CoilDefect.defectSource,
+            CoilDefect.defectData,
+        ).where(CoilDefect.secondaryCoilId == coil_id).order_by(CoilDefect.Id.asc())
+        return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 
 def get_defects(coil_id, direction):
     with Session() as session:
-        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == coil_id,
-                                                CoilDefect.surface == direction).all()
+        stmt = select(
+            CoilDefect.Id,
+            CoilDefect.secondaryCoilId,
+            CoilDefect.surface,
+            CoilDefect.defectClass,
+            CoilDefect.defectName,
+            CoilDefect.defectStatus,
+            CoilDefect.defectTime,
+            CoilDefect.defectX,
+            CoilDefect.defectY,
+            CoilDefect.defectW,
+            CoilDefect.defectH,
+            CoilDefect.defectSource,
+            CoilDefect.defectData,
+        ).where(
+            CoilDefect.secondaryCoilId == coil_id,
+            CoilDefect.surface == direction,
+        ).order_by(CoilDefect.Id.asc())
+        return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 
 
 def  get_defects_all(start_coil_id, end_coil_id):
     with  Session() as session:
-        return session.query(CoilDefect).filter(CoilDefect.secondaryCoilId >= start_coil_id,
-                                                CoilDefect.secondaryCoilId <= end_coil_id).all()
+        stmt = select(
+            CoilDefect.Id,
+            CoilDefect.secondaryCoilId,
+            CoilDefect.surface,
+            CoilDefect.defectClass,
+            CoilDefect.defectName,
+            CoilDefect.defectStatus,
+            CoilDefect.defectTime,
+            CoilDefect.defectX,
+            CoilDefect.defectY,
+            CoilDefect.defectW,
+            CoilDefect.defectH,
+            CoilDefect.defectSource,
+            CoilDefect.defectData,
+        ).where(
+            CoilDefect.secondaryCoilId >= start_coil_id,
+            CoilDefect.secondaryCoilId <= end_coil_id,
+        ).order_by(CoilDefect.secondaryCoilId.asc(), CoilDefect.Id.asc())
+        return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 def defects():
     with  Session() as session:

@@ -63,7 +63,7 @@ Item {
             PerspectiveCamera {
                 x:core3D.cameraOffsetX
                 y:core3D.cameraOffsetY
-                z:core3D.cameraOffsetZ+1000
+                z:core3D.cameraOffsetZ+450
                 id: sceneCamera
                 clipFar: 10000000
             }
@@ -83,7 +83,7 @@ Item {
     }
     OrbitCameraController {
         enabled: dataShowCore.controls3D.isRotateModel
-        origin: scene
+        origin: modelNode
         camera: sceneCamera
 
     }
