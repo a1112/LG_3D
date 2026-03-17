@@ -11,7 +11,15 @@ from Base.CONFIG import isLoc, serverConfigProperty
 from CoilDataBase import Coil, tool
 from CoilDataBase.core import Session
 from CoilDataBase.Coil import get_coil_status_by_coil_id, set_coil_status_by_data
-from CoilDataBase.CoilSummary import get_coil_list_with_summary, get_coil_list_hybrid, get_coil_detail, batch_sync_summaries
+from CoilDataBase.CoilSummary import (
+    batch_sync_summaries,
+    get_coil_detail,
+    get_coil_list_hybrid,
+    get_coil_list_with_summary,
+    search_coils_by_coil_no_summary,
+    search_coils_by_datetime_summary,
+    search_coils_by_id_summary,
+)
 from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect, PlcData, CoilState
 from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
@@ -119,20 +127,20 @@ async def get_flush(coil_id: int):
 
 @router.get("/search/coilNo/{coil_no:str}")
 async def search_by_coil_no(coil_no:str):
-    return format_coil_info(Coil.search_by_coil_no(coil_no))
+    return search_coils_by_coil_no_summary(coil_no, by_coil=True)
 
 
 @router.get("/search/coilId/{coil_id}")
 async def search_by_coil_id(coil_id: int):
     coil_id = int(coil_id)
-    return format_coil_info(Coil.searchByCoilId(coil_id))
+    return search_coils_by_id_summary(coil_id, by_coil=True)
 
 
 @router.get("/search/DateTime/{start:str}/{end:str}")
 async def search_by_date_time(start: str, end: str):
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
-    return format_coil_info(Coil.searchByDateTime(start, end))
+    return search_coils_by_datetime_summary(start, end, by_coil=True)
 
 
 @router.get("/search/CoilState/{coil_id:int}")

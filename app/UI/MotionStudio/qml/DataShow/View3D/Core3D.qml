@@ -15,7 +15,7 @@ Item {
 
     property real cameraOffsetY: 0
     property real cameraOffsetX: 0
-    property real cameraOffsetZ: 450
+    property real cameraOffsetZ: 120
 
     property real mouseStartX: 0
     property real mouseStartY: 0
