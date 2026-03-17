@@ -5,7 +5,22 @@ import QtQuick3D
 Node {
     id: node
     eulerRotation.z:-90
+    property string meshKey: surfaceData.key
+    property real modelOffsetX: 0
+    property real modelOffsetY: 0
+    property real modelOffsetZ: 0
+    property real modelRotationX: 0
+    property real modelRotationY: 0
+    property real modelRotationZ: 0
     property vector3d autoCenterOffset: Qt.vector3d(0, 0, 0)
+    readonly property vector3d modelBoundsMin: defaultobject.bounds.minimum
+    readonly property vector3d modelBoundsMax: defaultobject.bounds.maximum
+    readonly property vector3d modelSize: Qt.vector3d(
+                                              Math.max(0, modelBoundsMax.x - modelBoundsMin.x),
+                                              Math.max(0, modelBoundsMax.y - modelBoundsMin.y),
+                                              Math.max(0, modelBoundsMax.z - modelBoundsMin.z)
+                                              )
+    readonly property bool modelReady: defaultobject.status === Model.Ready
 
     function updateModelCenter() {
         let minBounds = defaultobject.bounds.minimum
@@ -16,7 +31,7 @@ Node {
         autoCenterOffset = Qt.vector3d(-centerX, -centerY, -centerZ)
     }
 
-    property string meshes_url: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+surfaceData.key+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
+    property string meshes_url: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+meshKey+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
     onMeshes_urlChanged: {
         defaultobject.source = ""
         autoCenterOffset = Qt.vector3d(0, 0, 0)
@@ -33,9 +48,12 @@ Node {
     Node {
         id: node3D_obj
         objectName: "3D.obj"
-        x: node.autoCenterOffset.x
-        y: node.autoCenterOffset.y
-        z: node.autoCenterOffset.z
+        x: node.autoCenterOffset.x + node.modelOffsetX
+        y: node.autoCenterOffset.y + node.modelOffsetY
+        z: node.autoCenterOffset.z + node.modelOffsetZ
+        eulerRotation.x: node.modelRotationX
+        eulerRotation.y: node.modelRotationY
+        eulerRotation.z: node.modelRotationZ
         Model {
             id: defaultobject
             pickable:false

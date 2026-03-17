@@ -8,6 +8,16 @@ Item {
     property real objectOffsetY: 0
     property real objectOffsetX: 0
     property real objectOffsetZ: 0
+    property bool stitchDualMesh: true
+    property real stitchGapX: 0
+    property real stitchGapY: 0
+    property real stitchGapZ: 0
+    property real secondaryOffsetX: 0
+    property real secondaryOffsetY: 0
+    property real secondaryOffsetZ: 0
+    property real secondaryRotationX: 0
+    property real secondaryRotationY: 180
+    property real secondaryRotationZ: 0
 
     property real startOffsetX: 0
     property real startOffsetY: 0
