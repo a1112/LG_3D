@@ -49,6 +49,9 @@
 /app/Server/rust_image_service/.cargo/
 /app/plcServer/build/
 /app/plcServer/dist/
+/app/Server/cache/base.py.backup
+/.gitignore_test_mode
+CONFIG_3D/test_mode_config.json
 /app/**/__pycache__/
 /package/CoilDataBase/**/__pycache__/
 **/__pycache__/
