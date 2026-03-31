@@ -12,6 +12,8 @@ Item {
     property real stitchGapX: 0
     property real stitchGapY: 0
     property real stitchGapZ: 0
+    property bool closeDualMesh: true
+    property bool normalizeDualMeshSize: true
     property real secondaryOffsetX: 0
     property real secondaryOffsetY: 0
     property real secondaryOffsetZ: 0

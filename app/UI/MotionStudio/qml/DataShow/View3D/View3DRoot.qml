@@ -7,13 +7,51 @@ import QtQuick3D.Helpers
 
 import QtQuick.Controls.Material
 Item {
-    function getOppositeKey(currentKey) {
-        if (currentKey === "S")
-            return "L"
-        if (currentKey === "L")
-            return "S"
-        return currentKey
+    id: root
+    function getCoilDataValue(keys, defaultValue) {
+        let info = surfaceData.coilInfo || {}
+        let coilData = info.coilData || info
+        for (let i = 0; i < keys.length; i++) {
+            let key = keys[i]
+            if (coilData[key] !== undefined && coilData[key] !== null && coilData[key] !== "") {
+                let value = Number(coilData[key])
+                if (isFinite(value) && value > 0)
+                    return value
+            }
+            if (info[key] !== undefined && info[key] !== null && info[key] !== "") {
+                let infoValue = Number(info[key])
+                if (isFinite(infoValue) && infoValue > 0)
+                    return infoValue
+            }
+        }
+        return defaultValue
     }
+
+    function getPixelOuterDiameter(defaultValue) {
+        let info = surfaceData.coilInfo || {}
+        let cropBox = info.crop_box
+        if (cropBox && cropBox.length >= 4) {
+            let cropW = Number(cropBox[2])
+            let cropH = Number(cropBox[3])
+            if (isFinite(cropW) && isFinite(cropH))
+                return Math.max(cropW, cropH)
+            if (isFinite(cropW) && cropW > 0)
+                return cropW
+        }
+        return getCoilDataValue(["outerDiameterPx", "outer_diameter_px", "outerDiameterPixel", "width", "Width"],
+                                defaultValue)
+    }
+
+    readonly property real coilWidthMm: getCoilDataValue(["ActWidth", "Width", "act_w", "width"], 0)
+    readonly property real modelDisplayWidth: Math.max(singleSurfaceFrontNode.modelSize.x, 1)
+    readonly property real modelDisplayDiameter: Math.max(singleSurfaceFrontNode.modelSize.x,
+                                                          singleSurfaceFrontNode.modelSize.y,
+                                                          modelDisplayWidth)
+    readonly property real pixelOuterDiameter: getPixelOuterDiameter(0)
+    readonly property real surfaceGapMm: coilWidthMm > 0 && pixelOuterDiameter > 0
+                                         ? modelDisplayDiameter * coilWidthMm / pixelOuterDiameter
+                                         : Math.max(modelDisplayDiameter * 0.35, 120)
+    readonly property real surfaceSpacingMm: modelDisplayWidth + surfaceGapMm
 
     Layout.fillWidth:true
     Layout.fillHeight:true
@@ -85,23 +123,59 @@ Item {
             scale: core3D.objectScale
 
             Node3D {
-                id: primaryModelNode
+                id: singleSurfaceFrontNode
                 meshKey: surfaceData.key
+                centerDepth: false
+                alignMinDepthToZero: true
+                modelOffsetX: -(root.surfaceSpacingMm / 2.0)
             }
 
             Node3D {
-                id: secondaryModelNode
-                visible: core3D.stitchDualMesh && getOppositeKey(surfaceData.key) !== surfaceData.key
-                meshKey: getOppositeKey(surfaceData.key)
-                modelOffsetX: ((primaryModelNode.modelSize.x + modelSize.x) / 2.0) + core3D.stitchGapX + core3D.secondaryOffsetX
-                modelOffsetY: core3D.stitchGapY + core3D.secondaryOffsetY
-                modelOffsetZ: core3D.stitchGapZ + core3D.secondaryOffsetZ
-                modelRotationX: core3D.secondaryRotationX
-                modelRotationY: core3D.secondaryRotationY
-                modelRotationZ: core3D.secondaryRotationZ
+                id: singleSurfaceBackNode
+                meshKey: surfaceData.key
+                centerDepth: false
+                alignMinDepthToZero: true
+                modelOffsetX: root.surfaceSpacingMm / 2.0
+                modelRotationY: 180
             }
         }
 
+    }
+    Rectangle {
+        width: 112
+        height: 32
+        radius: 4
+        anchors.left: parent.left
+        anchors.leftMargin: 20
+        anchors.top: parent.top
+        anchors.topMargin: 16
+        color: "#66000000"
+        border.width: 1
+        border.color: "#66ffffff"
+
+        Text {
+            anchors.centerIn: parent
+            color: "#f2f2f2"
+            text: "Front"
+        }
+    }
+    Rectangle {
+        width: 112
+        height: 32
+        radius: 4
+        anchors.right: parent.right
+        anchors.rightMargin: 20
+        anchors.top: parent.top
+        anchors.topMargin: 16
+        color: "#66000000"
+        border.width: 1
+        border.color: "#66ffffff"
+
+        Text {
+            anchors.centerIn: parent
+            color: "#f2f2f2"
+            text: "Back"
+        }
     }
     OrbitCameraController {
         enabled: dataShowCore.controls3D.isRotateModel

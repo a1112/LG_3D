@@ -1,5 +1,4 @@
 import time
-import os
 from threading import Thread
 import CONFIG
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
@@ -48,6 +47,7 @@ class CapTure2D(CapTureBase):
                 lastTimeDict[self.cameraInfo.key] = time.time()
                 self.parent.last_frame_time_2d = time.time()
                 self.parent.missed_in_without_frame = 0
+                self.parent.reconnect_attempts = 0
 
             except BaseException as e:
                 logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
@@ -153,8 +153,10 @@ class CapTure(Thread):
                     self.camera_2d.request_reconnect()
                     self.missed_in_without_frame = 0
                     if self.reconnect_attempts > 5:
-                        logger.error(f"2D camera {self.cameraInfo.key} exceeded 5 reconnect attempts, exiting process for watchdog restart")
-                        os._exit(1)
+                        logger.error(
+                            f"2D camera {self.cameraInfo.key} exceeded 5 reconnect attempts, "
+                            "keep retrying this camera only"
+                        )
             else:
                 self.missed_in_without_frame = 0
             self.last_trigger_in_time = now

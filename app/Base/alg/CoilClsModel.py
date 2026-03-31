@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path, WindowsPath
+from typing import Any, Optional
 
 import numpy as np
 import torch
@@ -8,20 +9,86 @@ from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from timm.models import create_model
+
 from Base.CONFIG import get_file_url
 from Base.utils.Log import logger
 
 
+def _load_checkpoint(checkpoint_path: Optional[Path]) -> Optional[dict[str, Any]]:
+    if checkpoint_path is None or not checkpoint_path.exists():
+        return None
+    try:
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        return checkpoint if isinstance(checkpoint, dict) else None
+    except Exception as e:
+        logger.warning(f"读取分类模型权重失败: {e}")
+        return None
+
+
+def _unwrap_state_dict(checkpoint: Optional[dict[str, Any]]) -> dict[str, Any]:
+    if isinstance(checkpoint, dict):
+        for key in ("state_dict", "model", "model_state_dict"):
+            value = checkpoint.get(key)
+            if isinstance(value, dict):
+                return value
+    return checkpoint if isinstance(checkpoint, dict) else {}
+
+
+def _infer_num_classes(checkpoint: Optional[dict[str, Any]]) -> Optional[int]:
+    args = checkpoint.get("args") if isinstance(checkpoint, dict) else None
+    if args is not None:
+        num_classes = getattr(args, "num_classes", None)
+        if isinstance(num_classes, int) and num_classes > 0:
+            return num_classes
+
+    state_dict = _unwrap_state_dict(checkpoint)
+    for key, value in state_dict.items():
+        if not hasattr(value, "shape") or len(value.shape) != 2:
+            continue
+        lower_key = key.lower()
+        if lower_key.endswith(("classifier.weight", "fc.weight", "head.weight", "head.fc.weight")):
+            return int(value.shape[0])
+    return None
+
+
+def _extract_names_from_checkpoint(checkpoint: Optional[dict[str, Any]]) -> list[str]:
+    if not isinstance(checkpoint, dict):
+        return []
+
+    for key in ("names", "class_names", "labels", "classes"):
+        value = checkpoint.get(key)
+        if isinstance(value, dict):
+            try:
+                return [str(value[idx]) for idx in sorted(value)]
+            except Exception:
+                pass
+        if isinstance(value, (list, tuple)):
+            return [str(item) for item in value]
+
+    for key in ("idx_to_class", "class_to_idx"):
+        value = checkpoint.get(key)
+        if isinstance(value, dict) and value:
+            try:
+                if key == "idx_to_class":
+                    normalized = {int(k): str(v) for k, v in value.items()}
+                    return [normalized[idx] for idx in sorted(normalized)]
+                normalized = {int(v): str(k) for k, v in value.items()}
+                return [normalized[idx] for idx in sorted(normalized)]
+            except Exception:
+                pass
+
+    return []
+
+
 class CoilClsModel:
-    def __init__(self, model_name=None,
-                 checkpoint_path=None, in_chans=3, config=None):
+    def __init__(self, model_name=None, checkpoint_path=None, in_chans=3, config=None):
         self.model_name = model_name
         self.checkpoint_path = checkpoint_path
         self.in_chans = in_chans
-        # 默认使用统一的分类器配置文件 model/classifier/classifier.json
         if model_name is None and config is None:
             config = get_file_url(r"model/classifier/classifier.json")
-        self.names = []
+
+        self.names: list[str] = []
         config_data = None
         if config is not None:
             config_path = Path(config)
@@ -32,25 +99,34 @@ class CoilClsModel:
             if not checkpoint_path.is_absolute():
                 checkpoint_path = (config_path.parent / checkpoint_path).resolve()
             if not checkpoint_path.exists():
-                checkpoint_path = get_file_url(checkpoint_cfg)
+                checkpoint_path = Path(get_file_url(checkpoint_cfg))
             self.checkpoint_path = checkpoint_path
             self.in_chans = config_data["in_chans"]
-            self.names = config_data["names"]
+            self.names = list(config_data.get("names", []))
 
+        checkpoint = _load_checkpoint(Path(self.checkpoint_path) if self.checkpoint_path is not None else None)
+        checkpoint_names = _extract_names_from_checkpoint(checkpoint)
+        if checkpoint_names:
+            self.names = checkpoint_names
 
-        # 确定类别数：优先使用配置文件中的类别数量，否则让 timm 从检查点自动推断
-        num_classes = len(self.names) if self.names else None
-        self.model = create_model(self.model_name, checkpoint_path=self.checkpoint_path, num_classes=num_classes, in_chans=self.in_chans)
+        num_classes = _infer_num_classes(checkpoint) or (len(self.names) if self.names else None)
+        if self.names and num_classes is not None and len(self.names) != num_classes:
+            raise ValueError(f"分类名称数量({len(self.names)})与模型类别数({num_classes})不一致")
+
+        self.model = create_model(
+            self.model_name,
+            checkpoint_path=self.checkpoint_path,
+            num_classes=num_classes,
+            in_chans=self.in_chans,
+        )
         self.model.eval()
 
-        self.device = 'cpu'
+        self.device = "cpu"
         if torch.cuda.is_available():
-            self.device = 'cuda:0'
+            self.device = "cuda:0"
             self.model = self.model.cuda()
-        # 先从模型默认配置推断预处理参数
-        self.config = resolve_data_config({}, model=self.model)
 
-        # 如果 classifier.json 中提供了 input_size / mean / std，则优先使用配置中的值
+        self.config = resolve_data_config({}, model=self.model)
         if config_data is not None:
             if "input_size" in config_data:
                 try:
@@ -68,12 +144,12 @@ class CoilClsModel:
                 except Exception as e:
                     logger.error(f"classifier.json std 解析失败: {e}")
 
-        # 兼容老模型：灰度输入且未在配置中显式指定 input_size/mean/std 时，使用默认单通道参数
         if self.in_chans == 1 and (config_data is None or "input_size" not in config_data):
             self.config["input_size"] = (1, 224, 224)
             self.config["mean"] = (0.485,)
             self.config["std"] = (0.229,)
         logger.debug(self.config)
+        logger.info(f"分类模型类别顺序: {self.names}")
         self.transform = create_transform(**self.config)
 
     def image_to_tensor(self, image):
@@ -81,11 +157,11 @@ class CoilClsModel:
             image = Image.fromarray(image)
         if self.in_chans == 1:
             return self.transform(image)
-        return self.transform(image.convert('RGB'))
+        return self.transform(image.convert("RGB"))
 
     def predict_image(self, image_list, bach_size=32):
         res_index, res_source, names = [], [], []
-        image_cache: torch.Tensor = torch.Tensor().to(self.device)
+        image_cache = torch.Tensor().to(self.device)
         for index, img_ in list(enumerate(image_list)):
             if isinstance(img_, (str, WindowsPath)):
                 try:
@@ -97,17 +173,17 @@ class CoilClsModel:
             tensor = tensor.to(self.device)
             image_cache = torch.cat([image_cache, tensor[None]])
             if image_cache.shape[0] < bach_size and index < len(image_list) - 1:
-                pass
-            else:
-                with torch.no_grad():
-                    pred_results_list = self.model(image_cache)
-                    for out in pred_results_list:
-                        ls = list(torch.nn.functional.softmax(out, dim=0).cpu().numpy())
-                        index = ls.index(max(ls))
-                        res_index.append(index)
-                        res_source.append(float(max(ls)))
-                        names.append(self.names[index])
-                image_cache: torch.Tensor = torch.Tensor().to('cuda:0')
+                continue
+
+            with torch.no_grad():
+                pred_results_list = self.model(image_cache)
+                for out in pred_results_list:
+                    ls = list(torch.nn.functional.softmax(out, dim=0).cpu().numpy())
+                    pred_index = ls.index(max(ls))
+                    res_index.append(pred_index)
+                    res_source.append(float(max(ls)))
+                    names.append(self.names[pred_index] if pred_index < len(self.names) else str(pred_index))
+            image_cache = torch.Tensor().to(self.device)
         return res_index, res_source, names
 
 
@@ -118,51 +194,3 @@ if __name__ == "__main__":
     r = ccm.predict_image([Image.open(r"E:\clfData\test\边部背景\92537_0.655604_14.jpg")] * 100)
     et = time.time()
     print(et - st)
-#     p = r"E:\clfData\r5\r5_cls_输出"
-#     p2 = Path(r"E:\clfData\data")
-#     classList = [f.name for f in Path(p2).glob("*")]
-#     rootFolder = Path(p)
-#     outFolder = rootFolder.parent / (rootFolder.name + "_cls_输出")
-#     outFolder.mkdir(exist_ok=True, parents=True)
-#     nameCache = []
-#     imageCache = []
-#
-#     move=True
-#
-#     if move:
-#         file_func= shutil.move
-#     else:
-#         file_func = shutil.copy
-#     for jpg__ in tqdm(getAllImage(rootFolder)):
-#         nameCache.append(jpg__)
-#         imageCache.append(Image.open(jpg__))
-#         if len(imageCache) < 64:
-#             continue
-#         dataList = predictImage(imageCache, bach_size=64)
-#         for jpg_, data in zip(nameCache, dataList):
-#             index = data.index(max(data))
-#             source = str(data[index])[2]
-#             if classList[index] == jpg_.parent.name:
-#                 imageOutFolder = outFolder / "相同" / classList[index]
-#                 okDict[classList[index]] += 1
-#                 imageOutFolder.mkdir(exist_ok=True, parents=True)
-#                 try:
-#                     file_func(str(jpg_), str(imageOutFolder))
-#                 except BaseException as e:
-#                     print(e)
-#             else:
-#                 errorDict[classList[index]] += 1
-#                 imageOutFolder = outFolder / "不同" / jpg_.parent.name / classList[index]
-#                 imageOutFolder.mkdir(exist_ok=True, parents=True)
-#                 try:
-#                     file_func(str(jpg_), str(imageOutFolder))
-#                 except BaseException as e:
-#                     print(e)
-#         imageCache = []
-#         nameCache = []
-#     okCount = 0
-#     errorCount = 0
-#     for k in classList:
-#         print(f" {k} : {okDict[str(k)] / (okDict[str(k)] + errorDict[str(k)])}")
-#         okCount += okDict[str(k)]
-#         errorCount += errorDict[str(k)]

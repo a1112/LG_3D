@@ -319,10 +319,7 @@ def _save_3d(data, managerQueue):
     if point_cloud.size == 0 or point_cloud.shape[0] < 3:
         logger.error(f"empty point cloud for {saveFile}, skip mesh generation")
         return
-    colors = apply_jet_colormap(point_cloud[:, 2], minV=-200, maxV=200)
     t2 = time.time()
-    logger.debug(f"apply_jet_colormap {t2 - t1}")
-    colors = colors[:, :3]  # 只保留 RGB 通道
     # 使用Delaunay三角剖分生成三角网格
     # mesh=generate_mesh_from_point_cloud_pcl(point_cloud)
     try:
@@ -338,10 +335,9 @@ def _save_3d(data, managerQueue):
 
     t3 = time.time()
     logger.debug(f"generate_mesh_from_grid {t3 - t2}")
-    mesh.vertex_colors = o3d.utility.Vector3dVector(apply_jet_colormap(mesh_vertices[:, 2], minV=-200, maxV=200)[:, :3])
     # o3d.visualization.draw_geometries([mesh])
-    # 保存彩色的.obj文件
-    save_colored_obj(mesh, colors, str(saveFile))
+    # 保存无顶点颜色的表面网格，颜色由前端材质统一控制
+    save_colored_obj(mesh, None, str(saveFile))
     t4 = time.time()
     logger.debug(f"save_colored_obj {t4 - t3}")
     Thread(target=toMesh,args=(str(saveFile), managerQueue)).start()
