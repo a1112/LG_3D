@@ -1,52 +1,80 @@
-SQLAlchemy
-uvicorn
-fastapi
-requests
-opencv-python
-numpy
-pillow
-matplotlib
-tqdm
-scipy
-supervision
-pycocotools
-setuptools
-seaborn
-loguru
-ipython
-traitlets
-SQLAlchemy-Utils
-ultralytics
-colorlog
-XlsxWriter
-psutil
-GPUtil
-pymssql
-PyMySQL
-harvesters
-timm
-scikit-image
-open3d
-argparse
-six
-wsproto
-cryptography
-fastapi-cache[redis]
-redis
-python-multipart
-typing_extensions
-sympy
-mpmath
-packaging
-colorama
-filelock
-urllib3
-pydantic
-PyYAML
-safetensors
-pandas
-shapely
-onnxruntime
-Labelme2YOLOv8
-labelme
-cachetools
+# ============================================
+# 依赖升级 - 2025-04-24
+# ============================================
+# 主要变更：
+# - 所有依赖添加版本锁定
+# - 升级到最新稳定版本
+# ============================================
+
+# Web 框架
+fastapi~=0.115.0
+uvicorn~=0.32.0
+python-multipart~=0.0.17
+pydantic~=2.10.0
+
+# 数据库
+SQLAlchemy~=2.0.36
+SQLAlchemy-Utils~=0.11.4
+pymssql~=2.3.2
+PyMySQL~=1.1.1
+redis~=5.2.0
+
+# 数据处理
+numpy~=1.26.4
+pandas~=2.2.0
+scipy~=1.14.0
+
+# 计算机视觉
+opencv-python~=4.10.0
+pillow~=10.4.0
+scikit-image~=0.25.0
+supervision~=0.23.0
+pycocotools~=2.0.7
+onnxruntime~=1.19.0
+safetensors~=0.4.0
+
+# AI/ML
+ultralytics~=8.4.22
+timm~=0.9.16
+open3d~=0.19.0
+
+# 3D 视觉
+harvesters~=2.6.0
+# GenICam 相机库
+
+# 可视化
+matplotlib~=3.9.0
+seaborn~=0.13.2
+
+# 工具库
+requests~=2.32.0
+tqdm~=4.66.0
+loguru~=0.7.2
+colorlog~=6.9.0
+ipython~=8.31.0
+traitlets~=5.14.0
+setuptools~=75.0.0
+XlsxWriter~=3.2.0
+psutil~=6.0.0
+GPUtil~=1.4.0
+argparse~=1.0.0
+six~=1.16.0
+wsproto~=1.0.0
+cryptography~=44.0.0
+typing_extensions~=4.13.0
+sympy~=1.13.0
+mpmath~=1.3.0
+packaging~=24.2
+colorama~=0.4.6
+filelock~=3.16.0
+urllib3~=2.3.0
+PyYAML~=6.0.1
+shapely~=2.0.6
+
+# 缓存
+cachetools~=5.5.0
+fastapi-cache[redis]~=0.2.1
+
+# 标注工具
+labelme~=5.5.0
+# Labelme2YOLOv8 已弃用，使用 labelme
