@@ -69,15 +69,27 @@ Item {
         defectSource = item.defectSource || 0
         defectData = item.defectData
         apiDefectLevel = item.defectLevel !== undefined ? item.defectLevel : -1
-        defect_url = api.get_defect_url(
-            surface,
-            coilId,
-            defectName,
-            defectX,
-            defectY,
-            defectW,
-            defectH
-        )
-        isArea = item.is_area ?? false
+        isArea = (item.is_area ?? false) || global.defectClassProperty.is_area_defect_name(configDefectName)
+        if (isArea) {
+            defect_url = api.defect_url(
+                coilId,
+                surface,
+                "AREA",
+                defectX,
+                defectY,
+                defectW,
+                defectH
+            )
+        } else {
+            defect_url = api.get_defect_url(
+                surface,
+                coilId,
+                defectName,
+                defectX,
+                defectY,
+                defectW,
+                defectH
+            )
+        }
     }
 }

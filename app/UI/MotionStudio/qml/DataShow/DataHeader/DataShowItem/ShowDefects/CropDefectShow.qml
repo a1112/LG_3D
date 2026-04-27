@@ -93,8 +93,9 @@ ItemDelegate {
                             h_=parseInt(h_+top_expand+bottom_expand)
                         }
 
+                        let viewKey = defect.isArea ? "AREA" : dataShowCore.currentViewKey
                         return api.defect_url(dataShowCore.coilId, dataShowCore.key,
-                                              dataShowCore.currentViewKey,
+                                              viewKey,
                                               x_,  y_, w_, h_
                                               )
                     }

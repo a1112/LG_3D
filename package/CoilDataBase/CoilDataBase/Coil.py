@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import subqueryload
@@ -33,23 +33,26 @@ def get_all_join_query(session: Session):
 
 def get_all_join_data_by_id(start_id, end_id):
     with Session() as session:
-        return get_all_join_query(session).filter(SecondaryCoil.Id >= start_id,
-                                                  SecondaryCoil.Id <= end_id).order_by(SecondaryCoil.Id.desc()).all()
+        return get_all_join_query(session).filter(
+            SecondaryCoil.Id >= start_id, SecondaryCoil.Id
+            <= end_id).order_by(SecondaryCoil.Id.desc()).all()
 
 
 def get_all_join_data_by_num(num, maxsize=None):
     with Session() as session:
         if maxsize:
-            return get_all_join_query(session).filter(SecondaryCoil.Id < maxsize).order_by(SecondaryCoil.Id.desc())[
-                   :num]
-        return get_all_join_query(session).order_by(SecondaryCoil.Id.desc())[:num]
+            return get_all_join_query(session).filter(
+                SecondaryCoil.Id < maxsize).order_by(
+                    SecondaryCoil.Id.desc())[:num]
+        return get_all_join_query(session).order_by(
+            SecondaryCoil.Id.desc())[:num]
 
 
 def get_all_join_data_by_time(start_time, end_time):
     with Session() as session:
-        return get_all_join_query(session).filter(SecondaryCoil.CreateTime >= start_time,
-                                                  SecondaryCoil.CreateTime <= end_time).order_by(
-            SecondaryCoil.Id.desc()).all()
+        return get_all_join_query(session).filter(
+            SecondaryCoil.CreateTime >= start_time, SecondaryCoil.CreateTime
+            <= end_time).order_by(SecondaryCoil.Id.desc()).all()
 
 
 def get_join_query(session: Session, by_coil=True):
@@ -59,21 +62,24 @@ def get_join_query(session: Session, by_coil=True):
         session: Session
         by_coil:
     """
-    query = session.query(SecondaryCoil).options(subqueryload(SecondaryCoil.childrenAlarmInfo),  # 塔形报警
-                                                 subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
-                                                 subqueryload(SecondaryCoil.childrenCoilDefect),  # 缺陷数据
-                                                 subqueryload(SecondaryCoil.childrenCoilCheck)  # 检测
-                                                 )
+    query = session.query(SecondaryCoil).options(
+        subqueryload(SecondaryCoil.childrenAlarmInfo),  # 塔形报警
+        subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
+        subqueryload(SecondaryCoil.childrenCoilDefect),  # 缺陷数据
+        subqueryload(SecondaryCoil.childrenCoilCheck)  # 检测
+    )
     if by_coil:
         last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
         query = query.filter(SecondaryCoil.Id <= last_coil.SecondaryCoilId)
     return query
 
+
 def get_grad_query(session):
     query = session.query(SecondaryCoil).options(
-                                                 subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
-                                                 ).order_by(SecondaryCoil.Id.desc())
+        subqueryload(SecondaryCoil.childrenCoil),  # 二级数据
+    ).order_by(SecondaryCoil.Id.desc())
     return query
+
 
 def add_secondary_coil(coil: SecondaryCoil):
     """
@@ -85,17 +91,16 @@ def add_secondary_coil(coil: SecondaryCoil):
 
     """
     with Session() as session:
-        session.add(SecondaryCoil(
-            CoilNo=coil["Coil_ID"],
-            CoilType=coil["Steel_Grade"],
-            CoilInside=coil["coil_in_dia"],
-            CoilDia=coil["coil_dia"],
-            Thickness=coil["FM_Tar_Thickness"],
-            Width=coil["FM_Tar_Width"],
-            Weight=coil["sp01"][0],
-            ActWidth=coil["act_w"],
-            CreateTime=datetime.datetime.now()
-        ))
+        session.add(
+            SecondaryCoil(CoilNo=coil["Coil_ID"],
+                          CoilType=coil["Steel_Grade"],
+                          CoilInside=coil["coil_in_dia"],
+                          CoilDia=coil["coil_dia"],
+                          Thickness=coil["FM_Tar_Thickness"],
+                          Width=coil["FM_Tar_Width"],
+                          Weight=coil["sp01"][0],
+                          ActWidth=coil["act_w"],
+                          CreateTime=datetime.datetime.now()))
         session.commit()
 
 
@@ -111,9 +116,11 @@ def get_secondary_coil(num: int, desc=True) -> List[SecondaryCoil]:
     """
     with Session() as session:
         if desc:
-            return session.query(SecondaryCoil).order_by(SecondaryCoil.Id.desc())[:num]
+            return session.query(SecondaryCoil).order_by(
+                SecondaryCoil.Id.desc())[:num]
         else:
-            return session.query(SecondaryCoil).order_by(SecondaryCoil.Id.asc())[:num]
+            return session.query(SecondaryCoil).order_by(
+                SecondaryCoil.Id.asc())[:num]
 
 
 def addCoil(coil):
@@ -129,7 +136,8 @@ def addCoil(coil):
         secondary_coil_id = coil["SecondaryCoilId"]
 
         # 查询是否已存在该 secondary_coil_id 的记录
-        existing = session.query(Coil).filter_by(SecondaryCoilId=secondary_coil_id).first()
+        existing = session.query(Coil).filter_by(
+            SecondaryCoilId=secondary_coil_id).first()
 
         if existing:
             # 已存在，更新记录
@@ -143,19 +151,48 @@ def addCoil(coil):
             existing.Msg = coil.get("Msg", "")
         else:
             # 不存在，新增记录
-            session.add(Coil(
-                SecondaryCoilId=secondary_coil_id,
-                DetectionTime=datetime.datetime.now(),
-                DefectCountS=coil["DefectCountS"],
-                DefectCountL=coil["DefectCountL"],
-                CheckStatus=coil["CheckStatus"],
-                Status_L=coil["Status_L"],
-                Status_S=coil["Status_S"],
-                Grade=coil["Grade"],
-                Msg=coil["Msg"]
-            ))
+            session.add(
+                Coil(SecondaryCoilId=secondary_coil_id,
+                     DetectionTime=datetime.datetime.now(),
+                     DefectCountS=coil["DefectCountS"],
+                     DefectCountL=coil["DefectCountL"],
+                     CheckStatus=coil["CheckStatus"],
+                     Status_L=coil["Status_L"],
+                     Status_S=coil["Status_S"],
+                     Grade=coil["Grade"],
+                     Msg=coil["Msg"]))
         session.commit()
-        return existing if existing else session.query(Coil).filter_by(SecondaryCoilId=secondary_coil_id).first()
+        return existing if existing else session.query(Coil).filter_by(
+            SecondaryCoilId=secondary_coil_id).first()
+
+
+def _create_coil_defect(defect: dict) -> CoilDefect:
+    return CoilDefect(
+        secondaryCoilId=defect["secondaryCoilId"],
+        surface=defect["surface"],
+        defectClass=defect["defectClass"],
+        defectName=defect["defectName"],
+        defectStatus=defect["defectStatus"],
+        defectTime=datetime.datetime.now(),
+        defectX=defect["defectX"],
+        defectY=defect["defectY"],
+        defectW=defect["defectW"],
+        defectH=defect["defectH"],
+        defectSource=defect["defectSource"],
+        defectData=defect["defectData"],
+    )
+
+
+def _sync_summary_counts(coil_ids: List[int]) -> None:
+    try:
+        from .CoilSummary import sync_summaries_range
+        sync_summaries_range(coil_ids)
+    except Exception as e:
+        print(f"sync_summaries_range failed: {e}")
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def delete_defects_by_secondary_coil_id(secondary_coil_id, surface):
@@ -169,8 +206,10 @@ def delete_defects_by_secondary_coil_id(secondary_coil_id, surface):
 
     """
     with Session() as session:
-        session.query(CoilDefect).filter(CoilDefect.secondaryCoilId == secondary_coil_id and
-                                         surface == CoilDefect.surface).delete()
+        session.query(CoilDefect).filter(
+            CoilDefect.secondaryCoilId == secondary_coil_id,
+            CoilDefect.surface == surface,
+        ).delete(synchronize_session=False)
         session.commit()
 
 
@@ -186,21 +225,30 @@ def add_defects(defects: List[dict]):
     if len(defects):
         print(fr"add_defects = {defects}")
     with Session() as session:
-        session.add_all([CoilDefect(
-            secondaryCoilId=defect["secondaryCoilId"],
-            surface=defect["surface"],
-            defectClass=defect["defectClass"],
-            defectName=defect["defectName"],
-            defectStatus=defect["defectStatus"],
-            defectTime=datetime.datetime.now(),
-            defectX=defect["defectX"],
-            defectY=defect["defectY"],
-            defectW=defect["defectW"],
-            defectH=defect["defectH"],
-            defectSource=defect["defectSource"],
-            defectData=defect["defectData"],
-        ) for defect in defects])
+        session.add_all([_create_coil_defect(defect) for defect in defects])
         session.commit()
+
+
+def replace_defects(defects: List[dict],
+                    secondary_coil_id: int,
+                    surface: str,
+                    defect_name_prefix: Optional[str] = None) -> None:
+    """Replace defects for one coil/surface, optionally scoped by name prefix."""
+    if len(defects):
+        print(fr"replace_defects = {defects}")
+    with Session() as session:
+        query = session.query(CoilDefect).filter(
+            CoilDefect.secondaryCoilId == secondary_coil_id,
+            CoilDefect.surface == surface,
+        )
+        if defect_name_prefix:
+            query = query.filter(
+                CoilDefect.defectName.like(
+                    f"{_escape_like(defect_name_prefix)}%", escape="\\"))
+        query.delete(synchronize_session=False)
+        session.add_all([_create_coil_defect(defect) for defect in defects])
+        session.commit()
+    _sync_summary_counts([secondary_coil_id])
 
 
 def get_secondary_coil_by_id(id_):
@@ -234,6 +282,7 @@ def get_grad_list(num):
         print(query.count())
         return query[:num]
 
+
 def search_by_coil_no(coil_no):
     with Session() as session:
         query = get_join_query(session)
@@ -242,22 +291,25 @@ def search_by_coil_no(coil_no):
 
 def get_idlist_by_coil_no(coil_no, end_coil_no):
     with Session() as session:
-        return session.query(SecondaryCoil.Id).filter(SecondaryCoil.CoilNo >= coil_no,
-                                                      SecondaryCoil.CoilNo <= end_coil_no).all()
+        return session.query(SecondaryCoil.Id).filter(
+            SecondaryCoil.CoilNo >= coil_no, SecondaryCoil.CoilNo
+            <= end_coil_no).all()
 
 
 def searchByCoilId(coil_id, end_coil_id=None):
     with Session() as session:
         query = get_join_query(session)
         if end_coil_id:
-            return query.filter(SecondaryCoil.Id >= coil_id, SecondaryCoil.Id <= end_coil_id).all()
+            return query.filter(SecondaryCoil.Id >= coil_id, SecondaryCoil.Id
+                                <= end_coil_id).all()
         return query.filter(SecondaryCoil.Id == coil_id).all()
 
 
 def searchByDateTime(start_time, end_timeq):
     with Session() as session:
         query = get_join_query(session)
-        return query.filter(SecondaryCoil.CreateTime >= start_time, SecondaryCoil.CreateTime <= end_timeq).all()
+        return query.filter(SecondaryCoil.CreateTime >= start_time,
+                            SecondaryCoil.CreateTime <= end_timeq).all()
 
 
 def addCoilState(coil_state):
@@ -268,12 +320,16 @@ def addCoilState(coil_state):
 
 def getCoilState(coil_id):
     with Session() as session:
-        return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).order_by(CoilState.Id.desc())[:2]
+        return session.query(CoilState).filter(
+            CoilState.secondaryCoilId == coil_id).order_by(
+                CoilState.Id.desc())[:2]
 
 
 def get_plc_data(coil_id):
     with Session() as session:
-        return session.query(PlcData).filter(PlcData.secondaryCoilId == coil_id).order_by(PlcData.Id.desc()).first()
+        return session.query(PlcData).filter(
+            PlcData.secondaryCoilId == coil_id).order_by(
+                PlcData.Id.desc()).first()
 
 
 def get_all_defects(coil_id):
@@ -292,7 +348,8 @@ def get_all_defects(coil_id):
             CoilDefect.defectH,
             CoilDefect.defectSource,
             CoilDefect.defectData,
-        ).where(CoilDefect.secondaryCoilId == coil_id).order_by(CoilDefect.Id.asc())
+        ).where(CoilDefect.secondaryCoilId == coil_id).order_by(
+            CoilDefect.Id.asc())
         return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 
@@ -319,9 +376,8 @@ def get_defects(coil_id, direction):
         return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 
-
-def  get_defects_all(start_coil_id, end_coil_id):
-    with  Session() as session:
+def get_defects_all(start_coil_id, end_coil_id):
+    with Session() as session:
         stmt = select(
             CoilDefect.Id,
             CoilDefect.secondaryCoilId,
@@ -342,9 +398,11 @@ def  get_defects_all(start_coil_id, end_coil_id):
         ).order_by(CoilDefect.secondaryCoilId.asc(), CoilDefect.Id.asc())
         return [dict(row) for row in session.execute(stmt).mappings().all()]
 
+
 def defects():
-    with  Session() as session:
+    with Session() as session:
         return session.query(CoilDefect)
+
 
 def get_defect_class_dict():
     with Session() as session:
@@ -353,18 +411,20 @@ def get_defect_class_dict():
 
 def get_coil_by_coil_no(coil_no):
     with Session() as session:
-        return session.query(SecondaryCoil).filter(SecondaryCoil.CoilNo == coil_no).first()
+        return session.query(SecondaryCoil).filter(
+            SecondaryCoil.CoilNo == coil_no).first()
 
 
 def addToPlc(coil_ddata):
     with Session() as session:
-        session.add(PlcData(
-            secondaryCoilId=coil_ddata["secondaryCoilId"],
-            location_S=coil_ddata["location_S"],
-            location_L=coil_ddata["location_L"],
-            location_laser=coil_ddata["location_laser"],
-            startTime=datetime.datetime.now(),
-        ))
+        session.add(
+            PlcData(
+                secondaryCoilId=coil_ddata["secondaryCoilId"],
+                location_S=coil_ddata["location_S"],
+                location_L=coil_ddata["location_L"],
+                location_laser=coil_ddata["location_laser"],
+                startTime=datetime.datetime.now(),
+            ))
         session.commit()
 
 
@@ -376,8 +436,10 @@ def deleteCoilByCoilId(Id_):
 
 def get_coil_state_by_coil_id(coil_id, surface):
     with Session() as session:
-        return session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id,
-                                               CoilState.surface == surface).order_by(CoilState.Id.desc()).first()
+        return session.query(CoilState).filter(
+            CoilState.secondaryCoilId == coil_id,
+            CoilState.surface == surface).order_by(
+                CoilState.Id.desc()).first()
 
 
 def add_server_detection_error(error: ServerDetectionError):
@@ -386,28 +448,29 @@ def add_server_detection_error(error: ServerDetectionError):
 
 def add_coil(coil):
     with Session() as session:
-        session.add(SecondaryCoil(
-            CoilNo=coil["Coil_ID"],
-            CoilType=coil["Steel_Grade"],
-            CoilInside=coil["coil_in_dia"],
-            CoilDia=coil["coil_dia"],
-            Thickness=coil["FM_Tar_Thickness"],
-            Width=coil["FM_Tar_Width"],
-            Weight=coil["sp01"][0],
-            ActWidth=coil["act_w"],
-            CreateTime=datetime.datetime.now()
-        ))
+        session.add(
+            SecondaryCoil(CoilNo=coil["Coil_ID"],
+                          CoilType=coil["Steel_Grade"],
+                          CoilInside=coil["coil_in_dia"],
+                          CoilDia=coil["coil_dia"],
+                          Thickness=coil["FM_Tar_Thickness"],
+                          Width=coil["FM_Tar_Width"],
+                          Weight=coil["sp01"][0],
+                          ActWidth=coil["act_w"],
+                          CreateTime=datetime.datetime.now()))
         session.commit()
 
 
 def get_last_coil():
     with Session() as session:
-        return session.query(SecondaryCoil).order_by(SecondaryCoil.CreateTime.desc()).first()
+        return session.query(SecondaryCoil).order_by(
+            SecondaryCoil.CreateTime.desc()).first()
 
 
 def get_point_data(coil_id, surface_key=None):
     with Session() as session:
-        que = session.query(PointData).filter(PointData.secondaryCoilId == coil_id)
+        que = session.query(PointData).filter(
+            PointData.secondaryCoilId == coil_id)
         if surface_key:
             que = que.filter(PointData.surface == surface_key)
         return que.all()
@@ -415,7 +478,8 @@ def get_point_data(coil_id, surface_key=None):
 
 def get_line_data(coil_id, surface_key=None):
     with Session() as session:
-        que = session.query(LineData).filter(LineData.secondaryCoilId == coil_id)
+        que = session.query(LineData).filter(
+            LineData.secondaryCoilId == coil_id)
         if surface_key:
             que = que.filter(LineData.surface == surface_key)
         return que.all()
@@ -423,35 +487,38 @@ def get_line_data(coil_id, surface_key=None):
 
 def get_coil_status_by_coil_id(coil_id):
     with Session() as session:
-        que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
+        que = session.query(CoilCheck).filter(
+            CoilCheck.secondaryCoilId == coil_id)
         return que.first()
 
 
 def set_coil_status_by_data(coil_id, status, msg):
     with Session() as session:
-        que = session.query(CoilCheck).filter(CoilCheck.secondaryCoilId == coil_id)
+        que = session.query(CoilCheck).filter(
+            CoilCheck.secondaryCoilId == coil_id)
         coil_check = que.all()
         if coil_check:
             coil_check = coil_check[0]
             coil_check.status = status
             coil_check.msg = msg
         else:
-            session.add(CoilCheck(
-                secondaryCoilId=coil_id,
-                status=status,
-                msg=msg
-            ))
+            session.add(
+                CoilCheck(secondaryCoilId=coil_id, status=status, msg=msg))
 
         session.commit()
 
-def get_coilState(coil_id, surface_key=None)->CoilState:
+
+def get_coilState(coil_id, surface_key=None) -> CoilState:
     with Session() as session:
-        que = session.query(CoilState).filter(CoilState.secondaryCoilId == coil_id).filter(CoilState.surface == surface_key)
-        all_data=que.all()
+        que = session.query(CoilState).filter(
+            CoilState.secondaryCoilId == coil_id).filter(
+                CoilState.surface == surface_key)
+        all_data = que.all()
         if all_data:
             return all_data[0]
         else:
             return None
+
 
 list_data_keys = {
     "二级内径": SecondaryCoil.CoilInside,
@@ -465,8 +532,8 @@ list_data_keys = {
     "生产间隔": ""
 }
 
-
 # ==================== 手动标注缺陷 CRUD 操作 ====================
+
 
 def add_manual_defect(defect_data: dict):
     """
@@ -494,8 +561,7 @@ def add_manual_defect(defect_data: dict):
         defect_class = 0
         defect_name = defect_data.get("defectName", "未知缺陷")
         defect_dict = session.query(DefectClassDict).filter(
-            DefectClassDict.defectName == defect_name
-        ).first()
+            DefectClassDict.defectName == defect_name).first()
         if defect_dict:
             defect_class = defect_dict.defectClass
 
@@ -513,8 +579,7 @@ def add_manual_defect(defect_data: dict):
             defectSource=0,
             defectData=defect_data.get("defectData", ""),
             remark=defect_data.get("remark", ""),
-            annotator=defect_data.get("annotator", "系统用户")
-        )
+            annotator=defect_data.get("annotator", "系统用户"))
         session.add(manual_defect)
         session.commit()
         session.refresh(manual_defect)
@@ -536,8 +601,7 @@ def update_manual_defect(defect_id: int, defect_data: dict):
 
     with Session() as session:
         manual_defect = session.query(ManualDefect).filter(
-            ManualDefect.Id == defect_id
-        ).first()
+            ManualDefect.Id == defect_id).first()
 
         if not manual_defect:
             return None
@@ -546,8 +610,7 @@ def update_manual_defect(defect_id: int, defect_data: dict):
         if "defectName" in defect_data:
             defect_name = defect_data["defectName"]
             defect_dict = session.query(DefectClassDict).filter(
-                DefectClassDict.defectName == defect_name
-            ).first()
+                DefectClassDict.defectName == defect_name).first()
             if defect_dict:
                 manual_defect.defectClass = defect_dict.defectClass
             manual_defect.defectName = defect_name
@@ -584,8 +647,7 @@ def delete_manual_defect(defect_id: int):
     """
     with Session() as session:
         manual_defect = session.query(ManualDefect).filter(
-            ManualDefect.Id == defect_id
-        ).first()
+            ManualDefect.Id == defect_id).first()
 
         if not manual_defect:
             return False
@@ -608,8 +670,7 @@ def get_manual_defects(coil_id: int, surface: str = None):
     """
     with Session() as session:
         query = session.query(ManualDefect).filter(
-            ManualDefect.secondaryCoilId == coil_id
-        )
+            ManualDefect.secondaryCoilId == coil_id)
         if surface:
             query = query.filter(ManualDefect.surface == surface)
         return query.all()
@@ -630,52 +691,80 @@ def get_all_defects_including_manual(coil_id: int, surface: str):
         # 获取自动检测的缺陷
         auto_defects = session.query(CoilDefect).filter(
             CoilDefect.secondaryCoilId == coil_id,
-            CoilDefect.surface == surface
-        ).all()
+            CoilDefect.surface == surface).all()
 
         # 获取手动标注的缺陷
         manual_defects = session.query(ManualDefect).filter(
             ManualDefect.secondaryCoilId == coil_id,
-            ManualDefect.surface == surface
-        ).all()
+            ManualDefect.surface == surface).all()
 
         # 合并结果
         result = []
         for d in auto_defects:
             result.append({
-                "Id": d.Id,
-                "type": "auto",
-                "secondaryCoilId": d.secondaryCoilId,
-                "surface": d.surface,
-                "defectClass": d.defectClass,
-                "defectName": d.defectName,
-                "defectStatus": d.defectStatus,
-                "defectTime": d.defectTime.isoformat() if d.defectTime else None,
-                "defectX": d.defectX,
-                "defectY": d.defectY,
-                "defectW": d.defectW,
-                "defectH": d.defectH,
-                "defectSource": d.defectSource,
-                "defectData": d.defectData,
+                "Id":
+                d.Id,
+                "type":
+                "auto",
+                "secondaryCoilId":
+                d.secondaryCoilId,
+                "surface":
+                d.surface,
+                "defectClass":
+                d.defectClass,
+                "defectName":
+                d.defectName,
+                "defectStatus":
+                d.defectStatus,
+                "defectTime":
+                d.defectTime.isoformat() if d.defectTime else None,
+                "defectX":
+                d.defectX,
+                "defectY":
+                d.defectY,
+                "defectW":
+                d.defectW,
+                "defectH":
+                d.defectH,
+                "defectSource":
+                d.defectSource,
+                "defectData":
+                d.defectData,
             })
         for d in manual_defects:
             result.append({
-                "Id": d.Id,
-                "type": "manual",
-                "secondaryCoilId": d.secondaryCoilId,
-                "surface": d.surface,
-                "defectClass": d.defectClass,
-                "defectName": d.defectName,
-                "defectStatus": d.defectStatus,
-                "defectTime": d.createTime.isoformat() if d.createTime else None,
-                "defectX": d.defectX,
-                "defectY": d.defectY,
-                "defectW": d.defectW,
-                "defectH": d.defectH,
-                "defectSource": d.defectSource,
-                "defectData": d.defectData,
-                "remark": d.remark,
-                "annotator": d.annotator,
+                "Id":
+                d.Id,
+                "type":
+                "manual",
+                "secondaryCoilId":
+                d.secondaryCoilId,
+                "surface":
+                d.surface,
+                "defectClass":
+                d.defectClass,
+                "defectName":
+                d.defectName,
+                "defectStatus":
+                d.defectStatus,
+                "defectTime":
+                d.createTime.isoformat() if d.createTime else None,
+                "defectX":
+                d.defectX,
+                "defectY":
+                d.defectY,
+                "defectW":
+                d.defectW,
+                "defectH":
+                d.defectH,
+                "defectSource":
+                d.defectSource,
+                "defectData":
+                d.defectData,
+                "remark":
+                d.remark,
+                "annotator":
+                d.annotator,
             })
 
         return result

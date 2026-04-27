@@ -1,17 +1,20 @@
 from pathlib import Path
 from queue import Queue
-
 from threading import Thread
 from typing import List
 
 import numpy as np
-from PIL import Image
 from lxml import etree
-from property.DataIntegration import DataIntegration, ClipImageItem
-from configs import CONFIG
+from PIL import Image
 from ultralytics import YOLO
 
+from CoilDataBase.Coil import add_defects, replace_defects
+from configs import CONFIG
+from property.DataIntegration import ClipImageItem, DataIntegration
+
+
 class DetectionSave(Thread):
+
     def __init__(self):
         Thread.__init__(self)
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
@@ -20,28 +23,25 @@ class DetectionSave(Thread):
         self.queue = Queue(maxsize=20)
         self.start()
 
-    def add(self,image,url):
-        self.queue.put([image,url])
+    def add(self, image, url) -> None:
+        self.queue.put([image, url])
 
-    def run(self):
+    def run(self) -> None:
         while True:
             try:
                 item = self.queue.get()
                 image, url = item
-                if isinstance(image, Image.Image):
-                    image = image
-                if isinstance(image,np.ndarray):
-                    image=Image.fromarray(image)
+                if isinstance(image, np.ndarray):
+                    image = Image.fromarray(image)
                 image.save(url)
-            except:
-                pass
-
+            except Exception as e:
+                print(f"DetectionSave save failed: {e}")
 
 
 detect_save = DetectionSave()
 
 
-def create_xml(file_name, img_shape, bounding_boxes, output_folder):
+def create_xml(file_name, img_shape, bounding_boxes, output_folder) -> None:
     annotation = etree.Element("annotation")
 
     folder = etree.SubElement(annotation, "folder")
@@ -59,9 +59,8 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder):
     depth.text = str(img_shape[2])
 
     for bbox in bounding_boxes:
-        bbox:CoilDetectionResult
-
-        xmin, ymin, xmax, ymax,label = bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax, bbox.label
+        bbox: CoilDetectionResult
+        xmin, ymin, xmax, ymax, label = bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax, bbox.label
         obj = etree.SubElement(annotation, "object")
 
         name = etree.SubElement(obj, "name")
@@ -78,13 +77,18 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder):
         ymax_elem.text = str(ymax)
 
     tree = etree.ElementTree(annotation)
-    xml_path = Path(output_folder) / (Path(file_name).stem + '.xml')
+    xml_path = Path(output_folder) / (Path(file_name).stem + ".xml")
     print(xml_path)
-    tree.write(str(xml_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
+    tree.write(str(xml_path),
+               pretty_print=True,
+               xml_declaration=True,
+               encoding="utf-8")
     print(f"Saved XML to {xml_path}")
 
+
 class CoilDetectionResult:
-    def __init__(self,xmin, ymin, xmax, ymax, label,source,name,image):
+
+    def __init__(self, xmin, ymin, xmax, ymax, label, source, name, image):
         self.xmin = xmin
         self.ymin = ymin
         self.xmax = xmax
@@ -95,46 +99,51 @@ class CoilDetectionResult:
         self.image = image
         self.key = fr"{self.name}_{self.source}_{self.label}"
 
-
     def get_image(self):
-        return self.image[self.ymin:self.ymax,self.xmin:self.xmax]
+        return self.image[self.ymin:self.ymax, self.xmin:self.xmax]
 
 
 class YoloResult:
-    def __init__(self,image_info:ClipImageItem, info_list:List[CoilDetectionResult]):
+
+    def __init__(self, image_info: ClipImageItem,
+                 info_list: List[CoilDetectionResult]):
         self.image_info = image_info
         self.info_list = info_list
 
         self.file_name = image_info.get_file_name()
-        self.image=image_info.image
+        self.image = image_info.image
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
         if self.has_det():
             self.save_det()
 
-    def save_det(self):
-        save_jpg=self.debug_save_folder/"det"/self.file_name
-        save_jpg.with_suffix(".jpg")
+    def save_det(self) -> None:
+        save_jpg = (self.debug_save_folder / "det" /
+                    self.file_name).with_suffix(".jpg")
         save_jpg.parent.mkdir(parents=True, exist_ok=True)
-        create_xml(save_jpg.name, self.image_info.image.shape, self.info_list, save_jpg.parent)
+        create_xml(save_jpg.name, self.image_info.image.shape, self.info_list,
+                   save_jpg.parent)
         detect_save.add(self.image, save_jpg)
 
-    def has_det(self):
+    def has_det(self) -> bool:
         return bool(self.info_list)
 
+
 class CoilDetectionModel:
-    def __init__(self,model_url=None,base_name=None):
-        model_url = str(CONFIG.base_config_folder / "model" / "CoilDetection_Area_JC.pt")
+
+    def __init__(self, model_url=None, base_name=None):
+        model_url = str(CONFIG.base_config_folder / "model" /
+                        "CoilDetection_Area_JC.pt")
         print(fr" CoilDetection model is {model_url}")
         self.model_url = model_url
-        self.model = YOLO(model_url)  # load a custom model
+        self.model = YOLO(model_url)
 
-    def predict(self,item_info: ClipImageItem):
+    def predict(self, item_info: ClipImageItem):
         results = self.model(item_info.image)
         res_list = []
         if not isinstance(item_info, list):
             item_info = [item_info]
 
-        for result,image in zip(results,item_info):
+        for result, image in zip(results, item_info):
             res_item_list = []
             for box in result.boxes:
                 xyxy = box.xyxy[0].cpu().numpy()
@@ -142,53 +151,72 @@ class CoilDetectionModel:
                 name = self.model.names[label_index]
                 xmin, ymin, xmax, ymax = xyxy
                 source = float(box.conf[0].cpu().numpy())
-                res_item_list.append(CoilDetectionResult(int(xmin), int(ymin), int(xmax), int(ymax), label_index, source, name, image))
-            res_list.append(YoloResult(image,res_item_list))
+                res_item_list.append(
+                    CoilDetectionResult(int(xmin), int(ymin), int(xmax),
+                                        int(ymax), label_index, source, name,
+                                        image))
+            res_list.append(YoloResult(image, res_item_list))
         return res_list
 
 
 coil_detection_model = CoilDetectionModel()
 
-from CoilDataBase.models.CoilDefect import CoilDefect
-from CoilDataBase.Coil import add_defects
-def add_db(det_info):
-    defect_list=[]
+
+def _get_absolute_defect_box(
+        clip_image_item: ClipImageItem,
+        defect_item: CoilDetectionResult) -> tuple[int, int, int, int]:
+    clip_x1, clip_y1, clip_x2, clip_y2 = clip_image_item.box
+    defect_x1 = max(clip_x1, clip_x1 + defect_item.xmin)
+    defect_y1 = max(clip_y1, clip_y1 + defect_item.ymin)
+    defect_x2 = min(clip_x2, clip_x1 + defect_item.xmax)
+    defect_y2 = min(clip_y2, clip_y1 + defect_item.ymax)
+    return (
+        int(defect_x1),
+        int(defect_y1),
+        max(1, int(defect_x2 - defect_x1)),
+        max(1, int(defect_y2 - defect_y1)),
+    )
+
+
+def build_defect_list(det_info: List[YoloResult]) -> List[dict]:
+    defect_list = []
     for item in det_info:
         item: YoloResult
         for defect_item in item.info_list:
-            defect_item:CoilDetectionResult
+            defect_item: CoilDetectionResult
             clip_image_item = item.image_info
-            clip_image_item:ClipImageItem
+            clip_image_item: ClipImageItem
+            defect_x, defect_y, defect_w, defect_h = _get_absolute_defect_box(
+                clip_image_item, defect_item)
             defect_list.append({
-            "secondaryCoilId": clip_image_item.coil_id,
-            "surface": clip_image_item.surface,
-            "defectClass": 101,
-            "defectName": "2D_"+defect_item.name,
-            "defectStatus": 5,
-            "defectX": clip_image_item.box[0]+defect_item.xmin,
-            "defectY": clip_image_item.box[1]+defect_item.ymin,
-            "defectW": clip_image_item.box[2],
-            "defectH":clip_image_item.box[3],
-            "defectSource": defect_item.source,
-            "defectData": "",
+                "secondaryCoilId": clip_image_item.coil_id,
+                "surface": clip_image_item.surface,
+                "defectClass": 101,
+                "defectName": "2D_" + defect_item.name,
+                "defectStatus": 5,
+                "defectX": defect_x,
+                "defectY": defect_y,
+                "defectW": defect_w,
+                "defectH": defect_h,
+                "defectSource": defect_item.source,
+                "defectData": "",
             })
+    return defect_list
+
+
+def add_db(det_info: List[YoloResult]) -> None:
+    defect_list = build_defect_list(det_info)
     add_defects(defect_list)
 
 
-def detection(data_integration: DataIntegration):
-
-    """
-    数据检测
-    """
-
+def detection(data_integration: DataIntegration) -> None:
     clip_image_list = data_integration.clip_image()
+    det_info_list = []
     for item in clip_image_list:
         item: ClipImageItem
         det_info = coil_detection_model.predict(item)
-        if CONFIG.add_to_database:
-            add_db(det_info)
-
-
-
-
-
+        det_info_list.extend(det_info)
+    if CONFIG.add_to_database:
+        defect_list = build_defect_list(det_info_list)
+        replace_defects(defect_list, data_integration.coil_id,
+                        data_integration.config.surface_key, "2D_")

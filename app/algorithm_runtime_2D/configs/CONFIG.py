@@ -1,3 +1,4 @@
+import os
 import socket
 from pathlib import Path
 from threading import Thread
@@ -14,7 +15,7 @@ WorkClass = Thread
 
 print(hostname)
 
-if hostname in ["DESKTOP-3VCH6DO","DESKTOP-94ADH1G"]:
+if hostname in ["DESKTOP-3VCH6DO", "DESKTOP-94ADH1G"]:
     DEBUG = True
 else:
     DEBUG = False
@@ -23,9 +24,17 @@ print(CONFIG_FOLDER)
 ModelFolder = CONFIG_FOLDER.parent / "model"
 
 base_config_folder = Path(fr"D:\CONFIG_3D")
-base_debug_image_save_folder = base_config_folder/"debug"
+base_debug_image_save_folder = base_config_folder / "debug"
 
 loger_folder = "../../log"
 loger_file = "app_alg_2d.log"
 
-add_to_database=False
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+add_to_database = _env_bool("ALG_2D_ADD_TO_DATABASE", True)
