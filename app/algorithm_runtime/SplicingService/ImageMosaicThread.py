@@ -1,4 +1,5 @@
 import datetime
+import os
 import time
 import traceback
 
@@ -24,6 +25,24 @@ from .ImageMosaic import ImageMosaic
 import Globs
 
 
+DEFAULT_MAX_HISTORY_COIL_COUNT = 500
+
+
+def _get_max_history_coil_count() -> int:
+    raw_value = os.getenv("ALGORITHM_3D_MAX_HISTORY_COIL_COUNT", str(DEFAULT_MAX_HISTORY_COIL_COUNT))
+    try:
+        return max(int(raw_value), 1)
+    except ValueError:
+        logger.warning(
+            f"invalid ALGORITHM_3D_MAX_HISTORY_COIL_COUNT={raw_value}, "
+            f"use {DEFAULT_MAX_HISTORY_COIL_COUNT}"
+        )
+        return DEFAULT_MAX_HISTORY_COIL_COUNT
+
+
+MAX_HISTORY_COIL_COUNT = _get_max_history_coil_count()
+
+
 class ImageMosaicThread(Thread):
     """
     多线程的主循环
@@ -37,6 +56,7 @@ class ImageMosaicThread(Thread):
         self.listData = []
         self.saveDataBase = True
         self.debugType = False
+        self.maxHistoryCoilCount = max(MAX_HISTORY_COIL_COUNT, 1)
         self.imageMosaicList: List[ImageMosaic] = []
         # 重新识别的排队机制（优先级低于新数据）
         self.re_detection_queue: list[int] = []
@@ -51,10 +71,27 @@ class ImageMosaicThread(Thread):
         try:
             self.startCoilId = Coil.get_coil(1)[0].SecondaryCoilId  # 最新的 数据
             self.endCoilId = Coil.get_secondary_coil(1)[0].Id  # 目标数据
+            self.startCoilId = self._limit_history_start_id(self.startCoilId, self.endCoilId)
         except IndexError:
             logger.error(" ")
             self.startCoilId = 0
     check_num=0
+
+    def _limit_history_start_id(self, start_coil_id: int, max_secondary_coil_id: int) -> int:
+        if self.maxHistoryCoilCount <= 0:
+            return max_secondary_coil_id
+
+        min_start_coil_id = max(max_secondary_coil_id - self.maxHistoryCoilCount, 0)
+        if start_coil_id < min_start_coil_id:
+            logger.warning(
+                f"history data exceeds limit, skip SecondaryCoilId <= {min_start_coil_id}; "
+                f"last_processed={start_coil_id}, latest={max_secondary_coil_id}, "
+                f"max_history={self.maxHistoryCoilCount}"
+            )
+            return min_start_coil_id
+
+        return start_coil_id
+
     def check_detection_end(self, secondary_coil_id):
         for imageMosaic in self.imageMosaicList:
             if not imageMosaic.check_detection_end(secondary_coil_id):
@@ -152,7 +189,13 @@ class ImageMosaicThread(Thread):
             run_num = 0
             try:
                 max_secondary_coil_id = Coil.get_secondary_coil(1)[0].Id
-                list_data = Coil.get_secondary_coil_by_id(self.startCoilId).all()
+                self.startCoilId = self._limit_history_start_id(self.startCoilId, max_secondary_coil_id)
+                list_data = (
+                    Coil.get_secondary_coil_by_id(self.startCoilId)
+                    .order_by(SecondaryCoilModel.Id.asc())
+                    .limit(self.maxHistoryCoilCount)
+                    .all()
+                )
                 # list_data = list_data[-3:]
                 # try:
                 #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
