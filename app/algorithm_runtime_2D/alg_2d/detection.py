@@ -138,7 +138,7 @@ class CoilDetectionModel:
         self.model = YOLO(model_url)
 
     def predict(self, item_info: ClipImageItem):
-        results = self.model(item_info.image)
+        results = self.model(item_info.image, imgsz=CONFIG.area_detection_image_size)
         res_list = []
         if not isinstance(item_info, list):
             item_info = [item_info]
@@ -164,17 +164,19 @@ coil_detection_model = CoilDetectionModel()
 
 def _get_absolute_defect_box(
         clip_image_item: ClipImageItem,
-        defect_item: CoilDetectionResult) -> tuple[int, int, int, int]:
+        defect_item: CoilDetectionResult) -> tuple[int, int, int, int] | None:
     clip_x1, clip_y1, clip_x2, clip_y2 = clip_image_item.box
-    defect_x1 = max(clip_x1, clip_x1 + defect_item.xmin)
-    defect_y1 = max(clip_y1, clip_y1 + defect_item.ymin)
-    defect_x2 = min(clip_x2, clip_x1 + defect_item.xmax)
-    defect_y2 = min(clip_y2, clip_y1 + defect_item.ymax)
+    defect_x1 = min(max(clip_x1 + defect_item.xmin, clip_x1), clip_x2)
+    defect_y1 = min(max(clip_y1 + defect_item.ymin, clip_y1), clip_y2)
+    defect_x2 = min(max(clip_x1 + defect_item.xmax, clip_x1), clip_x2)
+    defect_y2 = min(max(clip_y1 + defect_item.ymax, clip_y1), clip_y2)
+    if defect_x2 <= defect_x1 or defect_y2 <= defect_y1:
+        return None
     return (
         int(defect_x1),
         int(defect_y1),
-        max(1, int(defect_x2 - defect_x1)),
-        max(1, int(defect_y2 - defect_y1)),
+        int(defect_x2 - defect_x1),
+        int(defect_y2 - defect_y1),
     )
 
 
@@ -186,8 +188,10 @@ def build_defect_list(det_info: List[YoloResult]) -> List[dict]:
             defect_item: CoilDetectionResult
             clip_image_item = item.image_info
             clip_image_item: ClipImageItem
-            defect_x, defect_y, defect_w, defect_h = _get_absolute_defect_box(
-                clip_image_item, defect_item)
+            defect_box = _get_absolute_defect_box(clip_image_item, defect_item)
+            if defect_box is None:
+                continue
+            defect_x, defect_y, defect_w, defect_h = defect_box
             defect_list.append({
                 "secondaryCoilId": clip_image_item.coil_id,
                 "surface": clip_image_item.surface,

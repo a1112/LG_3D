@@ -37,4 +37,16 @@ def _env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 add_to_database = _env_bool("ALG_2D_ADD_TO_DATABASE", True)
+area_detection_tile_size = _env_int("ALG_2D_AREA_DETECTION_TILE_SIZE", 1024)
+area_detection_image_size = _env_int("ALG_2D_AREA_DETECTION_IMAGE_SIZE", area_detection_tile_size)

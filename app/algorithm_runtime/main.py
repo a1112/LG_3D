@@ -1,28 +1,106 @@
 ﻿"""
 Standalone entry point for algorithm runtime (Lis, ZipServer, ImageMosaic).
 """
-import faulthandler, sys
+from __future__ import annotations
+
+import faulthandler
+import logging
+import multiprocessing
+import os
+import signal
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 faulthandler.enable(all_threads=True)
 
-import sys
-
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent/"Base"))
-
-import multiprocessing
-import time
-import logging
 
 from Base.utils.StdoutLog import Logger
 from Base.utils.LoggerProcess import LoggerProcess
 from SplicingService.ImageMosaicThread import ImageMosaicThread
 from SubServer.ZipServer import ZipServer
+from Base.utils.Singleton import SingletonLock
 import Globs
 from CoilDataBase.Coil import deleteCoilByCoilId
 # deleteCoilByCoilId(1296711)
+
+
+def _read_pid(pid_file: Path) -> int | None:
+    try:
+        content = pid_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return int(content) if content.isdigit() else None
+
+
+def _terminate_process_tree(pid: int) -> bool:
+    if pid <= 0 or pid == os.getpid():
+        return False
+
+    if sys.platform == "win32":
+        result = subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(pid)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        if result.returncode != 0:
+            print(f"[ERROR] Failed to terminate old 3D runtime PID {pid}.")
+            if result.stdout:
+                print(result.stdout.strip())
+            if result.stderr:
+                print(result.stderr.strip())
+            return False
+        return True
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+        return True
+    except OSError as e:
+        print(f"[ERROR] Failed to terminate old 3D runtime PID {pid}: {e}")
+        return False
+
+
+def _acquire_runtime_lock() -> SingletonLock:
+    lock = SingletonLock("algorithm_runtime_3d")
+    if lock.acquire():
+        return lock
+
+    old_pid = _read_pid(lock.pid_file)
+    if old_pid is not None:
+        print(f"[INFO] 3D Algorithm Runtime is already running, restarting old PID {old_pid}...")
+        if _terminate_process_tree(old_pid):
+            try:
+                lock.pid_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+            time.sleep(2)
+
+            lock = SingletonLock("algorithm_runtime_3d")
+            if lock.acquire():
+                print("[INFO] Old 3D Algorithm Runtime stopped; startup will continue.")
+                return lock
+
+    print("[ERROR] 3D Algorithm Runtime is already running!")
+    print(f"  Lock file: {lock.pid_file}")
+    print("  Could not stop the old runtime automatically. Stop it manually and try again.")
+    sys.exit(1)
+
+
 def main() -> None:
+    # 防重复启动检查
+    lock = _acquire_runtime_lock()
+
+    try:
+        _run_main()
+    finally:
+        lock.release()
+
+
+def _run_main() -> None:
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     try:
