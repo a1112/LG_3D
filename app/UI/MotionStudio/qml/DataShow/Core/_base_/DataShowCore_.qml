@@ -134,10 +134,10 @@ Item {
                                             cleanItem[key] = item[key]
                                         }
                                     }
+                                    cleanItem["configDefectName"] = defectName
 
                                     if(defectName.indexOf("2D_")>=0){
                                         cleanItem["is_area"]=true
-                                        cleanItem["configDefectName"] = defectName
                                         cleanItem.defectName=cleanItem.defectName.slice(3)
                                         areaDefectModel.append(cleanItem)
                                     }

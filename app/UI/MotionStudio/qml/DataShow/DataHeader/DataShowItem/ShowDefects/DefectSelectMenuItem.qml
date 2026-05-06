@@ -18,7 +18,7 @@ MenuItem {
         width:10
         anchors.right:parent.right
         height:parent.height
-        visible: defectClass.defectName == defect.defect_name
+        visible: defectClass.defectName == defect.config_defect_name
         color:global.defectClassProperty.getColorByName(defectClass.defectName)
     }
 

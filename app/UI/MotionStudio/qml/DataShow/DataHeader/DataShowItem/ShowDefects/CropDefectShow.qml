@@ -6,6 +6,12 @@ ItemDelegate {
 
     id:root
     property ServerDefectModel defect: ServerDefectModel{}
+    readonly property int defectImageWidth: defect.isArea
+                                            ? (dataShowCore.dataShowAreaCore.sourceWidth || dataShowCore.sourceWidth || 5000)
+                                            : (dataShowCore.sourceWidth || 5000)
+    readonly property int defectImageHeight: defect.isArea
+                                             ? (dataShowCore.dataShowAreaCore.sourceHeight || dataShowCore.sourceHeight || 5000)
+                                             : (dataShowCore.sourceHeight || 5000)
 
 
     property real px_width:Math.min(Math.min(body.width,defect.defect_w)/defect.defect_w,
@@ -37,10 +43,10 @@ ItemDelegate {
                     source: {
                         let x_ = defect.defect_x
                         let w_ = defect.defect_w
-                        let imgW = dataShowCore.sourceWidth || 5000
+                        let imgW = root.defectImageWidth
 
-                        if ( px_width * defectW < body.width ){
-                            let out_w = body.width/px_width-defectW
+                        if ( px_width * defect.defect_w < body.width ){
+                            let out_w = body.width/px_width-defect.defect_w
                             let left_expand = out_w/2
                             let right_expand = out_w/2
 
@@ -66,10 +72,10 @@ ItemDelegate {
 
                         let y_ = defect.defect_y
                         let h_ = defect.defect_h
-                        let imgH = dataShowCore.sourceHeight || 5000
+                        let imgH = root.defectImageHeight
 
-                        if (px_width*defectH <body.height){
-                            let out_h = body.height / px_width - defectH
+                        if (px_width*defect.defect_h <body.height){
+                            let out_h = body.height / px_width - defect.defect_h
                             let top_expand = out_h/2
                             let bottom_expand = out_h/2
 
