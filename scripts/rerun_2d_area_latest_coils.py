@@ -71,6 +71,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-db", action="store_true", help="Do not replace database defects.")
     parser.add_argument("--no-save-images", action="store_true", help="Do not save detected tile images/XML.")
     parser.add_argument(
+        "--summary-sync-interval",
+        type=int,
+        default=100,
+        help="Sync CoilSummary every N processed coils after DB writes. 0 syncs only at the end.",
+    )
+    parser.add_argument(
         "--max-tiles-per-area",
         type=int,
         default=0,
@@ -306,6 +312,59 @@ def append_metadata(metadata_path: Path, saved_tile: SavedTile) -> None:
         f.write(json.dumps(asdict(saved_tile), ensure_ascii=False) + "\n")
 
 
+def escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def create_coil_defect(defect: dict):
+    from CoilDataBase.models import CoilDefect
+
+    return CoilDefect(
+        secondaryCoilId=defect["secondaryCoilId"],
+        surface=defect["surface"],
+        defectClass=defect["defectClass"],
+        defectName=defect["defectName"],
+        defectStatus=defect["defectStatus"],
+        defectTime=datetime.datetime.now(),
+        defectX=defect["defectX"],
+        defectY=defect["defectY"],
+        defectW=defect["defectW"],
+        defectH=defect["defectH"],
+        defectSource=defect["defectSource"],
+        defectData=defect["defectData"],
+    )
+
+
+def replace_defects_without_summary(defects: Sequence[dict], coil_id: int, surface: str,
+                                    defect_name_prefix: str) -> None:
+    from CoilDataBase.core import Session
+    from CoilDataBase.models import CoilDefect
+
+    with Session() as session:
+        query = session.query(CoilDefect).filter(
+            CoilDefect.secondaryCoilId == coil_id,
+            CoilDefect.surface == surface,
+        )
+        if defect_name_prefix:
+            query = query.filter(
+                CoilDefect.defectName.like(
+                    f"{escape_like(defect_name_prefix)}%", escape="\\"))
+        query.delete(synchronize_session=False)
+        if defects:
+            session.add_all([create_coil_defect(defect) for defect in defects])
+        session.commit()
+
+
+def sync_summaries(coil_ids: Sequence[int]) -> None:
+    if not coil_ids:
+        return
+    from CoilDataBase.CoilSummary import sync_summaries_range
+
+    unique_ids = sorted(set(int(coil_id) for coil_id in coil_ids))
+    updated_count = sync_summaries_range(unique_ids)
+    logging.info("summary synced coils=%s updated=%s", len(unique_ids), updated_count)
+
+
 def iter_batches(items: Sequence[ClipImageItem], batch_size: int) -> Iterable[Sequence[ClipImageItem]]:
     batch_size = max(1, batch_size)
     for index in range(0, len(items), batch_size):
@@ -321,11 +380,11 @@ def load_area(data_integration: DataIntegration, area_path: Path) -> bool:
 
 
 def process_area(model, surface_config, coil_id: int, area_path: Path, save_dir: Path,
-                 metadata_path: Path, args: argparse.Namespace) -> tuple[int, int, int]:
+                 metadata_path: Path, args: argparse.Namespace) -> tuple[int, int, int, bool]:
     data_integration = DataIntegration(surface_config, coil_id)
     if not load_area(data_integration, area_path):
         logging.warning("skip unreadable area coil=%s surface=%s path=%s", coil_id, surface_config.surface_key, area_path)
-        return 0, 0, 1
+        return 0, 0, 1, False
 
     clip_items = data_integration.clip_image()
     if args.max_tiles_per_area:
@@ -351,11 +410,9 @@ def process_area(model, surface_config, coil_id: int, area_path: Path, save_dir:
                 append_metadata(metadata_path, saved_tile)
 
     if not args.dry_run and not args.no_db:
-        from CoilDataBase.Coil import replace_defects
+        replace_defects_without_summary(defects, coil_id, surface_config.surface_key, "2D_")
 
-        replace_defects(defects, coil_id, surface_config.surface_key, "2D_")
-
-    return hit_tiles, total_boxes, 0
+    return hit_tiles, total_boxes, 0, not args.dry_run and not args.no_db
 
 
 def main() -> None:
@@ -381,24 +438,33 @@ def main() -> None:
     hit_tiles_total = 0
     boxes_total = 0
     errors = 0
+    pending_summary_coils = []
 
     for index, coil_id in enumerate(coil_ids, start=1):
+        coil_db_changed = False
         for surface_key, surface_config in surface_configs.items():
             area_path = existing_area_path(surface_config, coil_id)
             if area_path is None:
                 skipped_areas += 1
                 continue
             try:
-                hit_tiles, boxes, area_errors = process_area(
+                hit_tiles, boxes, area_errors, db_changed = process_area(
                     model, surface_config, coil_id, area_path, save_dir, metadata_path, args
                 )
                 processed_areas += 1
                 hit_tiles_total += hit_tiles
                 boxes_total += boxes
                 errors += area_errors
+                coil_db_changed = coil_db_changed or db_changed
             except Exception as exc:
                 errors += 1
                 logging.exception("failed coil=%s surface=%s path=%s error=%s", coil_id, surface_key, area_path, exc)
+
+        if coil_db_changed:
+            pending_summary_coils.append(coil_id)
+            if args.summary_sync_interval and len(pending_summary_coils) >= args.summary_sync_interval:
+                sync_summaries(pending_summary_coils)
+                pending_summary_coils = []
 
         if index == 1 or index % 20 == 0:
             elapsed = time.monotonic() - start_time
@@ -414,6 +480,9 @@ def main() -> None:
                 errors,
                 rate,
             )
+
+    if pending_summary_coils:
+        sync_summaries(pending_summary_coils)
 
     elapsed = time.monotonic() - start_time
     logging.info(
