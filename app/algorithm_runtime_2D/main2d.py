@@ -1,10 +1,41 @@
+import os
 import time
-from pathlib import Path
 
 
 from JoinService.JoinWork import JoinWork
 from configs import CONFIG
 from configs.JoinConfig import JoinConfig
+
+
+DEFAULT_MAX_HISTORY_COIL_COUNT = 200
+
+
+def _get_max_history_coil_count() -> int:
+    raw_value = os.getenv("ALGORITHM_2D_MAX_HISTORY_COIL_COUNT", str(DEFAULT_MAX_HISTORY_COIL_COUNT))
+    try:
+        return max(int(raw_value), 1)
+    except ValueError:
+        print(
+            f"invalid ALGORITHM_2D_MAX_HISTORY_COIL_COUNT={raw_value}, "
+            f"use {DEFAULT_MAX_HISTORY_COIL_COUNT}"
+        )
+        return DEFAULT_MAX_HISTORY_COIL_COUNT
+
+
+MAX_HISTORY_COIL_COUNT = _get_max_history_coil_count()
+
+
+def _limit_history_start_coil(start_coil: int, max_coil: int) -> int:
+    min_start_coil = max(max_coil - MAX_HISTORY_COIL_COUNT, 0)
+    if start_coil < min_start_coil:
+        print(
+            f"history data exceeds limit, skip coil_id <= {min_start_coil}; "
+            f"last_processed={start_coil}, latest={max_coil}, "
+            f"max_history={MAX_HISTORY_COIL_COUNT}"
+        )
+        return min_start_coil
+
+    return start_coil
 
 
 def main():
@@ -15,12 +46,15 @@ def main():
     start_coil = int(start_coil)
     print(start_coil)
     max_coil = join_config.get_save_max_coil()
+    start_coil = _limit_history_start_coil(start_coil, max_coil)
 
     # 控制日志输出频率（5分钟一次）
     last_log_time = 0
     LOG_INTERVAL = 300  # 5分钟 = 300秒
 
     while True:
+        max_coil = join_config.get_save_max_coil()
+        start_coil = _limit_history_start_coil(start_coil, max_coil)
         can = join_config.can_(start_coil)
         if ( not can ) and start_coil >= (max_coil-2) :
             time.sleep(5)
