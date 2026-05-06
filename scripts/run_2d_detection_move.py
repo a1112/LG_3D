@@ -44,7 +44,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Recursively run CoilDetection_Area_JC.pt and move detected 2D tiles to an output folder."
     )
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_DIR, help="Input folder scanned recursively.")
+    parser.add_argument(
+        "--input",
+        dest="inputs",
+        action="append",
+        type=Path,
+        default=None,
+        help="Input folder scanned recursively. Can be passed multiple times.",
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR, help="Output folder for detected images.")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL, help="YOLO detection model path.")
     parser.add_argument("--workers", type=int, default=4, help="Number of worker processes.")
@@ -56,6 +63,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=0, help="Max images to scan from the manifest. 0 means no limit.")
     parser.add_argument("--copy", action="store_true", help="Copy detected images instead of moving them.")
     parser.add_argument("--dry-run", action="store_true", help="Run detection without moving images or writing XML files.")
+    parser.add_argument(
+        "--include-output",
+        action="store_true",
+        help="Do not skip images under the output folder when an input contains the output folder.",
+    )
     parser.add_argument(
         "--progress-seconds",
         type=float,
@@ -85,25 +97,32 @@ def is_relative_to(path: Path, parent: Path) -> bool:
         return False
 
 
-def iter_images(input_dir: Path, output_dir: Path) -> Iterable[Path]:
+def iter_images(input_dirs: Sequence[Path], output_dir: Path, include_output: bool) -> Iterable[Path]:
     resolved_output = output_dir.resolve()
-    output_inside_input = is_relative_to(resolved_output, input_dir.resolve())
+    for input_dir in input_dirs:
+        resolved_input = input_dir.resolve()
+        output_inside_input = is_relative_to(resolved_output, resolved_input)
+        for path in input_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in IMAGE_SUFFIXES:
+                continue
+            if not include_output and output_inside_input and is_relative_to(path.resolve(), resolved_output):
+                continue
+            yield path
 
-    for path in input_dir.rglob("*"):
-        if not path.is_file():
-            continue
-        if path.suffix.lower() not in IMAGE_SUFFIXES:
-            continue
-        if output_inside_input and is_relative_to(path.resolve(), resolved_output):
-            continue
-        yield path
 
-
-def write_manifest(input_dir: Path, output_dir: Path, manifest_path: Path, limit: int) -> int:
+def write_manifest(input_dirs: Sequence[Path], output_dir: Path, manifest_path: Path, limit: int,
+                   include_output: bool) -> int:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     count = 0
+    seen_paths = set()
     with manifest_path.open("w", encoding="utf-8", newline="\n") as f:
-        for image_path in iter_images(input_dir, output_dir):
+        for image_path in iter_images(input_dirs, output_dir, include_output):
+            resolved_path = str(image_path.resolve())
+            if resolved_path in seen_paths:
+                continue
+            seen_paths.add(resolved_path)
             f.write(str(image_path) + "\n")
             count += 1
             if limit and count >= limit:
@@ -115,6 +134,14 @@ def load_model(model_path: Path):
     from ultralytics import YOLO
 
     return YOLO(str(model_path))
+
+
+def normalize_label(label: str) -> str:
+    try:
+        fixed_label = label.encode("gbk").decode("utf-8")
+    except UnicodeError:
+        return label
+    return fixed_label or label
 
 
 def parse_detection_result(result) -> tuple[int, int, list[DetectionBox]]:
@@ -138,14 +165,6 @@ def parse_detection_result(result) -> tuple[int, int, list[DetectionBox]]:
             )
         )
     return width, height, detections
-
-
-def normalize_label(label: str) -> str:
-    try:
-        fixed_label = label.encode("gbk").decode("utf-8")
-    except UnicodeError:
-        return label
-    return fixed_label or label
 
 
 def predict_paths(model, batch: Sequence[Path], args: dict):
@@ -255,8 +274,27 @@ def append_metadata(metadata_path: Path, moved_detection: MovedDetection) -> Non
         f.write(json.dumps(asdict(moved_detection), ensure_ascii=False) + "\n")
 
 
+def should_keep_in_output(source_path: Path, output_dir: Path) -> bool:
+    return is_relative_to(source_path.resolve(), output_dir.resolve())
+
+
 def move_detection(source_path: Path, output_dir: Path, metadata_path: Path, width: int, height: int,
                    detections: Sequence[DetectionBox], copy_mode: bool, dry_run: bool) -> MovedDetection:
+    if should_keep_in_output(source_path, output_dir):
+        target_path = source_path
+        xml_path = target_path.with_suffix(".xml")
+        if not dry_run:
+            save_pascal_voc_xml(xml_path, target_path, width, height, detections)
+        moved_detection = MovedDetection(
+            source_path=str(source_path),
+            image_path=str(target_path),
+            xml_path=str(xml_path),
+            detections=[asdict(detection) for detection in detections],
+        )
+        if not dry_run:
+            append_metadata(metadata_path, moved_detection)
+        return moved_detection
+
     target_path, lock_path = reserve_path(destination_for(output_dir, source_path))
     xml_path = target_path.with_suffix(".xml")
     source_xml = source_path.with_suffix(".xml")
@@ -401,25 +439,26 @@ def worker_main(worker_id: int, args: dict) -> None:
 
 def main() -> None:
     args = parse_args()
-    input_dir = args.input.resolve()
+    input_dirs = [path.resolve() for path in (args.inputs or [DEFAULT_INPUT_DIR])]
     output_dir = args.output.resolve()
     manifest_path = (args.manifest or output_dir / "detection_manifest.txt").resolve()
     metadata_path = (args.metadata or output_dir / "metadata.jsonl").resolve()
     log_dir = output_dir
 
-    if not input_dir.exists():
-        raise FileNotFoundError(f"input folder not found: {input_dir}")
+    for input_dir in input_dirs:
+        if not input_dir.exists():
+            raise FileNotFoundError(f"input folder not found: {input_dir}")
     if not args.model.exists():
         raise FileNotFoundError(f"model not found: {args.model}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    total_images = write_manifest(input_dir, output_dir, manifest_path, args.limit)
+    total_images = write_manifest(input_dirs, output_dir, manifest_path, args.limit, args.include_output)
     if total_images == 0:
-        print(f"FOUND images=0 input={input_dir}")
+        print(f"FOUND images=0 inputs={';'.join(str(path) for path in input_dirs)}")
         return
 
     runtime_args = {
-        "input": input_dir,
+        "inputs": input_dirs,
         "output": output_dir,
         "model": args.model.resolve(),
         "workers": max(1, args.workers),
@@ -439,7 +478,10 @@ def main() -> None:
     action = "copy" if args.copy else "move"
     if args.dry_run:
         action = f"dry-run {action}"
-    print(f"START input={input_dir} output={output_dir} model={args.model.resolve()} action={action}")
+    print(
+        f"START inputs={';'.join(str(path) for path in input_dirs)} "
+        f"output={output_dir} model={args.model.resolve()} action={action}"
+    )
     print(f"FOUND images={total_images}")
     print(f"MANIFEST path={manifest_path}")
 
