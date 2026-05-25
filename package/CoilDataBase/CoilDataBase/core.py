@@ -11,7 +11,10 @@ def ensure_runtime_indexes(engine_):
     """Create hot-path indexes for existing databases without requiring a manual migration."""
     inspector = inspect(engine_)
     try:
-        existing_indexes = {item["name"] for item in inspector.get_indexes("CoilDefect")}
+        existing_indexes = {
+            item["name"]
+            for item in inspector.get_indexes("CoilDefect")
+        }
     except Exception:
         existing_indexes = set()
 
@@ -23,6 +26,23 @@ def ensure_runtime_indexes(engine_):
     if "idx_coil_defect_secondary_surface" not in existing_indexes:
         statements.append(
             "CREATE INDEX idx_coil_defect_secondary_surface ON CoilDefect (secondaryCoilId, surface)"
+        )
+
+    try:
+        existing_manual_indexes = {
+            item["name"]
+            for item in inspector.get_indexes("ManualDefect")
+        }
+    except Exception:
+        existing_manual_indexes = set()
+
+    if "idx_manual_defect_secondary_coil_id" not in existing_manual_indexes:
+        statements.append(
+            "CREATE INDEX idx_manual_defect_secondary_coil_id ON ManualDefect (secondaryCoilId)"
+        )
+    if "idx_manual_defect_secondary_surface" not in existing_manual_indexes:
+        statements.append(
+            "CREATE INDEX idx_manual_defect_secondary_surface ON ManualDefect (secondaryCoilId, surface)"
         )
 
     if not statements:
@@ -47,8 +67,7 @@ def get_engine(url=None):
                             pool_timeout=20,
                             pool_recycle=600,
                             pool_pre_ping=True,
-                            echo=False
-                            )
+                            echo=False)
     if not database_exists(engine_.url):
         create_database(engine_.url)
     Base.metadata.create_all(engine_)

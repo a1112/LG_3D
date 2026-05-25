@@ -1,10 +1,12 @@
 import datetime
 import json
+import re
 from collections import defaultdict
-
-from sqlalchemy import func
+from pathlib import Path
 
 from fastapi import APIRouter
+from PIL import Image
+from sqlalchemy import func
 
 from Base import CONFIG
 from Base.CONFIG import isLoc, serverConfigProperty
@@ -27,12 +29,12 @@ from ._tool_ import get_surface_key
 from .api_core import app
 
 serverConfigProperty: ServerConfigProperty
-
 """
 数据库服务
 
 """
 router = APIRouter(tags=["数据库服务"])
+
 
 def get_coil_item_info(c):
     """
@@ -45,7 +47,7 @@ def get_coil_item_info(c):
             c["NextCode"] = code
             try:
                 c["NextInfo"] = CONFIG.infoConfigProperty.get_next(str(code))
-            except (Exception,) as e:
+            except (Exception, ) as e:
                 print(e)
                 c["NextInfo"] = "未知去向，" + str(code)
     return c
@@ -56,11 +58,12 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
      格式化 单个 Communication 返回 数据
      非 自动添加
     """
-    c_data = {"hasCoil": False,
-              "hasAlarmInfo": False,
-              "AlarmInfo" : {},
-              "defects": []
-              }
+    c_data = {
+        "hasCoil": False,
+        "hasAlarmInfo": False,
+        "AlarmInfo": {},
+        "defects": []
+    }
     if len(secondary_coil.childrenCoil) > 0:
         c_data["hasCoil"] = True
     for childrenCoil in secondary_coil.childrenCoil:
@@ -69,11 +72,14 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
             c_data["hasAlarmInfo"] = True
         for childrenAlarmInfo in secondary_coil.childrenAlarmInfo:
             childrenAlarmInfo: AlarmInfo
-            c_data["AlarmInfo"][childrenAlarmInfo.surface] = get_coil_item_info(childrenAlarmInfo)
+            c_data["AlarmInfo"][
+                childrenAlarmInfo.surface] = get_coil_item_info(
+                    childrenAlarmInfo)
         c_data["defects"] = defaultdict(list)
         for childrenCoilDefect in secondary_coil.childrenCoilDefect:
             childrenCoilDefect: CoilDefect
-            c_data["defects"][childrenCoilDefect.surface] .append(childrenCoilDefect)
+            c_data["defects"][childrenCoilDefect.surface].append(
+                childrenCoilDefect)
     # del secondary_coil.childrenCoilDefect
     # del secondary_coil.childrenAlarmInfo
     c_data.update(get_coil_item_info(secondary_coil))
@@ -82,11 +88,15 @@ def format_secondary_item_data(secondary_coil: SecondaryCoil):
     # c_data["defects"] = secondary_coil.childrenCoilDefect   # 返回缺陷数据
     return c_data
 
+
 def format_coil_info(secondary_coil_list):
     """
      格式化 Communication 返回 数据
     """
-    return [format_secondary_item_data(secondary_coil) for secondary_coil in secondary_coil_list]
+    return [
+        format_secondary_item_data(secondary_coil)
+        for secondary_coil in secondary_coil_list
+    ]
 
 
 @router.get("/coilList/{number}")
@@ -98,13 +108,11 @@ async def get_coil(number: int, coil_id=None, rev=True):
     """
     number = min(number, 1000)
     # 直接查询摘要表，不进行同步（快速返回）
-    data = get_coil_list_with_summary(
-        limit=number,
-        coil_id=coil_id,
-        rev=rev,
-        by_coil=isLoc,
-        auto_sync=False
-    )
+    data = get_coil_list_with_summary(limit=number,
+                                      coil_id=coil_id,
+                                      rev=rev,
+                                      by_coil=isLoc,
+                                      auto_sync=False)
     return data
 
 
@@ -115,18 +123,17 @@ async def get_flush(coil_id: int):
     """
     if coil_id > 0:
         return {
-            "coilList": get_coil_list_with_summary(
-                limit=10,
-                coil_id=coil_id,
-                rev=True,
-                by_coil=isLoc
-            )
+            "coilList":
+            get_coil_list_with_summary(limit=10,
+                                       coil_id=coil_id,
+                                       rev=True,
+                                       by_coil=isLoc)
         }
     return {}
 
 
 @router.get("/search/coilNo/{coil_no:str}")
-async def search_by_coil_no(coil_no:str):
+async def search_by_coil_no(coil_no: str):
     return search_coils_by_coil_no_summary(coil_no, by_coil=True)
 
 
@@ -157,10 +164,9 @@ async def get_plc_data(coil_id: int):
     return tool.to_dict(r)
 
 
-
-
-
-def _query_plc_curve_rows(start_id: int = 0, end_id: int = 0, limit: int = 200):
+def _query_plc_curve_rows(start_id: int = 0,
+                          end_id: int = 0,
+                          limit: int = 200):
     limit = min(max(int(limit), 1), 2000)
     if start_id and end_id and start_id > end_id:
         start_id, end_id = end_id, start_id
@@ -168,17 +174,16 @@ def _query_plc_curve_rows(start_id: int = 0, end_id: int = 0, limit: int = 200):
     order_desc = not start_id and not end_id
 
     with Session() as session:
-        base_query = session.query(
-            PlcData.secondaryCoilId,
-            func.max(PlcData.Id).label("max_id")
-        )
+        base_query = session.query(PlcData.secondaryCoilId,
+                                   func.max(PlcData.Id).label("max_id"))
         if start_id:
             base_query = base_query.filter(PlcData.secondaryCoilId >= start_id)
         if end_id:
             base_query = base_query.filter(PlcData.secondaryCoilId <= end_id)
         base_query = base_query.group_by(PlcData.secondaryCoilId).subquery()
 
-        query = session.query(PlcData).join(base_query, PlcData.Id == base_query.c.max_id)
+        query = session.query(PlcData).join(base_query,
+                                            PlcData.Id == base_query.c.max_id)
         if order_desc:
             query = query.order_by(PlcData.secondaryCoilId.desc())
         else:
@@ -190,8 +195,12 @@ def _query_plc_curve_rows(start_id: int = 0, end_id: int = 0, limit: int = 200):
         rows = list(reversed(rows))
     return rows
 
+
 @router.get("/plc_curve/{field}")
-async def get_plc_curve(field: str, start_id: int = 0, end_id: int = 0, limit: int = 200):
+async def get_plc_curve(field: str,
+                        start_id: int = 0,
+                        end_id: int = 0,
+                        limit: int = 200):
     field_map = {
         "location_S": PlcData.location_S,
         "location_L": PlcData.location_L,
@@ -217,17 +226,16 @@ async def get_plc_curve(field: str, start_id: int = 0, end_id: int = 0, limit: i
     order_desc = not start_id and not end_id
 
     with Session() as session:
-        base_query = session.query(
-            PlcData.secondaryCoilId,
-            func.max(PlcData.Id).label("max_id")
-        )
+        base_query = session.query(PlcData.secondaryCoilId,
+                                   func.max(PlcData.Id).label("max_id"))
         if start_id:
             base_query = base_query.filter(PlcData.secondaryCoilId >= start_id)
         if end_id:
             base_query = base_query.filter(PlcData.secondaryCoilId <= end_id)
         base_query = base_query.group_by(PlcData.secondaryCoilId).subquery()
 
-        query = session.query(PlcData).join(base_query, PlcData.Id == base_query.c.max_id)
+        query = session.query(PlcData).join(base_query,
+                                            PlcData.Id == base_query.c.max_id)
         if order_desc:
             query = query.order_by(PlcData.secondaryCoilId.desc())
         else:
@@ -249,7 +257,9 @@ async def get_plc_curve(field: str, start_id: int = 0, end_id: int = 0, limit: i
 
 
 @router.get("/plc_curve_all")
-async def get_plc_curve_all(start_id: int = 0, end_id: int = 0, limit: int = 200):
+async def get_plc_curve_all(start_id: int = 0,
+                            end_id: int = 0,
+                            limit: int = 200):
     rows = _query_plc_curve_rows(start_id, end_id, limit)
     coil_ids = [row.secondaryCoilId for row in rows]
     state_map = {}
@@ -259,15 +269,19 @@ async def get_plc_curve_all(start_id: int = 0, end_id: int = 0, limit: int = 200
             state_sub = session.query(
                 CoilState.secondaryCoilId.label("coil_id"),
                 CoilState.surface.label("surface"),
-                func.max(CoilState.Id).label("max_id")
-            ).filter(
-                CoilState.secondaryCoilId.in_(coil_ids),
-                CoilState.surface.in_(["S", "L"])
-            ).group_by(CoilState.secondaryCoilId, CoilState.surface).subquery()
-            state_rows = session.query(CoilState).join(state_sub, CoilState.Id == state_sub.c.max_id).all()
-            width_rows = session.query(SecondaryCoil.Id, SecondaryCoil.ActWidth).filter(SecondaryCoil.Id.in_(coil_ids)).all()
+                func.max(CoilState.Id).label("max_id")).filter(
+                    CoilState.secondaryCoilId.in_(coil_ids),
+                    CoilState.surface.in_(["S", "L"])).group_by(
+                        CoilState.secondaryCoilId,
+                        CoilState.surface).subquery()
+            state_rows = session.query(CoilState).join(
+                state_sub, CoilState.Id == state_sub.c.max_id).all()
+            width_rows = session.query(
+                SecondaryCoil.Id, SecondaryCoil.ActWidth).filter(
+                    SecondaryCoil.Id.in_(coil_ids)).all()
         for state in state_rows:
-            state_map[(state.secondaryCoilId, state.surface)] = state.median_3d_mm
+            state_map[(state.secondaryCoilId,
+                       state.surface)] = state.median_3d_mm
         for row in width_rows:
             width_map[row[0]] = row[1]
 
@@ -291,14 +305,15 @@ async def get_plc_curve_all(start_id: int = 0, end_id: int = 0, limit: int = 200
         })
     return {"items": items}
 
+
 @router.get("/search/defects/{coil_id:int}/{direction}")
 async def get_defects(coil_id: int, direction: str):
-    return tool.to_dict(Coil.get_defects(coil_id, direction))
+    return Coil.get_defects(coil_id, direction)
 
 
 @router.get("/search/getDefectAll/{start_coil_id:int}/{end_coil_id:int}")
 async def get_defect_all(start_coil_id, end_coil_id):
-    return tool.to_dict(Coil.get_defects_all(start_coil_id, end_coil_id))
+    return Coil.get_defects_all(start_coil_id, end_coil_id)
 
 
 @router.get("/defectDict")
@@ -340,33 +355,27 @@ async def get_camera_alarm():
             camera_config = json.load(f)
         return {
             "S_D": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "近端下方相机（右键打开设置）"
             },
             "S_M": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "近端中间相机（右键打开设置）"
             },
             "S_U": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "近端上方相机（右键打开设置）"
             },
             "L_D": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "远端下方相机（右键打开设置）"
             },
             "L_M": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "远端中间相机（右键打开设置）"
             },
             "L_U": {
-                **camera_config,
-                "level": 1,
+                **camera_config, "level": 1,
                 "msg": "远端上方相机（右键打开设置）"
             },
         }
@@ -412,7 +421,7 @@ async def get_line_data(coil_id: int, surface_key: str):
 async def get_coil_status(coil_id):
     item = tool.to_dict(get_coil_status_by_coil_id(coil_id))
     if not item:
-        item = {"status":0,"msg":"","secondaryCoilId":coil_id,"Id":-1}
+        item = {"status": 0, "msg": "", "secondaryCoilId": coil_id, "Id": -1}
     return item
 
 
@@ -460,6 +469,164 @@ async def sync_summaries_range_api(request: dict):
     return {"synced": count, "message": f"Updated {count} summaries"}
 
 
+def _safe_folder_name(value: str) -> str:
+    name = str(value or "Unknown").strip()
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "_", name)
+    return name.strip(" .") or "Unknown"
+
+
+def _load_defect_data(value) -> dict:
+    if isinstance(value, dict):
+        return dict(value)
+    if not value:
+        return {}
+    try:
+        data = json.loads(value)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _center_crop_with_padding(image, center_x: float, center_y: float,
+                              crop_w: int, crop_h: int):
+    img_w, img_h = image.size
+    crop_w = min(max(int(crop_w), 1), max(img_w, 1))
+    crop_h = min(max(int(crop_h), 1), max(img_h, 1))
+    left = int(round(center_x - crop_w / 2))
+    top = int(round(center_y - crop_h / 2))
+    right = left + crop_w
+    bottom = top + crop_h
+
+    source_left = max(0, left)
+    source_top = max(0, top)
+    source_right = min(img_w, right)
+    source_bottom = min(img_h, bottom)
+    crop = image.crop((source_left, source_top, source_right, source_bottom))
+
+    if crop.size == (crop_w, crop_h):
+        return crop, (left, top, right, bottom)
+
+    background = 0
+    if image.mode == "RGBA":
+        background = (0, 0, 0, 0)
+    elif image.mode == "RGB":
+        background = (0, 0, 0)
+    padded = Image.new(image.mode, (crop_w, crop_h), background)
+    padded.paste(crop, (source_left - left, source_top - top))
+    return padded, (left, top, right, bottom)
+
+
+def _write_manual_defect_xml(xml_path: Path, image_path: Path, image_size,
+                             bbox, defect_name: str) -> None:
+    import xml.etree.ElementTree as ET
+
+    width, height = image_size
+    xmin, ymin, xmax, ymax = bbox
+    annotation = ET.Element("annotation")
+    ET.SubElement(annotation, "folder").text = image_path.parent.name
+    ET.SubElement(annotation, "filename").text = image_path.name
+
+    size = ET.SubElement(annotation, "size")
+    ET.SubElement(size, "width").text = str(width)
+    ET.SubElement(size, "height").text = str(height)
+    ET.SubElement(size, "depth").text = "3"
+
+    obj = ET.SubElement(annotation, "object")
+    ET.SubElement(obj, "name").text = defect_name
+    bndbox = ET.SubElement(obj, "bndbox")
+    ET.SubElement(bndbox, "xmin").text = str(xmin)
+    ET.SubElement(bndbox, "ymin").text = str(ymin)
+    ET.SubElement(bndbox, "xmax").text = str(xmax)
+    ET.SubElement(bndbox, "ymax").text = str(ymax)
+
+    tree = ET.ElementTree(annotation)
+    xml_path.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(xml_path, encoding="utf-8", xml_declaration=True)
+
+
+def _save_manual_defect_assets(defect: dict) -> dict:
+    from Base.tools.DataGet import DataGet
+
+    defect_id = int(defect.get("Id") or 0)
+    coil_id = int(defect.get("secondaryCoilId") or 0)
+    surface = defect.get("surface") or "S"
+    defect_name = defect.get("defectName") or "Unknown"
+    x = int(defect.get("defectX") or 0)
+    y = int(defect.get("defectY") or 0)
+    w = max(int(defect.get("defectW") or 1), 1)
+    h = max(int(defect.get("defectH") or 1), 1)
+
+    try:
+        image = DataGet("image", surface, str(coil_id), "GRAY",
+                        False).get_image(pil=True)
+        if image is None:
+            return {"manualAssetError": "source image not found"}
+
+        center_x = x + w / 2
+        center_y = y + h / 2
+        crop_w = max(int(round(w * 1.4)), 128)
+        crop_h = max(int(round(h * 1.4)), 128)
+        crop_image, crop_box = _center_crop_with_padding(
+            image, center_x, center_y, crop_w, crop_h)
+        if crop_image.mode not in {"RGB", "L"}:
+            crop_image = crop_image.convert("RGB")
+
+        base_dir = Path(serverConfigProperty.get_folder(coil_id, surface))
+        category_dir = base_dir / "manual_defect" / _safe_folder_name(
+            defect_name)
+        category_dir.mkdir(parents=True, exist_ok=True)
+
+        file_stem = f"{coil_id}_{surface}_{defect_id}_x{x}_y{y}_w{w}_h{h}"
+        image_path = category_dir / f"{file_stem}.jpg"
+        xml_path = category_dir / f"{file_stem}.xml"
+        crop_image.save(image_path, quality=95)
+
+        left, top, _, _ = crop_box
+        local_xmin = max(0, min(crop_image.size[0] - 1, int(round(x - left))))
+        local_ymin = max(0, min(crop_image.size[1] - 1, int(round(y - top))))
+        local_xmax = max(local_xmin + 1,
+                         min(crop_image.size[0], int(round(x + w - left))))
+        local_ymax = max(local_ymin + 1,
+                         min(crop_image.size[1], int(round(y + h - top))))
+        _write_manual_defect_xml(
+            xml_path,
+            image_path,
+            crop_image.size,
+            (local_xmin, local_ymin, local_xmax, local_ymax),
+            defect_name,
+        )
+
+        return {
+            "manualImagePath": str(image_path),
+            "manualXmlPath": str(xml_path),
+            "manualCropBox": list(crop_box),
+            "manualCenter": [center_x, center_y],
+        }
+    except Exception as e:
+        return {"manualAssetError": str(e)}
+
+
+def _sync_manual_defect_assets(manual_defect):
+    defect = tool.to_dict(manual_defect)
+    asset_data = _save_manual_defect_assets(defect)
+    defect_data = _load_defect_data(defect.get("defectData"))
+    defect_data.update(asset_data)
+    updated = Coil.update_manual_defect(
+        defect["Id"],
+        {"defectData": json.dumps(defect_data, ensure_ascii=False)},
+    )
+    return updated or manual_defect
+
+
+def _get_manual_image_path(defect_data: dict) -> Path | None:
+    extra_data = _load_defect_data(defect_data.get("defectData"))
+    image_path = extra_data.get("manualImagePath")
+    if not image_path:
+        return None
+    path = Path(image_path)
+    return path if path.exists() else None
+
+
 @router.get("/search/defects_all/{coil_id:int}/{direction}")
 async def get_defects_all_including_manual(coil_id: int, direction: str):
     """
@@ -487,7 +654,7 @@ async def get_manual_defects_api(coil_id: int, direction: str):
     Returns:
         手动标注缺陷列表
     """
-    return tool.to_dict(Coil.get_manual_defects(coil_id, direction))
+    return Coil.get_manual_defect_dicts(coil_id, direction)
 
 
 @router.post("/manual_defect/add")
@@ -512,6 +679,7 @@ async def add_manual_defect_api(request: dict):
     """
     try:
         manual_defect = Coil.add_manual_defect(request)
+        manual_defect = _sync_manual_defect_assets(manual_defect)
         return tool.to_dict(manual_defect)
     except Exception as e:
         return {"error": str(e), "success": False}
@@ -533,6 +701,7 @@ async def update_manual_defect_api(defect_id: int, request: dict):
         manual_defect = Coil.update_manual_defect(defect_id, request)
         if manual_defect is None:
             return {"error": "缺陷不存在", "success": False}
+        manual_defect = _sync_manual_defect_assets(manual_defect)
         return tool.to_dict(manual_defect)
     except Exception as e:
         return {"error": str(e), "success": False}
@@ -633,7 +802,12 @@ async def export_defects(request: dict):
                 coil_defect.defectH = defect_h
 
                 # 获取缺陷图像
-                defect_image = get_pil_image_by_defect(coil_defect)
+                manual_image_path = _get_manual_image_path(defect_data)
+                if manual_image_path is not None:
+                    with Image.open(manual_image_path) as image:
+                        defect_image = image.copy()
+                else:
+                    defect_image = get_pil_image_by_defect(coil_defect)
 
                 # 生成文件名：coil_id_类别_位置_序号.jpg
                 x_pos = int(defect_x)

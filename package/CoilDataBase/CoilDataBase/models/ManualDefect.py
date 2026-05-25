@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, func, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
 from ._base_ import Base
@@ -11,7 +11,9 @@ class ManualDefect(Base):
     """
     __tablename__ = 'ManualDefect'
     Id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
-    secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'), comment="关联的二级卷ID")
+    secondaryCoilId = Column(Integer,
+                             ForeignKey('SecondaryCoil.Id'),
+                             comment="关联的二级卷ID")
     surface = Column(String(2), comment="表面标识（S/L）")
     defectClass = Column(Integer, comment="缺陷类型编号")
     defectName = Column(String(50), comment="缺陷名称")
@@ -25,6 +27,16 @@ class ManualDefect(Base):
     remark = Column(Text(), comment="备注信息")
     annotator = Column(String(50), comment="标注人")
     createTime = Column(DateTime, server_default=func.now(), comment="创建时间")
-    updateTime = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    updateTime = Column(DateTime,
+                        server_default=func.now(),
+                        onupdate=func.now(),
+                        comment="更新时间")
 
-    parent = relationship("SecondaryCoil", back_populates="childrenManualDefect")
+    __table_args__ = (
+        Index('idx_manual_defect_secondary_coil_id', 'secondaryCoilId'),
+        Index('idx_manual_defect_secondary_surface', 'secondaryCoilId',
+              'surface'),
+    )
+
+    parent = relationship("SecondaryCoil",
+                          back_populates="childrenManualDefect")

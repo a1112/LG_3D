@@ -36,11 +36,11 @@ ENABLE_PREFETCH = os.getenv("ENABLE_IMAGE_PREFETCH", "false").lower() == "true"
 # 多级瓦片加载配置
 # 瓦片等级定义：(目标尺寸, JPEG质量)
 TILE_LEVELS = {
-    0: (340, 60),    # Level 0: 1/16 缩略图 (~20KB)
-    1: (682, 70),    # Level 1: 1/8 (~50KB)
-    2: (1364, 80),   # Level 2: 1/4 (~120KB)
-    3: (2728, 90),   # Level 3: 1/2 (~250KB)
-    4: (5460, 95),   # Level 4: 原图瓦片 (~500KB)
+    0: (340, 60),  # Level 0: 1/16 缩略图 (~20KB)
+    1: (682, 70),  # Level 1: 1/8 (~50KB)
+    2: (1364, 80),  # Level 2: 1/4 (~120KB)
+    3: (2728, 90),  # Level 3: 1/2 (~250KB)
+    4: (5460, 95),  # Level 4: 原图瓦片 (~500KB)
 }
 
 # 默认原图瓦片尺寸（3x3切分时单个瓦片的大小）
@@ -55,7 +55,8 @@ def _resolved_path(path: str) -> Path:
     return _resolve_image_path(path)
 
 
-def _file_response(path: str, media_type: str = "image/jpeg") -> Optional[FileResponse]:
+def _file_response(path: str,
+                   media_type: str = "image/jpeg") -> Optional[FileResponse]:
     resolved = _resolved_path(path)
     if not resolved.exists():
         return None
@@ -79,10 +80,14 @@ def _get_image_size_from_path(path: str) -> Optional[Tuple[int, int]]:
         return None
 
 
-async def _get_image_async(data_get: DataGet, *, pil: bool = False, clip_num: int = 0):
+async def _get_image_async(data_get: DataGet,
+                           *,
+                           pil: bool = False,
+                           clip_num: int = 0):
     """将阻塞的磁盘/解码操作放入线程池，避免阻塞事件循环。"""
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(get_pool(), lambda: data_get.get_image(pil=pil, clip_num=clip_num))
+    return await loop.run_in_executor(
+        get_pool(), lambda: data_get.get_image(pil=pil, clip_num=clip_num))
 
 
 def _neighbor_ids(coil_id):
@@ -97,7 +102,13 @@ def _neighbor_ids(coil_id):
     return res
 
 
-def _schedule_prefetch(source_type: str, surface_key: str, coil_id, type_: str, *, mask: bool = False, clip_num: int = 0):
+def _schedule_prefetch(source_type: str,
+                       surface_key: str,
+                       coil_id,
+                       type_: str,
+                       *,
+                       mask: bool = False,
+                       clip_num: int = 0):
     """预加载相邻卷的同类型图像以加速切换。可通过环境变量 ENABLE_IMAGE_PREFETCH 启用。"""
     if not ENABLE_PREFETCH:
         return
@@ -114,18 +125,29 @@ def _schedule_prefetch(source_type: str, surface_key: str, coil_id, type_: str, 
             try:
                 await _get_image_async(dg, clip_num=clip_num)
             except Exception:
-                log.debug("prefetch failed %s %s %s", source_type, nid_, type_, exc_info=True)
+                log.debug("prefetch failed %s %s %s",
+                          source_type,
+                          nid_,
+                          type_,
+                          exc_info=True)
 
         loop.create_task(_prefetch())
 
 
 @router.get("/image/preview/{surface_key:str}/{coil_id:str}/{type_:str}")
-async def get_preview_image(surface_key, coil_id: str, type_: str, mask: bool = False):
+async def get_preview_image(surface_key,
+                            coil_id: str,
+                            type_: str,
+                            mask: bool = False):
     try:
         data_get = DataGet("preview", surface_key, coil_id, type_, mask)
         file_response = _file_response(data_get.url)
         if file_response is not None:
-            _schedule_prefetch("preview", surface_key, coil_id, type_, mask=mask)
+            _schedule_prefetch("preview",
+                               surface_key,
+                               coil_id,
+                               type_,
+                               mask=mask)
             return file_response
         image_bytes = await _get_image_async(data_get)
         _schedule_prefetch("preview", surface_key, coil_id, type_, mask=mask)
@@ -153,14 +175,16 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
 
 
 @router.get("/image/area/{surface_key:str}/{coil_id:str}")
-async def get_area_tiled(
-    surface_key: str,
-    coil_id: str,
-    row: int = Query(0, ge=-2, le=2, description="瓦片行索引"),
-    col: int = Query(0, ge=0, le=2, description="瓦片列索引"),
-    count: int = Query(0, ge=0, le=3, description="瓦片行列数"),
-    level: int = Query(4, ge=0, le=4, description="瓦片质量等级 0-4")
-):
+async def get_area_tiled(surface_key: str,
+                         coil_id: str,
+                         row: int = Query(0, ge=-2, le=2, description="瓦片行索引"),
+                         col: int = Query(0, ge=0, le=2, description="瓦片列索引"),
+                         count: int = Query(0, ge=0, le=3,
+                                            description="瓦片行列数"),
+                         level: int = Query(4,
+                                            ge=0,
+                                            le=4,
+                                            description="瓦片质量等级 0-4")):
     """
     多级瓦片加载接口
 
@@ -200,13 +224,15 @@ async def get_area_tiled(
         preview_get = DataGet("preview", surface_key, coil_id, "AREA", False)
         image_bytes = await _get_image_async(preview_get)
         _schedule_prefetch("preview", surface_key, coil_id, "AREA", mask=False)
-        return Response(image_bytes or noFindImageByte, media_type="image/jpeg")
+        return Response(image_bytes or noFindImageByte,
+                        media_type="image/jpeg")
 
     # 返回完整图像
     if row == -1:
         image_bytes = await _get_image_async(data_get)
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
-        return Response(image_bytes or noFindImageByte, media_type="image/jpeg")
+        return Response(image_bytes or noFindImageByte,
+                        media_type="image/jpeg")
 
     # 返回图像宽高信息
     if count == 0:
@@ -218,17 +244,24 @@ async def get_area_tiled(
                 with Image.open(tile_path) as tile_img:
                     tile_w, tile_h = tile_img.size
                 if tile_w > 0 and tile_h > 0:
-                    return {"width": tile_w * tile_count, "height": tile_h * tile_count}
+                    return {
+                        "width": tile_w * tile_count,
+                        "height": tile_h * tile_count
+                    }
         except Exception:
             pass
 
         size = await asyncio.get_event_loop().run_in_executor(
-            get_pool(), lambda: _get_image_size_from_path(data_get.url)
-        )
+            get_pool(), lambda: _get_image_size_from_path(data_get.url))
         if size is None:
             return Response(content=noFindImageByte, media_type="image/jpeg")
         w, h = size
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
+        _schedule_prefetch("source",
+                           surface_key,
+                           coil_id,
+                           "AREA",
+                           mask=False,
+                           clip_num=tile_count)
         return {"width": w, "height": h}
 
     # ========== 核心逻辑：优先从缓存读取指定级别的瓦片 ==========
@@ -237,18 +270,23 @@ async def get_area_tiled(
     if tile_bytes:
         # 缓存命中，直接返回
         if row == 0 and col == 0:
-            _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
-        return Response(
-            tile_bytes,
-            media_type="image/jpeg",
-            headers={
-                "X-Tile-Level": str(level),
-                "X-Cache": "hit"
-            }
-        )
+            _schedule_prefetch("source",
+                               surface_key,
+                               coil_id,
+                               "AREA",
+                               mask=False,
+                               clip_num=tile_count)
+        return Response(tile_bytes,
+                        media_type="image/jpeg",
+                        headers={
+                            "X-Tile-Level": str(level),
+                            "X-Cache": "hit"
+                        })
 
     # 2. 缓存未命中，回退到原来的实时生成模式
-    log.info(f"Cache miss L{level} ({col},{row}), falling back to real-time generation")
+    log.info(
+        f"Cache miss L{level} ({col},{row}), falling back to real-time generation"
+    )
 
     # 获取所有瓦片（会触发多级缓存生成）
     image_dict = await _get_image_async(data_get, clip_num=count)
@@ -258,19 +296,24 @@ async def get_area_tiled(
 
             # 如果不是最高等级，需要调整尺寸
             if level < 4:
-                crop_image_byte = _resize_tile(crop_image_byte, TILE_LEVELS[level][0], TILE_LEVELS[level][1])
+                crop_image_byte = _resize_tile(crop_image_byte,
+                                               TILE_LEVELS[level][0],
+                                               TILE_LEVELS[level][1])
 
             if row == 0 and col == 0:
-                _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
+                _schedule_prefetch("source",
+                                   surface_key,
+                                   coil_id,
+                                   "AREA",
+                                   mask=False,
+                                   clip_num=tile_count)
 
-            return Response(
-                crop_image_byte,
-                media_type="image/jpeg",
-                headers={
-                    "X-Tile-Level": str(level),
-                    "X-Cache": "miss"
-                }
-            )
+            return Response(crop_image_byte,
+                            media_type="image/jpeg",
+                            headers={
+                                "X-Tile-Level": str(level),
+                                "X-Cache": "miss"
+                            })
         except Exception:
             return Response(content=noFindImageByte, media_type="image/jpeg")
 
@@ -300,7 +343,8 @@ async def get_area_tiled(
 
     # 根据等级调整尺寸和质量
     target_size, quality = TILE_LEVELS[level]
-    if level < 4 and (tile.shape[0] > target_size or tile.shape[1] > target_size):
+    if level < 4 and (tile.shape[0] > target_size
+                      or tile.shape[1] > target_size):
         scale = target_size / max(tile.shape[0], tile.shape[1])
         new_w = int(tile.shape[1] * scale)
         new_h = int(tile.shape[0] * scale)
@@ -314,16 +358,19 @@ async def get_area_tiled(
     crop_image_byte = buf.tobytes()
 
     if row == 0 and col == 0:
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False, clip_num=tile_count)
+        _schedule_prefetch("source",
+                           surface_key,
+                           coil_id,
+                           "AREA",
+                           mask=False,
+                           clip_num=tile_count)
 
-    return Response(
-        crop_image_byte,
-        media_type="image/jpeg",
-        headers={
-            "X-Tile-Level": str(level),
-            "X-Cache": "fallback"
-        }
-    )
+    return Response(crop_image_byte,
+                    media_type="image/jpeg",
+                    headers={
+                        "X-Tile-Level": str(level),
+                        "X-Cache": "fallback"
+                    })
 
 
 def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
@@ -343,7 +390,9 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         tile = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
 
         if tile is None:
-            log.warning(f"Resize failed: imdecode returned None, target_size={target_size}")
+            log.warning(
+                f"Resize failed: imdecode returned None, target_size={target_size}"
+            )
             return tile_bytes
 
         # 计算缩放比例
@@ -352,23 +401,31 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
 
         if scale >= 1.0:
             # 不需要缩小，直接返回（略微降低质量以减小文件）
-            ok, buf = cv2.imencode(".jpg", tile, [cv2.IMWRITE_JPEG_QUALITY, quality])
+            ok, buf = cv2.imencode(".jpg", tile,
+                                   [cv2.IMWRITE_JPEG_QUALITY, quality])
             result = buf.tobytes() if ok else tile_bytes
-            log.debug(f"Resize: scale={scale:.2f}>=1.0, no resize needed, returning {len(result)} bytes")
+            log.debug(
+                f"Resize: scale={scale:.2f}>=1.0, no resize needed, returning {len(result)} bytes"
+            )
             return result
 
         # 缩小图像
         new_w = int(tile.shape[1] * scale)
         new_h = int(tile.shape[0] * scale)
-        resized = cv2.resize(tile, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        resized = cv2.resize(tile, (new_w, new_h),
+                             interpolation=cv2.INTER_AREA)
 
         # 编码
-        ok, buf = cv2.imencode(".jpg", resized, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        ok, buf = cv2.imencode(".jpg", resized,
+                               [cv2.IMWRITE_JPEG_QUALITY, quality])
         result = buf.tobytes() if ok else tile_bytes
         if ok:
-            log.debug(f"Resize: {tile.shape} -> ({new_w},{new_h}), {len(result)} bytes at quality={quality}")
+            log.debug(
+                f"Resize: {tile.shape} -> ({new_w},{new_h}), {len(result)} bytes at quality={quality}"
+            )
         else:
-            log.warning(f"Resize: imencode failed for resized image ({new_w},{new_h})")
+            log.warning(
+                f"Resize: imencode failed for resized image ({new_w},{new_h})")
         return result
 
     except Exception as e:
@@ -377,9 +434,11 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
 
 
 @lru_cache(maxsize=256)
-def _load_detection_candidates(coil_id: int) -> Tuple[Tuple[int, int, int, int, str], ...]:
+def _load_detection_candidates(
+        coil_id: int) -> Tuple[Tuple[int, int, int, int, str], ...]:
     candidates = []
-    save_folder = list(serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder
+    save_folder = list(
+        serverConfigProperty.surfaceConfigPropertyDict.values())[0].saveFolder
     save_base = Path(save_folder).parent
     detection_folder = save_base / str(coil_id) / "detection"
 
@@ -414,18 +473,22 @@ def _load_detection_candidates(coil_id: int) -> Tuple[Tuple[int, int, int, int, 
     return tuple(candidates)
 
 
-def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int, y: int, w: int, h: int) -> Optional[Path]:
+def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int,
+                                     y: int, w: int, h: int) -> Optional[Path]:
     try:
         requested_center_x = x + w / 2
         requested_center_y = y + h / 2
 
-        for xml_xmin, xml_ymin, xml_xmax, xml_ymax, png_path in _load_detection_candidates(coil_id):
+        for xml_xmin, xml_ymin, xml_xmax, xml_ymax, png_path in _load_detection_candidates(
+                coil_id):
             if xml_xmin <= requested_center_x <= xml_xmax and xml_ymin <= requested_center_y <= xml_ymax:
                 path = Path(png_path)
                 if path.exists():
                     return path
 
-        log.debug(f"No matching defect image found in detection folder for coil {coil_id}")
+        log.debug(
+            f"No matching defect image found in detection folder for coil {coil_id}"
+        )
         return None
 
     except Exception as e:
@@ -433,52 +496,48 @@ def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int, y: 
         return None
 
 
-@router.get("/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}")
-async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str, w: str, h: str):
-    # 处理 NaN 或无效值
+def _image_cache_key(path: str) -> Optional[Tuple[int, int]]:
     try:
-        x = int(x) if x and x.lower() != 'nan' else 0
-        y = int(y) if y and y.lower() != 'nan' else 0
-        w = int(w) if w and w.lower() != 'nan' else 100
-        h = int(h) if h and h.lower() != 'nan' else 100
-    except (ValueError, TypeError):
-        return Response(noFindImageByte, media_type="image/jpeg")
+        stat = _resolved_path(path).stat()
+        return stat.st_mtime_ns, stat.st_size
+    except OSError:
+        return None
 
-    old_box = [x, y, w, h]
 
-    # 优先从 detection 目录读取缺陷图片（更快）
-    detection_image = await asyncio.get_event_loop().run_in_executor(
-        get_pool(), lambda: _get_defect_image_from_detection(coil_id, surface_key, x, y, w, h)
-    )
-    if detection_image is not None:
-        return FileResponse(detection_image, media_type="image/png")
-
-    # 回退到原图裁剪
-    image = await _get_image_async(DataGet("image", surface_key, coil_id, type_, False), pil=True)
-    image: Image.Image
+@lru_cache(maxsize=2048)
+def _crop_defect_image_cached(
+    surface_key: str,
+    coil_id: int,
+    type_: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    mtime_ns: int,
+    file_size: int,
+) -> Optional[bytes]:
+    image = DataGet("image", surface_key, coil_id, type_,
+                    False).get_image(pil=True)
     if image is None:
-        return Response(noFindImageByte, media_type="image/jpeg")
+        return None
 
     img_w, img_h = image.size
+    old_box = [x, y, w, h]
 
-    # Validate and clip coordinates to image bounds
-    # Ensure x and y are within image bounds
     if x < 0:
-        w += x  # Reduce width by the negative offset
+        w += x
         x = 0
     if y < 0:
-        h += y  # Reduce height by the negative offset
+        h += y
         y = 0
     if x >= img_w:
         x = img_w - 1
     if y >= img_h:
         y = img_h - 1
-    # Ensure width and height don't exceed image bounds
     if x + w > img_w:
         w = img_w - x
     if y + h > img_h:
         h = img_h - y
-    # Ensure minimum dimensions
     if w <= 0:
         w = 1
     if h <= 0:
@@ -488,16 +547,54 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str, y: str
     img_byte_arr = io.BytesIO()
 
     if bound_box([x, y, w, h], image.size):
-        new_image = Image.new(crop_image.mode, (old_box[2], old_box[3]), (0, 0, 0))
+        new_image = Image.new(crop_image.mode, (old_box[2], old_box[3]),
+                              (0, 0, 0))
         paste_x_y = (int((old_box[2] - w) / 2), int((old_box[3] - h) / 2))
         new_image.paste(crop_image, paste_x_y)
-        new_image.paste(crop_image, paste_x_y)
-        new_image.save(img_byte_arr, format='jpeg')
+        new_image.save(img_byte_arr, format="jpeg", quality=85)
     else:
-        crop_image.save(img_byte_arr, format='jpeg')
-    img_byte_arr.seek(0)
+        crop_image.save(img_byte_arr, format="jpeg", quality=85)
+    return img_byte_arr.getvalue()
 
-    return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
+
+@router.get(
+    "/defect_image/{surface_key:str}/{coil_id:int}/{type_:str}/{x:str}/{y:str}/{w:str}/{h:str}"
+)
+async def get_defect_image(surface_key, coil_id: int, type_: str, x: str,
+                           y: str, w: str, h: str):
+    # 处理 NaN 或无效值
+    try:
+        x = int(x) if x and x.lower() != 'nan' else 0
+        y = int(y) if y and y.lower() != 'nan' else 0
+        w = int(w) if w and w.lower() != 'nan' else 100
+        h = int(h) if h and h.lower() != 'nan' else 100
+    except (ValueError, TypeError):
+        return Response(noFindImageByte, media_type="image/jpeg")
+
+    detection_image = await asyncio.get_event_loop().run_in_executor(
+        get_pool(), lambda: _get_defect_image_from_detection(
+            coil_id, surface_key, x, y, w, h))
+    if detection_image is not None:
+        return FileResponse(detection_image, media_type="image/png")
+
+    data_get = DataGet("image", surface_key, coil_id, type_, False)
+    cache_key = _image_cache_key(data_get.url)
+    if cache_key is None:
+        return Response(noFindImageByte, media_type="image/jpeg")
+
+    crop_bytes = await asyncio.get_event_loop().run_in_executor(
+        get_pool(),
+        lambda: _crop_defect_image_cached(surface_key, coil_id, type_, x, y, w,
+                                          h, cache_key[0], cache_key[1]),
+    )
+    if crop_bytes is None:
+        return Response(noFindImageByte, media_type="image/jpeg")
+
+    return Response(
+        content=crop_bytes,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "private, max-age=300"},
+    )
 
 
 # 注册路由
