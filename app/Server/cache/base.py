@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -16,8 +17,8 @@ Image.MAX_IMAGE_PIXELS = None
 
 def _should_use_testdata() -> bool:
     """检查是否应该使用TestData的多种方式"""
+    config_dir = _config_dir()
     # 方式1: 检查CONFIG_3D目录下的developer_mode=true文件
-    config_dir = Path(r"D:\CONFIG_3D")
     if (config_dir / "developer_mode=true").exists():
         return True
     
@@ -30,7 +31,7 @@ def _should_use_testdata() -> bool:
                 config = json.load(f)
                 if config.get("test_mode", False):
                     return True
-        except:
+        except Exception:
             pass
     
     # 方式3: 检查环境变量
@@ -40,12 +41,20 @@ def _should_use_testdata() -> bool:
     
     # 方式4: 尝试从CONFIG获取（如果已初始化）
     try:
-        from CONFIG import developer_mode, isLoc
-        return developer_mode and isLoc
-    except:
+        from Base import CONFIG
+        return CONFIG.developer_mode and CONFIG.isLoc
+    except Exception:
         pass
     
     return False
+
+
+def _config_dir() -> Path:
+    try:
+        from Base import CONFIG
+        return Path(CONFIG.base_config_folder)
+    except Exception:
+        return Path(os.getenv("CONFIG_3D_DIR", r"D:\CONFIG_3D"))
 
 
 _TESTDATA_COIL_ID = "125143"

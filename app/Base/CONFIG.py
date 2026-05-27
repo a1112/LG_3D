@@ -16,7 +16,7 @@ from Base.property.ServerConfigProperty import ServerConfigProperty
 
 # Log basic host info in ASCII to avoid encoding issues
 is_local_host = socket.gethostname() in ["lcx_ace", "lcx_mov", "DESKTOP-94ADH1G", "MS-LGKRSZGOVODD", "DESKTOP-3VCH6DO"]
-base_config_folder = Path(r"D:\CONFIG_3D")
+base_config_folder = Path(os.getenv("CONFIG_3D_DIR", r"D:\CONFIG_3D"))
 
 try:
     file_url = Path(__file__)
@@ -111,3 +111,13 @@ if socket.gethostname() == "DESKTOP-94ADH1G":
 
 def getAllKey():
     return "2D", "MASK", "3D"
+
+
+def set_developer_mode(enabled: bool) -> None:
+    global developer_mode, isLoc, configFile, DEBUG_MODEL
+
+    developer_mode = bool(enabled)
+    isLoc = bool(enabled)
+    DEBUG_MODEL = bool(enabled)
+    configFile = get_file_url(r"configs/Server3DLoc2.json" if enabled else "configs/Server3D.json")
+    serverConfigProperty.__init__(configFile)

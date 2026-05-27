@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, List, Select, Spin, Empty, message } from 'antd'
+import { Card, Row, Col, Select, Spin, Empty, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Canvas3D from '@/components/Canvas3D'
@@ -72,22 +72,6 @@ function DataShowPage() {
     queryFn: () => coilApi.getCoilList(50),
   })
 
-  // 3D 渲染数据由加载器管理（最高优先级）
-  const { data: render3DData } = useQuery({
-    queryKey: ['render3D', currentCoil?.id, surfaceKey],
-    queryFn: () =>
-      heightDataApi.getRenderData(surfaceKey, currentCoil?.id || 0),
-    enabled: false, // 禁用自动加载，由加载器控制
-  })
-
-  // 缺陷数据由加载器管理（中等优先级）
-  const { data: defectsData } = useQuery({
-    queryKey: ['defects', currentCoil?.id, surfaceKey],
-    queryFn: () =>
-      defectApi.getDefects(currentCoil?.id || 0, surfaceKey),
-    enabled: false, // 禁用自动加载，由加载器控制
-  })
-
   // 高度线数据由加载器管理（最低优先级）
   const { data: heightLineData } = useQuery({
     queryKey: ['heightLine', currentCoil?.id, surfaceKey],
@@ -106,6 +90,7 @@ function DataShowPage() {
           queryFn: () =>
             heightDataApi.getRenderData(surfaceKey, currentCoil.id),
         })
+        setRenderData(data)
         return data
       })
     }
@@ -230,7 +215,7 @@ function DataShowPage() {
                       <div style={{ marginTop: 16 }}>正在加载 3D 数据...</div>
                     </div>
                   ) : (
-                    <HeightChart data={heightLineData?.data} />
+                    <HeightChart data={heightLineData} />
                   )}
                 </Card>
               </Col>

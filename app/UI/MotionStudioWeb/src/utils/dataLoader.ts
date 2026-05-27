@@ -203,6 +203,10 @@ export function useDataLoader(options: UseDataLoaderOptions) {
     onError,
   } = options
 
+  dataLoader.onTaskError = (_task, error) => {
+    onError?.(error)
+  }
+
   /**
    * 加载图像数据（最高优先级）
    */

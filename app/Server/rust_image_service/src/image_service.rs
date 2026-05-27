@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use axum::body::Body;
 use axum::extract::{Path as AxumPath, Query, State};
-use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
+use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
 use image::codecs::jpeg::JpegEncoder;
@@ -34,9 +34,15 @@ impl AppState {
         Self {
             config,
             detection_index: Arc::new(RwLock::new(HashMap::new())),
-            file_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(64).expect("non-zero")))),
-            area_gray_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1).expect("non-zero")))),
-            tile_bytes_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(64).expect("non-zero")))),
+            file_cache: Arc::new(Mutex::new(LruCache::new(
+                NonZeroUsize::new(64).expect("non-zero"),
+            ))),
+            area_gray_cache: Arc::new(Mutex::new(LruCache::new(
+                NonZeroUsize::new(1).expect("non-zero"),
+            ))),
+            tile_bytes_cache: Arc::new(Mutex::new(LruCache::new(
+                NonZeroUsize::new(64).expect("non-zero"),
+            ))),
         }
     }
 
@@ -166,7 +172,15 @@ pub async fn area_image_compat(
             set_tile_headers(&mut response, level, "hit");
             response
         }
-        None => match generate_area_tile_response(&state, &surface_key, &coil_id, row, col, tile_count, level) {
+        None => match generate_area_tile_response(
+            &state,
+            &surface_key,
+            &coil_id,
+            row,
+            col,
+            tile_count,
+            level,
+        ) {
             Some(response) => response,
             None => not_found("tile cache not found"),
         },
@@ -329,7 +343,12 @@ fn generate_area_tile_response(
     Some(response)
 }
 
-fn crop_area_tile_gray(image: &GrayImage, row: i32, col: i32, tile_count: i32) -> Option<GrayImage> {
+fn crop_area_tile_gray(
+    image: &GrayImage,
+    row: i32,
+    col: i32,
+    tile_count: i32,
+) -> Option<GrayImage> {
     let (width, height) = image.dimensions();
     let tile_w = width / tile_count as u32;
     let tile_h = height / tile_count as u32;
@@ -397,7 +416,9 @@ fn resize_gray_tile_if_needed(tile: GrayImage, target_size: u32) -> GrayImage {
 
 fn load_image(state: &AppState, path: &Path) -> Option<DynamicImage> {
     let bytes = get_file_bytes(state, path)?;
-    let mut reader = ImageReader::new(Cursor::new(bytes.as_ref())).with_guessed_format().ok()?;
+    let mut reader = ImageReader::new(Cursor::new(bytes.as_ref()))
+        .with_guessed_format()
+        .ok()?;
     reader.no_limits();
     reader.decode().ok()
 }
@@ -411,7 +432,9 @@ fn load_area_gray_image(state: &AppState, path: &Path) -> Option<Arc<GrayImage>>
     }
 
     let bytes = get_file_bytes(state, path)?;
-    let mut reader = ImageReader::new(Cursor::new(bytes.as_ref())).with_guessed_format().ok()?;
+    let mut reader = ImageReader::new(Cursor::new(bytes.as_ref()))
+        .with_guessed_format()
+        .ok()?;
     reader.no_limits();
     let image = Arc::new(reader.decode().ok()?.into_luma8());
 
@@ -430,38 +453,49 @@ fn encode_jpeg(image: DynamicImage, quality: u8) -> Option<Vec<u8>> {
 
 fn image_dimensions(state: &AppState, path: &Path) -> Option<(u32, u32)> {
     let bytes = get_file_bytes(state, path)?;
-    let reader = ImageReader::new(Cursor::new(bytes.as_ref())).with_guessed_format().ok()?;
+    let reader = ImageReader::new(Cursor::new(bytes.as_ref()))
+        .with_guessed_format()
+        .ok()?;
     reader.into_dimensions().ok()
 }
 
 fn resolve_defect_tile(
     state: &AppState,
-    _surface_key: &str,
+    surface_key: &str,
     coil_id: i32,
     x: i32,
     y: i32,
     w: i32,
     h: i32,
 ) -> Option<PathBuf> {
-    let candidates = detection_candidates(state, coil_id)?;
+    let candidates = detection_candidates(state, surface_key, coil_id)?;
     let cx = x + w / 2;
     let cy = y + h / 2;
     candidates
         .iter()
-        .find(|candidate| candidate.xmin <= cx && cx <= candidate.xmax && candidate.ymin <= cy && cy <= candidate.ymax)
+        .find(|candidate| {
+            candidate.xmin <= cx
+                && cx <= candidate.xmax
+                && candidate.ymin <= cy
+                && cy <= candidate.ymax
+        })
         .map(|candidate| candidate.image_path.clone())
 }
 
-fn detection_candidates(state: &AppState, coil_id: i32) -> Option<Arc<Vec<DetectionCandidate>>> {
-    let cache_key = coil_id.to_string();
+fn detection_candidates(
+    state: &AppState,
+    surface_key: &str,
+    coil_id: i32,
+) -> Option<Arc<Vec<DetectionCandidate>>> {
+    let cache_key = format!("{surface_key}:{coil_id}");
     if let Ok(guard) = state.detection_index.read() {
         if let Some(cached) = guard.get(&cache_key) {
             return Some(cached.clone());
         }
     }
 
-    let save_folder = state.config.surfaces.first()?.save_folder.clone();
-    let detection_dir = save_folder.parent()?.join(coil_id.to_string()).join("detection");
+    let save_folder = state.surface(surface_key)?.save_folder.clone();
+    let detection_dir = save_folder.join(coil_id.to_string()).join("detection");
     if !detection_dir.exists() {
         return None;
     }
@@ -598,3 +632,69 @@ fn store_tile_bytes(state: &AppState, key: String, bytes: Vec<u8>) -> Vec<u8> {
 }
 
 use axum::http::HeaderName;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_config::{RuntimeConfig, SurfaceConfig};
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_dir() -> PathBuf {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        std::env::temp_dir().join(format!("lg3d_rust_image_service_test_{suffix}"))
+    }
+
+    fn write_candidate(
+        base: &Path,
+        coil_id: i32,
+        class_name: &str,
+        bbox: (i32, i32, i32, i32),
+    ) -> PathBuf {
+        let defect_dir = base
+            .join(coil_id.to_string())
+            .join("detection")
+            .join(class_name);
+        fs::create_dir_all(&defect_dir).expect("create detection dir");
+        let image_path = defect_dir.join("candidate.png");
+        fs::write(&image_path, b"").expect("create image placeholder");
+        let (xmin, ymin, xmax, ymax) = bbox;
+        let xml = format!(
+            r#"<annotation><object><bndbox><xmin>{xmin}</xmin><ymin>{ymin}</ymin><xmax>{xmax}</xmax><ymax>{ymax}</ymax></bndbox></object></annotation>"#
+        );
+        fs::write(defect_dir.join("candidate.xml"), xml).expect("write xml");
+        image_path
+    }
+
+    #[test]
+    fn defect_lookup_uses_requested_surface_folder() {
+        let temp_dir = unique_temp_dir();
+        let s_root = temp_dir.join("Save_S");
+        let l_root = temp_dir.join("Save_L");
+        let s_image = write_candidate(&s_root, 42, "s_defect", (0, 0, 10, 10));
+        let l_image = write_candidate(&l_root, 42, "l_defect", (100, 100, 140, 140));
+
+        let state = AppState::new(RuntimeConfig {
+            surfaces: vec![
+                SurfaceConfig {
+                    key: "S".to_string(),
+                    save_folder: s_root,
+                },
+                SurfaceConfig {
+                    key: "L".to_string(),
+                    save_folder: l_root,
+                },
+            ],
+        });
+
+        let resolved = resolve_defect_tile(&state, "L", 42, 110, 110, 10, 10);
+
+        assert_eq!(resolved.as_deref(), Some(l_image.as_path()));
+        assert_ne!(resolved.as_deref(), Some(s_image.as_path()));
+
+        let _ = fs::remove_dir_all(temp_dir);
+    }
+}

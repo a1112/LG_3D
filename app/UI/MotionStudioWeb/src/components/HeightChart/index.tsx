@@ -1,25 +1,26 @@
 import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import type { HeightLineData } from '@/types'
+import type { HeightLineSegment } from '@/types'
 import './HeightChart.css'
 
 interface HeightChartProps {
-  data?: HeightLineData
+  data?: HeightLineSegment[]
 }
 
 function HeightChart({ data }: HeightChartProps) {
   const chartData = useMemo(() => {
-    if (!data?.points || data.points.length === 0) {
+    if (!data || data.length === 0) {
       return []
     }
 
-    // 将点数据转换为图表数据格式
-    return data.points.map((point, index) => ({
-      index,
-      x: point.x.toFixed(2),
-      y: point.y.toFixed(2),
-      z: point.z.toFixed(2),
-    }))
+    return data.flatMap((segment, segmentIndex) =>
+      segment.points.map(([x, y, z], pointIndex) => ({
+        index: `${segmentIndex + 1}-${pointIndex + 1}`,
+        x: x.toFixed(2),
+        y: y.toFixed(2),
+        z: z.toFixed(2),
+      }))
+    )
   }, [data])
 
   if (!data || chartData.length === 0) {

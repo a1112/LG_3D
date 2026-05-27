@@ -26,10 +26,14 @@ export interface HeightPoint {
   z: number
 }
 
-// 高度线数据类型
-export interface HeightLineData {
-  points: HeightPoint[]
-  timestamp: number
+export type HeightPointTuple = [number, number, number]
+export type HeightEndpoint = [number, number]
+
+// 后端 /coilData/heightData 返回的线段数据
+export interface HeightLineSegment {
+  pointL: HeightEndpoint
+  pointR: HeightEndpoint
+  points: HeightPointTuple[]
 }
 
 // API响应类型

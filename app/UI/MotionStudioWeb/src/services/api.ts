@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { CoilData, DefectData, HeightLineData, ApiResponse } from '@/types'
+import type { CoilData, DefectData, HeightLineSegment, ApiResponse } from '@/types'
 
 // 创建axios实例
 const apiClient = axios.create({
@@ -35,43 +35,47 @@ apiClient.interceptors.response.use(
 export const coilApi = {
   // 获取卷材列表
   getCoilList: (number: number = 20) =>
-    apiClient.get<ApiResponse<CoilData[]>>(`/coilList/${number}`),
+    apiClient.get<ApiResponse<CoilData[]>, ApiResponse<CoilData[]>>(`/coilList/${number}`),
 
   // 按卷号搜索
   searchByCoilNo: (coilNo: string) =>
-    apiClient.get<ApiResponse<CoilData>>(`/search/coilNo/${coilNo}`),
+    apiClient.get<ApiResponse<CoilData>, ApiResponse<CoilData>>(`/search/coilNo/${coilNo}`),
 
   // 按时间范围搜索
   searchByDateTime: (start: string, end: string) =>
-    apiClient.get<ApiResponse<CoilData[]>>(`/search/DateTime/${start}/${end}`),
+    apiClient.get<ApiResponse<CoilData[]>, ApiResponse<CoilData[]>>(`/search/DateTime/${start}/${end}`),
 }
 
 // 缺陷数据API
 export const defectApi = {
   // 获取缺陷数据
   getDefects: (coilId: number, direction: string) =>
-    apiClient.get<ApiResponse<DefectData[]>>(`/search/defects/${coilId}/${direction}`),
+    apiClient.get<ApiResponse<DefectData[]>, ApiResponse<DefectData[]>>(`/search/defects/${coilId}/${direction}`),
 }
 
 // 高度数据API
 export const heightDataApi = {
   // 获取高度线数据
   getHeightLine: (surfaceKey: string, coilId: number) =>
-    apiClient.get<ApiResponse<HeightLineData>>(`/coilData/heightData/${surfaceKey}/${coilId}`),
+    apiClient.get<HeightLineSegment[], HeightLineSegment[]>(
+      `/coilData/heightData/${surfaceKey}/${coilId}`
+    ),
 
   // 获取高度点数据
   getHeightPoint: (surfaceKey: string, coilId: number) =>
-    apiClient.get<ApiResponse<HeightLineData>>(`/coilData/heightPoint/${surfaceKey}/${coilId}`),
+    apiClient.get<number | string, number | string>(
+      `/coilData/heightPoint/${surfaceKey}/${coilId}`
+    ),
 
   // 获取3D渲染数据
   getRenderData: (surfaceKey: string, coilId: number) =>
-    apiClient.get(`/coilData/Render/${surfaceKey}/${coilId}`, {
+    apiClient.get<ArrayBuffer, ArrayBuffer>(`/coilData/Render/${surfaceKey}/${coilId}`, {
       responseType: 'arraybuffer',
     }),
 
   // 获取误差数据
   getErrorData: (surfaceKey: string, coilId: number) =>
-    apiClient.get(`/coilData/Error/${surfaceKey}/${coilId}`, {
+    apiClient.get<ArrayBuffer, ArrayBuffer>(`/coilData/Error/${surfaceKey}/${coilId}`, {
       responseType: 'arraybuffer',
     }),
 }
@@ -184,11 +188,11 @@ export const imageApi = {
 export const plcApi = {
   // 获取PLC曲线数据
   getCurve: (field: string) =>
-    apiClient.get(`/plc_curve/${field}`),
+    apiClient.get<unknown, unknown>(`/plc_curve/${field}`),
 
   // 获取硬件信息
   getHardware: () =>
-    apiClient.get('/hardware'),
+    apiClient.get<unknown, unknown>('/hardware'),
 }
 
 // 导出数据API

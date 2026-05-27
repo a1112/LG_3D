@@ -15,6 +15,10 @@ sys.path.append(str(Path(__file__).parent.parent / "algorithm_runtime"))
 
 from fastapi import FastAPI
 import uvicorn
+from runtime_settings import ensure_default_cache_backend, get_api_workers  # noqa: E402
+
+ensure_default_cache_backend()
+
 from api import app as fastapi_app  # noqa: E402
 from Base.CONFIG import configFile  # noqa: E402
 from Base.utils.StdoutLog import Logger
@@ -132,7 +136,7 @@ def _start_rust_image_service() -> None:
     logging.warning("rust image service did not become healthy within %ss", RUST_IMAGE_SERVICE_START_TIMEOUT)
 
 
-def _load_default_routers():
+def _load_default_routers(enable_runtime: bool = True):
     from api import ApiInfo  # noqa: F401
     from api import ApiDataBase  # noqa: F401
     from api import ApiServerControl  # noqa: F401
@@ -143,20 +147,19 @@ def _load_default_routers():
     from api import ApiSettings  # noqa: F401
     from AlarmDetection.Server import ApiAlarmInfo  # noqa: F401
     from api import ApiAlgTest  # noqa: F401
+    if enable_runtime:
+        from api import ApiServer  # noqa: F401
 
 
 def create_app(enable_runtime: bool = True) -> FastAPI:
-    _load_default_routers()
     fastapi_app.state.enable_runtime = enable_runtime
+    _load_default_routers(enable_runtime=enable_runtime)
     return fastapi_app
 
 
 def run():
-    # 使用 Redis 缓存以支持多进程
-    os.environ["IMAGE_CACHE_BACKEND"] = "redis"
-
-    # Windows 不支持多进程 workers，Linux 生产环境可以设置 workers > 1
-    workers = 3 if sys.platform == "win32" else 10
+    # 默认单进程；需要水平扩展时通过 API_WORKERS 显式配置，并同步评估 DB 连接池容量。
+    workers = get_api_workers(sys.platform)
 
     logging.basicConfig(
         level=logging.INFO,

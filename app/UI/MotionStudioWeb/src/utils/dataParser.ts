@@ -34,8 +34,6 @@ export function parseHeightData(buffer: ArrayBuffer): {
       const x = dataView.getFloat32(offset, true) // little-endian
       const y = dataView.getFloat32(offset + floatSize, true)
       const z = dataView.getFloat32(offset + floatSize * 2, true)
-      const colorValue = dataView.getFloat32(offset + floatSize * 3, true)
-
       positions[i * 3] = x
       positions[i * 3 + 1] = y
       positions[i * 3 + 2] = z
