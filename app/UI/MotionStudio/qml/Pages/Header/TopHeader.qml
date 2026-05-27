@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Window
 // import Qt5Compat.GraphicalEffects
 // import "../../Base" as Base
 import "../../btns"
@@ -79,12 +80,47 @@ Item {
             Layout.fillHeight: true
         }
         Row{
-            spacing:10
+            spacing: 6
             HelpButton{
                 visible: !auth.isAdmin
             }
             TopToolsButton{}
+            ItemDelegate {
+                id: minimizeButton
+                height: 35
+                width: height
+                ToolTip.visible: hovered
+                ToolTip.text: "最小化"
+                onClicked: {
+                    const window = Window.window
+                    if (window) {
+                        window.showMinimized()
+                    }
+                }
+                background: Rectangle {
+                    color: minimizeButton.hovered ? "#22FFFFFF" : "#00000000"
+                }
+                Label {
+                    anchors.centerIn: parent
+                    text: "-"
+                    color: coreStyle.labelColor
+                    font.pixelSize: 24
+                    font.bold: true
+                }
+            }
             TopWindowModelChangeButton {}
+            ItemDelegateButtonBase {
+                height: 35
+                width: height
+                tipText: "关闭"
+                source: coreStyle.getIcon("close")
+                onClicked: {
+                    const window = Window.window
+                    if (window) {
+                        window.close()
+                    }
+                }
+            }
         }
 
 

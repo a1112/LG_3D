@@ -6,6 +6,7 @@ import shlex
 import subprocess
 import sys
 import threading
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -51,6 +52,18 @@ def _ensure_rcc(*, base_dir: Path, qrc_filename: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     rcc_path = out_dir / f"{qrc_path.stem}.rcc"
 
+    latest_source_mtime = qrc_path.stat().st_mtime
+    try:
+        tree = ET.parse(qrc_path)
+        for file_node in tree.iter("file"):
+            if not file_node.text:
+                continue
+            source_path = qrc_path.parent / file_node.text
+            if source_path.exists():
+                latest_source_mtime = max(latest_source_mtime, source_path.stat().st_mtime)
+    except Exception:
+        latest_source_mtime = qrc_path.stat().st_mtime
+
     if rcc_path.exists():
         try:
             with open(rcc_path, "rb") as f:
@@ -59,7 +72,7 @@ def _ensure_rcc(*, base_dir: Path, qrc_filename: str) -> Path:
         except Exception:
             looks_like_python = False
 
-        if (not looks_like_python) and rcc_path.stat().st_mtime >= qrc_path.stat().st_mtime:
+        if (not looks_like_python) and rcc_path.stat().st_mtime >= latest_source_mtime:
             return rcc_path
 
     pyside_rcc = shutil.which("pyside6-rcc")
