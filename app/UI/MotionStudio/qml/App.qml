@@ -16,9 +16,11 @@ AppBase {
     visible: true
     visibility:control.visibility
     Material.theme: coreStyle.theme
+    Material.background: coreStyle.panelBackgroundColor
     width: global.screenConfig.width-100
     height: global.screenConfig.height-100
     title: qsTr("涟钢3D端面检测系统") + (coreSetting.testMode ? " - [测试模式]" : "")
+    color: coreStyle.appBackgroundColor
     Material.accent: coreStyle.accentColor
     CoreAction{}
     property CppInterFace cpp:CppInterFace{}

@@ -7,7 +7,7 @@ TabBar{
     currentIndex:app_core.appIndex
     onCurrentIndexChanged:app_core.appIndex = currentIndex
     background: Rectangle {
-        color: "#00000000"
+        color: coreStyle.headerBackgroundColor
     }
 
     TabButton{

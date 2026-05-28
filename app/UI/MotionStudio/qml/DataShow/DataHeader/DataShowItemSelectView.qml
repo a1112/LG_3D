@@ -5,11 +5,11 @@ Item{
     Pane {
         anchors.fill: parent
         Material.elevation:6
+        Material.background: coreStyle.headerBackgroundColor
     }
     Rectangle{
         anchors.fill: parent
-        color:"blue"
-        opacity:0.1
+        color: coreStyle.headerBackgroundColor
     }
     Column{
         spacing: 10

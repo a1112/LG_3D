@@ -22,13 +22,13 @@ Menu{
         MenuItem{
             text:qsTr("深色")
             onTriggered: {
-                coreStyle.isDark=true
+                coreStyle.applyTheme("dark")
             }
         }
         MenuItem{
             text:qsTr("浅色")
             onTriggered: {
-                coreStyle.isDark=false
+                coreStyle.applyTheme("light")
             }
         }
     }

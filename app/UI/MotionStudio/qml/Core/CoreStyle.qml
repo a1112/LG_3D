@@ -11,15 +11,22 @@ Item {
     property string themeName: "dark"  // 当前主题名称
     readonly property var themes: ({
         "dark": {
-            name: "深色主题",
+            name: "工业深色主题",
             isDark: true,
-            accentColor: Material.Teal,
-            cardBorderColor: Material.Blue,
-            titleColor: Material.Teal,
-            backgroundColor: "#000000",
-            gridLineColor: "#02eeeeee",
-            textColor: "#FFFFFF",
-            itemBackColor: "#AA2f2f2f"
+            accentColor: Material.Cyan,
+            cardBorderColor: Material.BlueGrey,
+            titleColor: Material.Cyan,
+            backgroundColor: "#0B1117",
+            gridLineColor: "#263646",
+            textColor: "#E8F1F8",
+            itemBackColor: "#17212B",
+            panelColor: "#111A23",
+            panelElevatedColor: "#172330",
+            panelAlternateColor: "#1C2A36",
+            headerColor: "#0F1A24",
+            headerBorderColor: "#2C4357",
+            hoverColor: "#233447",
+            selectionColor: "#2F5F82"
         },
         "light": {
             name: "浅色主题",
@@ -30,7 +37,14 @@ Item {
             backgroundColor: "#E0E0E0",
             gridLineColor: "#22000000",
             textColor: "#000000",
-            itemBackColor: "#AAe2e2e2"
+            itemBackColor: "#E2E2E2",
+            panelColor: "#F4F6F8",
+            panelElevatedColor: "#FFFFFF",
+            panelAlternateColor: "#E8EDF2",
+            headerColor: "#E9EEF3",
+            headerBorderColor: "#B7C2CD",
+            hoverColor: "#DCE7F1",
+            selectionColor: "#90CAF9"
         },
         "ocean": {
             name: "海洋主题",
@@ -41,7 +55,7 @@ Item {
             backgroundColor: "#001a2c",
             gridLineColor: "#1a3a5c",
             textColor: "#E0F7FA",
-            itemBackColor: "#AA1a3a5c"
+            itemBackColor: "#1a3a5c"
         },
         "forest": {
             name: "森林主题",
@@ -52,7 +66,7 @@ Item {
             backgroundColor: "#0a1a0a",
             gridLineColor: "#1a3a1a",
             textColor: "#E8F5E9",
-            itemBackColor: "#AA1a3a1a"
+            itemBackColor: "#1a3a1a"
         },
         "purple": {
             name: "紫色主题",
@@ -63,7 +77,7 @@ Item {
             backgroundColor: "#1a0a2c",
             gridLineColor: "#3a1a5c",
             textColor: "#F3E5F5",
-            itemBackColor: "#AA3a1a5c"
+            itemBackColor: "#3a1a5c"
         },
         "sunset": {
             name: "日落主题",
@@ -74,7 +88,7 @@ Item {
             backgroundColor: "#1a0f00",
             gridLineColor: "#3a2a1a",
             textColor: "#FFF3E0",
-            itemBackColor: "#AA3a2a1a"
+            itemBackColor: "#3a2a1a"
         }
     })
 
@@ -90,6 +104,19 @@ Item {
         accentColor = Material.color(t.accentColor)
         cardBorderColor = Material.color(t.cardBorderColor)
         titleColor = Material.color(t.titleColor)
+        appBackgroundColor = t.backgroundColor || (isDark ? "#0B1117" : "#E0E0E0")
+        panelBackgroundColor = t.panelColor || t.itemBackColor || (isDark ? "#111A23" : "#F4F6F8")
+        panelElevatedColor = t.panelElevatedColor || t.itemBackColor || (isDark ? "#172330" : "#FFFFFF")
+        panelAlternateColor = t.panelAlternateColor || t.itemBackColor || (isDark ? "#1C2A36" : "#E8EDF2")
+        headerBackgroundColor = t.headerColor || t.backgroundColor || (isDark ? "#0F1A24" : "#E9EEF3")
+        headerBorderColor = t.headerBorderColor || t.gridLineColor || (isDark ? "#2C4357" : "#B7C2CD")
+        buttonHoverColor = t.hoverColor || t.itemBackColor || (isDark ? "#233447" : "#DCE7F1")
+        selectionColor = t.selectionColor || Material.color(t.accentColor)
+        gridLineColor = t.gridLineColor || gridLineColor
+        labelColor = t.textColor || labelColor
+        labelsColor = labelColor
+        textColor = labelColor
+        itemDbackColor = t.itemBackColor || itemDbackColor
         console.log("Applied theme:", t.name)
     }
 
@@ -101,6 +128,14 @@ Item {
     property color cardBorderErrorColor: Material.color(Material.Red)
     property color rootTitleColor: titleColor
     property color titleColor: Material.color(Material.Teal)
+    property color appBackgroundColor: "#0B1117"
+    property color panelBackgroundColor: "#111A23"
+    property color panelElevatedColor: "#172330"
+    property color panelAlternateColor: "#1C2A36"
+    property color headerBackgroundColor: "#0F1A24"
+    property color headerBorderColor: "#2C4357"
+    property color buttonHoverColor: "#233447"
+    property color selectionColor: "#2F5F82"
 
     // ========== 自适应视图 ==========
     property AdaptiveView adaptive_base: AdaptiveView {
@@ -127,15 +162,15 @@ Item {
 
     // ========== 样式属性 ==========
     property bool isDark: true
-    property string backC: isDark ? "rgba(200, 200, 200, 0.005)" : "rgba(200, 200, 200, 0.07)"
-    property string backColor: isDark ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(200, 200, 200, 1)
+    property string backC: isDark ? "#15202A" : "#D6DEE6"
+    property color backColor: appBackgroundColor
 
-    property string gridLineColor: isDark ? "#02eeeeee" : "#22222222"
-    property string labelsColor: isDark ? "#FFF" : "#000"
-    property string labelColor: isDark ? "#FFF" : "#000"
-    property color textColor: isDark ? "#FFF" : "#000"
+    property string gridLineColor: isDark ? "#263646" : "#CBD4DD"
+    property string labelsColor: isDark ? "#E8F1F8" : "#111827"
+    property string labelColor: isDark ? "#E8F1F8" : "#111827"
+    property color textColor: isDark ? "#E8F1F8" : "#111827"
 
-    property color itemDbackColor: isDark ? "#AA2f2f2f" : "#AAe2e2e2"
+    property color itemDbackColor: isDark ? "#17212B" : "#E2E2E2"
 
     // ========== 尺寸属性 ==========
     property int leftWidth: 450

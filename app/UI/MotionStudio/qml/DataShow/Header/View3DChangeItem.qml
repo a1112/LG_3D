@@ -13,9 +13,9 @@ ItemDelegate{
         menu_type.popup()
     }
     Rectangle{
-        border.color:Material.color(Material.Blue)
+        border.color: coreStyle.headerBorderColor
         border.width: 1
-        color: "transparent"
+        color: hovered ? coreStyle.buttonHoverColor : coreStyle.panelElevatedColor
         anchors.fill: parent
     }
     Menu{

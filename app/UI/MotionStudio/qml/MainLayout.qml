@@ -9,6 +9,10 @@ Item {
     height: 1080
     anchors.fill: parent
     id:root
+    Rectangle {
+        anchors.fill: parent
+        color: coreStyle.appBackgroundColor
+    }
     ColumnLayout{
         spacing: 10
         anchors.fill: parent

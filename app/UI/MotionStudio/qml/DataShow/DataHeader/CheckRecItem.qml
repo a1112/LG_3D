@@ -18,5 +18,5 @@ CheckRec {
     property bool selected:checked
     color:selected?Material.color(Material.Teal):coreStyle.labelsColor
 
-    checkColor:selected?Material.color(Material.Teal):"#00000000"
+    checkColor:selected?coreStyle.accentColor:coreStyle.headerBorderColor
 }

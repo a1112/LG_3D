@@ -21,6 +21,7 @@ Item {
         width: parent.width
         height: parent.height
         Material.elevation: 4
+        Material.background: coreStyle.headerBackgroundColor
     }
 
 
@@ -46,7 +47,7 @@ Item {
     Rectangle{
         visible: item.fillWidth
         anchors.fill: parent
-        color:"transparent"
+        color: coreStyle.headerBackgroundColor
         border.color: item.checkColor
         border.width: item.fillWidthWidth
 
@@ -57,6 +58,9 @@ Item {
         font.pixelSize: 15
         id:itemDelegate
         anchors.fill:parent
+        background: Rectangle {
+            color: itemDelegate.hovered ? coreStyle.buttonHoverColor : coreStyle.headerBackgroundColor
+        }
         onClicked: {
             item.checked = !item.checked
             item.clicked()

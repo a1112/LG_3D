@@ -21,17 +21,16 @@ Item {
     Pane{
         anchors.fill: parent
         Material.elevation: 5
+        Material.background: coreStyle.headerBackgroundColor
     }
     Rectangle{
-        color:"blue"
         anchors.fill: parent
-        opacity:0.1
+        color: coreStyle.headerBackgroundColor
     }
     Rectangle{
         width: parent.width
         height: 1
-                opacity:0.1
-        color: "#FFF"
+        color: coreStyle.headerBorderColor
         anchors.bottom: parent.bottom
     }
     RowLayout{
@@ -99,7 +98,7 @@ Item {
                     }
                 }
                 background: Rectangle {
-                    color: minimizeButton.hovered ? "#22FFFFFF" : "#00000000"
+                    color: minimizeButton.hovered ? coreStyle.buttonHoverColor : coreStyle.headerBackgroundColor
                 }
                 Label {
                     anchors.centerIn: parent

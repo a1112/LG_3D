@@ -18,8 +18,12 @@ Item {
     Pane{
         width: parent.width
         Material.elevation: 5
-        Material.background: Material.color(Material.BlueGrey)
+        Material.background: coreStyle.panelBackgroundColor
         // height:ustb.height+5
+    }
+    Rectangle {
+        anchors.fill: parent
+        color: coreStyle.panelBackgroundColor
     }
 
     SplitView {

@@ -41,9 +41,10 @@ Item{
     Rectangle{
         id:mask
         anchors.fill: parent
-        color: "#00000000"
+        z: -1
+        color: coreStyle.panelBackgroundColor
         border.width: 1
-        border.color: Material.color(Material.Blue)
+        border.color: coreStyle.headerBorderColor
     }
     HoverHandler{
         onPointChanged: {
