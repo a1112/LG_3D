@@ -3,13 +3,13 @@ from pathlib import Path
 from threading import Thread
 from queue import Queue
 
-import numpy as np
 from PIL import Image
 
 from CONFIG import capTureConfig
 from CoilDataBase.Coil import add_obj
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 from CoilDataBase.models.CapTrueLogItem import CapTrueLogItem
+from Base.tools.compressed_storage import save_compressed_image, save_compressed_numpy
 from ImageBuffer import SickBuffer, DaHengBuffer
 from Camera import SickCamera
 from Log import logger
@@ -77,27 +77,23 @@ class ImageDataSave(Thread):
 
     def save3_d(self, buffer):
         buffer: SickBuffer
-        save_file = self.saveFolder / buffer.coilId / "3d" / f"{buffer.save_index}.npy"
-        save_file.parent.mkdir(parents=True, exist_ok=True)
-        np.save(str(save_file), buffer.data3D)
+        save_file = self.saveFolder / buffer.coilId / "3d" / f"{buffer.save_index}.npz"
+        save_compressed_numpy(buffer.data3D, save_file)
 
     def save_area_2d(self, buffer):
         buffer: DaHengBuffer
         if buffer.if_save_index():
                 save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.jpg"
-                save_file.parent.mkdir(parents=True, exist_ok=True)
-                Image.fromarray(buffer.data2D).save(str(save_file))
+                save_compressed_image(Image.fromarray(buffer.data2D), save_file)
 
     def save2_d(self, buffer):
-        save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.bmp"
-        save_file.parent.mkdir(parents=True, exist_ok=True)
-        Image.fromarray(buffer.data2D).save(str(save_file))
+        save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.jpg"
+        save_compressed_image(Image.fromarray(buffer.data2D), save_file)
 
     def save_area_2d_(self,buffer):
         if buffer.area_cap is not None:
-            save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.bmp"
-            save_file.parent.mkdir(parents=True, exist_ok=True)
-            Image.fromarray(buffer.area_cap).save(str(save_file))
+            save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.jpg"
+            save_compressed_image(Image.fromarray(buffer.area_cap), save_file)
 
     def save_database(self, buffer):
         try:

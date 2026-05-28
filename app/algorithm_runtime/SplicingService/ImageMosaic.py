@@ -160,7 +160,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         coil_id = data_integration.coilId
 
         start = data_integration.median_non_zero + serverConfigProperty.colorFromValue_mm // data_integration.scan3dCoordinateScaleZ
-        self._save_(data_integration.npy_data, self.saveFolder / coil_id / "3D.npy")
+        self._save_(data_integration.npy_data, self.saveFolder / coil_id / "3D.npz")
         step = (serverConfigProperty.colorToValue_mm - serverConfigProperty.colorFromValue_mm) // data_integration.scan3dCoordinateScaleZ
         data_integration.set("colorFromValue_mm", serverConfigProperty.colorFromValue_mm)
         data_integration.set("colorToValue_mm", serverConfigProperty.colorToValue_mm)
@@ -189,8 +189,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         try:
             from Base.utils.cache_generator import generate_error_image, get_error_cache_dir
 
-            # 保存 3D.npy 的路径
-            npy_file = self.saveFolder / coil_id / "3D.npy"
+            # 保存 3D.npz 的路径
+            npy_file = self.saveFolder / coil_id / "3D.npz"
 
             # median_z_int 用于计算阈值偏移
             median_z_int = int(data_integration.median_3d_mm / 0.016229506582021713) if data_integration.median_3d_mm else 0
