@@ -16,6 +16,12 @@ Item {
         // 初始化
         // 初始化 卷 数据
         coreModel.coilListModel.clear()
+        if (coilData && coilData.value !== undefined) {
+            coilData = coilData.value
+        }
+        if (!coilData || !Array.isArray(coilData)) {
+            coilData = []
+        }
         let data={
             "coilList":coilData
         }

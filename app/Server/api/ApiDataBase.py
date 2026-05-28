@@ -1,6 +1,7 @@
 import datetime
 import json
 from collections import defaultdict
+from pathlib import Path
 
 from sqlalchemy import func
 
@@ -33,6 +34,92 @@ serverConfigProperty: ServerConfigProperty
 
 """
 router = APIRouter(tags=["数据库服务"])
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_TESTDATA_COIL_ID = 125143
+
+
+def _test_mode_enabled() -> bool:
+    return bool(getattr(CONFIG, "developer_mode", False) and getattr(CONFIG, "isLoc", False))
+
+
+def _testdata_available() -> bool:
+    base = _PROJECT_ROOT / "TestData" / str(_TESTDATA_COIL_ID)
+    return base.exists() and (base / "3D.npz").exists()
+
+
+def _test_mode_coil_item() -> dict:
+    now = datetime.datetime.now()
+    date_value = {
+        "year": now.year,
+        "month": now.month,
+        "day": now.day,
+        "weekday": now.weekday(),
+        "hour": now.hour,
+        "minute": now.minute,
+        "second": now.second,
+    }
+    alarm_info = {
+        surface: {
+            "surface": surface,
+            "grad": 1,
+            "defectGrad": 1,
+            "taperShapeGrad": 1,
+            "looseCoilGrad": 1,
+            "flatRollGrad": 1,
+            "defectMsg": "",
+            "taperShapeMsg": "测试模式",
+            "looseCoilMsg": "",
+            "flatRollMsg": "测试模式",
+        }
+        for surface in ("S", "L")
+    }
+    return {
+        "Id": _TESTDATA_COIL_ID,
+        "SecondaryCoilId": _TESTDATA_COIL_ID,
+        "CoilNo": str(_TESTDATA_COIL_ID),
+        "CoilType": "TestData",
+        "CoilInside": "",
+        "CoilDia": "",
+        "Thickness": "",
+        "Width": "",
+        "Weight": "",
+        "ActWidth": "",
+        "CheckStatus": 0,
+        "DefectCountS": 0,
+        "DefectCountL": 0,
+        "Status_L": 0,
+        "Status_S": 0,
+        "Grade": 0,
+        "Msg": "TestData/125143",
+        "NextInfo": "测试模式",
+        "NextCode": "",
+        "hasCoil": True,
+        "hasAlarmInfo": True,
+        "AlarmInfo": alarm_info,
+        "defects": {},
+        "childrenCoilCheck": [],
+        "CreateTime": date_value,
+        "DetectionTime": date_value,
+        "DateTime": date_value,
+    }
+
+
+def _with_test_mode_coil_fallback(data):
+    if not (_test_mode_enabled() and _testdata_available()):
+        return data
+
+    test_item = _test_mode_coil_item()
+    if isinstance(data, dict):
+        values = data.get("value")
+        if isinstance(values, list) and len(values) == 0:
+            fallback = dict(data)
+            fallback["value"] = [test_item]
+            fallback["Count"] = max(int(fallback.get("Count") or 0), 1)
+            return fallback
+    elif isinstance(data, list) and len(data) == 0:
+        return [test_item]
+    return data
 
 def get_coil_item_info(c):
     """
@@ -105,7 +192,7 @@ async def get_coil(number: int, coil_id=None, rev=True):
         by_coil=isLoc,
         auto_sync=False
     )
-    return data
+    return _with_test_mode_coil_fallback(data)
 
 
 @router.get("/flush/{coil_id:int}")

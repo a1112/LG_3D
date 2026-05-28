@@ -17,6 +17,7 @@ Item {
     width: 1080
     height: 35
     clip: false
+    readonly property var appWindow: Window.window
     Pane{
         anchors.fill: parent
         Material.elevation: 5
@@ -92,7 +93,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.text: "最小化"
                 onClicked: {
-                    const window = Window.window
+                    const window = root.appWindow
                     if (window) {
                         window.showMinimized()
                     }
@@ -115,7 +116,7 @@ Item {
                 tipText: "关闭"
                 source: coreStyle.getIcon("close")
                 onClicked: {
-                    const window = Window.window
+                    const window = root.appWindow
                     if (window) {
                         window.close()
                     }

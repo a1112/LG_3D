@@ -7,8 +7,7 @@ Api_Base {
     property string oldHeightDatUrl:""
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
-        // Direct URL to avoid auto remapping.
-        url: apiConfig.ws_protocol+apiConfig.hostname+":"+apiConfig.dataPort+"/ws/coilData/heightPoint"
+        url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
         active: true
         onStatusChanged: {
             if (status === WebSocket.Open) {

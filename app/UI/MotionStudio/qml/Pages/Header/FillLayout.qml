@@ -2,8 +2,10 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Window
 Item{
+    id: root
     Layout.fillWidth: true
     Layout.fillHeight: true
+    readonly property var appWindow: Window.window
 
     TapHandler {
         acceptedButtons: Qt.LeftButton
@@ -18,7 +20,7 @@ Item{
         acceptedButtons: Qt.LeftButton
         enabled: !control.isFullScreen
         onActiveChanged: {
-            const window = Window.window
+            const window = root.appWindow
             if (active && window && window.startSystemMove) {
                 window.startSystemMove()
             }
