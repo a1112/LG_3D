@@ -2,13 +2,18 @@ import asyncio
 import json
 
 from pathlib import Path
-import time
 
 import cv2
 import numpy as np
 from PIL import Image
 from Base.CONFIG import isLoc, serverConfigProperty
 from SplicingService.DataFolderLog import DataFolderLog
+from SplicingService.capture_paths import (
+    THREE_D_DIR_NAMES,
+    TWO_D_DIR_NAMES,
+    capture_complete,
+    resolve_capture_dir,
+)
 from Base.tools.Glob import cmdThread
 
 from Base.tools import tool
@@ -46,17 +51,7 @@ class DataFolder(Globs.control.BaseDataFolder):
 
     @staticmethod
     def static_check_detection_end(source, coil_id):
-        source = source / str(coil_id) / "2D"
-        if not source.exists():
-            return False
-        bmp_list = list(source.glob("*.bmp"))
-        if len(list(bmp_list)) < 3.2:   # 判断采集结束
-            return False
-        for bmp in bmp_list:
-            file_time = bmp.stat().st_mtime
-            if time.time() - file_time < 3.2:
-                return False
-        return True
+        return capture_complete(source, coil_id)
 
     def get_data(self):
         return self.consumer.get()
@@ -96,7 +91,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         return json_datas, stem_list
 
     async def load2_d(self, coil_id, stem_list):
-        source2_d = self.source / coil_id / "2D"
+        source2_d = resolve_capture_dir(self.source, coil_id, TWO_D_DIR_NAMES)
 
         async def read_2d(stem):
             """异步读取 BMP 文件并返回图像数据"""
@@ -120,7 +115,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         return cv_image, mask, rec, steel_rec
 
     async def load3_d(self, coil_id, rec, stem_list, json_data_list):
-        source3_d = self.source / coil_id / "3D"
+        source3_d = resolve_capture_dir(self.source, coil_id, THREE_D_DIR_NAMES)
 
         async def read_3d(stem):
             """异步读取 BMP 文件并返回图像数据"""
