@@ -27,7 +27,7 @@ class SurfaceConfigProperty:
         return str(Path(self.saveFolder)/str(coil_id)/self.get_file_type.folder/(type_ + self.saveImageType))
 
     def get_3d_file(self, coil_id):
-        return str(Path(self.saveFolder)/str(coil_id)/"3D.npy")
+        return str(Path(self.saveFolder)/str(coil_id)/"3D.npz")
 
     def get_mesh_file(self, coil_id):
         return str(Path(self.saveFolder) / str(coil_id) / "meshes"/"defaultobject_mesh.mesh")
@@ -138,7 +138,9 @@ class ServerConfigProperty(BaseConfigProperty):
         surface_config = self.surfaceConfigPropertyDict[surface_key]
         file_url = Path(surface_config.get_3d_file(coil_id))
         if not file_url.exists():
-            file_url=file_url.with_suffix(".npz")
+            legacy_file_url = file_url.with_suffix(".npy")
+            if legacy_file_url.exists():
+                return legacy_file_url
         return file_url
 
     def get_mesh_file(self, coil_id, surface_key):

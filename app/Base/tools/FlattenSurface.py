@@ -1,21 +1,60 @@
+import os
+
 import numpy as np
 from scipy.stats import norm
 from scipy.spatial.transform import Rotation as R
+
+
+DEFAULT_MAX_PLANE_FIT_POINTS = 200_000
+
+
+def _get_max_plane_fit_points():
+    raw_value = os.getenv("ALGORITHM_3D_FLATTEN_SAMPLE_POINTS", str(DEFAULT_MAX_PLANE_FIT_POINTS))
+    try:
+        return max(int(raw_value), 3)
+    except ValueError:
+        return DEFAULT_MAX_PLANE_FIT_POINTS
+
+
+def _select_plane_fit_points(data, mask, min_value, max_value, max_points):
+    valid_mask = np.logical_and(mask.astype(bool), np.logical_and(data > min_value, data < max_value))
+    filtered_count = int(np.count_nonzero(valid_mask))
+    if filtered_count == 0:
+        return np.array([]), np.array([]), np.array([]), filtered_count
+
+    if filtered_count <= max_points:
+        y, x = np.nonzero(valid_mask)
+    else:
+        stride = max(int(np.sqrt(valid_mask.size / max_points)), 1)
+        y = x = None
+        while stride > 1:
+            sample_mask = valid_mask[::stride, ::stride]
+            sample_y, sample_x = np.nonzero(sample_mask)
+            if sample_y.size >= min(max_points, filtered_count):
+                y = sample_y * stride
+                x = sample_x * stride
+                break
+            stride //= 2
+        if y is None:
+            y, x = np.nonzero(valid_mask)
+
+        if y.size > max_points:
+            sample_positions = np.linspace(0, y.size - 1, max_points, dtype=np.int64)
+            y = y[sample_positions]
+            x = x[sample_positions]
+
+    return x, y, data[y, x], filtered_count
 
 
 def fit_plane(x_, y_, z):
     """
     使用线性回归拟合一个平面，返回平面方程的系数 (a, b, c) 和法向量。
     """
-    from sklearn.linear_model import LinearRegression
     if len(x_) != len(y_) or len(x_) != len(z):
         raise ValueError("x_, y_, z 必须具有相同的长度。")
 
-    X = np.vstack((x_, y_)).T
-    model = LinearRegression()
-    model.fit(X, z)
-    a_, b_ = model.coef_
-    c_ = model.intercept_
+    design_matrix = np.column_stack((x_, y_, np.ones_like(x_, dtype=np.float64)))
+    a_, b_, c_ = np.linalg.lstsq(design_matrix, z, rcond=None)[0]
 
     normal_vector = np.array([a_, b_, -1])
     return a_, b_, c_, normal_vector
@@ -160,30 +199,24 @@ def flatten_surface_by_rotation(data, mask, media_z):
     """
     from Base.utils.Log import logger
     import logging
-    data = np.copy(data)
-    data[mask == False] = 0
-    rows, cols = data.shape
-    x, y = np.meshgrid(np.arange(cols), np.arange(rows))  # 获取X和Y的下标
-    x = x.flatten()
-    y = y.flatten()
-    z = data.flatten()
-
     min_value = media_z - 3000  # 设置下限值
     max_value = media_z + 3000  # 设置上限值
 
-    # 筛选出范围内的值
-    non_zero_indices = np.logical_and(z > min_value, z < max_value)
+    max_points = _get_max_plane_fit_points()
+    x, y, z, filtered_count = _select_plane_fit_points(data, mask, min_value, max_value, max_points)
     if logger.isEnabledFor(logging.DEBUG):
         total_nz = int(np.count_nonzero(data))
         mask_nz = int(np.count_nonzero(mask))
         logger.debug(
             f"flatten_surface_by_rotation stats: shape={data.shape}, total_nz={total_nz}, mask_nz={mask_nz}, "
-            f"filtered_count={int(non_zero_indices.sum())}, range=({min_value}, {max_value}), median={media_z}")
-    x = x[non_zero_indices]
-    y = y[non_zero_indices]
-    z = z[non_zero_indices]
-    if x.size == 0:
+            f"filtered_count={filtered_count}, range=({min_value}, {max_value}), median={media_z}")
+    if z.size == 0:
         raise ValueError("平面拟合失败：筛选后无有效点")
+
+    logger.debug(
+        f"flatten_surface_by_rotation fit_points={len(z)} filtered_count={filtered_count} "
+        f"sample_limit={max_points}"
+    )
 
     # 拟合平面并计算平面方程的系数
     a, b, c, normal_vector = fit_plane(x, y, z)

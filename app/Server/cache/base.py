@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -10,14 +11,15 @@ import cv2
 import numpy as np
 from PIL import Image
 from cachetools import TTLCache, cached
+from testdata_config import get_testdata_asset_dir, get_testdata_dir
 
 # 解除 PIL 对单张图片像素数量的安全限制，避免大幅面图像触发 DecompressionBombError。
 Image.MAX_IMAGE_PIXELS = None
 
 def _should_use_testdata() -> bool:
     """检查是否应该使用TestData的多种方式"""
+    config_dir = _config_dir()
     # 方式1: 检查CONFIG_3D目录下的developer_mode=true文件
-    config_dir = Path(r"D:\CONFIG_3D")
     if (config_dir / "developer_mode=true").exists():
         return True
     
@@ -30,7 +32,7 @@ def _should_use_testdata() -> bool:
                 config = json.load(f)
                 if config.get("test_mode", False):
                     return True
-        except:
+        except Exception:
             pass
     
     # 方式3: 检查环境变量
@@ -40,17 +42,23 @@ def _should_use_testdata() -> bool:
     
     # 方式4: 尝试从CONFIG获取（如果已初始化）
     try:
-        from CONFIG import developer_mode, isLoc
-        return developer_mode and isLoc
-    except:
+        from Base import CONFIG
+        return CONFIG.developer_mode and CONFIG.isLoc
+    except Exception:
         pass
     
     return False
 
 
-_TESTDATA_COIL_ID = "125143"
+def _config_dir() -> Path:
+    try:
+        from Base import CONFIG
+        return Path(CONFIG.base_config_folder)
+    except Exception:
+        return Path(os.getenv("CONFIG_3D_DIR", r"D:\CONFIG_3D"))
+
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_TESTDATA_DIR = _PROJECT_ROOT / "TestData" / _TESTDATA_COIL_ID
 
 
 class CacheComponent(ABC):
@@ -67,7 +75,7 @@ class CacheComponent(ABC):
 
 def _resolve_image_path(original_path: str) -> Path:
     """
-    在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
+    在开发者模式 + 本地环境下，将图片路径映射到当前 TestData 目录。
     其余情况直接返回原路径。
 
     注意：现在所有文件都保存为 .jpg 格式，优先尝试 .jpg
@@ -76,14 +84,15 @@ def _resolve_image_path(original_path: str) -> Path:
 
     if not _should_use_testdata():
         return path_obj
-    if not _TESTDATA_DIR.exists():
+    testdata_dir = get_testdata_asset_dir(path_obj)
+    if not testdata_dir.exists():
         return path_obj
 
     try:
         parts = path_obj.parts
         if "preview" in parts:
             type_name = path_obj.stem
-            preview_dir = _TESTDATA_DIR / "preview"
+            preview_dir = testdata_dir / "preview"
             # 优先尝试 .jpg（当前保存格式），然后才是其他格式
             for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
                 if not ext:
@@ -95,7 +104,7 @@ def _resolve_image_path(original_path: str) -> Path:
         # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
         folder_name = path_obj.parent.name
         type_name = path_obj.stem
-        target_dir = _TESTDATA_DIR / folder_name
+        target_dir = testdata_dir / folder_name
 
         # 优先尝试 .jpg（当前保存格式）
         for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
@@ -113,18 +122,19 @@ def _resolve_image_path(original_path: str) -> Path:
 
 def _resolve_3d_path(original_path: str) -> Path:
     """
-    在开发者模式 + 本地环境下，将任意 coil 的 3D 文件映射到固定 TestData/125143 的 3D 示例数据。
+    在开发者模式 + 本地环境下，将任意 coil 的 3D 文件映射到当前 TestData 示例数据。
 
-    注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/125143/3D.npz）。
+    注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/to/193113/3D.npz）。
     """
     path_obj = Path(original_path)
     if not _should_use_testdata():
         return path_obj
-    if not _TESTDATA_DIR.exists():
+    testdata_dir = get_testdata_asset_dir(path_obj)
+    if not testdata_dir.exists():
         return path_obj
 
     for name in ("3D.npz", "3D.npy"):
-        candidate = _TESTDATA_DIR / name
+        candidate = testdata_dir / name
         if candidate.exists():
             if candidate != path_obj:
                 logging.info("developer_mode: map 3D %s -> %s", path_obj, candidate)

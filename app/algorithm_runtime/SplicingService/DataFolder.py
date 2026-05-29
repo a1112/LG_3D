@@ -1,14 +1,20 @@
 import asyncio
 import json
+import time
 
 from pathlib import Path
-import time
 
 import cv2
 import numpy as np
 from PIL import Image
 from Base.CONFIG import isLoc, serverConfigProperty
 from SplicingService.DataFolderLog import DataFolderLog
+from SplicingService.capture_paths import (
+    THREE_D_DIR_NAMES,
+    TWO_D_DIR_NAMES,
+    capture_complete,
+    resolve_capture_dir,
+)
 from Base.tools.Glob import cmdThread
 
 from Base.tools import tool
@@ -46,17 +52,7 @@ class DataFolder(Globs.control.BaseDataFolder):
 
     @staticmethod
     def static_check_detection_end(source, coil_id):
-        source = source / str(coil_id) / "2D"
-        if not source.exists():
-            return False
-        bmp_list = list(source.glob("*.bmp"))
-        if len(list(bmp_list)) < 3.2:   # 判断采集结束
-            return False
-        for bmp in bmp_list:
-            file_time = bmp.stat().st_mtime
-            if time.time() - file_time < 3.2:
-                return False
-        return True
+        return capture_complete(source, coil_id)
 
     def get_data(self):
         return self.consumer.get()
@@ -96,7 +92,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         return json_datas, stem_list
 
     async def load2_d(self, coil_id, stem_list):
-        source2_d = self.source / coil_id / "2D"
+        source2_d = resolve_capture_dir(self.source, coil_id, TWO_D_DIR_NAMES)
 
         async def read_2d(stem):
             """异步读取 BMP 文件并返回图像数据"""
@@ -120,7 +116,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         return cv_image, mask, rec, steel_rec
 
     async def load3_d(self, coil_id, rec, stem_list, json_data_list):
-        source3_d = self.source / coil_id / "3D"
+        source3_d = resolve_capture_dir(self.source, coil_id, THREE_D_DIR_NAMES)
 
         async def read_3d(stem):
             """异步读取 BMP 文件并返回图像数据"""
@@ -171,21 +167,30 @@ class DataFolder(Globs.control.BaseDataFolder):
         while True:
             coil_id = self.producer.get()
             # logger.info(f"DataFolder {coil_id} start")
+            total_start = time.perf_counter()
             data = {}
             # dataFolderLog = DataFolderLog(self)
             try:
+                json_start = time.perf_counter()
                 json_datas, stem_list = self.load_json(coil_id)
+                json_s = time.perf_counter() - json_start
+                load2d_start = time.perf_counter()
                 image2_d, image_mask, rec, steel_rec = asyncio.run(self.load2_d(coil_id, stem_list))
+                load2d_s = time.perf_counter() - load2d_start
+                load3d_start = time.perf_counter()
                 data3_d =  asyncio.run(self.load3_d(coil_id, rec, stem_list, json_datas))
+                load3d_s = time.perf_counter() - load3d_start
                 data["json"] = json_datas
                 data["2D"] = image2_d
                 data["rec"] = steel_rec
                 data["MASK"] = image_mask
 
+                post_start = time.perf_counter()
                 data3_d = cv2.bitwise_and(data3_d, data3_d, mask=image_mask)
                 if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
                     data3_d = auto_data_leveling_3d(data3_d, image_mask)
                 data["3D"] = data3_d
+                post_s = time.perf_counter() - post_start
 
                 self.mk_link(coil_id)
                 if self.saveMask:
@@ -193,6 +198,11 @@ class DataFolder(Globs.control.BaseDataFolder):
                     Image.fromarray(image_mask).save(self.saveMaskFolder / f"{coil_id}_{self.folderName}_MASK.png")
 
                 # 显示图像
+                logger.info(
+                    f"perf DataFolder coil={coil_id} camera={self.folderName} frames={len(stem_list)} "
+                    f"json_s={json_s:.3f} load2d_s={load2d_s:.3f} load3d_s={load3d_s:.3f} "
+                    f"post_s={post_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
+                )
             except BaseException as e:
                 logger.error(f"Error in DataFolder {coil_id}: {e}")
                 if isLoc and Globs.control.debug_raise:

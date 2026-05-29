@@ -1,8 +1,8 @@
 import QtQuick
 
 ToolsButton{
-   height:35
-   width:height
+   height: coreStyle.topHeight
+   width: coreStyle.windowButtonWidth
    tipText: qsTr("帮助")
   source: coreStyle.getIcon("help")
   onClicked: popManage.popupHelpView()

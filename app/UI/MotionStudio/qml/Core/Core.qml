@@ -14,7 +14,7 @@ Item {
 
 property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
 
-property bool developer_mode: app.coreSetting.testMode
+property bool developer_mode: app.coreSetting.testMode || (ScriptLauncher ? ScriptLauncher.developerMode() : false)
 
 property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
 

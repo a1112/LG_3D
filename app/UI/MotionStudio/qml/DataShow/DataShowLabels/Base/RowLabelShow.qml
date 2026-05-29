@@ -11,6 +11,6 @@ RowLayout{
     Label{
         visible:mm_label_visible
         text: "mm"
-    color: "#747474"
+    color: coreStyle.labelColor
     }
 }

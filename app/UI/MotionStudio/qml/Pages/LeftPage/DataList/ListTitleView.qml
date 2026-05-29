@@ -10,8 +10,7 @@ Item {
     // anchors.verticalCenter: parent.verticalCenter
     Rectangle{
         anchors.fill: parent
-        color: Material.color(Material.Blue)
-        opacity: 0.1
+        color: coreStyle.headerBackgroundColor
     }
     RowLayout{
         anchors.fill: parent

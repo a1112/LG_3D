@@ -34,6 +34,7 @@ cryptography
 fastapi-cache[redis]
 redis
 python-multipart
+PySide6
 typing_extensions
 sympy
 mpmath
@@ -50,3 +51,4 @@ onnxruntime
 Labelme2YOLOv8
 labelme
 cachetools
+pytest

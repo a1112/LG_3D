@@ -1,11 +1,9 @@
 import QtQuick.Window
-import "../../btns"
 
-WindowModelChangeButton {
-    height: 35
-    tipText: control.isFullScreen?"窗口模式":"全屏模式"
-    selectColor:control.isFullScreen? "#FFCB3D":"#3DCBFF"
+WindowCaptionButton {
+    buttonType: control.isMaximized || control.isFullScreen ? "restore" : "maximize"
+    tipText: control.isMaximized || control.isFullScreen ? "还原" : "最大化"
     onClicked: {
-        control.visibility= control.isFullScreen? Window.Windowed:Window.FullScreen
+        control.visibility = control.isMaximized || control.isFullScreen ? Window.Windowed : Window.Maximized
     }
 }

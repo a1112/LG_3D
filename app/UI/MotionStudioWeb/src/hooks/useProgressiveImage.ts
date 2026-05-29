@@ -12,7 +12,7 @@ import {
   preloadImage,
   type ViewportInfo,
 } from '@/utils/imageLoader'
-import { globalImageCache, loadImageWithCache } from '@/utils/imageCache'
+import { loadImageWithCache } from '@/utils/imageCache'
 
 interface UseProgressiveImageOptions {
   baseUrl: string

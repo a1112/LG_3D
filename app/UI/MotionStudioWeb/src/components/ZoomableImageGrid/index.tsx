@@ -3,7 +3,7 @@
  * 用于缺陷检测页面的图像展示
  */
 
-import React, { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { Card, Row, Col, Tag, Button } from 'antd'
 import { FullscreenOutlined } from '@ant-design/icons'
 import ProgressiveImage from '../ProgressiveImage'

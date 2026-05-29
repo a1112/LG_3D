@@ -26,7 +26,7 @@ ColumnLayout{
                 Label{
                     text: core.developer_mode ? "TestData/125143" : (app.coreSetting.useSharedFolder ? "\\\\" + app.api.apiConfig.hostname + "/" + app.coreSetting.sharedFolderBaseName : "数据库")
                     font.pixelSize: 13
-                    color: "#333333"
+                    color: coreStyle.labelColor
                 }
             }
             
@@ -41,7 +41,7 @@ ColumnLayout{
                 Label{
                     text: core.developer_mode ? "TestData (测试数据)" : (app.coreSetting.useSharedFolder ? "共享文件夹" : "本地数据库")
                     font.pixelSize: 13
-                    color: "#333333"
+                    color: coreStyle.labelColor
                 }
             }
             
@@ -78,7 +78,7 @@ ColumnLayout{
                 Label{
                     text: app.api.apiConfig.hostname
                     font.pixelSize: 13
-                    color: "#333333"
+                    color: coreStyle.labelColor
                 }
             }
             
@@ -93,7 +93,7 @@ ColumnLayout{
                 Label{
                     text: "Offline"
                     font.pixelSize: 13
-                    color: "#666666"
+                    color: coreStyle.labelColor
                 }
             }
         }
@@ -118,7 +118,7 @@ ColumnLayout{
                 Label{
                     text: "D:\\CONFIG_3D"
                     font.pixelSize: 13
-                    color: "#333333"
+                    color: coreStyle.labelColor
                 }
             }
             
@@ -133,7 +133,7 @@ ColumnLayout{
                 Label{
                     text: app.coreSetting.server_port.toString()
                     font.pixelSize: 13
-                    color: "#333333"
+                    color: coreStyle.labelColor
                 }
             }
         }

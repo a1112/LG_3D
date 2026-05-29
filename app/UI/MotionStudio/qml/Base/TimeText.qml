@@ -31,6 +31,6 @@ Row {
         font.family: fonts.timeFamioly || "Microsoft YaHei"
         id: label
         font.pixelSize: 24
-        color: "#333"
+        color: coreStyle.isDark ? "#DDEBFF" : coreStyle.textColor
     }
 }

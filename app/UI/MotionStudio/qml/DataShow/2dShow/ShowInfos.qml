@@ -25,7 +25,7 @@ Item {
         Row{
             Label{
                 text: "X: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataShowCore_.hoverPoint.x.toFixed(0)
@@ -38,7 +38,7 @@ Item {
         Row{
             Label{
                 text: "Y: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataShowCore_.hoverPoint.y.toFixed(0)
@@ -53,7 +53,7 @@ Item {
         Row{
             Label{
                 text: "宽: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: (dataShowCore_.sourceWidth*dataShowCore_.scan3dScaleX).toFixed(0)
@@ -63,7 +63,7 @@ Item {
             }
             Label{
                 text: "mm "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
         Row{
@@ -71,7 +71,7 @@ Item {
             Label{
 
                 text: "高: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: (dataShowCore_.sourceHeight*dataShowCore_.scan3dScaleY).toFixed(0)
@@ -81,7 +81,7 @@ Item {
             }
             Label{
                 text: "mm "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 
@@ -95,7 +95,7 @@ Item {
             }
             Label{
                 text: "x"
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataShowCore_.sourceHeight
@@ -105,7 +105,7 @@ Item {
             }
             Label{
                 text: "px "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 

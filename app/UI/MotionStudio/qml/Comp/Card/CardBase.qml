@@ -24,16 +24,20 @@ Item {
         width: parent.width
         height: parent.height-5
         Material.elevation: 6
+        Material.background: app.coreStyle.panelElevatedColor
     }
     Rectangle{
-        opacity:0.5
-        color:"transparent"
         anchors.fill: parent
+        color: app.coreStyle.panelElevatedColor
         border.color: showError?app.coreStyle.cardBorderErrorColor:app.coreStyle.cardBorderColor
         border.width: 1
     }
     ItemDelegate{
+        id: cardDelegate
         anchors.fill: parent
+        background: Rectangle {
+            color: cardDelegate.hovered ? app.coreStyle.buttonHoverColor : app.coreStyle.panelElevatedColor
+        }
     }
 
     ColumnLayout{

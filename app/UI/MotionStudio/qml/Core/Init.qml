@@ -16,6 +16,12 @@ Item {
         // 初始化
         // 初始化 卷 数据
         coreModel.coilListModel.clear()
+        if (coilData && coilData.value !== undefined) {
+            coilData = coilData.value
+        }
+        if (!coilData || !Array.isArray(coilData)) {
+            coilData = []
+        }
         let data={
             "coilList":coilData
         }
@@ -141,13 +147,14 @@ Item {
         api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
+                        core.setCoilIndex(0)
+                        core.flushListItem()
                         isListLoading = false  // 完成后重置状态
                         },(error)=>{
                             console.log("error")
                             isListLoading = false  // 错误时也要重置状态
                         }
                     )
-        core.setCoilIndex(0)
 
     }
 }

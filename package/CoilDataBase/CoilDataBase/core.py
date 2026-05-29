@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 
 from .config import get_url
+from .db_settings import sqlalchemy_pool_settings
 from .models import *
 
 
@@ -61,13 +62,7 @@ def ensure_runtime_indexes(engine_):
 def get_engine(url=None):
     if url is None:
         url = get_url()
-    engine_ = create_engine(url,
-                            pool_size=5,
-                            max_overflow=10,
-                            pool_timeout=20,
-                            pool_recycle=600,
-                            pool_pre_ping=True,
-                            echo=False)
+    engine_ = create_engine(url, **sqlalchemy_pool_settings())
     if not database_exists(engine_.url):
         create_database(engine_.url)
     Base.metadata.create_all(engine_)

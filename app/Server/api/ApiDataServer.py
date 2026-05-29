@@ -9,6 +9,7 @@ from PIL import Image
 from fastapi import APIRouter, Query, WebSocket
 from fastapi.responses import FileResponse, Response
 from starlette.responses import StreamingResponse
+from starlette.websockets import WebSocketDisconnect
 
 from Base.property.Data3D import LineData
 from Base.property.Types import Point2D
@@ -49,7 +50,7 @@ async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x
         x2, y2 = x1 + 10, y1
 
     line_data = LineData(npy_data, mask_image, Point2D(x1, y1), Point2D(x2, y2))
-    segments = line_data.split_image_line_points()
+    segments = line_data.split_image_line_points(ray=False)
 
     result = []
     for seg in segments:
@@ -90,27 +91,30 @@ async def ws_height_point(websocket: WebSocket):
     {"id": 1, "surface_key": "S", "coil_id": "1755", "x": 100, "y": 200}
     """
     await websocket.accept()
-    while True:
-        message = await websocket.receive_json()
-        req_id = message.get("id")
-        surface_key = message.get("surface_key") or message.get("surfaceKey")
-        coil_id = str(message.get("coil_id") or message.get("coilId") or "")
-        x = int(message.get("x", 0))
-        y = int(message.get("y", 0))
+    try:
+        while True:
+            message = await websocket.receive_json()
+            req_id = message.get("id")
+            surface_key = message.get("surface_key") or message.get("surfaceKey")
+            coil_id = str(message.get("coil_id") or message.get("coilId") or "")
+            x = int(message.get("x", 0))
+            y = int(message.get("y", 0))
 
-        base_resp = {"id": req_id, "surface_key": surface_key, "coil_id": coil_id, "x": x, "y": y}
+            base_resp = {"id": req_id, "surface_key": surface_key, "coil_id": coil_id, "x": x, "y": y}
 
-        if not surface_key or not coil_id:
-            await websocket.send_json({**base_resp, "error": "surface_key and coil_id are required"})
-            continue
+            if not surface_key or not coil_id:
+                await websocket.send_json({**base_resp, "error": "surface_key and coil_id are required"})
+                continue
 
-        data_get = DataGet("image", surface_key, coil_id, "MASK", False)
-        npy_data = data_get.get_3d_data()
-        try:
-            value = int(npy_data[int(y)][int(x)])
-            await websocket.send_json({**base_resp, "value": value})
-        except Exception as exc:  # pragma: no cover - runtime guard
-            await websocket.send_json({**base_resp, "error": str(exc)})
+            data_get = DataGet("image", surface_key, coil_id, "MASK", False)
+            npy_data = data_get.get_3d_data()
+            try:
+                value = int(npy_data[int(y)][int(x)])
+                await websocket.send_json({**base_resp, "value": value})
+            except Exception as exc:  # pragma: no cover - runtime guard
+                await websocket.send_json({**base_resp, "error": str(exc)})
+    except WebSocketDisconnect:
+        log.debug("heightPoint websocket disconnected")
 
 
 @router.get("/coilData/Render/{surfaceKey:str}/{coil_id:str}")
@@ -121,6 +125,8 @@ async def getRender(
     mask: bool = Query(True, description="是否应用掩码"),
     min_value: int = Query(0, description="最小值"),
     max_value: int = Query(255, description="最大值"),
+    minValue: int | None = Query(None, description="兼容 QML 旧参数：最小值"),
+    maxValue: int | None = Query(None, description="兼容 QML 旧参数：最大值"),
     thumbnail: bool = Query(False, description="是否返回缩略图（1024x1024）"),
     grayscale: bool = Query(False, description="是否使用灰度模式（GRAY）而非伪彩色（JET）"),
 ) -> Response:
@@ -135,8 +141,14 @@ async def getRender(
     """
     mask = get_bool(mask)
     scale = float(scale)
+    if minValue is not None:
+        min_value = minValue
+    if maxValue is not None:
+        max_value = maxValue
     min_value = int(min_value)
     max_value = int(max_value)
+    if max_value <= min_value:
+        max_value = min_value + 1
 
     data_get = DataGet("image", surfaceKey, coil_id, "MASK", False)
     npy_data = data_get.get_3d_data()
@@ -155,7 +167,7 @@ async def getRender(
         if mask:
             mask_image = data_get.get_image()
             if mask_image:
-                mask_array = np.array(Image.open(io.BytesIO(mask_image)))
+                mask_array = np.array(Image.open(io.BytesIO(mask_image)).convert("L"))
 
         # 尝试从缓存获取或生成缩略图
         if cacheProvider.falsecolor_cache:
@@ -181,7 +193,7 @@ async def getRender(
     s_t = time.time()
     mask_image = data_get.get_image()
     if mask_image:
-        mask_image = Image.open(io.BytesIO(mask_image))
+        mask_image = Image.open(io.BytesIO(mask_image)).convert("L")
         mask_image = np.array(mask_image)
 
     r_size = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
@@ -203,12 +215,7 @@ async def getRender(
         rendered_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
 
     if mask and mask_image is not None:
-        if grayscale:
-            # GRAY 模式掩码需要 3 通道
-            mask_3ch = cv2.merge([mask_image, mask_image, mask_image])
-            rendered_image = cv2.bitwise_and(rendered_image, rendered_image, mask=mask_3ch)
-        else:
-            rendered_image = cv2.bitwise_and(rendered_image, rendered_image, mask=mask_image)
+        rendered_image = cv2.bitwise_and(rendered_image, rendered_image, mask=mask_image)
 
     _, img_encoded = cv2.imencode('.jpg', rendered_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
     img_bytes = img_encoded.tobytes()

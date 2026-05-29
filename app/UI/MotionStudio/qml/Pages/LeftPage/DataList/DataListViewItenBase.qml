@@ -44,12 +44,12 @@ Item {
     Pane{
         Material.elevation: 7
         anchors.fill: parent
+        Material.background: root.isCurrentIndex ? coreStyle.panelAlternateColor : coreStyle.panelElevatedColor
     }
     Rectangle {
         anchors.fill: parent
-        color: "#32eeeeee"
+        color: index%2==0 ? coreStyle.panelAlternateColor : coreStyle.panelElevatedColor
         radius: 5
-        visible: index%2==0
     }
 
     ItemDelegate{
@@ -63,10 +63,10 @@ Item {
     }
     Rectangle {
         anchors.fill: parent
-        color: "#00000000"
+        color: root.isCurrentIndex ? coreStyle.selectionColor : coreStyle.buttonHoverColor
         radius: 5
-        visible: root.isCurrentIndex
-        border.color:"orange"
+        visible: root.isCurrentIndex || hov.hovered
+        border.color: coreStyle.accentColor
         border.width: 2
     }
 
@@ -81,7 +81,7 @@ Item {
         width: 3
         height: parent.height
         anchors.bottom: parent.bottom
-        color: root.isCurrentIndex?"red":"#00000000"
+        color: root.isCurrentIndex ? coreStyle.accentColor : coreStyle.panelElevatedColor
     }
     HoverHandler{
         id:hov

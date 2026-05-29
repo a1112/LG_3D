@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Window
 // import Qt5Compat.GraphicalEffects
 // import "../../Base" as Base
 import "../../btns"
@@ -14,22 +15,22 @@ Item {
 
     id:root
     width: 1080
-    height: 35
+    height: coreStyle.topHeight
     clip: false
+    readonly property var appWindow: Window.window
     Pane{
         anchors.fill: parent
         Material.elevation: 5
+        Material.background: coreStyle.headerBackgroundColor
     }
     Rectangle{
-        color:"blue"
         anchors.fill: parent
-        opacity:0.1
+        color: coreStyle.headerBackgroundColor
     }
     Rectangle{
         width: parent.width
         height: 1
-                opacity:0.1
-        color: "#FFF"
+        color: coreStyle.headerBorderColor
         anchors.bottom: parent.bottom
     }
     RowLayout{
@@ -41,13 +42,10 @@ Item {
         }
         ItemDelegateButtonBase {
           id: mainMenuButton
-          height: parent.height
-          width: height
+          Layout.preferredHeight: parent.height
+          Layout.preferredWidth: parent.height
           tipText: qsTr("主菜单")
           source:  coreStyle.getIcon("Menu")
-          onClicked: {
-              popManage.popupStyleMenu()
-          }
         }
 
         TopIcon{}
@@ -78,13 +76,45 @@ Item {
             implicitWidth: 20
             Layout.fillHeight: true
         }
-        Row{
-            spacing:10
+        RowLayout{
+            id: captionControls
+            Layout.preferredHeight: parent.height
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
+            spacing: coreStyle.headerButtonGap
             HelpButton{
+                Layout.alignment: Qt.AlignVCenter
                 visible: !auth.isAdmin
             }
-            TopToolsButton{}
-            TopWindowModelChangeButton {}
+            TopToolsButton{
+                Layout.alignment: Qt.AlignVCenter
+            }
+            WindowCaptionButton {
+                id: minimizeButton
+                Layout.alignment: Qt.AlignVCenter
+                buttonType: "minimize"
+                tipText: "最小化"
+                onClicked: {
+                    const window = root.appWindow
+                    if (window) {
+                        window.showMinimized()
+                    }
+                }
+            }
+            TopWindowModelChangeButton {
+                Layout.alignment: Qt.AlignVCenter
+            }
+            WindowCaptionButton {
+                Layout.alignment: Qt.AlignVCenter
+                buttonType: "close"
+                tipText: "关闭"
+                onClicked: {
+                    const window = root.appWindow
+                    if (window) {
+                        window.close()
+                    }
+                }
+            }
         }
 
 

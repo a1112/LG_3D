@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -27,6 +28,7 @@ from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
 from .api_core import app
+from testdata_config import get_testdata_coil_id, get_testdata_coil_info, get_testdata_dir
 
 serverConfigProperty: ServerConfigProperty
 """
@@ -35,6 +37,116 @@ serverConfigProperty: ServerConfigProperty
 """
 router = APIRouter(tags=["数据库服务"])
 
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _test_mode_enabled() -> bool:
+    if os.getenv("API_DEVELOPER_MODE", "").lower() in {"1", "true", "yes", "on"}:
+        return True
+    if _test_mode_config_enabled():
+        return True
+    return bool(getattr(CONFIG, "developer_mode", False) and getattr(CONFIG, "isLoc", False))
+
+
+def _test_mode_config_enabled() -> bool:
+    try:
+        test_mode_config_path = Path(CONFIG.base_config_folder) / "test_mode_config.json"
+        if test_mode_config_path.exists():
+            config = json.loads(test_mode_config_path.read_text(encoding="utf-8"))
+            if bool(config.get("test_mode", False)):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _testdata_available() -> bool:
+    base = get_testdata_dir()
+    if not base.exists():
+        return False
+    if (base / "3D.npz").exists():
+        return True
+    return any((base / surface / "3D.npz").exists() for surface in ("S", "L"))
+
+
+def _test_mode_coil_item() -> dict:
+    testdata_coil_id = int(get_testdata_coil_id())
+    testdata_dir = get_testdata_dir()
+    try:
+        testdata_msg = str(testdata_dir.relative_to(_PROJECT_ROOT)).replace("\\", "/")
+    except ValueError:
+        testdata_msg = str(testdata_dir)
+    now = datetime.datetime.now()
+    date_value = {
+        "year": now.year,
+        "month": now.month,
+        "day": now.day,
+        "weekday": now.weekday(),
+        "hour": now.hour,
+        "minute": now.minute,
+        "second": now.second,
+    }
+    alarm_info = {
+        surface: {
+            "surface": surface,
+            "grad": 1,
+            "defectGrad": 1,
+            "taperShapeGrad": 1,
+            "looseCoilGrad": 1,
+            "flatRollGrad": 1,
+            "defectMsg": "",
+            "taperShapeMsg": "测试模式",
+            "looseCoilMsg": "",
+            "flatRollMsg": "测试模式",
+        }
+        for surface in ("S", "L")
+    }
+    return {
+        "Id": testdata_coil_id,
+        "SecondaryCoilId": testdata_coil_id,
+        "CoilNo": str(testdata_coil_id),
+        "CoilType": "TestData",
+        "CoilInside": "",
+        "CoilDia": "",
+        "Thickness": "",
+        "Width": "",
+        "Weight": "",
+        "ActWidth": "",
+        "CheckStatus": 0,
+        "DefectCountS": 0,
+        "DefectCountL": 0,
+        "Status_L": 0,
+        "Status_S": 0,
+        "Grade": 0,
+        "Msg": testdata_msg,
+        "NextInfo": "测试模式",
+        "NextCode": "",
+        "hasCoil": True,
+        "hasAlarmInfo": True,
+        "AlarmInfo": alarm_info,
+        "defects": {},
+        "childrenCoilCheck": [],
+        "CreateTime": date_value,
+        "DetectionTime": date_value,
+        "DateTime": date_value,
+    }
+
+
+def _with_test_mode_coil_fallback(data):
+    if not (_test_mode_enabled() and _testdata_available()):
+        return data
+
+    test_item = _test_mode_coil_item()
+    if isinstance(data, dict):
+        values = data.get("value")
+        if isinstance(values, list):
+            fallback = dict(data)
+            fallback["value"] = [test_item]
+            fallback["Count"] = max(int(fallback.get("Count") or 0), 1)
+            return fallback
+    elif isinstance(data, list):
+        return [test_item]
+    return data
 
 def get_coil_item_info(c):
     """
@@ -108,12 +220,14 @@ async def get_coil(number: int, coil_id=None, rev=True):
     """
     number = min(number, 1000)
     # 直接查询摘要表，不进行同步（快速返回）
-    data = get_coil_list_with_summary(limit=number,
-                                      coil_id=coil_id,
-                                      rev=rev,
-                                      by_coil=isLoc,
-                                      auto_sync=False)
-    return data
+    data = get_coil_list_with_summary(
+        limit=number,
+        coil_id=coil_id,
+        rev=rev,
+        by_coil=isLoc,
+        auto_sync=False
+    )
+    return _with_test_mode_coil_fallback(data)
 
 
 @router.get("/flush/{coil_id:int}")
@@ -332,7 +446,10 @@ async def get_defect_dict_all():
 
 @router.get("/coilInfo/{coil_id:int}/{surface_key:str}")
 async def get_info(coil_id: int, surface_key: str):
-    return serverConfigProperty.get_info(coil_id, surface_key)
+    data = serverConfigProperty.get_info(coil_id, surface_key)
+    if data is None and _test_mode_enabled() and str(coil_id) == get_testdata_coil_id():
+        return get_testdata_coil_info(surface_key)
+    return data
 
 
 async def get_camera_config(coil_id: int, surface_key: str, c):

@@ -8,7 +8,7 @@ Item {
         Row{
             Label{
                 text: "X: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataShowCore.hoverPoint.x.toFixed(0)
@@ -21,7 +21,7 @@ Item {
         Row{
             Label{
                 text: "Y: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataShowCore.hoverPoint.y.toFixed(0)
@@ -36,7 +36,7 @@ Item {
         Row{
             Label{
                 text: "宽: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: (dataShowCore.sourceWidth*surfaceData.scan3dScaleX).toFixed(0)
@@ -46,7 +46,7 @@ Item {
             }
             Label{
                 text: "mm "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
         Row{
@@ -54,7 +54,7 @@ Item {
             Label{
 
                 text: "高: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: (dataShowCore.sourceHeight*surfaceData.scan3dScaleY).toFixed(0)
@@ -64,7 +64,7 @@ Item {
             }
             Label{
                 text: "mm "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 
@@ -78,7 +78,7 @@ Item {
             }
             Label{
                 text: "x"
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataAreaShowCore.sourceHeight
@@ -88,7 +88,7 @@ Item {
             }
             Label{
                 text: "px "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 
@@ -97,7 +97,7 @@ Item {
             visible: dataAreaShowCore.sourceWidth > 0 && dataAreaShowCore.sourceHeight > 0
             Label{
                 text: "瓦片: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: parseInt(dataAreaShowCore.sourceWidth / 3) + "x" + parseInt(dataAreaShowCore.sourceHeight / 3)
@@ -107,7 +107,7 @@ Item {
             }
             Label{
                 text: "px "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 
@@ -116,7 +116,7 @@ Item {
             visible: dataAreaShowCore.flick !== null
             Label{
                 text: "显示: "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
             Label{
                 text: dataAreaShowCore.flick.width + "x" + dataAreaShowCore.flick.height
@@ -126,7 +126,7 @@ Item {
             }
             Label{
                 text: "px "
-                color: "#747474"
+                color: coreStyle.labelColor
             }
         }
 }

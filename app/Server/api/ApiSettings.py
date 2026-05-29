@@ -1,13 +1,7 @@
-import asyncio
 import json
 from pathlib import Path
-from queue import Queue
-from threading import Thread
-
-from CoilDataBase.Coil import get_coil_status_by_coil_id
 
 from fastapi import APIRouter, HTTPException
-from fastapi import WebSocket
 from pydantic import BaseModel
 
 from Base import CONFIG
@@ -29,15 +23,16 @@ async def set_defect_dict(data: dict):
 class TestModeRequest(BaseModel):
     enabled: bool
 
-# 测试模式配置文件路径（不跟踪）
-TEST_MODE_CONFIG_PATH = Path("CONFIG_3D/test_mode_config.json")
+def _test_mode_config_path() -> Path:
+    return Path(CONFIG.base_config_folder) / "test_mode_config.json"
 
 @router.get("/settings/test_mode")
 async def get_test_mode():
     """获取测试模式状态"""
     try:
-        if TEST_MODE_CONFIG_PATH.exists():
-            with open(TEST_MODE_CONFIG_PATH, 'r', encoding='utf-8') as f:
+        test_mode_config_path = _test_mode_config_path()
+        if test_mode_config_path.exists():
+            with open(test_mode_config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
                 return {"test_mode": config.get("test_mode", False)}
         else:
@@ -50,25 +45,24 @@ async def get_test_mode():
 async def set_test_mode(request: TestModeRequest):
     """设置测试模式状态"""
     try:
+        test_mode_config_path = _test_mode_config_path()
         # 确保目录存在
-        TEST_MODE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        test_mode_config_path.parent.mkdir(parents=True, exist_ok=True)
         
         # 读取现有配置
         config = {}
-        if TEST_MODE_CONFIG_PATH.exists():
-            with open(TEST_MODE_CONFIG_PATH, 'r', encoding='utf-8') as f:
+        if test_mode_config_path.exists():
+            with open(test_mode_config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
         
         # 更新测试模式设置
         config["test_mode"] = request.enabled
         
         # 保存配置
-        with open(TEST_MODE_CONFIG_PATH, 'w', encoding='utf-8') as f:
+        with open(test_mode_config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
         
-        # 同时更新CONFIG中的developer_mode（运行时生效）
-        CONFIG.developer_mode = request.enabled
-        CONFIG.isLoc = request.enabled  # 同步更新兼容变量
+        CONFIG.set_developer_mode(request.enabled)
         
         return {"status": "success", "test_mode": request.enabled}
     except Exception as e:
@@ -78,11 +72,12 @@ async def set_test_mode(request: TestModeRequest):
 async def get_test_mode_status():
     """获取详细的测试模式状态信息"""
     try:
-        config_file_exists = TEST_MODE_CONFIG_PATH.exists()
+        test_mode_config_path = _test_mode_config_path()
+        config_file_exists = test_mode_config_path.exists()
         config_file_value = False
         
         if config_file_exists:
-            with open(TEST_MODE_CONFIG_PATH, 'r', encoding='utf-8') as f:
+            with open(test_mode_config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
                 config_file_value = config.get("test_mode", False)
         
@@ -91,7 +86,7 @@ async def get_test_mode_status():
             "config_file_value": config_file_value,
             "developer_mode": getattr(CONFIG, 'developer_mode', False),
             "is_local": getattr(CONFIG, 'isLoc', False),
-            "config_file_path": str(TEST_MODE_CONFIG_PATH)
+            "config_file_path": str(test_mode_config_path)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取测试模式状态失败: {str(e)}")

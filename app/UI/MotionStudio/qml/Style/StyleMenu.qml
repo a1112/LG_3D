@@ -20,15 +20,21 @@ Menu{
     Menu{
         title:qsTr("主题")
         MenuItem{
-            text:qsTr("深色")
+            text:qsTr("黑色")
             onTriggered: {
-                coreStyle.isDark=true
+                coreStyle.applyTheme("dark")
             }
         }
         MenuItem{
-            text:qsTr("浅色")
+            text:qsTr("白色")
             onTriggered: {
-                coreStyle.isDark=false
+                coreStyle.applyTheme("light")
+            }
+        }
+        MenuItem{
+            text:qsTr("蓝色")
+            onTriggered: {
+                coreStyle.applyTheme("blue")
             }
         }
     }

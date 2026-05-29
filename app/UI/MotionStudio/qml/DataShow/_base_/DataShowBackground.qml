@@ -3,6 +3,10 @@ import "../"
 Item {
     width: 1980
     height: 1080
+    Rectangle {
+        anchors.fill: parent
+        color: coreStyle.panelBackgroundColor
+    }
     property int tooolWidth: 0
     property bool is_half: (dataShowView_L.visible && dataShowView_R.visible)
     property int viewWidth_half: (root.width - tooolWidth)/2

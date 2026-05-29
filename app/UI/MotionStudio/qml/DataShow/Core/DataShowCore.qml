@@ -235,6 +235,11 @@ DataShowCore_ {
 
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
+    onMedianZValueChanged: {
+        if (surfaceData.coilId > 0) {
+            renderDrawer()
+        }
+    }
 
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()

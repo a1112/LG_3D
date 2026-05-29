@@ -8,7 +8,7 @@ Item {
     Pane{
         anchors.fill: parent
         Material.elevation: 5
-        opacity:hh.hovered? 1 : 0.9
+        Material.background: hh.hovered ? coreStyle.buttonHoverColor : coreStyle.panelElevatedColor
     }
     Frame{
     anchors.fill: parent
@@ -31,9 +31,9 @@ Item {
                 menu_type.popup()
             }
             Rectangle{
-                border.color:Material.color(Material.Blue)
+                border.color: coreStyle.headerBorderColor
                 border.width: 1
-                color: "transparent"
+                color: parent.hovered ? coreStyle.buttonHoverColor : coreStyle.panelElevatedColor
                 anchors.fill: parent
             }
         }
