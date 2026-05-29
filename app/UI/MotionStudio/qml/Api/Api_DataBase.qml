@@ -1,10 +1,27 @@
-
+import QtQuick
 import QtWebSockets
 Api_Base {
     id:api_database
 
 
     property string oldHeightDatUrl:""
+
+    Timer {
+        id: heightPointReconnectTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            heightPointSocket.active = false
+            heightPointSocket.active = true
+        }
+    }
+
+    function _scheduleHeightPointReconnect(){
+        if (!heightPointReconnectTimer.running) {
+            heightPointReconnectTimer.restart()
+        }
+    }
+
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
         url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
@@ -17,6 +34,7 @@ Api_Base {
                 }
             } else if (status === WebSocket.Error || status === WebSocket.Closed) {
                 console.log("heightPoint ws closed/error", status, errorString)
+                heightPointSocket.active = false
                 // flush pending with failure
                 for (let key in _heightPointRequests) {
                     let cb = _heightPointRequests[key]
@@ -26,6 +44,7 @@ Api_Base {
                 }
                 _heightPointRequests = {}
                 _heightPointQueue = []
+                _scheduleHeightPointReconnect()
             }
         }
         onTextMessageReceived: function(message){
@@ -68,9 +87,7 @@ Api_Base {
             heightPointSocket.sendTextMessage(text)
         }else{
             _heightPointQueue.push(text)
-            if (!heightPointSocket.active){
-                heightPointSocket.active = true
-            }
+            _scheduleHeightPointReconnect()
         }
     }
 

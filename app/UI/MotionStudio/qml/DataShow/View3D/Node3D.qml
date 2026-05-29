@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick3D
+import QtQuick3D.AssetUtils
 
 
 Node {
@@ -16,18 +17,18 @@ Node {
     property real modelRotationZ: 0
     property vector3d modelScale: Qt.vector3d(1, 1, 1)
     property vector3d autoCenterOffset: Qt.vector3d(0, 0, 0)
-    readonly property vector3d modelBoundsMin: defaultobject.bounds.minimum
-    readonly property vector3d modelBoundsMax: defaultobject.bounds.maximum
+    readonly property vector3d modelBoundsMin: runtimeModel.bounds.minimum
+    readonly property vector3d modelBoundsMax: runtimeModel.bounds.maximum
     readonly property vector3d modelSize: Qt.vector3d(
                                               Math.max(0, modelBoundsMax.x - modelBoundsMin.x),
                                               Math.max(0, modelBoundsMax.y - modelBoundsMin.y),
                                               Math.max(0, modelBoundsMax.z - modelBoundsMin.z)
                                               )
-    readonly property bool modelReady: defaultobject.status === Model.Ready
+    readonly property bool modelReady: runtimeModel.status === RuntimeLoader.Success
 
     function updateModelCenter() {
-        let minBounds = defaultobject.bounds.minimum
-        let maxBounds = defaultobject.bounds.maximum
+        let minBounds = runtimeModel.bounds.minimum
+        let maxBounds = runtimeModel.bounds.maximum
         let centerX = (minBounds.x + maxBounds.x) / 2.0
         let centerY = (minBounds.y + maxBounds.y) / 2.0
         let centerZ = (minBounds.z + maxBounds.z) / 2.0
@@ -39,9 +40,11 @@ Node {
         autoCenterOffset = Qt.vector3d(-centerX, -centerY, offsetZ)
     }
 
-    property string meshes_url: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+meshKey+"/"+surfaceData.coilId+"/meshes/defaultobject_mesh.mesh"
+    property string meshes_url: core.developer_mode && ScriptLauncher
+                                ? ScriptLauncher.testDataMeshUrl(meshKey, surfaceData.coilId)
+                                : surfaceData.meshUrl
     onMeshes_urlChanged: {
-        defaultobject.source = ""
+        runtimeModel.source = ""
         autoCenterOffset = Qt.vector3d(0, 0, 0)
         t_.start()
     }
@@ -49,9 +52,10 @@ Node {
         id:t_
         interval:5000
         onTriggered: {
-            defaultobject.source = meshes_url
+            runtimeModel.source = meshes_url
         }
     }
+    Component.onCompleted: t_.start()
 
     Node {
         id: node3D_obj
@@ -63,21 +67,16 @@ Node {
         eulerRotation.y: node.modelRotationY
         eulerRotation.z: node.modelRotationZ
         scale: node.modelScale
-        Model {
-            id: defaultobject
-            pickable:false
+        RuntimeLoader {
+            id: runtimeModel
             objectName: "defaultobject"
-            //source: "file:////"+surfaceData.meshUrl
             source: ""
-            materials: [
-                defaultMaterial_material,
-            ]
-            onStateChanged: {
-                console.log("3D state: "+state)
-                if (status === Model.Ready) {
+            onStatusChanged: {
+                console.log("3D state: "+status)
+                if (status === RuntimeLoader.Success) {
                     node.updateModelCenter()
                     console.log("Model loaded successfully");
-                } else if (status === Model.Error) {
+                } else if (status === RuntimeLoader.Error) {
                     console.log("Failed to load model:", errorString);
                 }
 

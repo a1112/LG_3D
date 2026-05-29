@@ -25,7 +25,7 @@ Item {
     readonly property string serverUrlDaaBase: protocol+hostname+":"+databasPort
     readonly property string wsServerUrlDaaBase: ws_protocol+hostname+":"+databasPort
 
-    readonly property int activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : port
+    readonly property int activeImageServerPort: core.developer_mode ? port : (coreSetting.useRustImageServer ? rustImageServerPort : port)
     readonly property string serverUrlImage: protocol+hostname+":"+activeImageServerPort
     readonly property string serverUrlData: protocol+hostname+":"+dataPort
 

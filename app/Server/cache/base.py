@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from cachetools import TTLCache, cached
+from testdata_config import get_testdata_asset_dir, get_testdata_dir
 
 # 解除 PIL 对单张图片像素数量的安全限制，避免大幅面图像触发 DecompressionBombError。
 Image.MAX_IMAGE_PIXELS = None
@@ -57,9 +58,7 @@ def _config_dir() -> Path:
         return Path(os.getenv("CONFIG_3D_DIR", r"D:\CONFIG_3D"))
 
 
-_TESTDATA_COIL_ID = "125143"
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_TESTDATA_DIR = _PROJECT_ROOT / "TestData" / _TESTDATA_COIL_ID
 
 
 class CacheComponent(ABC):
@@ -76,7 +75,7 @@ class CacheComponent(ABC):
 
 def _resolve_image_path(original_path: str) -> Path:
     """
-    在开发者模式 + 本地环境下，将图片路径映射到 TestData/125143。
+    在开发者模式 + 本地环境下，将图片路径映射到当前 TestData 目录。
     其余情况直接返回原路径。
 
     注意：现在所有文件都保存为 .jpg 格式，优先尝试 .jpg
@@ -85,14 +84,15 @@ def _resolve_image_path(original_path: str) -> Path:
 
     if not _should_use_testdata():
         return path_obj
-    if not _TESTDATA_DIR.exists():
+    testdata_dir = get_testdata_asset_dir(path_obj)
+    if not testdata_dir.exists():
         return path_obj
 
     try:
         parts = path_obj.parts
         if "preview" in parts:
             type_name = path_obj.stem
-            preview_dir = _TESTDATA_DIR / "preview"
+            preview_dir = testdata_dir / "preview"
             # 优先尝试 .jpg（当前保存格式），然后才是其他格式
             for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
                 if not ext:
@@ -104,7 +104,7 @@ def _resolve_image_path(original_path: str) -> Path:
         # 其他图像：.../<coil_id>/<folder>/<type>.<ext>
         folder_name = path_obj.parent.name
         type_name = path_obj.stem
-        target_dir = _TESTDATA_DIR / folder_name
+        target_dir = testdata_dir / folder_name
 
         # 优先尝试 .jpg（当前保存格式）
         for ext in (path_obj.suffix, ".jpg", ".jpeg", ".png"):
@@ -122,18 +122,19 @@ def _resolve_image_path(original_path: str) -> Path:
 
 def _resolve_3d_path(original_path: str) -> Path:
     """
-    在开发者模式 + 本地环境下，将任意 coil 的 3D 文件映射到固定 TestData/125143 的 3D 示例数据。
+    在开发者模式 + 本地环境下，将任意 coil 的 3D 文件映射到当前 TestData 示例数据。
 
-    注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/125143/3D.npz）。
+    注意：3D 数据不在 jpg/png 等子目录中，而是直接位于 TestData 根目录（例如 TestData/to/193113/3D.npz）。
     """
     path_obj = Path(original_path)
     if not _should_use_testdata():
         return path_obj
-    if not _TESTDATA_DIR.exists():
+    testdata_dir = get_testdata_asset_dir(path_obj)
+    if not testdata_dir.exists():
         return path_obj
 
     for name in ("3D.npz", "3D.npy"):
-        candidate = _TESTDATA_DIR / name
+        candidate = testdata_dir / name
         if candidate.exists():
             if candidate != path_obj:
                 logging.info("developer_mode: map 3D %s -> %s", path_obj, candidate)

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 
 from pathlib import Path
 
@@ -166,21 +167,30 @@ class DataFolder(Globs.control.BaseDataFolder):
         while True:
             coil_id = self.producer.get()
             # logger.info(f"DataFolder {coil_id} start")
+            total_start = time.perf_counter()
             data = {}
             # dataFolderLog = DataFolderLog(self)
             try:
+                json_start = time.perf_counter()
                 json_datas, stem_list = self.load_json(coil_id)
+                json_s = time.perf_counter() - json_start
+                load2d_start = time.perf_counter()
                 image2_d, image_mask, rec, steel_rec = asyncio.run(self.load2_d(coil_id, stem_list))
+                load2d_s = time.perf_counter() - load2d_start
+                load3d_start = time.perf_counter()
                 data3_d =  asyncio.run(self.load3_d(coil_id, rec, stem_list, json_datas))
+                load3d_s = time.perf_counter() - load3d_start
                 data["json"] = json_datas
                 data["2D"] = image2_d
                 data["rec"] = steel_rec
                 data["MASK"] = image_mask
 
+                post_start = time.perf_counter()
                 data3_d = cv2.bitwise_and(data3_d, data3_d, mask=image_mask)
                 if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
                     data3_d = auto_data_leveling_3d(data3_d, image_mask)
                 data["3D"] = data3_d
+                post_s = time.perf_counter() - post_start
 
                 self.mk_link(coil_id)
                 if self.saveMask:
@@ -188,6 +198,11 @@ class DataFolder(Globs.control.BaseDataFolder):
                     Image.fromarray(image_mask).save(self.saveMaskFolder / f"{coil_id}_{self.folderName}_MASK.png")
 
                 # 显示图像
+                logger.info(
+                    f"perf DataFolder coil={coil_id} camera={self.folderName} frames={len(stem_list)} "
+                    f"json_s={json_s:.3f} load2d_s={load2d_s:.3f} load3d_s={load3d_s:.3f} "
+                    f"post_s={post_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
+                )
             except BaseException as e:
                 logger.error(f"Error in DataFolder {coil_id}: {e}")
                 if isLoc and Globs.control.debug_raise:

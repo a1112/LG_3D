@@ -15,7 +15,7 @@ Item {
 
     id:root
     width: 1080
-    height: 35
+    height: coreStyle.topHeight
     clip: false
     readonly property var appWindow: Window.window
     Pane{
@@ -42,13 +42,10 @@ Item {
         }
         ItemDelegateButtonBase {
           id: mainMenuButton
-          height: parent.height
-          width: height
+          Layout.preferredHeight: parent.height
+          Layout.preferredWidth: parent.height
           tipText: qsTr("主菜单")
           source:  coreStyle.getIcon("Menu")
-          onClicked: {
-              popManage.popupStyleMenu()
-          }
         }
 
         TopIcon{}
@@ -79,41 +76,38 @@ Item {
             implicitWidth: 20
             Layout.fillHeight: true
         }
-        Row{
-            spacing: 6
+        RowLayout{
+            id: captionControls
+            Layout.preferredHeight: parent.height
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
+            spacing: coreStyle.headerButtonGap
             HelpButton{
+                Layout.alignment: Qt.AlignVCenter
                 visible: !auth.isAdmin
             }
-            TopToolsButton{}
-            ItemDelegate {
+            TopToolsButton{
+                Layout.alignment: Qt.AlignVCenter
+            }
+            WindowCaptionButton {
                 id: minimizeButton
-                height: 35
-                width: height
-                ToolTip.visible: hovered
-                ToolTip.text: "最小化"
+                Layout.alignment: Qt.AlignVCenter
+                buttonType: "minimize"
+                tipText: "最小化"
                 onClicked: {
                     const window = root.appWindow
                     if (window) {
                         window.showMinimized()
                     }
                 }
-                background: Rectangle {
-                    color: minimizeButton.hovered ? coreStyle.buttonHoverColor : coreStyle.headerBackgroundColor
-                }
-                Label {
-                    anchors.centerIn: parent
-                    text: "-"
-                    color: coreStyle.labelColor
-                    font.pixelSize: 24
-                    font.bold: true
-                }
             }
-            TopWindowModelChangeButton {}
-            ItemDelegateButtonBase {
-                height: 35
-                width: height
+            TopWindowModelChangeButton {
+                Layout.alignment: Qt.AlignVCenter
+            }
+            WindowCaptionButton {
+                Layout.alignment: Qt.AlignVCenter
+                buttonType: "close"
                 tipText: "关闭"
-                source: coreStyle.getIcon("close")
                 onClicked: {
                     const window = root.appWindow
                     if (window) {

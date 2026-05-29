@@ -11,7 +11,7 @@ Item{
         acceptedButtons: Qt.LeftButton
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onDoubleTapped: {
-            control.visibility = control.isFullScreen ? Window.Windowed : Window.FullScreen
+            control.visibility = control.isMaximized ? Window.Windowed : Window.Maximized
         }
     }
 
@@ -22,7 +22,16 @@ Item{
         onActiveChanged: {
             const window = root.appWindow
             if (active && window && window.startSystemMove) {
-                window.startSystemMove()
+                if (control.isMaximized) {
+                    control.visibility = Window.Windowed
+                    Qt.callLater(function() {
+                        if (window.startSystemMove) {
+                            window.startSystemMove()
+                        }
+                    })
+                } else {
+                    window.startSystemMove()
+                }
             }
         }
     }

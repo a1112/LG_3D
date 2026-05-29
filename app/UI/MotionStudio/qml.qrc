@@ -461,6 +461,7 @@
         <file>qml/Pages/Header/TopTools.qml</file>
         <file>qml/Pages/Header/TopToolsButton.qml</file>
         <file>qml/Pages/Header/TopWindowModelChangeButton.qml</file>
+        <file>qml/Pages/Header/WindowCaptionButton.qml</file>
         <file>qml/Pages/LeftPage/DataList/AlarmRectangleItem.qml</file>
         <file>qml/Pages/LeftPage/DataList/CoilState.qml</file>
         <file>qml/Pages/LeftPage/DataList/Core/AlarmInfoItem.qml</file>
@@ -551,6 +552,7 @@
         <file>qml/SettingPage/GeneralSetting/GeneralSetting.qml</file>
         <file>qml/SettingPage/OtherSetting/OtherSetting.qml</file>
         <file>qml/SettingPage/SettingPageView.qml</file>
+        <file>qml/SettingPage/StyleSetting/StyleSetting.qml</file>
         <file>qml/SettingPage/TitleRow.qml</file>
         <file>qml/Style/Adaptive/AdaptiveView.qml</file>
         <file>qml/Style/Adaptive/AdaptiveView1920_1080.qml</file>

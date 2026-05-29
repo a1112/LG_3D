@@ -9,27 +9,29 @@ Item {
 
     // ========== 主题预设 ==========
     property string themeName: "dark"  // 当前主题名称
+    property string displayStyleName: "standard"
     readonly property var themes: ({
         "dark": {
-            name: "工业深色主题",
+            name: "黑色主题",
             isDark: true,
             accentColor: Material.Cyan,
             cardBorderColor: Material.BlueGrey,
             titleColor: Material.Cyan,
-            backgroundColor: "#0B1117",
-            gridLineColor: "#263646",
-            textColor: "#E8F1F8",
-            itemBackColor: "#17212B",
-            panelColor: "#111A23",
-            panelElevatedColor: "#172330",
-            panelAlternateColor: "#1C2A36",
-            headerColor: "#0F1A24",
-            headerBorderColor: "#2C4357",
-            hoverColor: "#233447",
-            selectionColor: "#2F5F82"
+            backgroundColor: "#090F14",
+            gridLineColor: "#32475A",
+            textColor: "#F4FAFF",
+            labelColor: "#D8E7F2",
+            itemBackColor: "#17222C",
+            panelColor: "#111B24",
+            panelElevatedColor: "#1A2834",
+            panelAlternateColor: "#20313E",
+            headerColor: "#0E1821",
+            headerBorderColor: "#3A5368",
+            hoverColor: "#26394A",
+            selectionColor: "#2F6F95"
         },
         "light": {
-            name: "浅色主题",
+            name: "白色主题",
             isDark: false,
             accentColor: Material.Blue,
             cardBorderColor: Material.Blue,
@@ -46,49 +48,51 @@ Item {
             hoverColor: "#DCE7F1",
             selectionColor: "#90CAF9"
         },
-        "ocean": {
-            name: "海洋主题",
+        "blue": {
+            name: "蓝色主题",
             isDark: true,
-            accentColor: Material.Cyan,
-            cardBorderColor: Material.Cyan,
-            titleColor: Material.Cyan,
-            backgroundColor: "#001a2c",
-            gridLineColor: "#1a3a5c",
-            textColor: "#E0F7FA",
-            itemBackColor: "#1a3a5c"
+            accentColor: Material.Blue,
+            cardBorderColor: Material.Blue,
+            titleColor: Material.LightBlue,
+            backgroundColor: "#071A2B",
+            gridLineColor: "#2E5574",
+            textColor: "#F2F8FF",
+            labelColor: "#D5E8F7",
+            itemBackColor: "#12304A",
+            panelColor: "#0C2338",
+            panelElevatedColor: "#143453",
+            panelAlternateColor: "#1A4164",
+            headerColor: "#082034",
+            headerBorderColor: "#356383",
+            hoverColor: "#1E496D",
+            selectionColor: "#2C78B2"
+        }
+    })
+
+    readonly property var displayStyles: ({
+        "standard": {
+            name: "标准",
+            topHeight: 45,
+            windowButtonWidth: 46,
+            headerButtonGap: 4,
+            controlRadius: 3,
+            titleSize: 22
         },
-        "forest": {
-            name: "森林主题",
-            isDark: true,
-            accentColor: Material.Green,
-            cardBorderColor: Material.Green,
-            titleColor: Material.Green,
-            backgroundColor: "#0a1a0a",
-            gridLineColor: "#1a3a1a",
-            textColor: "#E8F5E9",
-            itemBackColor: "#1a3a1a"
+        "compact": {
+            name: "紧凑",
+            topHeight: 40,
+            windowButtonWidth: 42,
+            headerButtonGap: 2,
+            controlRadius: 2,
+            titleSize: 20
         },
-        "purple": {
-            name: "紫色主题",
-            isDark: true,
-            accentColor: Material.Purple,
-            cardBorderColor: Material.Purple,
-            titleColor: Material.Purple,
-            backgroundColor: "#1a0a2c",
-            gridLineColor: "#3a1a5c",
-            textColor: "#F3E5F5",
-            itemBackColor: "#3a1a5c"
-        },
-        "sunset": {
-            name: "日落主题",
-            isDark: true,
-            accentColor: Material.Orange,
-            cardBorderColor: Material.Orange,
-            titleColor: Material.DeepOrange,
-            backgroundColor: "#1a0f00",
-            gridLineColor: "#3a2a1a",
-            textColor: "#FFF3E0",
-            itemBackColor: "#3a2a1a"
+        "comfortable": {
+            name: "大屏",
+            topHeight: 52,
+            windowButtonWidth: 54,
+            headerButtonGap: 6,
+            controlRadius: 4,
+            titleSize: 24
         }
     })
 
@@ -113,11 +117,26 @@ Item {
         buttonHoverColor = t.hoverColor || t.itemBackColor || (isDark ? "#233447" : "#DCE7F1")
         selectionColor = t.selectionColor || Material.color(t.accentColor)
         gridLineColor = t.gridLineColor || gridLineColor
-        labelColor = t.textColor || labelColor
+        labelColor = t.labelColor || t.textColor || labelColor
         labelsColor = labelColor
-        textColor = labelColor
+        textColor = t.textColor || labelColor
         itemDbackColor = t.itemBackColor || itemDbackColor
         console.log("Applied theme:", t.name)
+    }
+
+    function applyDisplayStyle(styleKey) {
+        if (!displayStyles[styleKey]) {
+            console.warn("Display style not found:", styleKey)
+            return
+        }
+        var style = displayStyles[styleKey]
+        displayStyleName = styleKey
+        topHeight = style.topHeight
+        windowButtonWidth = style.windowButtonWidth
+        headerButtonGap = style.headerButtonGap
+        controlRadius = style.controlRadius
+        titleFontSize = style.titleSize
+        console.log("Applied display style:", style.name)
     }
 
     readonly property var theme: isDark ? Material.Dark : Material.Light
@@ -175,11 +194,16 @@ Item {
     // ========== 尺寸属性 ==========
     property int leftWidth: 450
     property int topHeight: 45
+    property int windowButtonWidth: 46
+    property int headerButtonGap: 4
+    property int controlRadius: 3
+    property int titleFontSize: 22
 
     // ========== 持久化设置 ==========
     SettingsBase {
         location: "style.ini"
         property alias themeName: root.themeName
+        property alias displayStyleName: root.displayStyleName
         property alias isDark: root.isDark
         property alias accentColor: root.accentColor
         property alias cardBorderColor: root.cardBorderColor
@@ -189,8 +213,12 @@ Item {
 
     // ========== 组件完成时应用保存的主题 ==========
     Component.onCompleted: {
-        if (themes[themeName]) {
-            applyTheme(themeName)
+        if (!themes[themeName]) {
+            themeName = "dark"
+        }
+        applyTheme(themeName)
+        if (displayStyles[displayStyleName]) {
+            applyDisplayStyle(displayStyleName)
         }
     }
 }

@@ -3,7 +3,9 @@ import QtQuick
 Row {
     id:root
     property bool meshExits: ScriptLauncher
-                            ? ScriptLauncher.fileExists("\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + surfaceData.key + "/"+surfaceData.coilId + "/meshes/defaultobject_mesh.mesh")
+                            ? (core.developer_mode
+                               ? ScriptLauncher.testDataMeshExists(surfaceData.key, surfaceData.coilId)
+                               : ScriptLauncher.fileExists(surfaceData.productionMeshPath))
                             : false
     onMeshExitsChanged:{
         surfaceData.meshExits = root.meshExits

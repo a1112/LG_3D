@@ -147,13 +147,14 @@ Item {
         api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
+                        core.setCoilIndex(0)
+                        core.flushListItem()
                         isListLoading = false  // 完成后重置状态
                         },(error)=>{
                             console.log("error")
                             isListLoading = false  // 错误时也要重置状态
                         }
                     )
-        core.setCoilIndex(0)
 
     }
 }

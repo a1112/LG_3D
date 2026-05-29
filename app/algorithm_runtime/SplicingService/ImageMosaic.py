@@ -1,6 +1,7 @@
 import asyncio
 import json
 import traceback
+import time
 from pathlib import Path
 import logging
 from typing import List, Optional
@@ -368,11 +369,20 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             data_integration = DataIntegration(coil_id, self.saveFolder, self.direction, self.key)
             try:
                 logger.info(f"ImageMosaic {self.key} {data_integration.coilId}")
+                total_start = time.perf_counter()
+                get_data_start = time.perf_counter()
                 self.__getAllData__(data_integration)  # 获取全部的拼接数据
+                get_data_s = time.perf_counter() - get_data_start
+                original_start = time.perf_counter()
                 data_integration.set_original_data(data_integration.datas)
+                original_s = time.perf_counter() - original_start
                 # 裁剪 2D 3D MASK
+                stitch_start = time.perf_counter()
                 self.__stitching__(data_integration)
+                stitch_s = time.perf_counter() - stitch_start
+                save_start = time.perf_counter()
                 self.sync_save(data_integration)
+                save_s = time.perf_counter() - save_start
                 # Thread(target=self.sync_save, args=(data_integration,)).start()
                 # self.sync_save(data_integration)
                 data_integration.currentSecondaryCoil = self.currentSecondaryCoil
@@ -380,7 +390,14 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
                 # AlarmDetection.detectionAll(data_integration)
 
+                commit_start = time.perf_counter()
                 data_integration.commit()
+                commit_s = time.perf_counter() - commit_start
+                logger.info(
+                    f"perf ImageMosaic coil={coil_id} surface={self.key} get_data_s={get_data_s:.3f} "
+                    f"set_original_s={original_s:.3f} stitch_s={stitch_s:.3f} save_s={save_s:.3f} "
+                    f"commit_s={commit_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
+                )
             except ServerDetectionException as e:
                 error_message = traceback.format_exc()
                 logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")

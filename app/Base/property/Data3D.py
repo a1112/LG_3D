@@ -216,14 +216,14 @@ class LineData:
             zz = np.where(zz_mask > self.image_threshold, self.npy_data[cc, rr], 0)
             return np.array(list(zip(rr, cc, zz)))
 
-    def mask_image_line_points(self):
+    def mask_image_line_points(self, ray=True):
         """
         过滤mask外的点
         Returns:
         """
-        return self.all_image_line_points(mask=True)
+        return self.all_image_line_points(mask=True, ray=ray)
 
-    def split_image_line_points(self):
+    def split_image_line_points(self, ray=True):
         """
         过滤mask外的点,然后进行分段
         Returns:
@@ -231,7 +231,7 @@ class LineData:
         old_has_steel = False  # 记录上一个点的状态
         lines = []
         line_item = []
-        for point in self.mask_image_line_points():
+        for point in self.mask_image_line_points(ray=ray):
             """
             扫描一次实现全部的分段
             """
@@ -245,9 +245,9 @@ class LineData:
             elif not has_steel and old_has_steel:
                 if len(line_item) > 100:
                     lines.append(line_item)
-                    line_item = []
+                line_item = []
             old_has_steel = has_steel
-        if line_item:
+        if len(line_item) > 100:
             lines.append(line_item)
         return lines
 

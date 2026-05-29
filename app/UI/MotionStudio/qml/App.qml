@@ -15,6 +15,11 @@ AppBase {
     id:app
     visible: true
     visibility:control.visibility
+    onVisibilityChanged: {
+        if (control && control.visibility !== visibility) {
+            control.visibility = visibility
+        }
+    }
     Material.theme: coreStyle.theme
     Material.background: coreStyle.panelBackgroundColor
     width: global.screenConfig.width-100

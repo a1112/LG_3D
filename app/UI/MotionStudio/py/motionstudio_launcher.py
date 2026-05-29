@@ -144,12 +144,50 @@ def run(*, base_dir: Path) -> int:
         ) from exc
 
     class _ScriptLauncher(QObject):
-        @Slot(str, result=bool)
-        def fileExists(self, path: str) -> bool:
-            norm = path
+        def _path_from_url_or_path(self, value: str) -> Path:
+            if value.startswith("file:"):
+                url = QUrl(value)
+                return Path(url.toLocalFile())
+            norm = value
             if os.name == "nt":
                 norm = norm.replace("/", "\\")
-            return Path(norm).exists()
+            return Path(norm)
+
+        @Slot(str, result=bool)
+        def fileExists(self, path: str) -> bool:
+            return self._path_from_url_or_path(path).exists()
+
+        @Slot(result=bool)
+        def developerMode(self) -> bool:
+            return os.getenv("API_DEVELOPER_MODE", "").lower() in {"1", "true", "yes", "on"}
+
+        def _ensure_testdata_mesh(self, surface_key: str, coil_id: str) -> Optional[Path]:
+            try:
+                project_root = base_dir.parents[2]
+                server_dir = project_root / "app" / "Server"
+                if str(server_dir) not in sys.path:
+                    sys.path.insert(0, str(server_dir))
+                from testdata_mesh import ensure_testdata_mesh
+
+                return ensure_testdata_mesh(surface_key, coil_id)
+            except Exception as exc:
+                print(f"Failed to prepare testdata mesh {surface_key}/{coil_id}: {exc}", file=sys.stderr)
+                return None
+
+        @Slot(str, str, result=str)
+        def testDataMeshPath(self, surface_key: str, coil_id: str) -> str:
+            path = self._ensure_testdata_mesh(surface_key, coil_id)
+            return "" if path is None else str(path)
+
+        @Slot(str, str, result=str)
+        def testDataMeshUrl(self, surface_key: str, coil_id: str) -> str:
+            path = self._ensure_testdata_mesh(surface_key, coil_id)
+            return "" if path is None else QUrl.fromLocalFile(str(path)).toString()
+
+        @Slot(str, str, result=bool)
+        def testDataMeshExists(self, surface_key: str, coil_id: str) -> bool:
+            path = self._ensure_testdata_mesh(surface_key, coil_id)
+            return path is not None and path.exists()
 
         @Slot(str, result=bool)
         def launchScript(self, cmd_args: str) -> bool:

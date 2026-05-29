@@ -96,6 +96,12 @@ Item {
         } else {
             scan3dCoordinateOffsetZ = 0
         }
+        if (coilInfo && coilInfo.median_3d !== undefined) {
+            medianZInt = Number(coilInfo.median_3d)
+        }
+        if (coilInfo && coilInfo.median_3d_mm !== undefined) {
+            medianZ = Number(coilInfo.median_3d_mm)
+        }
         if (coilInfo && coilInfo.circleConfig){
         let inner_circle = coilInfo.circleConfig.inner_circle
         // circleTool.init(coilInfo.circleConfig)
@@ -493,8 +499,15 @@ Item {
     function openSaveFolderById(coilId){
         return Qt.openUrlExternally(getBaseUrl(coilId))
     }
-    // 不可用
-    readonly property string meshUrl:"\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + key + "/"+coilId + "/meshes/defaultobject_mesh.mesh"
+    readonly property string productionMeshPath: "\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + key + "/"+coilId + "/meshes/defaultobject_mesh.mesh"
+    readonly property string productionMeshUrl: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+key+"/"+coilId+"/meshes/defaultobject_mesh.mesh"
+    readonly property string testDataMeshPath: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshPath(key, coilId) : ""
+    readonly property string testDataMeshUrl: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshUrl(key, coilId) : ""
+    readonly property string meshUrl: core.developer_mode && testDataMeshUrl !== "" ? testDataMeshUrl : productionMeshUrl
 
-    property bool meshExits: ScriptLauncher ? ScriptLauncher.fileExists ? ScriptLauncher.fileExists(meshUrl) : false : false
+    property bool meshExits: ScriptLauncher
+                            ? (core.developer_mode
+                               ? ScriptLauncher.testDataMeshExists(key, coilId)
+                               : ScriptLauncher.fileExists(productionMeshPath))
+                            : false
 }

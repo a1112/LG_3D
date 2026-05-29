@@ -7,7 +7,7 @@ Label {
     id: root
     Layout.alignment:Qt.AlignVCenter
     text: core.appTitle
-    font.pixelSize: 24
+    font.pixelSize: coreStyle.titleFontSize
     font.bold: true
     font.family: "Inter"
     color: coreStyle.rootTitleColor
@@ -22,7 +22,7 @@ Label {
         acceptedButtons: Qt.LeftButton
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onDoubleTapped: {
-            control.visibility = control.isFullScreen ? Window.Windowed : Window.FullScreen
+            control.visibility = control.isMaximized ? Window.Windowed : Window.Maximized
         }
     }
 
@@ -33,7 +33,16 @@ Label {
         onActiveChanged: {
             const window = root.appWindow
             if (active && window && window.startSystemMove) {
-                window.startSystemMove()
+                if (control.isMaximized) {
+                    control.visibility = Window.Windowed
+                    Qt.callLater(function() {
+                        if (window.startSystemMove) {
+                            window.startSystemMove()
+                        }
+                    })
+                } else {
+                    window.startSystemMove()
+                }
             }
         }
     }

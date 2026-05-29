@@ -12,6 +12,7 @@ from CoilDataBase.core import engine
 from cache import get_cache_mode
 from CoilDataBase.Coil import get_coil, list_data_keys, get_coil_list, get_grad_list
 from CoilDataBase.tool import to_dict
+from testdata_config import get_testdata_asset_dir
 
 
 router = APIRouter(tags=["参数服务"])
@@ -113,14 +114,14 @@ async def coil_list_value_change_keys():
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
-def _file_has_testdata(kind: str, coil_id: int) -> bool:
+def _file_has_testdata(path_str: str, kind: str, coil_id: int) -> bool:
     """
     在开发者模式 + 本地环境下，辅助检查 TestData/<coil_id> 是否存在对应数据。
     """
     if not (getattr(CONFIG, "developer_mode", False) and CONFIG.isLoc):
         return False
 
-    base = _PROJECT_ROOT / "TestData" / str(125143)
+    base = get_testdata_asset_dir(path_str)
     if not base.exists():
         return False
 
@@ -159,7 +160,7 @@ def file_has(path_str: str, kind: str, coil_id: int) -> bool:
     path = Path(path_str)
     if path.exists():
         return True
-    return _file_has_testdata(kind, coil_id)
+    return _file_has_testdata(path_str, kind, coil_id)
 
 
 @router.get("/data_has/{coil_id:int}")
