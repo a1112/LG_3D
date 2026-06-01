@@ -10,6 +10,8 @@ body {
     'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #090f14;
+  color: #f4faff;
 }
 
 #root {
@@ -20,4 +22,46 @@ body {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+.ant-select-selector,
+.ant-input,
+.ant-btn-default {
+  background-color: #111b24 !important;
+  border-color: #294050 !important;
+  color: #f4faff !important;
+}
+
+.ant-select-selection-item,
+.ant-input::placeholder {
+  color: #d8e7f2 !important;
+}
+
+.ant-tag {
+  border-color: #294050;
+  background: #111b24;
+}
+
+.ant-select-dropdown {
+  background: #111b24 !important;
+  border: 1px solid #294050;
+}
+
+.ant-select-item {
+  color: #d8e7f2 !important;
+}
+
+.ant-select-item-option-selected,
+.ant-select-item-option-active {
+  background: #20313e !important;
+}
+
+.ant-empty-description,
+.ant-spin-text {
+  color: #8ea7b9 !important;
+}
+
+* {
+  scrollbar-color: #3a5368 #111b24;
+  scrollbar-width: thin;
 }

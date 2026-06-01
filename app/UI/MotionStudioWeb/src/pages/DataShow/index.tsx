@@ -1,228 +1,167 @@
-import { useState, useEffect } from 'react'
-import { Card, Row, Col, Select, Spin, Empty, message } from 'antd'
-import { LoadingOutlined } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
+import { Button, Empty, Select, Tag, message } from 'antd'
+import { AppstoreOutlined, BorderOutlined, DotChartOutlined, LineChartOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+
 import Canvas3D from '@/components/Canvas3D'
 import HeightChart from '@/components/HeightChart'
-import CoilList from '@/components/CoilList'
+import TileImageViewer from '@/components/TileImageViewer'
+import { defectApi, heightDataApi, imageApi } from '@/services/api'
 import { useCoilStore } from '@/stores/coilStore'
-import { coilApi, heightDataApi, defectApi } from '@/services/api'
-import { useDataLoader, LOAD_DELAYS } from '@/utils/dataLoader'
+import type { DefectData, SurfaceKey } from '@/types'
 import './DataShow.css'
 
+type ViewMode = 'area' | 'three'
+const SURFACES: SurfaceKey[] = ['S', 'L']
+
+function surfaceLabel(surface: SurfaceKey) {
+  return surface === 'S' ? 'S 面' : 'L 面'
+}
+
 function DataShowPage() {
-  const { currentCoil, surfaceKey, setCurrentCoil, setSurfaceKey } = useCoilStore()
   const queryClient = useQueryClient()
+  const { currentCoil, surfaceKey, setSurfaceKey } = useCoilStore()
+  const [viewMode, setViewMode] = useState<ViewMode>('area')
   const [renderData, setRenderData] = useState<ArrayBuffer | null>(null)
-  const [loadState, setLoadState] = useState({
-    imageLoaded: false,
-    defectLoaded: false,
-    threeDLoaded: false,
+  const [selectedDefect, setSelectedDefect] = useState<DefectData | null>(null)
+
+  const { data: defectsSData, isFetching: defectsSLoading } = useQuery({
+    queryKey: ['defects', currentCoil?.id, 'S'],
+    queryFn: () => defectApi.getDefects(currentCoil?.id || 0, 'S'),
+    enabled: !!currentCoil,
   })
 
-  // 使用数据加载器
-  const { loadImage, loadDefect, load3d, cleanup } = useDataLoader({
-    coilId: currentCoil?.id || 0,
-    surfaceKey: surfaceKey,
-    onImageLoaded: () => {
-      console.log('[DataShow] Image loaded')
-      setLoadState(prev => ({ ...prev, imageLoaded: true }))
-
-      // 延迟加载缺陷数据
-      setTimeout(() => {
-        loadDefect(async () => {
-          const defects = await queryClient.fetchQuery({
-            queryKey: ['defects', currentCoil?.id, surfaceKey],
-            queryFn: () =>
-              defectApi.getDefects(currentCoil?.id || 0, surfaceKey),
-          })
-          return defects
-        })
-      }, LOAD_DELAYS.imageToDefect)
-    },
-    onDefectLoaded: () => {
-      console.log('[DataShow] Defect data loaded')
-      setLoadState(prev => ({ ...prev, defectLoaded: true }))
-
-      // 延迟加载 3D 数据
-      setTimeout(() => {
-        load3d(async () => {
-          const data = await queryClient.fetchQuery({
-            queryKey: ['heightLine', currentCoil?.id, surfaceKey],
-            queryFn: () =>
-              heightDataApi.getHeightLine(surfaceKey, currentCoil?.id || 0),
-          })
-          return data
-        })
-      }, LOAD_DELAYS.defectTo3d)
-    },
-    on3dLoaded: () => {
-      console.log('[DataShow] 3D data loaded')
-      setLoadState(prev => ({ ...prev, threeDLoaded: true }))
-    },
-    onError: (error) => {
-      console.error('[DataShow] Load error:', error)
-      message.error('数据加载失败: ' + error.message)
-    },
+  const { data: defectsLData, isFetching: defectsLLoading } = useQuery({
+    queryKey: ['defects', currentCoil?.id, 'L'],
+    queryFn: () => defectApi.getDefects(currentCoil?.id || 0, 'L'),
+    enabled: !!currentCoil,
   })
 
-  // 获取卷材列表
-  const { data: coilListData, isLoading: listLoading } = useQuery({
-    queryKey: ['coilList'],
-    queryFn: () => coilApi.getCoilList(50),
-  })
-
-  // 高度线数据由加载器管理（最低优先级）
-  const { data: heightLineData } = useQuery({
+  const { data: heightLineData, isFetching: heightLoading } = useQuery({
     queryKey: ['heightLine', currentCoil?.id, surfaceKey],
-    queryFn: () =>
-      heightDataApi.getHeightLine(surfaceKey, currentCoil?.id || 0),
-    enabled: false, // 禁用自动加载，由加载器控制
+    queryFn: () => heightDataApi.getHeightLine(surfaceKey, currentCoil?.id || 0),
+    enabled: !!currentCoil,
+    retry: 1,
   })
 
-  // 触发图像加载（最高优先级）
   useEffect(() => {
-    if (currentCoil && surfaceKey) {
-      console.log('[DataShow] Triggering image load (priority 1)')
-      loadImage(async () => {
-        const data = await queryClient.fetchQuery({
-          queryKey: ['render3D', currentCoil.id, surfaceKey],
-          queryFn: () =>
-            heightDataApi.getRenderData(surfaceKey, currentCoil.id),
-        })
-        setRenderData(data)
-        return data
+    setRenderData(null)
+    setSelectedDefect(null)
+  }, [currentCoil?.id])
+
+  useEffect(() => {
+    if (!currentCoil || viewMode !== 'three') return
+    queryClient
+      .fetchQuery({
+        queryKey: ['render3D', currentCoil.id, surfaceKey],
+        queryFn: () => heightDataApi.getRenderData(surfaceKey, currentCoil.id),
       })
-    }
+      .then(setRenderData)
+      .catch(() => {
+        setRenderData(null)
+        message.warning(`${surfaceLabel(surfaceKey)} 3D数据暂不可用`)
+      })
+  }, [currentCoil, queryClient, surfaceKey, viewMode])
 
-    return () => {
-      cleanup()
-    }
-  }, [currentCoil?.id, surfaceKey])
-
-  const handleCoilSelect = (coil: any) => {
-    setCurrentCoil(coil)
+  const defectsBySurface: Record<SurfaceKey, DefectData[]> = {
+    S: defectsSData?.data ?? [],
+    L: defectsLData?.data ?? [],
   }
-
-  const handleSurfaceChange = (value: string) => {
-    setSurfaceKey(value)
-  }
+  const totalDefects = defectsBySurface.S.length + defectsBySurface.L.length
+  const anyDefectLoading = defectsSLoading || defectsLLoading
 
   return (
     <div className="data-show-page">
-      <Row gutter={16} style={{ height: '100%' }}>
-        {/* 左侧卷材列表 */}
-        <Col span={6}>
-          <Card title="卷材列表" className="full-height-card" styles={{ body: { padding: 0 } }}>
-            {listLoading ? (
-              <div className="loading-container">
-                <Spin indicator={<LoadingOutlined spin />} />
+      <div className="data-toolbar">
+        <div className="toolbar-title">
+          <DotChartOutlined />
+          <span>数据展示</span>
+          <Tag color="cyan">{currentCoil?.coilNo ?? '未选择卷材'}</Tag>
+        </div>
+        <div className="toolbar-controls">
+          <span className="surface-select-label">当前曲线/3D</span>
+          <Select
+            size="small"
+            value={surfaceKey}
+            onChange={setSurfaceKey}
+            options={[
+              { value: 'S', label: 'S 面' },
+              { value: 'L', label: 'L 面' },
+            ]}
+          />
+          <Button
+            size="small"
+            icon={<AppstoreOutlined />}
+            type={viewMode === 'area' ? 'primary' : 'default'}
+            onClick={() => setViewMode('area')}
+          >
+            2D瓦片
+          </Button>
+          <Button
+            size="small"
+            icon={<BorderOutlined />}
+            type={viewMode === 'three' ? 'primary' : 'default'}
+            onClick={() => setViewMode('three')}
+          >
+            3D
+          </Button>
+        </div>
+        <div className="load-state">
+          <span className="ready">S图像</span>
+          <span className="ready">L图像</span>
+          <span className={!anyDefectLoading ? 'ready' : ''}>缺陷 {totalDefects}</span>
+        </div>
+      </div>
+
+      <div className="data-content">
+        <section className="main-view-panel">
+          <div className="panel-title">
+            {viewMode === 'area' ? 'S / L 端面区域瓦片查看' : `${surfaceLabel(surfaceKey)} 3D数据可视化`}
+          </div>
+          <div className="main-view-body">
+            {!currentCoil ? (
+              <Empty description="请选择卷材" />
+            ) : viewMode === 'area' ? (
+              <div className="surface-split-view">
+                {SURFACES.map((surface) => (
+                  <section key={surface} className="surface-view-panel">
+                    <div className="surface-view-title">
+                      <strong>{surfaceLabel(surface)}</strong>
+                      <Tag color={surface === 'S' ? 'blue' : 'purple'}>{defectsBySurface[surface].length} 缺陷</Tag>
+                    </div>
+                    <div className="surface-view-body">
+                      <TileImageViewer
+                        imageUrl={imageApi.getArea(surface, currentCoil.id)}
+                        previewUrl={imageApi.getPreview(surface, currentCoil.id, 'AREA')}
+                        defects={defectsBySurface[surface]}
+                        selectedDefectId={selectedDefect?.surface === surface ? selectedDefect.id : null}
+                        onDefectSelect={setSelectedDefect}
+                      />
+                    </div>
+                  </section>
+                ))}
               </div>
             ) : (
-              <CoilList
-                coils={coilListData?.data || []}
-                selectedCoil={currentCoil}
-                onSelect={handleCoilSelect}
-              />
+              <Canvas3D data={renderData} />
             )}
-          </Card>
-        </Col>
+          </div>
+        </section>
+      </div>
 
-        {/* 右侧数据展示 */}
-        <Col span={18}>
-          <Row gutter={[16, 16]} style={{ height: '100%' }}>
-            {/* 控制栏 + 加载状态 */}
-            <Col span={24}>
-              <Card size="small">
-                <Row align="middle" gutter={16} justify="space-between">
-                  <Col>
-                    <Row align="middle" gutter={8}>
-                      <Col>
-                        <span>当前卷材: </span>
-                        <strong>{currentCoil?.coilNo || '未选择'}</strong>
-                      </Col>
-                      <Col>
-                        <span>表面: </span>
-                        <Select
-                          value={surfaceKey}
-                          onChange={handleSurfaceChange}
-                          style={{ width: 120 }}
-                        >
-                          <Select.Option value="top">上表面</Select.Option>
-                          <Select.Option value="bottom">下表面</Select.Option>
-                          <Select.Option value="left">左侧面</Select.Option>
-                          <Select.Option value="right">右侧面</Select.Option>
-                        </Select>
-                      </Col>
-                    </Row>
-                  </Col>
-                  <Col>
-                    {/* 加载状态指示器 */}
-                    {currentCoil && (
-                      <Row gutter={12} align="middle">
-                        <Col>
-                          <span style={{ fontSize: 12, color: loadState.imageLoaded ? '#52c41a' : '#d9d9d9' }}>
-                            {loadState.imageLoaded ? '✓' : '○'} 图像
-                          </span>
-                        </Col>
-                        <Col>
-                          <span style={{ fontSize: 12, color: loadState.defectLoaded ? '#52c41a' : '#d9d9d9' }}>
-                            {loadState.defectLoaded ? '✓' : '○'} 缺陷
-                          </span>
-                        </Col>
-                        <Col>
-                          <span style={{ fontSize: 12, color: loadState.threeDLoaded ? '#52c41a' : '#d9d9d9' }}>
-                            {loadState.threeDLoaded ? '✓' : '○'} 3D数据
-                          </span>
-                        </Col>
-                      </Row>
-                    )}
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-
-            {/* 3D数据展示 */}
-            <Col span={24} style={{ height: 'calc(100% - 100px)' }}>
-              <Card
-                title="3D数据可视化"
-                className="full-height-card"
-                styles={{ body: { padding: 0, height: '100%' } }}
-              >
-                {!currentCoil ? (
-                  <Empty description="请选择卷材" />
-                ) : !loadState.imageLoaded ? (
-                  <div className="loading-container">
-                    <Spin indicator={<LoadingOutlined spin />} size="large" />
-                    <div style={{ marginTop: 16 }}>正在加载图像...</div>
-                  </div>
-                ) : (
-                  <Canvas3D data={renderData} />
-                )}
-              </Card>
-            </Col>
-
-            {/* 高度曲线图 */}
-            {currentCoil && loadState.defectLoaded && (
-              <Col span={24}>
-                <Card
-                  title="高度曲线"
-                  styles={{ body: { height: 200 } }}
-                >
-                  {!loadState.threeDLoaded ? (
-                    <div className="loading-container">
-                      <Spin indicator={<LoadingOutlined spin />} />
-                      <div style={{ marginTop: 16 }}>正在加载 3D 数据...</div>
-                    </div>
-                  ) : (
-                    <HeightChart data={heightLineData} />
-                  )}
-                </Card>
-              </Col>
-            )}
-          </Row>
-        </Col>
-      </Row>
+      <section className="chart-band">
+        <div className="panel-title">
+          <LineChartOutlined />
+          {surfaceLabel(surfaceKey)} 高度曲线
+          {selectedDefect ? <Tag color="orange">{selectedDefect.defectType}</Tag> : null}
+        </div>
+        <div className="chart-body">
+          {currentCoil && !heightLoading ? (
+            <HeightChart data={heightLineData} />
+          ) : (
+            <div className="chart-placeholder">等待3D数据加载</div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

@@ -1,117 +1,155 @@
 .defect-show-page {
   height: 100%;
-  padding: 16px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 42px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
 }
 
-.full-height-card {
-  height: 100%;
+.defect-toolbar,
+.defect-list-panel,
+.surface-panel,
+.defect-detail-panel {
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #111b24;
 }
 
-.full-height-card .ant-card-body {
-  height: calc(100% - 57px);
-  overflow: auto;
-}
-
-.loading-container {
+.defect-toolbar {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100%;
-  min-height: 200px;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.defect-content {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 330px;
+  gap: 8px;
+}
+
+.defect-list-panel,
+.surface-panel,
+.defect-detail-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-title,
+.toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title {
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  border-bottom: 1px solid #243848;
+  color: #7ad7ec;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toolbar-title {
+  color: #f4faff;
+  font-weight: 700;
 }
 
 .defect-list-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
   padding: 8px;
-  height: 100%;
-  overflow-y: auto;
+}
+
+.loading-container {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
 }
 
 .defect-item {
-  padding: 12px;
-  margin-bottom: 8px;
-  border: 1px solid #e8e8e8;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 9px;
+  border: 1px solid #263b4c;
   border-radius: 4px;
+  background: #17222c;
+  color: #f4faff;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.3s;
-  background-color: #fff;
 }
 
-.defect-item:hover {
-  background-color: #f5f5f5;
-  border-color: #d9d9d9;
-  transform: translateX(4px);
-}
-
+.defect-item:hover,
 .defect-item.selected {
-  background-color: #e6f7ff;
-  border-color: #1890ff;
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
-}
-
-.defect-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  border-color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.14);
 }
 
 .defect-type {
-  font-weight: 600;
-  font-size: 14px;
-  color: #ff4d4f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
 }
 
-.defect-confidence {
-  font-size: 12px;
-  color: #999;
-  background-color: #f5f5f5;
-  padding: 2px 8px;
-  border-radius: 10px;
+.defect-item small {
+  grid-column: 1 / -1;
+  color: #8ea7b9;
 }
 
-.defect-position,
-.defect-size,
-.defect-description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 4px;
-}
-
-.defect-detail-panel {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.defect-info {
-  padding: 16px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.info-row:last-child {
-  margin-bottom: 0;
-}
-
-.info-row .label {
-  font-weight: 600;
-  min-width: 80px;
-  color: #666;
-}
-
-.info-row .value {
-  flex: 1;
-  color: #333;
-}
-
-.defect-image-container {
+.surface-body {
   flex: 1;
   min-height: 0;
+}
+
+.defect-detail {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 7px 10px;
+  padding: 10px;
+  border-radius: 4px;
+  background: #17222c;
+  color: #a9bdcb;
+  font-size: 12px;
+}
+
+.detail-grid strong {
+  color: #f4faff;
+}
+
+.defect-crop {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #071018;
+}
+
+.defect-crop .ant-image,
+.defect-crop img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }

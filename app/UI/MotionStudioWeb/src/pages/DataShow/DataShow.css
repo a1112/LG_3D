@@ -1,21 +1,150 @@
 .data-show-page {
   height: 100%;
-  padding: 16px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 42px minmax(0, 1fr) 176px;
+  gap: 8px;
+  padding: 10px;
 }
 
-.full-height-card {
-  height: 100%;
+.data-toolbar,
+.main-view-panel,
+.chart-band {
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #111b24;
 }
 
-.full-height-card .ant-card-body {
-  height: calc(100% - 57px);
-  overflow: auto;
-}
-
-.loading-container {
+.data-toolbar {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+}
+
+.toolbar-title,
+.toolbar-controls,
+.load-state,
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-title {
+  min-width: 0;
+  color: #f4faff;
+  font-weight: 700;
+}
+
+.toolbar-controls {
+  margin-left: auto;
+}
+
+.surface-select-label {
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.load-state span {
+  padding: 2px 8px;
+  border: 1px solid #294050;
+  border-radius: 999px;
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.load-state span.ready {
+  border-color: rgba(82, 196, 26, 0.45);
+  color: #a8f0bd;
+}
+
+.data-content {
+  min-height: 0;
+  display: flex;
+}
+
+.main-view-panel,
+.chart-band {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-view-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-title {
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  border-bottom: 1px solid #243848;
+  color: #7ad7ec;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.main-view-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.surface-split-view {
   height: 100%;
-  min-height: 200px;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.surface-view-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #243848;
+  background: #09131b;
+}
+
+.surface-view-panel:last-child {
+  border-right: 0;
+}
+
+.surface-view-title {
+  height: 32px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-bottom: 1px solid #203545;
+  color: #f4faff;
+}
+
+.surface-view-title strong {
+  color: #7ad7ec;
+}
+
+.surface-view-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.loading-container,
+.chart-placeholder {
+  height: 100%;
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: #a9bdcb;
+}
+
+.chart-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
 }

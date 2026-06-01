@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { CoilData, DefectData, HeightLineSegment, ApiResponse } from '@/types'
+import type { CoilData, DefectData, HeightLineSegment, ApiResponse, SurfaceKey } from '@/types'
 
 // 创建axios实例
 const apiClient = axios.create({
@@ -31,26 +31,139 @@ apiClient.interceptors.response.use(
   }
 )
 
+type BackendListResponse<T> = {
+  value?: T[]
+  Count?: number
+  data?: T[]
+  code?: number
+  message?: string
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+}
+
+function readNumber(record: Record<string, unknown>, keys: string[], fallback = 0): number {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+    if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value)
+  }
+  return fallback
+}
+
+function readString(record: Record<string, unknown>, keys: string[], fallback = ''): string {
+  for (const key of keys) {
+    const value = record[key]
+    if (value !== undefined && value !== null) return String(value)
+  }
+  return fallback
+}
+
+function formatBackendDate(value: unknown): string {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  const record = asRecord(value)
+  const year = readNumber(record, ['year'])
+  const month = readNumber(record, ['month'])
+  const day = readNumber(record, ['day'])
+  const hour = readNumber(record, ['hour'])
+  const minute = readNumber(record, ['minute'])
+  const second = readNumber(record, ['second'])
+  if (!year || !month || !day) return ''
+  const pad = (num: number) => String(num).padStart(2, '0')
+  return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`
+}
+
+function normalizeSurfaceKey(surface: unknown): SurfaceKey {
+  const text = String(surface ?? 'S').toUpperCase()
+  return text === 'L' ? 'L' : 'S'
+}
+
+function normalizeCoil(item: unknown): CoilData {
+  const record = asRecord(item)
+  const id = readNumber(record, ['id', 'Id', 'SecondaryCoilId', 'secondaryCoilId'])
+  const statusS = readNumber(record, ['statusS', 'Status_S', 'StatusS', 'status_s'])
+  const statusL = readNumber(record, ['statusL', 'Status_L', 'StatusL', 'status_l'])
+  return {
+    id,
+    coilNo: readString(record, ['coilNo', 'CoilNo', 'SecondaryCoilId'], String(id || '')),
+    dateTime: formatBackendDate(record.dateTime ?? record.DateTime ?? record.CreateTime ?? record.DetectionTime),
+    status: Math.max(statusS, statusL, readNumber(record, ['status', 'Status', 'CheckStatus'])),
+    surfaceKey: 'S',
+    grade: readNumber(record, ['grade', 'Grade']),
+    defectCountS: readNumber(record, ['defectCountS', 'DefectCountS']),
+    defectCountL: readNumber(record, ['defectCountL', 'DefectCountL']),
+    statusS,
+    statusL,
+    alarmInfo: record.alarmInfo ?? record.AlarmInfo,
+    raw: record,
+  }
+}
+
+function normalizeDefect(item: unknown): DefectData {
+  const record = asRecord(item)
+  const id = readNumber(record, ['id', 'Id'])
+  const x = readNumber(record, ['defectX', 'x', 'X'])
+  const y = readNumber(record, ['defectY', 'y', 'Y'])
+  const width = readNumber(record, ['defectW', 'width', 'Width', 'w', 'W'])
+  const height = readNumber(record, ['defectH', 'height', 'Height', 'h', 'H'])
+  return {
+    id,
+    coilId: readNumber(record, ['coilId', 'secondaryCoilId', 'SecondaryCoilId']),
+    surface: normalizeSurfaceKey(record.surface),
+    defectType: readString(record, ['configDefectName', 'defectName', 'defectType', 'name'], '缺陷'),
+    position: { x, y },
+    size: { width, height },
+    confidence: Math.max(0, Math.min(1, readNumber(record, ['confidence', 'defectSource'], 1))),
+    description: readString(record, ['description', 'Msg', 'msg']),
+    level: readNumber(record, ['defectLevel', 'level'], -1),
+    raw: record,
+  }
+}
+
+function normalizeListResponse<TIn, TOut>(response: BackendListResponse<TIn> | TIn[], mapper: (item: TIn) => TOut): ApiResponse<TOut[]> {
+  const items = Array.isArray(response)
+    ? response
+    : Array.isArray(response.value)
+      ? response.value
+      : Array.isArray(response.data)
+        ? response.data
+        : []
+  return {
+    code: Array.isArray(response) ? 0 : response.code ?? 0,
+    data: items.map(mapper),
+    count: Array.isArray(response) ? items.length : response.Count ?? items.length,
+    message: Array.isArray(response) ? undefined : response.message,
+  }
+}
+
 // 卷材数据API
 export const coilApi = {
   // 获取卷材列表
   getCoilList: (number: number = 20) =>
-    apiClient.get<ApiResponse<CoilData[]>, ApiResponse<CoilData[]>>(`/coilList/${number}`),
+    apiClient
+      .get<BackendListResponse<unknown> | unknown[], BackendListResponse<unknown> | unknown[]>(`/coilList/${number}`)
+      .then((response) => normalizeListResponse(response, normalizeCoil)),
 
   // 按卷号搜索
   searchByCoilNo: (coilNo: string) =>
-    apiClient.get<ApiResponse<CoilData>, ApiResponse<CoilData>>(`/search/coilNo/${coilNo}`),
+    apiClient.get<unknown, unknown>(`/search/coilNo/${coilNo}`).then((response) => normalizeCoil(response)),
 
   // 按时间范围搜索
   searchByDateTime: (start: string, end: string) =>
-    apiClient.get<ApiResponse<CoilData[]>, ApiResponse<CoilData[]>>(`/search/DateTime/${start}/${end}`),
+    apiClient
+      .get<BackendListResponse<unknown> | unknown[], BackendListResponse<unknown> | unknown[]>(`/search/DateTime/${start}/${end}`)
+      .then((response) => normalizeListResponse(response, normalizeCoil)),
 }
 
 // 缺陷数据API
 export const defectApi = {
   // 获取缺陷数据
   getDefects: (coilId: number, direction: string) =>
-    apiClient.get<ApiResponse<DefectData[]>, ApiResponse<DefectData[]>>(`/search/defects/${coilId}/${direction}`),
+    apiClient
+      .get<BackendListResponse<unknown> | unknown[], BackendListResponse<unknown> | unknown[]>(`/search/defects/${coilId}/${direction}`)
+      .then((response) => normalizeListResponse(response, normalizeDefect)),
 }
 
 // 高度数据API
@@ -193,6 +306,18 @@ export const plcApi = {
   // 获取硬件信息
   getHardware: () =>
     apiClient.get<unknown, unknown>('/hardware'),
+}
+
+// 设置与系统信息 API
+export const settingsApi = {
+  getTestMode: () =>
+    apiClient.get<unknown, unknown>('/settings/test_mode'),
+
+  setTestMode: (enabled: boolean) =>
+    apiClient.post<unknown, unknown>('/settings/test_mode', { enabled }),
+
+  getTestModeStatus: () =>
+    apiClient.get<unknown, unknown>('/settings/test_mode_status'),
 }
 
 // 导出数据API
