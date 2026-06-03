@@ -1,0 +1,75 @@
+.settings-panel .ant-drawer-content,
+.settings-panel .ant-drawer-body {
+  background: #0e1821 !important;
+  color: #f4faff;
+}
+
+.settings-panel .ant-drawer-header {
+  border-bottom-color: #294050;
+  background: #111b24;
+}
+
+.settings-panel .ant-drawer-title,
+.settings-panel .ant-drawer-close {
+  color: #f4faff;
+}
+
+.settings-panel .ant-tabs-tab {
+  color: #a9bdcb;
+}
+
+.settings-panel .ant-tabs-nav::before {
+  border-bottom-color: #294050 !important;
+}
+
+.settings-panel .ant-tabs-content-holder {
+  color: #d8e7f2;
+}
+
+.settings-panel .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #7ad7ec !important;
+}
+
+.settings-panel .ant-tabs-ink-bar {
+  background: #7ad7ec;
+}
+
+.settings-section {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-status-row,
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #17222c;
+  color: #d8e7f2;
+}
+
+.settings-status-row {
+  justify-content: flex-start;
+}
+
+.settings-note {
+  margin: 0;
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.settings-panel .ant-descriptions-view {
+  border-color: #263b4c !important;
+}
+
+.settings-panel .ant-descriptions-item-label,
+.settings-panel .ant-descriptions-item-content {
+  border-color: #263b4c !important;
+  background: #111b24 !important;
+  color: #d8e7f2 !important;
+}

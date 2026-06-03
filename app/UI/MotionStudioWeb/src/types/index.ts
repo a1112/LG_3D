@@ -4,19 +4,28 @@ export interface CoilData {
   coilNo: string
   dateTime: string
   status: number
-  surfaceKey: string
-  // 其他字段...
+  surfaceKey: SurfaceKey
+  grade?: number
+  defectCountS?: number
+  defectCountL?: number
+  statusS?: number
+  statusL?: number
+  alarmInfo?: unknown
+  raw?: Record<string, unknown>
 }
 
 // 缺陷数据类型
 export interface DefectData {
   id: number
   coilId: number
+  surface: SurfaceKey
   defectType: string
   position: { x: number; y: number }
   size: { width: number; height: number }
   confidence: number
   description?: string
+  level?: number
+  raw?: Record<string, unknown>
 }
 
 // 高度点数据类型
@@ -41,10 +50,11 @@ export interface ApiResponse<T> {
   code: number
   data: T
   message?: string
+  count?: number
 }
 
 // 表面键类型
-export type SurfaceKey = 'top' | 'bottom' | 'left' | 'right'
+export type SurfaceKey = 'S' | 'L'
 
 // 卷材状态
 export enum CoilStatus {

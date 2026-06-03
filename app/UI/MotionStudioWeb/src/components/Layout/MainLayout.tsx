@@ -1,48 +1,127 @@
-import { Layout, Menu } from 'antd'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { BarsOutlined, BugOutlined } from '@ant-design/icons'
+import { useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import {
+  AlertOutlined,
+  ApiOutlined,
+  BugOutlined,
+  CloseOutlined,
+  DatabaseOutlined,
+  FullscreenOutlined,
+  MenuOutlined,
+  MinusOutlined,
+  SettingOutlined,
+} from '@ant-design/icons'
+
+import OperationSidebar from '@/components/OperationSidebar'
+import SettingsPanel from '@/components/SettingsPanel'
+import { settingsApi } from '@/services/api'
+import { hasTauriRuntime, tauriWindow } from '@/utils/tauriWindow'
 import './MainLayout.css'
 
-const { Header, Sider, Content } = Layout
+function ServiceLight({ label, state }: { label: string; state: 'ok' | 'warn' | 'error' }) {
+  return (
+    <span className={`service-light ${state}`}>
+      <i />
+      {label}
+    </span>
+  )
+}
 
 function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const isDefect = location.pathname.includes('defect')
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const menuItems = [
-    {
-      key: '/data',
-      icon: <BarsOutlined />,
-      label: '数据展示',
-      onClick: () => navigate('/data'),
-    },
-    {
-      key: '/defect',
-      icon: <BugOutlined />,
-      label: '缺陷检测',
-      onClick: () => navigate('/defect'),
-    },
-  ]
+  const { data: testModeStatus } = useQuery({
+    queryKey: ['settings', 'testModeStatus'],
+    queryFn: settingsApi.getTestModeStatus,
+    retry: 1,
+    staleTime: 30_000,
+  })
+
+  const testModeEnabled =
+    !!testModeStatus &&
+    typeof testModeStatus === 'object' &&
+    Boolean((testModeStatus as Record<string, unknown>).developer_mode ?? (testModeStatus as Record<string, unknown>).test_mode)
 
   return (
-    <Layout className="main-layout">
-      <Header className="layout-header">
-        <div className="logo">Motion Studio - 3D卷材端面检测系统</div>
-      </Header>
-      <Layout>
-        <Sider width={200} theme="light">
-          <Menu
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            style={{ height: '100%', borderRight: 0 }}
-          />
-        </Sider>
-        <Content className="layout-content">
+    <div className="motion-shell">
+      <header className="motion-titlebar" data-tauri-drag-region onDoubleClick={() => tauriWindow.toggleMaximize()}>
+        <button className="icon-button" type="button" title="主菜单">
+          <MenuOutlined />
+        </button>
+        <div className="brand-block" onClick={() => navigate('/data')}>
+          <div className="brand-mark">MS</div>
+          <div>
+            <div className="brand-title">涟钢3D端面检测系统</div>
+            <div className="brand-subtitle">Motion Studio · Tauri + React</div>
+          </div>
+        </div>
+
+        <nav className="top-tabs" data-no-drag>
+          <NavLink to="/data" className={({ isActive }) => (isActive || !isDefect ? 'active' : '')}>
+            数据展示
+          </NavLink>
+          <NavLink to="/defect" className={({ isActive }) => (isActive ? 'active' : '')}>
+            缺陷检测
+          </NavLink>
+        </nav>
+
+        <div className="titlebar-tools" data-no-drag>
+          <ServiceLight label="PLC" state="ok" />
+          <ServiceLight label="Redis" state="ok" />
+          <ServiceLight label="FastAPI" state="warn" />
+          <span className={`test-mode-badge ${testModeEnabled ? 'enabled' : 'normal'}`}>
+            {testModeEnabled ? '测试模式' : '生产模式'}
+          </span>
+          <span className="global-alarm">
+            <AlertOutlined />
+            全局报警
+          </span>
+          <button className="icon-button" type="button" title="接口">
+            <ApiOutlined />
+          </button>
+          <button className="icon-button" type="button" title="缓存">
+            <DatabaseOutlined />
+          </button>
+          <button className="icon-button" type="button" title="设置" onClick={() => setSettingsOpen(true)}>
+            <SettingOutlined />
+          </button>
+          <button className="icon-button" type="button" title="最小化" onClick={() => tauriWindow.minimize()}>
+            <MinusOutlined />
+          </button>
+          <button
+            className="icon-button"
+            type="button"
+            title="最大化"
+            onClick={() => tauriWindow.toggleMaximize()}
+          >
+            <FullscreenOutlined />
+          </button>
+          <button className="icon-button danger" type="button" title="关闭" onClick={() => tauriWindow.close()}>
+            <CloseOutlined />
+          </button>
+        </div>
+      </header>
+
+      <main className="motion-main">
+        <OperationSidebar />
+        <section className="workspace">
           <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+        </section>
+      </main>
+
+      <footer className="motion-statusbar">
+        <span>{hasTauriRuntime() ? 'Tauri native shell' : 'Web preview mode'}</span>
+        <span>图像 / 缺陷 / 3D数据 分级加载</span>
+        <span>
+          <BugOutlined /> 缺陷数据随卷材与表面切换刷新
+        </span>
+      </footer>
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    </div>
   )
 }
 
