@@ -33,7 +33,7 @@ function DefectShowPage() {
       ? imageApi.getDefectImage(
           surfaceKey,
           currentCoil.id,
-          'preview',
+          'AREA',
           selectedDefect.position.x,
           selectedDefect.position.y,
           selectedDefect.size.width,

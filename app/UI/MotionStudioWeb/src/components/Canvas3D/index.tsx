@@ -111,9 +111,32 @@ function Scene({ parsedData, isLoading }: SceneProps) {
 function Canvas3D({ data }: Canvas3DProps) {
   const [parsedData, setParsedData] = useState<ReturnType<typeof parseHeightData>>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
+    setImageUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl)
+      return null
+    })
+
     if (data) {
+      const bytes = new Uint8Array(data)
+      const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8
+      const isPng =
+        bytes[0] === 0x89 &&
+        bytes[1] === 0x50 &&
+        bytes[2] === 0x4e &&
+        bytes[3] === 0x47
+
+      if (isJpeg || isPng) {
+        const blob = new Blob([data], { type: isJpeg ? 'image/jpeg' : 'image/png' })
+        const nextImageUrl = URL.createObjectURL(blob)
+        setImageUrl(nextImageUrl)
+        setParsedData(null)
+        setIsLoading(false)
+        return () => URL.revokeObjectURL(nextImageUrl)
+      }
+
       setIsLoading(true)
 
       // 使用 requestAnimationFrame 避免阻塞 UI
@@ -132,7 +155,25 @@ function Canvas3D({ data }: Canvas3DProps) {
       setParsedData(null)
       setIsLoading(false)
     }
+
+    return () => {
+      setImageUrl((currentUrl) => {
+        if (currentUrl) URL.revokeObjectURL(currentUrl)
+        return null
+      })
+    }
   }, [data])
+
+  if (imageUrl) {
+    return (
+      <div className="canvas-3d-container">
+        <img className="canvas-3d-image" src={imageUrl} alt="3D height render" />
+        <div className="canvas-controls">
+          <small>3D高度渲染图</small>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="canvas-3d-container">

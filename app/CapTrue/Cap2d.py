@@ -1,7 +1,17 @@
 """
  入口
 """
+import sys
 import time
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parents[1]
+PACKAGE_DIR = APP_DIR.parent / "package" / "CoilDataBase"
+for path in (APP_DIR, PACKAGE_DIR):
+    path_text = str(path)
+    if path_text not in sys.path:
+        sys.path.insert(0, path_text)
+
 import CONFIG
 from CapTure import CapTure
 import Signal

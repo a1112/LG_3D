@@ -3,6 +3,7 @@ from multiprocessing import Process, Queue
 import time
 from threading import Thread
 import queue
+from pathlib import Path
 
 import CONFIG
 from BKVisionCamera import crate_capter
@@ -87,6 +88,7 @@ class DaHengCamera(Thread): # Process
     def __init__(self, yaml_config):
         super().__init__()
         self.yaml_config = yaml_config
+        self.camera_param_file = self._get_camera_param_file()
         self.last_frame = None
         self.last_frame_time = 0
         self.frame_queue = Queue()
@@ -97,6 +99,48 @@ class DaHengCamera(Thread): # Process
 
     def _create_capter(self):
         return crate_capter(str(CONFIG.CONFIG_DIR / self.yaml_config))
+
+    def _get_camera_param_file(self):
+        if not self.yaml_config:
+            return None
+        return CONFIG.CONFIG_DIR / "camera_params" / f"{Path(self.yaml_config).stem}.ini"
+
+    def _apply_or_save_camera_params(self, cap):
+        if self.camera_param_file is None:
+            return
+
+        if self.camera_param_file.exists():
+            self._load_camera_params(cap)
+            return
+
+        self._save_camera_params(cap)
+
+    def _load_camera_params(self, cap):
+        try:
+            cap.sdk.stopGrabbing()
+            ret = cap.sdk.cam.MV_CC_FeatureLoad(str(self.camera_param_file))
+            if ret != 0:
+                logger.warning(f"2D camera params load failed: {self.camera_param_file}, ret={ret}")
+                return
+            logger.info(f"2D camera params loaded: {self.camera_param_file}")
+        except Exception as e:
+            logger.warning(f"2D camera params load failed: {self.camera_param_file}, error={e}")
+        finally:
+            try:
+                cap.sdk.startGrabbing()
+            except Exception as e:
+                logger.warning(f"2D camera restart grabbing failed after params load: {e}")
+
+    def _save_camera_params(self, cap):
+        try:
+            self.camera_param_file.parent.mkdir(parents=True, exist_ok=True)
+            ret = cap.sdk.cam.MV_CC_FeatureSave(str(self.camera_param_file))
+            if ret != 0:
+                logger.warning(f"2D camera params save failed: {self.camera_param_file}, ret={ret}")
+                return
+            logger.info(f"2D camera params saved: {self.camera_param_file}")
+        except Exception as e:
+            logger.warning(f"2D camera params save failed: {self.camera_param_file}, error={e}")
 
     def _clear_queue(self):
         try:
@@ -141,6 +185,7 @@ class DaHengCamera(Thread): # Process
                 self.capter = self._create_capter()
                 with self.capter as cap:
                     logger.debug("2D camera connected")
+                    self._apply_or_save_camera_params(cap)
                     self._clear_queue()
                     reconnect_delay = 1
                     self.last_frame_time = time.time()
