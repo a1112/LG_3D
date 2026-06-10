@@ -90,7 +90,8 @@ Item {
     onHovedIndexChanged: {
         if (hovedIndex < 0) return
 
-        let p = coreModel.currentCoilListModel.get(hovedIndex)
+        let sourceModel = fliterEnable ? fliterListModel : coreModel.currentCoilListModel
+        let p = sourceModel.get(hovedIndex)
         if (!p) return
 
         let coilId = p.Id || p.SecondaryCoilId

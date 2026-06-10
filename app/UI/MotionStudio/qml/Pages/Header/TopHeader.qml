@@ -89,29 +89,34 @@ Item {
             TopToolsButton{
                 Layout.alignment: Qt.AlignVCenter
             }
-            WindowCaptionButton {
-                id: minimizeButton
+            RowLayout {
+                id: windowControls
+                Layout.preferredWidth: coreStyle.windowButtonWidth * 3
+                Layout.preferredHeight: coreStyle.topHeight
                 Layout.alignment: Qt.AlignVCenter
-                buttonType: "minimize"
-                tipText: "最小化"
-                onClicked: {
-                    const window = root.appWindow
-                    if (window) {
-                        window.showMinimized()
+                spacing: 0
+
+                WindowCaptionButton {
+                    id: minimizeButton
+                    buttonType: "minimize"
+                    tipText: "最小化"
+                    onClicked: {
+                        const window = root.appWindow
+                        if (window) {
+                            window.showMinimized()
+                        }
                     }
                 }
-            }
-            TopWindowModelChangeButton {
-                Layout.alignment: Qt.AlignVCenter
-            }
-            WindowCaptionButton {
-                Layout.alignment: Qt.AlignVCenter
-                buttonType: "close"
-                tipText: "关闭"
-                onClicked: {
-                    const window = root.appWindow
-                    if (window) {
-                        window.close()
+                TopWindowModelChangeButton {
+                }
+                WindowCaptionButton {
+                    buttonType: "close"
+                    tipText: "关闭"
+                    onClicked: {
+                        const window = root.appWindow
+                        if (window) {
+                            window.close()
+                        }
                     }
                 }
             }

@@ -25,6 +25,7 @@ QtObject {
     property int coilCheckStatus: 0
     property int coilDefectCountS: 0
     property int coilDefectCountL: 0
+    property int coilDefectCountTotal: coilDefectCountS + coilDefectCountL
     property int coilStatus_L: 0
     property int coilGrade: 0
     property int coilStatus_S: 0
@@ -116,8 +117,13 @@ QtObject {
         coilWeight = coil.Weight || ""
         coilActWidth = coil.ActWidth || ""
         coilCheckStatus = coil.CheckStatus || 0
-        coilDefectCountS = coil.DefectCountS || 0
-        coilDefectCountL = coil.DefectCountL || 0
+        let normalizedDefects = _normalizeDefectsData(coil.childrenCoilDefect || coil.defects)
+        coilDefectCountS = coil.DefectCountS !== undefined ? Number(coil.DefectCountS) : 0
+        coilDefectCountL = coil.DefectCountL !== undefined ? Number(coil.DefectCountL) : 0
+        if (coilDefectCountS + coilDefectCountL <= 0 && normalizedDefects.length > 0) {
+            coilDefectCountS = normalizedDefects.length
+            coilDefectCountL = 0
+        }
         coilStatus_L = coil.Status_L || 0
         coilGrade = coil.Grade || 0
         coilStatus_S = coil.Status_S || 0
@@ -139,7 +145,7 @@ QtObject {
             }
         }
 
-        defectsData = _normalizeDefectsData(coil.childrenCoilDefect || coil.defects)
+        defectsData = normalizedDefects
         if (!maxDefectName && defectsData.length > 0) {
             maxDefectName = defectsData[0].defectName || ""
         }

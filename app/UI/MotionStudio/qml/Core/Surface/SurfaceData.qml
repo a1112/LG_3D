@@ -26,6 +26,7 @@ Item {
     property real scan3dCoordinateOffsetZ: 0
     property real medianZInt: 0
     property real medianZ: 0.0
+    property bool coilInfoReady: false
 
 
     readonly property int mm_pointValueShowType: 0
@@ -102,6 +103,7 @@ Item {
         if (coilInfo && coilInfo.median_3d_mm !== undefined) {
             medianZ = Number(coilInfo.median_3d_mm)
         }
+        coilInfoReady = coilInfo && coilInfo.median_3d !== undefined && coilInfo.median_3d_mm !== undefined
         if (coilInfo && coilInfo.circleConfig){
         let inner_circle = coilInfo.circleConfig.inner_circle
         // circleTool.init(coilInfo.circleConfig)
@@ -217,8 +219,8 @@ Item {
     property string source: ""
     property string area_source: ""
     property string error_source: ""
-    property bool error_visible: true
-    property bool error_auto: true
+    property bool error_visible: false
+    property bool error_auto: false
     property int tower_warning_show_opacity: 50
 
 
@@ -233,23 +235,44 @@ Item {
         area_source = getSouceByKey("AREA")
     }
 
+    function hasViewData(viewKey){
+        if (!coreModel || coreModel.hasDataCoilId !== coilId || !coreModel.has_data
+                || !key || !coreModel.has_data[key]) {
+            return hasData
+        }
+
+        let surfaceHasData = coreModel.has_data[key]
+        if (surfaceHasData[viewKey] === true) {
+            return true
+        }
+
+        if (viewKey === "GRAY" || viewKey === "JET" || viewKey === "JPG") {
+            return surfaceHasData["JPG"] === true || surfaceHasData["3D"] === true
+        }
+        if (viewKey === "AREA") {
+            return surfaceHasData["2D"] === true
+        }
+
+        return false
+    }
+
     property CoilModel currentCoilModel
 
     function setCoilId(coilId_){
         // 切换时进行的设置
         let type_= default_key
         coilId = coilId_
+        coilInfoReady = false
+        medianZInt = 0
+        medianZ = 0
+        error_visible = false
         source = getSource(coilId_,type_,false)
         area_source = getSource(coilId_,"AREA",false)
 
         viewDataModel.clear()
-        // 检查是否启用 1024 缓冲模式
-        if (coreSetting.enable1024CacheMode) {
-            // 启用时加载预览图
-            coreModel.allViewKeys.forEach(function(viewKey){
-                viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
-            })
-        }
+        coreModel.allViewKeys.forEach(function(viewKey){
+            viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
+        })
 
         // 延迟加载其他数据，优先保证图像加载
         delayDataLoadTimer.restart()

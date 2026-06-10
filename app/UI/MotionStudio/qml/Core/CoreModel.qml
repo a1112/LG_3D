@@ -217,6 +217,7 @@ CoreModel_ {
     }
 
     property var has_data // 是否数据存在
+    property int hasDataCoilId: 0
 
     // 待定位的缺陷（从缺陷页面跳转时设置）
     property var pendingDefect: null

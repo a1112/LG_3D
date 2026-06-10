@@ -59,7 +59,7 @@ Item {
                     font.pointSize: 13
                     font.bold: true
                     font.family: "Microsoft YaHei"
-                    text: " 状态"
+                    text: " 缺陷"
                 }
             }
         }

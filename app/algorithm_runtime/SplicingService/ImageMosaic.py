@@ -36,16 +36,37 @@ def leveling_2d(datas):
     if Globs.control.leveling_gray:  # 调整灰度
         media_gray_list = []
         for data in datas:
-            media_gray = np.median(data["2D"][data["2D"] != 0])
+            image_2d = data.get("2D")
+            if image_2d is None or image_2d.size == 0:
+                logger.warning(
+                    f"leveling_2d skip empty image: camera={data.get('camera')}"
+                )
+                return
+            valid_gray = image_2d[image_2d != 0]
+            if valid_gray.size == 0:
+                logger.warning(
+                    f"leveling_2d skip all-zero image: camera={data.get('camera')}"
+                )
+                return
+            media_gray = float(np.median(valid_gray))
             media_gray_list.append(media_gray)
         print(f"media_gray_list {media_gray_list}")
-        if min(media_gray_list) < 0.4 or max(media_gray_list) > 2.5:
-            logger.error(f"leveling_2d 失败")
+        if len(media_gray_list) < 3 or media_gray_list[1] <= 0:
+            logger.warning(f"leveling_2d skip invalid medians: {media_gray_list}")
             return
-        datas[0]["2D"] = (datas[0]["2D"].astype(np.float32) * (media_gray_list[1] / media_gray_list[0])).astype(
-            np.uint8)
-        datas[2]["2D"] = (datas[2]["2D"].astype(np.float32) * (media_gray_list[1] / media_gray_list[2])).astype(
-            np.uint8)
+        ratio_list = [gray / media_gray_list[1] for gray in media_gray_list]
+        if min(ratio_list) < 0.4 or max(ratio_list) > 2.5:
+            logger.error(
+                f"leveling_2d 失败: medians={media_gray_list}, ratios={ratio_list}"
+            )
+            return
+        for index in (0, 2):
+            if media_gray_list[index] <= 0:
+                continue
+            scale = media_gray_list[1] / media_gray_list[index]
+            datas[index]["2D"] = np.clip(
+                datas[index]["2D"].astype(np.float32) * scale, 0,
+                255).astype(np.uint8)
 
 
 class ImageMosaic(Globs.control.BaseImageMosaic):
@@ -93,6 +114,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
     def _save_image_(self, data_integration, image, name):
         from pathlib import Path
 
+        cache_image = image.copy()
+
         # 保存 PNG
         self._save_(image, data_integration.get_save_url("png", name + serverConfigProperty.save_image_type))
 
@@ -124,7 +147,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             if name == "GRAY":
                 gray_cache_dir = cache_base / "falsecolor" / "gray"
                 generate_gray_thumbnail(
-                    source_image=jpg_path,
+                    source_pil_image=cache_image,
                     cache_dir=gray_cache_dir,
                     size=1024
                 )
@@ -134,7 +157,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             elif name == "JET":
                 jet_cache_dir = cache_base / "falsecolor" / "jet"
                 generate_jet_thumbnail(
-                    source_image=jpg_path,
+                    source_pil_image=cache_image,
                     cache_dir=jet_cache_dir,
                     size=1024
                 )
@@ -251,22 +274,89 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
     @DetectionSpeedRecord.timing_decorator("拼接图像计时")
     def __stitching__(self, data_integration: DataIntegration):
-        min_h = 0
-        max_h = 0
+        min_h = None
+        max_h = None
+        valid_datas = []
         datas = data_integration.datas
         for data in datas:
-            if data["rec"]:
-                if data["rec"][1] < min_h:
-                    min_h = data["rec"][1]
-                if data["rec"][1] + data["rec"][3] > max_h:
-                    max_h = data["rec"][1] + data["rec"][3]
+            camera = data.get("camera", "unknown")
+            missing_keys = [
+                key for key in ["2D", "MASK", "3D"]
+                if key not in data or data[key] is None
+            ]
+            if missing_keys:
+                logger.warning(
+                    f"skip camera data with missing keys: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, missing={missing_keys}"
+                )
+                continue
+            if any(data[key].size == 0 for key in ["2D", "MASK", "3D"]):
+                logger.warning(
+                    f"skip camera data with empty image: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, "
+                    f"shapes={{'2D': {data['2D'].shape}, 'MASK': {data['MASK'].shape}, '3D': {data['3D'].shape}}}"
+                )
+                continue
+
+            image_h = data["2D"].shape[0]
+            rec = data.get("rec")
+            if rec and len(rec) >= 4 and rec[3] > 0:
+                top = max(0, int(rec[1]))
+                bottom = min(image_h, top + int(rec[3]))
+            else:
+                logger.warning(
+                    f"steel rect missing, use full image height: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, crop_rec={data.get('crop_rec')}"
+                )
+                top = 0
+                bottom = image_h
+            if bottom <= top:
+                logger.warning(
+                    f"invalid crop range, use full image height: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, top={top}, bottom={bottom}"
+                )
+                top = 0
+                bottom = image_h
+            min_h = top if min_h is None else min(min_h, top)
+            max_h = bottom if max_h is None else max(max_h, bottom)
+            valid_datas.append(data)
+
+        if not valid_datas or min_h is None or max_h is None or max_h <= min_h:
+            self.raise_error(
+                f"算法错误：{data_integration.surface} 面无有效相机数据，coil={data_integration.coilId}"
+            )
+
+        datas = valid_datas
+        out_side_px = Globs.control.out_side_px
+        crop_top = max(min_h - out_side_px, 0)
+        crop_datas = []
         for data in datas:  # 裁剪，减低计算
-            out_side_px = Globs.control.out_side_px
-            min_h = max(min_h - out_side_px, 0)
-            max_h = min(max_h + out_side_px, data["2D"].shape[0])
+            camera = data.get("camera", "unknown")
+            crop_bottom = min(max_h + out_side_px, data["2D"].shape[0])
+            if crop_bottom <= crop_top:
+                logger.warning(
+                    f"skip camera data after crop: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, "
+                    f"crop_top={crop_top}, crop_bottom={crop_bottom}"
+                )
+                continue
             for key in ["2D", "MASK", "3D"]:
-                # 少裁剪固定像素
-                data[key] = data[key][min_h:max_h, :]
+                data[key] = data[key][crop_top:crop_bottom, :]
+            if data["MASK"].size == 0 or not np.any(data["MASK"] > 150):
+                logger.warning(
+                    f"skip camera data with empty mask foreground: coil={data_integration.coilId}, "
+                    f"surface={data_integration.surface}, camera={camera}, mask_shape={data['MASK'].shape}"
+                )
+                continue
+            crop_datas.append(data)
+
+        if not crop_datas:
+            self.raise_error(
+                f"算法错误：{data_integration.surface} 面裁剪后无有效 mask，coil={data_integration.coilId}"
+            )
+
+        datas = crop_datas
+        data_integration.datas = datas
         horizontal_projection_list = tool.get_horizontal_projection_list([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontal_projection_list)
         data_integration.set_cross_points(cross_points)

@@ -2,9 +2,8 @@ from io import BytesIO
 import xlsxwriter
 
 from Base.utils.export.export_image import (
+    export_3d_defect_image,
     export_area_2d_defect_image,
-    export_defect_show_image,
-    export_defect_un_show_image,
 )
 from .export_database import export_info_data
 from CoilDataBase import Coil
@@ -24,18 +23,16 @@ def export_data_by_coil_id_list(coil_id_list,
     if export_config.export_defect_image:
         # 数据导出
         print(
-            f"[Export] export_defect_image={export_config.export_defect_image}, defect_show_info={export_config.defect_show_info}"
+            f"[Export] export_defect_image={export_config.export_defect_image}, "
+            f"defect_show_info={export_config.defect_show_info}, "
+            f"defect_un_show_info={export_config.defect_un_show_info}"
         )
-        if export_config.defect_show_info:
+        if export_config.defect_show_info or export_config.defect_un_show_info:
             print(
-                f"[Export] Calling export_defect_show_image with {len(coil_id_list)} coils"
+                f"[Export] Calling export_3d_defect_image with {len(coil_id_list)} coils"
             )
-            export_defect_show_image(coil_id_list, workbook, export_config,
-                                     format_)
-        if export_config.defect_un_show_info:
-            print(f"[Export] Calling export_defect_un_show_image")
-            export_defect_un_show_image(coil_id_list, workbook, export_config,
-                                        format_)
+            export_3d_defect_image(coil_id_list, workbook, export_config,
+                                   format_)
         if export_config.export_area_defect_image:
             print(f"[Export] Calling export_area_2d_defect_image")
             export_area_2d_defect_image(coil_id_list, workbook, export_config,

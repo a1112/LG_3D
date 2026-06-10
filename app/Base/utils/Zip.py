@@ -6,34 +6,125 @@ import numpy as np
 
 from Base import Globs
 
+MIN_COMPRESS_AGE_SECONDS = 10 * 60
+
+
+def _folder_sort_key(folder: Path) -> tuple[int, str]:
+    try:
+        return int(folder.name), folder.name
+    except ValueError:
+        try:
+            return int(folder.stat().st_mtime), folder.name
+        except OSError:
+            return 0, folder.name
+
+
+def _old_folders(path: Path, reserve_num: int) -> list[Path]:
+    folders = [folder for folder in path.iterdir() if folder.is_dir()]
+    folders.sort(key=_folder_sort_key, reverse=True)
+    return folders[reserve_num:]
+
+
+def _resolve_child_dir(folder: Path, dir_name: str) -> Path:
+    candidate = folder / dir_name
+    if candidate.exists():
+        return candidate
+    lowered_name = dir_name.lower()
+    try:
+        for child in folder.iterdir():
+            if child.is_dir() and child.name.lower() == lowered_name:
+                return child
+    except OSError:
+        pass
+    return candidate
+
+
+def _latest_mtime(folder: Path) -> float:
+    latest = folder.stat().st_mtime
+    for child_path in folder.iterdir():
+        try:
+            latest = max(latest, child_path.stat().st_mtime)
+            if child_path.is_dir():
+                for child in child_path.iterdir():
+                    latest = max(latest, child.stat().st_mtime)
+        except OSError:
+            return time.time()
+    return latest
+
+
+def _is_quiet_folder(folder: Path) -> bool:
+    try:
+        return time.time() - _latest_mtime(folder) >= MIN_COMPRESS_AGE_SECONDS
+    except OSError:
+        return False
+
+
+def _is_file_access_error(error: Exception) -> bool:
+    return isinstance(error, PermissionError) or getattr(error, "winerror",
+                                                        None) == 32
+
 
 def _zip_camera_data_(folder):
-    image_folder = folder / "2D"
+    if not _is_quiet_folder(folder):
+        return False
+
+    image_folder = _resolve_child_dir(folder, "2D")
     bmp_list = list(image_folder.glob("*.bmp"))
     if not len(bmp_list):
         time.sleep(0.001)
         return False
+    compressed = False
     for imageUrl in bmp_list:
-        image = Image.open(imageUrl)
-        image.save(imageUrl.with_suffix(".jpg"), quality=95, optimize=True)
-        image.close()
-        os.remove(str(imageUrl))
-    d3_folder = folder / "3D"
+        try:
+            with Image.open(imageUrl) as image:
+                image.load()
+                image.save(imageUrl.with_suffix(".jpg"),
+                           quality=95,
+                           optimize=True)
+            os.remove(str(imageUrl))
+            compressed = True
+        except Exception as e:
+            if _is_file_access_error(e):
+                print(f"跳过正在占用的相机数据目录 {folder}: {imageUrl} {e}")
+                return False
+            print(f"跳过无法压缩的2D图像 {imageUrl}: {e}")
+            continue
+    d3_folder = _resolve_child_dir(folder, "3D")
     for d3Url in d3_folder.glob("*.npy"):
-        d3 = np.load(d3Url)
-        np.savez_compressed(d3Url.with_suffix(".npz"), array=d3)
-        os.remove(str(d3Url))
-    return True
+        try:
+            d3 = np.load(d3Url)
+            np.savez_compressed(d3Url.with_suffix(".npz"), array=d3)
+            os.remove(str(d3Url))
+            compressed = True
+        except Exception as e:
+            if _is_file_access_error(e):
+                print(f"跳过正在占用的3D数据目录 {folder}: {d3Url} {e}")
+                return False
+            print(f"跳过无法压缩的3D数据 {d3Url}: {e}")
+    return compressed
 
 def _zip_save_data_(folder):
+    if not _is_quiet_folder(folder):
+        return False
+
     obj_file = folder / "3D.obj"
     if obj_file.exists():
-        os.remove(str(obj_file))
+        try:
+            os.remove(str(obj_file))
+        except Exception as e:
+            if _is_file_access_error(e):
+                return False
+            raise e
     npy_file = folder / "3D.npy"
     if npy_file.exists():
-        d3 = np.load(npy_file)
-        np.savez_compressed(npy_file.with_suffix(".npz"), array=d3)
-        os.remove(str(npy_file))
+        try:
+            d3 = np.load(npy_file)
+            np.savez_compressed(npy_file.with_suffix(".npz"), array=d3)
+            os.remove(str(npy_file))
+        except Exception as e:
+            if _is_file_access_error(e):
+                return False
+            raise e
     else:
         return False
     return True
@@ -62,8 +153,7 @@ class ZipAndDeletionCameraData(Globs.control.SaveAndDeleteCameraDataBase):
 
     def run(self):
         while self._run_:
-            folders = list(self.path.iterdir())
-            for folder in folders[self.reserve_num:][::-1]:
+            for folder in _old_folders(self.path, self.reserve_num)[::-1]:
                 try:
                     s_time = time.time()
                     zip_state = _zip_camera_data_(folder)
@@ -91,8 +181,7 @@ class ZipAndDeletionSaveData(Globs.control.SaveAndDeleteSaveDataBase):
 
     def run(self):
         while self._run_:
-            folders = list(self.path.iterdir())
-            for folder in folders[self.reserve_num:][::-1]:
+            for folder in _old_folders(self.path, self.reserve_num)[::-1]:
                 try:
                     s_time = time.time()
                     zip_state = _zip_save_data_(folder)

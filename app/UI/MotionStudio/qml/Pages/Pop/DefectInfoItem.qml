@@ -4,10 +4,12 @@ import "../../Model/server"
 Item {
     id:root
     property DefectItemModel defectItem:DefectItemModel{}
-    property int currentCoilId: coilModel.coilId
-    height: 150
+    property var defectData
+    property bool respectFilter: false
+    property int thumbnailSize: 96
+    height: thumbnailSize
     width: height
-    visible: leftCore.isShowDefect(defectItem.defectName)
+    visible: !respectFilter || leftCore.isShowDefect(defectItem.defectName)
     Image {
         width:parent.width
         height:parent.height
@@ -19,15 +21,19 @@ Item {
         font.bold:true
         font.pointSize:16
         anchors.horizontalCenter:parent.horizontalCenter
-        text:defectItem.defectName
+        text:root.defectItem.defectName
         anchors.bottom:parent.bottom
-        color:Qt.lighter(defectItem.defectColor)
+        color:Qt.lighter(root.defectItem.defectColor)
         background:Rectangle{
             color:"#88000000"
         }
     }
 
+    onDefectDataChanged: {
+        defectItem.init(defectData)
+    }
+
     Component.onCompleted:{
-        defectItem.init(defectModel.get(index))
+        defectItem.init(defectData)
     }
 }

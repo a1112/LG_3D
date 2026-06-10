@@ -68,7 +68,8 @@ HeaderBase {
         }
 
         ItemDelegateItemLabel {
-            key:qsTr("JPG")
+            key:surfaceData.currentViewKey
+            has_data: true
             height: 20
             text: surfaceData.currentViewKey
             selected:surfaceData.rootViewIndex==0

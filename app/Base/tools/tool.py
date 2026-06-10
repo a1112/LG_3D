@@ -138,11 +138,18 @@ def cropImage(image, cropLeft, cropRight):
 def horizontal_projection_first_nonzero(mask):
     if isinstance(mask, Image.Image):
         mask = np.array(mask)
-    # height = mask.shape[0]
+    mask = np.asarray(mask)
+    if mask.ndim < 2 or mask.shape[0] == 0 or mask.shape[1] == 0:
+        logger.warning(
+            f"horizontal_projection_first_nonzero skip empty mask: shape={getattr(mask, 'shape', None)}"
+        )
+        return np.array([], dtype=np.int32)
+    height = mask.shape[0]
     # 使用np.argmax找到第一个非零值的索引
-    non_zero_indices = np.argmax(mask > 150, axis=0)
+    foreground = mask > 150
+    non_zero_indices = np.argmax(foreground, axis=0)
     # 处理整列都是零的情况
-    # non_zero_indices[np.all(mask == 0, axis=0)] = height
+    non_zero_indices[np.all(~foreground, axis=0)] = height
     return non_zero_indices
 
 
@@ -174,6 +181,12 @@ def find_cross_points(projections):
         l_ = projections[i - 1]
         r_ = projections[i]
         l_len = len(l_)
+        if l_len == 0 or len(r_) == 0:
+            logger.warning(
+                f"find_cross_points skip empty projection: left={l_len}, right={len(r_)}"
+            )
+            cross_points.append((0, 0))
+            continue
         abs_diff_l_r = np.abs(l_ - r_[0])
         f_l_List = getDiff(abs_diff_l_r, 0)
         if f_l_List:
@@ -193,10 +206,16 @@ def find_cross_points(projections):
 def crop_black_border(gray):
     if isinstance(gray, Image.Image):
         gray = np.array(gray)
+    gray = np.asarray(gray)
     # 阈值处理，获得二值图像
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
     # 寻找非黑色区域的边界
     coords = cv2.findNonZero(binary)
+    if coords is None:
+        logger.warning(
+            f"crop_black_border found no foreground, using full image: shape={gray.shape}"
+        )
+        return 0, 0, gray.shape[1], gray.shape[0]
     # 计算边界框
     x, y, w, h = cv2.boundingRect(coords)
     # 裁剪图像

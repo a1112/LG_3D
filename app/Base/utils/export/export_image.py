@@ -13,78 +13,53 @@ from Base.tools.DataGet import DataGet, get_pil_image_by_defect
 
 
 def get_pil_image_from_classifier_save(defect: CoilDefect):
-    """
-    从 classifier 目录获取缺陷图像
-
-    优先级顺序：
-    1. 卷材级 classifier 文件夹：D:\Save_S\{coil_id}\classifier\{defect_name}\{coil_id}_{x}_{y}_{w}_{h}.png
-    2. 全局 classifier_save 文件夹：classifier_save/classifier/{defect_name}/{coil_id}_{x}_{y}_{w}_{h}.png
-    3. 原始图像裁剪（最后备选）
-
-    Args:
-        defect: 缺陷对象
-
-    Returns:
-        PIL.Image or None: 缺陷图像，如果找不到则返回 None
-    """
-    from PIL import Image
-
+    """Load a saved classifier crop for a defect if it exists."""
     try:
-        # 获取基础目录
-        save_folder = list(serverConfigProperty.surfaceConfigPropertyDict.
-                           values())[0].saveFolder
-        save_base = Path(save_folder).parent  # D:\Save_S
-
         coil_id = defect.secondaryCoilId
-        coil_folder = save_base / str(coil_id)  # D:\Save_S\{coil_id}
-
-        # 构建文件名：coil_id_x_y_w_h.png
         x1 = int(defect.defectX)
         y1 = int(defect.defectY)
         x2 = x1 + int(defect.defectW)
         y2 = y1 + int(defect.defectH)
-
-        # 尝试多个可能的文件名格式
         possible_names = [
-            f"{coil_id}_{x1}_{y1}_{x2}_{y2}.png",  # xmin_ymin_xmax_ymax
-            f"{coil_id}_{x1}_{y1}_{int(defect.defectW)}_{int(defect.defectH)}.png",  # x_y_w_h
+            f"{coil_id}_{x1}_{y1}_{x2}_{y2}.png",
+            f"{coil_id}_{x1}_{y1}_{int(defect.defectW)}_{int(defect.defectH)}.png",
         ]
 
-        # 标准化缺陷名称（去掉后缀数字，如 "背景(1)" -> "背景"）
-        defect_name = defect.defectName
+        defect_name = defect.defectName or ""
         if defect_name.endswith(")"):
             defect_name = defect_name.split("(")[0].rstrip()
 
-        # 优先级1：检查卷材级 classifier 文件夹 D:\Save_S\{coil_id}\classifier\{defect_name}\
-        coil_classifier_path = coil_folder / "classifier" / defect_name
-        if coil_classifier_path.exists():
+        candidate_dirs = []
+        surface_config = serverConfigProperty.surfaceConfigPropertyDict.get(
+            defect.surface)
+        if surface_config:
+            save_folder = Path(surface_config.saveFolder)
+            candidate_dirs.extend([
+                save_folder / str(coil_id) / "classifier" / defect_name,
+                save_folder.parent / "classifier_save" / "classifier" /
+                defect_name,
+            ])
+
+        for config in serverConfigProperty.surfaceConfigPropertyDict.values():
+            save_folder = Path(config.saveFolder)
+            candidate_dirs.extend([
+                save_folder / str(coil_id) / "classifier" / defect_name,
+                save_folder.parent / "classifier_save" / "classifier" /
+                defect_name,
+            ])
+
+        seen_dirs = set()
+        for classifier_dir in candidate_dirs:
+            if classifier_dir in seen_dirs:
+                continue
+            seen_dirs.add(classifier_dir)
+            if not classifier_dir.exists():
+                continue
             for name in possible_names:
-                image_path = coil_classifier_path / name
+                image_path = classifier_dir / name
                 if image_path.exists():
                     return Image.open(image_path)
 
-        # 优先级2：检查全局 classifier_save 文件夹
-        classifier_save_base = save_base / "classifier_save"
-        global_classifier_path = classifier_save_base / "classifier" / defect_name
-        if global_classifier_path.exists():
-            for name in possible_names:
-                image_path = global_classifier_path / name
-                if image_path.exists():
-                    return Image.open(image_path)
-
-        # 优先级3：检查其他可能的 classifier 路径（例如 Save_L 等）
-        for surface_key in ["S", "L"]:
-            surface_folder = save_base / f"Save_{surface_key}"
-            if surface_folder.exists():
-                coil_path = surface_folder / str(
-                    coil_id) / "classifier" / defect_name
-                if coil_path.exists():
-                    for name in possible_names:
-                        image_path = coil_path / name
-                        if image_path.exists():
-                            return Image.open(image_path)
-
-        # 所有路径都找不到，返回 None（不回退到原始裁剪）
         print(
             f"Warning: Image not found for defect {defect.defectName} in coil {coil_id}"
         )
@@ -92,6 +67,20 @@ def get_pil_image_from_classifier_save(defect: CoilDefect):
 
     except Exception as e:
         print(f"Error loading from classifier: {e}")
+        return None
+
+
+def get_pil_image_for_export(defect: CoilDefect):
+    image = get_pil_image_from_classifier_save(defect)
+    if image is not None:
+        return image
+    try:
+        return get_pil_image_by_defect(defect)
+    except Exception as e:
+        print(
+            f"[Export] failed to crop defect image from source coil={defect.secondaryCoilId}, "
+            f"surface={defect.surface}, defect={defect.defectName}: {e}"
+        )
         return None
 
 
@@ -120,7 +109,8 @@ def export_defect_image_by_names(coil_id_list,
                                  export_config: ExportConfig = None,
                                  names=None,
                                  in_list=True,
-                                 format_=None):
+                                 format_=None,
+                                 defect_filter=None):
     print(
         f"[Export] export_defect_image_by_names called, names={names}, in_list={in_list}"
     )
@@ -157,27 +147,33 @@ def export_defect_image_by_names(coil_id_list,
             continue
 
         defects = row_data[-1]
-        defect_count_total += len(defects)  # 统计总缺陷数
         text_row = row_data[:-1]
         for index, data_item in enumerate(text_row):
             worksheet.write(row_num, index, data_item)
         offset = len(row_data)
         for index, defect in enumerate(defects):
-            defect.defectName = CONFIG.defectClassesProperty.format_name(
+            if defect_filter is not None and not defect_filter(defect):
+                continue
+
+            defect_name = CONFIG.defectClassesProperty.format_name(
                 defect.defectName)
             if in_list:
-                if defect.defectName not in names:
+                if defect_name not in names:
                     continue
             else:
-                if defect.defectName in names:
+                if defect_name in names:
                     continue
 
-            image = get_pil_image_from_classifier_save(defect)
+            defect_count_total += 1  # 统计导出的缺陷数
+            original_defect_name = defect.defectName
+            defect.defectName = defect_name
+            image = get_pil_image_for_export(defect)
+            defect.defectName = original_defect_name
             # 失败跳过逻辑：如果图像加载失败，跳过该缺陷
             if image is None:
                 skipped_images.append({
                     'coil_id': defect.secondaryCoilId,
-                    'defect_name': defect.defectName,
+                    'defect_name': defect_name,
                     'x': defect.defectX,
                     'y': defect.defectY
                 })
@@ -185,7 +181,7 @@ def export_defect_image_by_names(coil_id_list,
 
             image_found_count += 1  # 统计找到的图像数
             defect: CoilDefect
-            text = f"{defect.defectName}\n宽：{int((defect.defectW*0.34))}\n高：{int(defect.defectH*0.34)}"
+            text = f"{defect_name}\n宽：{int((defect.defectW*0.34))}\n高：{int(defect.defectH*0.34)}"
             insert_image_and_name(worksheet, row_num, offset, text, image,
                                   format_)
             offset += 2
@@ -211,6 +207,19 @@ def export_defect_image_by_names(coil_id_list,
 def _is_2d_defect(defect: CoilDefect) -> bool:
     defect_name = str(getattr(defect, "defectName", "") or "")
     return defect_name.upper().startswith("2D")
+
+
+def _is_3d_defect(defect: CoilDefect) -> bool:
+    return not _is_2d_defect(defect)
+
+
+def _sheet_name(base_name: str, suffix: str) -> str:
+    base_name = str(base_name or "Sheet")
+    suffix = str(suffix or "")[:31]
+    invalid_chars = set("[]:*?/\\")
+    safe_base_name = "".join("_" if char in invalid_chars else char
+                             for char in base_name)
+    return f"{safe_base_name[:max(0, 31 - len(suffix))]}{suffix}"
 
 
 def _get_defect_number(defect: CoilDefect, field: str, default=0):
@@ -336,8 +345,36 @@ def _format_area_defect_details(defects: list[CoilDefect]) -> str:
 
 
 def _area_sheet_name(base_name: str) -> str:
-    suffix = "_2D_AREA"
-    return f"{base_name[:31 - len(suffix)]}{suffix}"
+    return _sheet_name(base_name, "_2D")
+
+
+def _defect_3d_sheet_name(base_name: str) -> str:
+    return _sheet_name(base_name, "_3D")
+
+
+def export_3d_defect_image(coil_id_list,
+                           workbook,
+                           export_config: ExportConfig = None,
+                           format_=None):
+    print(
+        f"[Export] export_3d_defect_image called with {len(coil_id_list)} coils"
+    )
+    print(
+        f"[Export] show_name_list: {CONFIG.defectClassesProperty.show_name_list}"
+    )
+
+    if not export_config.defect_show_info and not export_config.defect_un_show_info:
+        return
+
+    worksheet = workbook.add_worksheet(
+        _defect_3d_sheet_name(export_config.worksheet_defect_image_name))
+    export_defect_image_by_names(coil_id_list,
+                                 worksheet,
+                                 export_config,
+                                 [],
+                                 False,
+                                 format_=format_,
+                                 defect_filter=_is_3d_defect)
 
 
 def export_area_2d_defect_image(coil_id_list,
@@ -403,12 +440,13 @@ def export_defect_show_image(coil_id_list,
     )
 
     worksheet = workbook.add_worksheet(
-        export_config.worksheet_defect_image_name + "_显示")
+        _sheet_name(export_config.worksheet_defect_image_name, "_显示"))
     export_defect_image_by_names(coil_id_list,
                                  worksheet,
                                  export_config,
                                  CONFIG.defectClassesProperty.show_name_list,
-                                 format_=format_)
+                                 format_=format_,
+                                 defect_filter=_is_3d_defect)
 
 
 def export_defect_un_show_image(coil_id_list,
@@ -416,13 +454,14 @@ def export_defect_un_show_image(coil_id_list,
                                 export_config: ExportConfig = None,
                                 format_=None):
     worksheet = workbook.add_worksheet(
-        export_config.worksheet_defect_image_name + "_屏蔽")
+        _sheet_name(export_config.worksheet_defect_image_name, "_屏蔽"))
     export_defect_image_by_names(coil_id_list,
                                  worksheet,
                                  export_config,
                                  CONFIG.defectClassesProperty.show_name_list,
                                  False,
-                                 format_=format_)
+                                 format_=format_,
+                                 defect_filter=_is_3d_defect)
 
 
 def insert_image_and_name(worksheet, row_num, index, text, image,

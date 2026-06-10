@@ -168,7 +168,7 @@ class DataFolder(Globs.control.BaseDataFolder):
             coil_id = self.producer.get()
             # logger.info(f"DataFolder {coil_id} start")
             total_start = time.perf_counter()
-            data = {}
+            data = {"camera": self.folderName}
             # dataFolderLog = DataFolderLog(self)
             try:
                 json_start = time.perf_counter()
@@ -183,6 +183,7 @@ class DataFolder(Globs.control.BaseDataFolder):
                 data["json"] = json_datas
                 data["2D"] = image2_d
                 data["rec"] = steel_rec
+                data["crop_rec"] = rec
                 data["MASK"] = image_mask
 
                 post_start = time.perf_counter()

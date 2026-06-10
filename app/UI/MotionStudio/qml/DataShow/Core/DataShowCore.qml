@@ -17,9 +17,10 @@ DataShowCore_ {
 
     function flush(){
         surfaceData.error_visible=false
-        // 第一阶段：立即触发图像渲染
-        renderDrawer()
-        // 第二阶段：延迟加载缺陷数据，优先保证图像加载完成
+        if (surfaceData.coilId > 0 && surfaceData.source === "") {
+            surfaceData.source = surfaceData.getSouceByKey(surfaceData.currentViewKey)
+        }
+        // 延迟加载缺陷数据，优先保证图像加载完成
         defectLoadTimer.restart()
     }
 
@@ -162,26 +163,55 @@ DataShowCore_ {
 
 
     property point hoverPoint: Qt.point(0,0) // 鼠标悬停点
-    property int hoverdX: (hoverPoint.x+flick.contentX)/canvasScale
-    property int hoverdY: (hoverPoint.y+flick.contentY)/canvasScale
+    property int hoverdX: flick && canvasScale > 0 ? (hoverPoint.x+flick.contentX)/canvasScale : 0
+    property int hoverdY: flick && canvasScale > 0 ? (hoverPoint.y+flick.contentY)/canvasScale : 0
     property real hoverdXmm: pxtoPos(hoverdX).toFixed(1)
 
 
     property real hoverdYmm: pxtoPos(hoverdY).toFixed(1)
     onHoverdXChanged: {
-        get_zValue()
+        hoverZRequestTimer.restart()
     }
+    onHoverdYChanged: {
+        hoverZRequestTimer.restart()
+    }
+    function zRawToRelativeMm(value){
+        let rawValue = Number(value)
+        if (!isFinite(rawValue)) {
+            return hoverdZmm
+        }
+        return (rawValue*surfaceData.scan3dScaleZ-medianZ).toFixed(2)
+    }
+    property int hoverZRequestId: 0
     function get_zValue(){
+        if (!surfaceData.coilInfoReady || !surfaceData.coilId || !surfaceData.key || hoverdX < 0 || hoverdY < 0
+                || hoverdX >= sourceWidth || hoverdY >= sourceHeight) {
+            return
+        }
+        hoverZRequestId += 1
+        let requestId = hoverZRequestId
+        let requestX = hoverdX
+        let requestY = hoverdY
         api.get_zValueData(surfaceData.key,surfaceData.coilId,
-                           hoverdX,
-                           hoverdY,
+                           requestX,
+                           requestY,
                            (result)=>{
-                               hoverdZmm = (parseInt(result)*surfaceData.scan3dScaleZ-medianZ).toFixed(2)
+                               if (requestId !== hoverZRequestId || requestX !== hoverdX || requestY !== hoverdY) {
+                                   return
+                               }
+                               hoverdZmm = zRawToRelativeMm(result)
                            },
                            (error)=>{
                                console.log("get_zValueData error:",error)
                            }
                         )
+    }
+
+    Timer {
+        id: hoverZRequestTimer
+        interval: 40
+        repeat: false
+        onTriggered: get_zValue()
     }
 
 
@@ -236,7 +266,10 @@ DataShowCore_ {
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
     onMedianZValueChanged: {
-        if (surfaceData.coilId > 0) {
+        if (surfaceData.coilInfoReady) {
+            hoverZRequestTimer.restart()
+        }
+        if (autoRender && surfaceData.coilInfoReady && surfaceData.coilId > 0) {
             renderDrawer()
         }
     }
@@ -244,6 +277,9 @@ DataShowCore_ {
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
+        if (!surfaceData.coilInfoReady || surfaceData.coilId <= 0) {
+            return
+        }
         // 检查是否启用 1024 缓冲模式
         if (coreSetting.enable1024CacheMode) {
             // 启用时：第一阶段加载 GRAY 缓存图（快速显示）
@@ -256,6 +292,7 @@ DataShowCore_ {
                 true,  // mask
                 true   // grayscale - GRAY 模式，使用 GRAY 缓存
             )
+            surfaceData.currentViewKey = "GRAY"
             currentImageType = "gray"
             imageTypeText = "灰度预览"
             imageTypeColor = "#999999"
@@ -273,6 +310,7 @@ DataShowCore_ {
                 true,  // mask
                 false  // grayscale - JET 模式，直接加载彩色图像
             )
+            surfaceData.currentViewKey = "JET"
             currentImageType = "jet"
             imageTypeText = "彩色显示"
             imageTypeColor = "#52c41a"
@@ -283,6 +321,9 @@ DataShowCore_ {
         id: renderTimer
         interval: 500  // 500ms 后切换到 JET 图像
         onTriggered: {
+            if (!surfaceData.coilInfoReady || surfaceData.coilId <= 0) {
+                return
+            }
             surfaceData.source = api.geRenderDrawerSource(
                 surfaceData.key,
                 surfaceData.coilId,
@@ -292,6 +333,7 @@ DataShowCore_ {
                 true,  // mask
                 false  // grayscale - JET 模式，使用 JET 缓存
             )
+            surfaceData.currentViewKey = "JET"
             currentImageType = "jet"
             imageTypeText = "彩色显示"
             imageTypeColor = "#52c41a"

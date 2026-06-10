@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from typing import Optional
 
 from .area_cache import DiskAreaImageCache
@@ -29,7 +31,13 @@ class CacheProvider:
     def startup(self) -> None:
         for component in self._components:
             if hasattr(component, "startup"):
+                start_time = time.perf_counter()
+                component_name = component.__class__.__name__
+                logging.info("starting cache component: %s", component_name)
                 component.startup()
+                logging.info("started cache component: %s in %.3fs",
+                             component_name,
+                             time.perf_counter() - start_time)
 
     def shutdown(self) -> None:
         for component in self._components:

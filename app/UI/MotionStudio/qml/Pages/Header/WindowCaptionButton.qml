@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
-ItemDelegate {
+AbstractButton {
     id: root
 
     property string buttonType: "minimize"
@@ -12,14 +13,23 @@ ItemDelegate {
 
     width: coreStyle.windowButtonWidth
     height: coreStyle.topHeight
+    implicitWidth: coreStyle.windowButtonWidth
+    implicitHeight: coreStyle.topHeight
+    Layout.preferredWidth: coreStyle.windowButtonWidth
+    Layout.preferredHeight: coreStyle.topHeight
+    Layout.fillHeight: false
     padding: 0
+    spacing: 0
+    hoverEnabled: true
 
     ToolTip.visible: tipText !== "" && hovered
     ToolTip.text: tipText
 
     background: Rectangle {
+        anchors.fill: parent
         color: root.pressed ? root.pressedColor : (root.hovered ? root.hoverColor : coreStyle.headerBackgroundColor)
         radius: 0
+        border.width: 0
     }
 
     contentItem: Item {

@@ -1,5 +1,6 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 Item {
     id:root
@@ -9,6 +10,8 @@ Item {
     Layout.fillHeight:true
     property var coilModel
     visible: coilModel !== undefined
+    property bool respectFilter: false
+    property int thumbnailSize: 96
     property ListModel defectModel:ListModel{}
     property var defectsData:coilModel ? coilModel.defectsData : null
     onDefectsDataChanged:{
@@ -30,6 +33,9 @@ Item {
         Repeater{
             model:root.defectModel
             DefectInfoItem{
+                defectData: root.defectModel.get(index)
+                respectFilter: root.respectFilter
+                thumbnailSize: root.thumbnailSize
             }
 
         }

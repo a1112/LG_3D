@@ -13,6 +13,7 @@ def generate_gray_thumbnail(
     npy_data: Optional[np.ndarray] = None,
     cache_dir: Optional[Path] = None,
     source_image: Optional[Path] = None,
+    source_pil_image: Optional[Image.Image] = None,
     size: int = 1024,
     quality: int = 85
 ) -> bool:
@@ -31,8 +32,12 @@ def generate_gray_thumbnail(
     """
     try:
         # 优先从源图像文件生成
-        if source_image and source_image.exists():
-            img = Image.open(source_image)
+        if source_pil_image is not None or (source_image and source_image.exists()):
+            if source_pil_image is not None:
+                img = source_pil_image.copy()
+            else:
+                with Image.open(source_image) as source:
+                    img = source.copy()
             # 确保是 RGB 模式
             if img.mode != 'RGB':
                 img = img.convert('RGB')
@@ -80,6 +85,7 @@ def generate_jet_thumbnail(
     npy_data: Optional[np.ndarray] = None,
     cache_dir: Optional[Path] = None,
     source_image: Optional[Path] = None,
+    source_pil_image: Optional[Image.Image] = None,
     mask: Optional[np.ndarray] = None,
     size: int = 1024,
     min_value: int = 0,
@@ -104,8 +110,12 @@ def generate_jet_thumbnail(
     """
     try:
         # 优先从源图像文件生成
-        if source_image and source_image.exists():
-            img = Image.open(source_image)
+        if source_pil_image is not None or (source_image and source_image.exists()):
+            if source_pil_image is not None:
+                img = source_pil_image.copy()
+            else:
+                with Image.open(source_image) as source:
+                    img = source.copy()
             # 确保是 RGB 模式
             if img.mode != 'RGB':
                 img = img.convert('RGB')

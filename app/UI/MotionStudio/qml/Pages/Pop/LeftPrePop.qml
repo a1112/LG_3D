@@ -28,7 +28,7 @@ Menu {
 
     Label{    // title
         text:qsTr("数据摘要")
-        anchors.left: parent.Left
+        anchors.left: parent.left
         color:Material.color(Material.Orange)
     }
     Column{
@@ -37,7 +37,7 @@ Menu {
         spacing:0
         TitleLabel{
             Layout.fillWidth:true
-            text:coilModel ? coilModel.coilNo || "" : ""
+            text:root.coilModel ? root.coilModel.coilNo || "" : ""
             color:Material.color(Material.Blue)
             Layout.alignment:Qt.AlignHCenter
             anchors.horizontalCenter:parent.horizontalCenter
@@ -74,6 +74,9 @@ Menu {
         DefectInfo{
             width:parent.width
             Layout.fillWidth:true
+            coilModel: root.coilModel
+            respectFilter: false
+            thumbnailSize: 96
         }
 
     }

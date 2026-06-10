@@ -8,11 +8,22 @@ Item {
     }
 
     function init_data_has(){
-        api.has_data(core.currentCoilModel.coilId,
+        let requestedCoilId = core.currentCoilModel.coilId
+        coreModel.has_data = null
+        coreModel.hasDataCoilId = requestedCoilId
+        api.has_data(requestedCoilId,
                      (text)=>{
+                        if (core.currentCoilModel.coilId !== requestedCoilId) {
+                            return
+                        }
                         coreModel.has_data = JSON.parse(text)
+                        coreModel.hasDataCoilId = requestedCoilId
                      },
                      (err)=>{
+                        if (core.currentCoilModel.coilId === requestedCoilId) {
+                            coreModel.has_data = null
+                            coreModel.hasDataCoilId = 0
+                        }
 
                      }
                      )

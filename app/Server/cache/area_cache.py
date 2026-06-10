@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from collections import defaultdict
 from pathlib import Path
@@ -130,5 +131,18 @@ class DiskAreaImageCache(MemoryImageCache):
             logging.info(f"Cleaned up {cleaned} old tile cache files (legacy format)")
 
     def startup(self) -> None:
-        # 清理旧缓存
-        self.cleanup_old_cache()
+        cleanup_enabled = os.getenv("CACHE_AREA_CLEANUP_ON_STARTUP",
+                                    "false").lower() in {
+                                        "1", "true", "yes", "on"
+                                    }
+        if not cleanup_enabled:
+            logging.info(
+                "area tile legacy cleanup skipped on startup; set CACHE_AREA_CLEANUP_ON_STARTUP=true to enable"
+            )
+            return
+
+        cleanup_thread = threading.Thread(target=self.cleanup_old_cache,
+                                          name="area_tile_cleanup",
+                                          daemon=True)
+        cleanup_thread.start()
+        logging.info("area tile legacy cleanup started in background")

@@ -38,6 +38,9 @@ class RedisImageCache(BaseImageCache):
             port=self.port,
             db=self.db,
             password=self.password,
+            socket_connect_timeout=0.5,
+            socket_timeout=0.5,
+            health_check_interval=30,
             decode_responses=False,
         )
         super().__init__(cache_size=cache_size, ttl=ttl)
