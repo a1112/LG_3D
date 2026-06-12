@@ -15,7 +15,6 @@ from PIL import Image
 from Save3D.save import D3Saver
 
 from Base.property.ErrorBase import ServerDetectionException
-from Base.property.Types import LevelingType
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from Base.tools import tool  # FlattenSurface
 
@@ -217,10 +216,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             npy_file = self.saveFolder / coil_id / "3D.npz"
 
             # median_z_int 用于计算阈值偏移
-            median_z_int = int(data_integration.median_3d_mm / 0.016229506582021713) if data_integration.median_3d_mm else 0
-            # 默认阈值上下限
-            threshold_down = 100
-            threshold_up = 100
+            median_z_int = int(data_integration.median_non_zero) if data_integration.median_non_zero else 0
+            threshold_down, threshold_up = self._get_taper_error_thresholds(data_integration)
 
             # png 目录用于保存 Error.png
             png_dir = get_error_cache_dir(str(npy_file))
@@ -229,7 +226,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 png_dir=png_dir,
                 median_z_int=median_z_int,
                 threshold_down=threshold_down,
-                threshold_up=threshold_up
+                threshold_up=threshold_up,
+                scale_factor=data_integration.scan3dCoordinateScaleZ
             )
             logger.info(f"Generated Error image for {data_integration.key}/{coil_id}")
         except Exception as e:
@@ -242,6 +240,24 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
     def join_saver(self):
         self.imageSaver.join()
+
+    def _get_taper_error_thresholds(self, data_integration: DataIntegration):
+        default_threshold = 100
+        try:
+            from AlarmDetection.property import alarmConfigProperty
+
+            _, height_limits, _, _, _ = alarmConfigProperty.get_taper_shape_config(
+                data_integration
+            ).get_config().get_config()
+            if not isinstance(height_limits, (list, tuple)):
+                height_limits = [height_limits]
+            height_limits = [abs(float(value)) for value in height_limits]
+            if height_limits:
+                threshold = int(max(height_limits))
+                return threshold, threshold
+        except Exception as e:
+            logger.warning(f"get taper error thresholds failed, use default {default_threshold}: {e}")
+        return default_threshold, default_threshold
 
     @DetectionSpeedRecord.timing_decorator("数据获取 __getAllData__")
     def __getAllData__(self, data_integration):
@@ -386,10 +402,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         join_image = np.hstack([data["2D"] for data in datas])
         join_mask_image = np.hstack([data["MASK"] for data in datas])
 
-        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
-            npy_data = np.hstack([data["3D"] for data in datas])
-        else:
-            npy_data = tool.hstack_3d([data["3D"] for data in datas], join_mask_image=join_mask_image)
+        # Keep camera depth as raw INT values; mm conversion is offset + scale * INT.
+        npy_data = np.hstack([data["3D"] for data in datas])
 
         if self.rotate == 90 or data_integration.surface == "S":
             join_image = np.rot90(join_image, 1)
@@ -421,17 +435,6 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         data_integration.npy_mask = join_mask_image
         data_integration.pil_mask = Image.fromarray(join_mask_image)
         data_integration.set_npy_data(npy_data)
-        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.LinearRegression:
-            r_z = data_integration.flatten_surface_by_rotation()
-            npy_data = tool.rotate_around_x_axis(npy_data, r_z)
-            data_integration.set("x_rotate", r_z)
-            data_integration.set_npy_data(npy_data)
-
-        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.Config:
-            if self.x_rotate:  # x、旋转
-                npy_data = tool.rotate_around_x_axis(npy_data, self.x_rotate)
-                data_integration.set("x_rotate", self.x_rotate)
-                data_integration.set_npy_data(npy_data)
 
         return join_image, join_mask_image, npy_data
 
@@ -470,12 +473,12 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 stitch_start = time.perf_counter()
                 self.__stitching__(data_integration)
                 stitch_s = time.perf_counter() - stitch_start
+                data_integration.currentSecondaryCoil = self.currentSecondaryCoil
                 save_start = time.perf_counter()
                 self.sync_save(data_integration)
                 save_s = time.perf_counter() - save_start
                 # Thread(target=self.sync_save, args=(data_integration,)).start()
                 # self.sync_save(data_integration)
-                data_integration.currentSecondaryCoil = self.currentSecondaryCoil
                 # AlarmDetection.detection(data_integration)
 
                 # AlarmDetection.detectionAll(data_integration)

@@ -29,8 +29,11 @@ def _detection_taper_shape_(data_integration: DataIntegration):
     print("塔形检测")
     # 角度检测
     line_data_dict = {}
-    for rotate in [i * 20 for i in range(18)]:
-        line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
+    for rotate in range(0, 360, TAPER_ROTATION_STEP):
+        try:
+            line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
+        except (ValueError, IndexError) as e:
+            logger.warning(f"{data_integration.coilId} {data_integration.surface} 塔形角度 {rotate} 跳过: {e}")
 
 
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
@@ -391,11 +394,13 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     no doc
     """
     print("塔形检测 all")
+    taper_shape_type = Globs.control.taper_shape_type
     for dataIntegration in data_integration_list:
-        if DetectionTaperShapeType.WK_TYPE in Globs.control.taper_shape_type:
-            _detectionTaperShapeA_(dataIntegration)
+        if taper_shape_type == DetectionTaperShapeType.NONE:
             dataIntegration.alarmData.set_line_data_dict({})
-        if DetectionTaperShapeType.LINE_TYPE in Globs.control.taper_shape_type:
-            dataIntegration.alarmData.set_line_data_dict( _detection_taper_shape_(dataIntegration))
+            continue
+        if DetectionTaperShapeType.LINE_TYPE not in taper_shape_type:
+            logger.warning(f"unsupported taper_shape_type={taper_shape_type}, fallback to LINE_TYPE")
+        dataIntegration.alarmData.set_line_data_dict(_detection_taper_shape_(dataIntegration))
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
 

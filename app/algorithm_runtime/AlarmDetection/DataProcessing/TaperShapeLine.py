@@ -3,6 +3,10 @@ import numpy as np
 from Base.property.Base import CoilLineData, DataIntegration
 from Base.property.Data3D import LineData
 from Base.tools.data3dTool import getLengthData, getLengthDataByRotate
+from Base.utils.Log import logger
+
+
+TAPER_ROTATION_STEP = 10
 
 
 def find_max_min_value(line, noneDataValue, offset=0):

@@ -49,7 +49,7 @@ def _defect_name_candidates(defect: CoilDefect,
 
 def _crop_margin_for_defect(defect: CoilDefect) -> int | None:
     if _is_2d_defect(defect):
-        return 20
+        return 40
     return None
 
 

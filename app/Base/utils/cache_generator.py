@@ -2,6 +2,8 @@
 缓存生成工具
 用于在 AlgServer 和 Alg2DServer 存储原图时生成缓存
 """
+import json
+
 import cv2
 import numpy as np
 from pathlib import Path
@@ -235,6 +237,11 @@ def generate_error_image(
         s_t = time.time()
 
         height, width = npy_data.shape[:2]
+        scale_factor = float(scale_factor)
+        if scale_factor <= 0:
+            raise ValueError(f"invalid scale_factor: {scale_factor}")
+        threshold_down = abs(float(threshold_down))
+        threshold_up = abs(float(threshold_up))
 
         # 将 mm 阈值转换为原始单位
         threshold_down_units = int(threshold_down / scale_factor)
@@ -261,6 +268,12 @@ def generate_error_image(
         ok, buf = cv2.imencode('.png', output_image)
         if ok:
             error_path.write_bytes(buf.tobytes())
+            (png_dir / "Error.json").write_text(json.dumps({
+                "median_z_int": int(median_z_int),
+                "threshold_down": float(threshold_down),
+                "threshold_up": float(threshold_up),
+                "scale_factor": float(scale_factor),
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
             e_t = time.time()
             median_mm = median_z_int * scale_factor
             min_mm = median_mm - threshold_down

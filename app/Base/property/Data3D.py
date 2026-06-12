@@ -22,29 +22,29 @@ def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
         type_ = "_" + type_
     else:
         type_ = ""
-    line_ = line_[line_[:, 2] > none_data_value]
-    values = line_[:, 2]
-    n = 100  # 你可以选择n的值
-    max_indices = np.argsort(values)[-n:][::-1]  # 排序并反转获取最大值的前n个索引
-    # 获取前n个最小值的索引
-    min_indices = np.argsort(values)[:n]  # 排序并获取最小值的前n个索引
-    if not len(max_indices) or not len(min_indices):
+    line_ = line_[np.isfinite(line_[:, 2]) & (line_[:, 2] > none_data_value)]
+    if line_.size == 0:
         return None, None
 
-    max_index = max_indices[0]
-    min_index = min_indices[0]
+    values = line_[:, 2].astype(float)
+    n = min(100, len(values))
+    max_indices = np.argsort(values)[-n:][::-1]
+    min_indices = np.argsort(values)[:n]
+
+    max_index = int(max_indices[0])
+    min_index = int(min_indices[0])
     if use_iqr:
-        iqr_max_outliers = IQR_outliers(values[max_indices])  # 异常值
-        iqr_min_outliers = IQR_outliers(values[min_indices])  # 异常值
+        iqr_max_outliers = set(IQR_outliers(values[max_indices]).tolist())
+        iqr_min_outliers = set(IQR_outliers(values[min_indices]).tolist())
         for i in max_indices:
             if values[i] in iqr_max_outliers:
                 continue
-            max_index = i
+            max_index = int(i)
             break
         for i in min_indices:
             if values[i] in iqr_min_outliers:
                 continue
-            min_index = i
+            min_index = int(i)
             break
     return PointData(line_[max_index], "max" + type_), PointData(line_[min_index], "min" + type_)
 
@@ -122,10 +122,12 @@ class LineData:
         if self._ray_line_ is None:
             arr = self.ray_data
             non_zero_indices = np.where(arr[:, 2] != 0)[0]
+            if non_zero_indices.size == 0:
+                raise ValueError("塔形检测失败: 线数据为空或全零")
             # 起始索引和结束索引
             start_index = non_zero_indices[0]
             end_index = non_zero_indices[-1]
-            self._ray_line_ = arr[start_index:end_index]
+            self._ray_line_ = arr[start_index:end_index + 1]
         return self._ray_line_
 
     @property
@@ -206,8 +208,12 @@ class LineData:
                 return direction1[0] == direction2[0] and direction1[1] == direction2[1]
 
             direction = (self.p2[0] - self.p1[0] > 0, self.p2[1] - self.p1[1] > 0)
-            rr, cc = list(zip(*[[r, c] for r, c in zip(rr, cc) if
-                                directionEqual(direction, (r - self.p1.x > 0, c - self.p1.y > 0))]))
+            ray_points = [[r, c] for r, c in zip(rr, cc)
+                          if directionEqual(direction, (r - self.p1.x > 0, c - self.p1.y > 0))]
+            if not ray_points:
+                return np.empty((0, 3), dtype=np.int32)
+            ray_points.sort(key=lambda point: (point[0] - self.p1.x) ** 2 + (point[1] - self.p1.y) ** 2)
+            rr, cc = list(zip(*ray_points))
         if not mask:
             zz = self.npy_data[cc, rr]
             return np.array(list(zip(rr, cc, zz)))
@@ -270,12 +276,16 @@ class LineData:
         # 起始索引和结束索引
         start_index = non_zero_indices[0]
         end_index = non_zero_indices[-1]
-        center_index = (start_index + end_index) // 2
+        if end_index - start_index < 2:
+            raise ValueError("塔形检测失败: 有效线数据过短")
+        center_index = (start_index + end_index + 1) // 2
         inner_points = arr[start_index:center_index]
-        outer_points = arr[center_index:end_index]
+        outer_points = arr[center_index:end_index + 1]
         # 最值检测
         self.inner_max_point, self.inner_min_point = find_line_max_min(inner_points, 10, self.useIQR, type_="inner")
         self.outer_max_point, self.outer_min_point = find_line_max_min(outer_points, 10, self.useIQR, type_="outer")
+        if None in (self.inner_max_point, self.inner_min_point, self.outer_max_point, self.outer_min_point):
+            raise ValueError("塔形检测失败: 内外圈有效线数据不足")
 
     def all_point_data_model(self, data_integration):
         return [self.inner_min_point.pointDataModel(data_integration),

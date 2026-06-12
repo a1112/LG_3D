@@ -5,6 +5,11 @@ Row {
     // 直接绑定到 listItemCoil.maxDefectName，避免手动同步
     property string maxDefectName: listItemCoil.maxDefectName || ""
     property int defectCount: coilModel ? coilModel.coilDefectCountTotal : 0
+    property int defectCountS: coilModel ? coilModel.coilDefectCountS : 0
+    property int defectCountL: coilModel ? coilModel.coilDefectCountL : 0
+    property string defectStatusTip: "S: " + defectCountS
+                                    + "  L: " + defectCountL
+                                    + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
 
     spacing:1
     Label{
@@ -33,9 +38,27 @@ Row {
             font.bold: true
             font.family: "Microsoft YaHei"
             ToolTip.visible: ma.containsMouse
-            ToolTip.text: "S: " + coilModel.coilDefectCountS + "  L: " + coilModel.coilDefectCountL
+            ToolTip.text: defectStatusTip
             MouseArea {
                 id: ma
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+            }
+        }
+        Label {
+            visible: listItemCoil.hasCoilData && defectCount > 0 && maxDefectName.length > 0
+            width: Math.min(90, implicitWidth)
+            text: maxDefectName
+            elide: Text.ElideRight
+            font.pointSize: 9
+            color: listItemCoil.defectNameColor
+            font.bold: true
+            font.family: "Microsoft YaHei"
+            ToolTip.visible: maxDefectMa.containsMouse
+            ToolTip.text: defectStatusTip
+            MouseArea {
+                id: maxDefectMa
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton

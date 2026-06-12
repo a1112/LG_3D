@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import time
 from pathlib import Path
@@ -11,6 +12,7 @@ from fastapi.responses import FileResponse, Response
 from starlette.responses import StreamingResponse
 from starlette.websockets import WebSocketDisconnect
 
+from CoilDataBase.Coil import get_coil_state_by_coil_id
 from Base.property.Data3D import LineData
 from Base.property.Types import Point2D
 from Base.tools.DataGet import DataGet, noFindImageByte
@@ -21,6 +23,43 @@ from cache import cacheProvider
 
 router = APIRouter(tags=["深度数据访问服务"])
 log = logging.getLogger(__name__)
+
+
+def _get_error_render_baseline(coil_id: str, surface_key: str, npy_data: np.ndarray):
+    scale_factor = 0.016229506582021713
+    median_z_int = None
+
+    try:
+        coil_state = get_coil_state_by_coil_id(int(coil_id), surface_key)
+    except (TypeError, ValueError):
+        coil_state = None
+
+    if coil_state is not None:
+        if coil_state.scan3dCoordinateScaleZ:
+            scale_factor = float(coil_state.scan3dCoordinateScaleZ)
+        if coil_state.median_3d:
+            median_z_int = int(coil_state.median_3d)
+
+    if median_z_int is None:
+        valid_data = npy_data[npy_data > 1000]
+        if len(valid_data) == 0:
+            return None, scale_factor
+        median_z_int = int(np.median(valid_data))
+
+    return median_z_int, scale_factor
+
+
+def _error_cache_matches(error_cache_path: Path, threshold_down_mm: int, threshold_up_mm: int) -> bool:
+    meta_path = error_cache_path.with_suffix(".json")
+    if not meta_path.exists():
+        return False
+    try:
+        data = json.loads(meta_path.read_text(encoding="utf-8"))
+        cached_down = abs(float(data.get("threshold_down")))
+        cached_up = abs(float(data.get("threshold_up")))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+    return cached_down == abs(float(threshold_down_mm)) and cached_up == abs(float(threshold_up_mm))
 
 
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
@@ -311,8 +350,8 @@ async def get_error(
     """
     mask = get_bool(mask)
     scale = float(scale)
-    threshold_down_mm = int(minValue)
-    threshold_up_mm = int(maxValue)
+    threshold_down_mm = abs(int(minValue))
+    threshold_up_mm = abs(int(maxValue))
     sT = time.time()
 
     # ========== 优先读取预生成的缓存 ==========
@@ -330,7 +369,7 @@ async def get_error(
 
         error_cache_path = coil_dir / "png" / "Error.png"
 
-        if error_cache_path.exists():
+        if error_cache_path.exists() and _error_cache_matches(error_cache_path, threshold_down_mm, threshold_up_mm):
             # 读取缓存的 Error.png
             with open(error_cache_path, "rb") as f:
                 img_bytes = f.read()
@@ -362,18 +401,13 @@ async def get_error(
         img_bytes = io.BytesIO(img_encoded.tobytes())
         return StreamingResponse(img_bytes, media_type="image/png")
 
-    # mm 到原始单位的转换系数（与 ImageMosaic.py 中一致）
-    scale_factor = 0.016229506582021713
-
-    # 计算 median（中位数）
-    valid_data = npy_data[npy_data > 1000]  # 只使用有效数据
-    if len(valid_data) == 0:
+    median_z_int, scale_factor = _get_error_render_baseline(coil_id, surface_key, npy_data)
+    if median_z_int is None:
         logging.warning(f"No valid 3D data for coil_id={coil_id}, surface={surface_key}")
         blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
         _, img_encoded = cv2.imencode('.png', blank_image)
         img_bytes = io.BytesIO(img_encoded.tobytes())
         return StreamingResponse(img_bytes, media_type="image/png")
-    median_z_int = int(np.median(valid_data))
 
     # 将 mm 阈值转换为原始单位
     threshold_down_units = int(threshold_down_mm / scale_factor)
