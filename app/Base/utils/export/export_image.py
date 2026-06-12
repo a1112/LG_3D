@@ -1,5 +1,6 @@
 #  数据导出
 import io
+import json
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -9,60 +10,204 @@ from Base import CONFIG
 from Base.CONFIG import serverConfigProperty
 from .export_config import ExportConfig, XlsxWriterFormatConfig
 from .export_database import get_defects, get_header_data
-from Base.tools.DataGet import DataGet, get_pil_image_by_defect
+from Base.tools.DataGet import DataGet, get_pil_image
+from Base.tools.tool import expansion_box
 
 
-def get_pil_image_from_classifier_save(defect: CoilDefect):
+def _defect_int(value, default=0) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _defect_box_values(defect: CoilDefect) -> tuple[int, int, int, int, int, int]:
+    x1 = _defect_int(getattr(defect, "defectX", 0))
+    y1 = _defect_int(getattr(defect, "defectY", 0))
+    w = _defect_int(getattr(defect, "defectW", 0))
+    h = _defect_int(getattr(defect, "defectH", 0))
+    return x1, y1, w, h, x1 + w, y1 + h
+
+
+def _normalized_defect_name(defect_name: str) -> str:
+    defect_name = str(defect_name or "")
+    if defect_name.endswith(")") and "(" in defect_name:
+        return defect_name.split("(")[0].rstrip()
+    return defect_name
+
+
+def _defect_name_candidates(defect: CoilDefect,
+                            defect_name: str | None = None) -> list[str]:
+    names = []
+    for value in (defect_name, getattr(defect, "defectName", "")):
+        name = str(value or "")
+        for candidate in (name, _normalized_defect_name(name)):
+            if candidate and candidate not in names:
+                names.append(candidate)
+    return names or ["Unknown"]
+
+
+def _crop_margin_for_defect(defect: CoilDefect) -> int | None:
+    if _is_2d_defect(defect):
+        return 20
+    return None
+
+
+def _classifier_file_names(defect: CoilDefect,
+                           crop_margin: int | None = None) -> list[str]:
+    coil_id = getattr(defect, "secondaryCoilId", "")
+    x1, y1, w, h, x2, y2 = _defect_box_values(defect)
+    suffix = "" if crop_margin is None else f"_m{crop_margin}"
+    names = [
+        f"{coil_id}_{x1}_{y1}_{x2}_{y2}{suffix}.png",
+        f"{coil_id}_{x1}_{y1}_{w}_{h}{suffix}.png",
+        f"{coil_id}_{x1}_{y1}_{x2}_{y2}{suffix}.jpg",
+        f"{coil_id}_{x1}_{y1}_{w}_{h}{suffix}.jpg",
+        f"{coil_id}_{x1}_{y1}_{x2}_{y2}{suffix}.jpeg",
+        f"{coil_id}_{x1}_{y1}_{w}_{h}{suffix}.jpeg",
+    ]
+    return list(dict.fromkeys(names))
+
+
+def _load_image_copy(image_path: Path):
+    try:
+        if image_path.exists() and image_path.is_file():
+            with Image.open(image_path) as image:
+                return image.copy()
+    except Exception as e:
+        print(f"[Export] failed to load saved defect image {image_path}: {e}")
+    return None
+
+
+def _iter_defect_data_values(value):
+    if value is None:
+        return
+    if isinstance(value, dict):
+        for key in (
+                "image_path",
+                "imagePath",
+                "path",
+                "file",
+                "url",
+                "defect_image",
+                "defectImage",
+                "classifier_image",
+                "classifierImage",
+                "clip_image",
+                "clipImage",
+                "thumbnail",
+        ):
+            if key in value:
+                yield value[key]
+        for child in value.values():
+            if isinstance(child, (dict, list, tuple)):
+                yield from _iter_defect_data_values(child)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            yield from _iter_defect_data_values(child)
+    elif isinstance(value, str):
+        yield value
+
+
+def _defect_data_image_paths(defect: CoilDefect) -> list[Path]:
+    defect_data = getattr(defect, "defectData", None)
+    if not defect_data:
+        return []
+
+    parsed_values = [defect_data]
+    if isinstance(defect_data, str):
+        try:
+            parsed_values.append(json.loads(defect_data))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
+
+    image_paths = []
+    seen_paths = set()
+    image_suffixes = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+    for parsed_value in parsed_values:
+        for value in _iter_defect_data_values(parsed_value):
+            if not isinstance(value, str):
+                continue
+            path_text = value.strip().strip('"').strip("'")
+            if not path_text or path_text.startswith(("http://", "https://")):
+                continue
+            image_path = Path(path_text)
+            if image_path.suffix.lower() not in image_suffixes:
+                continue
+            if not image_path.is_absolute():
+                for config in serverConfigProperty.surfaceConfigPropertyDict.values():
+                    candidate = Path(config.saveFolder) / image_path
+                    if candidate not in seen_paths:
+                        seen_paths.add(candidate)
+                        image_paths.append(candidate)
+                continue
+            if image_path not in seen_paths:
+                seen_paths.add(image_path)
+                image_paths.append(image_path)
+    return image_paths
+
+
+def _classifier_dirs(defect: CoilDefect,
+                     defect_name: str | None = None) -> list[Path]:
+    coil_id = getattr(defect, "secondaryCoilId", "")
+    surface = getattr(defect, "surface", None)
+    configs = []
+    surface_config = serverConfigProperty.surfaceConfigPropertyDict.get(surface)
+    if surface_config:
+        configs.append(surface_config)
+    configs.extend(serverConfigProperty.surfaceConfigPropertyDict.values())
+
+    candidate_dirs = []
+    seen_dirs = set()
+    for config in configs:
+        save_folder = Path(config.saveFolder)
+        for name in _defect_name_candidates(defect, defect_name):
+            for classifier_dir in (
+                    save_folder / str(coil_id) / "classifier" / name,
+                    save_folder.parent / "classifier_save" / "classifier" /
+                    name,
+            ):
+                if classifier_dir in seen_dirs:
+                    continue
+                seen_dirs.add(classifier_dir)
+                candidate_dirs.append(classifier_dir)
+    return candidate_dirs
+
+
+def get_pil_image_from_classifier_save(defect: CoilDefect,
+                                       defect_name: str | None = None,
+                                       crop_margin: int | None = None):
     """Load a saved classifier crop for a defect if it exists."""
     try:
-        coil_id = defect.secondaryCoilId
-        x1 = int(defect.defectX)
-        y1 = int(defect.defectY)
-        x2 = x1 + int(defect.defectW)
-        y2 = y1 + int(defect.defectH)
-        possible_names = [
-            f"{coil_id}_{x1}_{y1}_{x2}_{y2}.png",
-            f"{coil_id}_{x1}_{y1}_{int(defect.defectW)}_{int(defect.defectH)}.png",
+        if crop_margin is None:
+            for image_path in _defect_data_image_paths(defect):
+                image = _load_image_copy(image_path)
+                if image is not None:
+                    return image
+
+        x1, y1, *_ = _defect_box_values(defect)
+        coil_id = getattr(defect, "secondaryCoilId", "")
+        glob_patterns = [
+            f"{coil_id}_{x1}_{y1}_*.png",
+            f"{coil_id}_{x1}_{y1}_*.jpg",
+            f"{coil_id}_{x1}_{y1}_*.jpeg",
         ]
-
-        defect_name = defect.defectName or ""
-        if defect_name.endswith(")"):
-            defect_name = defect_name.split("(")[0].rstrip()
-
-        candidate_dirs = []
-        surface_config = serverConfigProperty.surfaceConfigPropertyDict.get(
-            defect.surface)
-        if surface_config:
-            save_folder = Path(surface_config.saveFolder)
-            candidate_dirs.extend([
-                save_folder / str(coil_id) / "classifier" / defect_name,
-                save_folder.parent / "classifier_save" / "classifier" /
-                defect_name,
-            ])
-
-        for config in serverConfigProperty.surfaceConfigPropertyDict.values():
-            save_folder = Path(config.saveFolder)
-            candidate_dirs.extend([
-                save_folder / str(coil_id) / "classifier" / defect_name,
-                save_folder.parent / "classifier_save" / "classifier" /
-                defect_name,
-            ])
-
-        seen_dirs = set()
-        for classifier_dir in candidate_dirs:
-            if classifier_dir in seen_dirs:
-                continue
-            seen_dirs.add(classifier_dir)
+        for classifier_dir in _classifier_dirs(defect, defect_name):
             if not classifier_dir.exists():
                 continue
-            for name in possible_names:
+            for name in _classifier_file_names(defect, crop_margin):
                 image_path = classifier_dir / name
-                if image_path.exists():
-                    return Image.open(image_path)
+                image = _load_image_copy(image_path)
+                if image is not None:
+                    return image
+            if crop_margin is not None:
+                continue
+            for glob_pattern in glob_patterns:
+                for image_path in sorted(classifier_dir.glob(glob_pattern)):
+                    image = _load_image_copy(image_path)
+                    if image is not None:
+                        return image
 
-        print(
-            f"Warning: Image not found for defect {defect.defectName} in coil {coil_id}"
-        )
         return None
 
     except Exception as e:
@@ -70,17 +215,130 @@ def get_pil_image_from_classifier_save(defect: CoilDefect):
         return None
 
 
-def get_pil_image_for_export(defect: CoilDefect):
-    image = get_pil_image_from_classifier_save(defect)
+def _crop_source_for_defect(defect: CoilDefect) -> tuple[str, str]:
+    if _is_2d_defect(defect):
+        return "source", "AREA"
+    return "image", "GRAY"
+
+
+def _get_cached_source_image(defect: CoilDefect,
+                             source_image_cache: dict | None = None):
+    if source_image_cache is None:
+        source_image_cache = {}
+
+    source_type, image_type = _crop_source_for_defect(defect)
+    key = (str(getattr(defect, "secondaryCoilId", "")),
+           str(getattr(defect, "surface", "")), source_type, image_type)
+    if key in source_image_cache:
+        return source_image_cache[key]
+
+    image = get_pil_image(defect.surface,
+                          defect.secondaryCoilId,
+                          source_type=source_type,
+                          type_=image_type)
+    if image is None:
+        return None
+    source_image_cache[key] = image.copy()
+    return source_image_cache[key]
+
+
+def _crop_defect_image_cached(defect: CoilDefect,
+                              source_image_cache: dict | None = None):
+    source_image = _get_cached_source_image(defect, source_image_cache)
+    if source_image is None:
+        return None
+
+    x, y, w, h, *_ = _defect_box_values(defect)
+    box = [x, y, max(w, 1), max(h, 1)]
+    crop_margin = _crop_margin_for_defect(defect)
+    if crop_margin is None:
+        crop_box = expansion_box(box, source_image.size, 0.1, 10, 50)
+    else:
+        crop_box = _expand_box_with_margin(box, source_image.size,
+                                           crop_margin)
+    return source_image.crop([
+        crop_box[0],
+        crop_box[1],
+        crop_box[2] + crop_box[0],
+        crop_box[3] + crop_box[1],
+    ])
+
+
+def _expand_box_with_margin(box, image_size, margin: int):
+    x, y, w, h = box
+    width, height = image_size
+    x1 = max(0, int(x) - margin)
+    y1 = max(0, int(y) - margin)
+    x2 = min(width, int(x) + int(w) + margin)
+    y2 = min(height, int(y) + int(h) + margin)
+    if x2 <= x1:
+        x2 = min(width, x1 + 1)
+    if y2 <= y1:
+        y2 = min(height, y1 + 1)
+    return x1, y1, x2 - x1, y2 - y1
+
+
+def _classifier_save_path(defect: CoilDefect,
+                          defect_name: str | None = None,
+                          crop_margin: int | None = None) -> Path | None:
+    dirs = _classifier_dirs(defect, defect_name)
+    if not dirs:
+        return None
+    return dirs[0] / _classifier_file_names(defect, crop_margin)[0]
+
+
+def _save_classifier_crop(defect: CoilDefect,
+                          image: Image.Image,
+                          defect_name: str | None = None,
+                          crop_margin: int | None = None) -> None:
+    image_path = _classifier_save_path(defect, defect_name, crop_margin)
+    if image_path is None:
+        return
+
+    try:
+        image_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(image_path, format="PNG")
+    except Exception as e:
+        print(
+            f"[Export] failed to save defect crop coil={defect.secondaryCoilId}, "
+            f"surface={defect.surface}, defect={defect_name or defect.defectName}: {e}"
+        )
+
+
+def _close_source_image_cache(source_image_cache: dict) -> None:
+    for image in source_image_cache.values():
+        try:
+            image.close()
+        except Exception as e:
+            pass
+    source_image_cache.clear()
+
+
+def get_pil_image_for_export(defect: CoilDefect,
+                             source_image_cache: dict | None = None,
+                             defect_name: str | None = None):
+    """Prefer persisted defect crops; crop the source image only as fallback."""
+    crop_margin = _crop_margin_for_defect(defect)
+    image = get_pil_image_from_classifier_save(defect, defect_name,
+                                               crop_margin)
     if image is not None:
         return image
+
     try:
-        return get_pil_image_by_defect(defect)
+        image = _crop_defect_image_cached(defect, source_image_cache)
+        if image is not None:
+            _save_classifier_crop(defect, image, defect_name, crop_margin)
+            return image
+        if crop_margin is not None:
+            return get_pil_image_from_classifier_save(defect, defect_name)
+        return None
     except Exception as e:
         print(
             f"[Export] failed to crop defect image from source coil={defect.secondaryCoilId}, "
             f"surface={defect.surface}, defect={defect.defectName}: {e}"
         )
+        if crop_margin is not None:
+            return get_pil_image_from_classifier_save(defect, defect_name)
         return None
 
 
@@ -118,6 +376,7 @@ def export_defect_image_by_names(coil_id_list,
         names = []
     data_all = []
     head_key_list = []
+    source_image_cache = {}
     skipped_images = []  # 记录跳过的图像
     defect_count_total = 0  # 统计总缺陷数
     image_found_count = 0  # 统计找到的图像数
@@ -165,10 +424,8 @@ def export_defect_image_by_names(coil_id_list,
                     continue
 
             defect_count_total += 1  # 统计导出的缺陷数
-            original_defect_name = defect.defectName
-            defect.defectName = defect_name
-            image = get_pil_image_for_export(defect)
-            defect.defectName = original_defect_name
+            image = get_pil_image_for_export(defect, source_image_cache,
+                                             defect_name)
             # 失败跳过逻辑：如果图像加载失败，跳过该缺陷
             if image is None:
                 skipped_images.append({
@@ -184,12 +441,19 @@ def export_defect_image_by_names(coil_id_list,
             text = f"{defect_name}\n宽：{int((defect.defectW*0.34))}\n高：{int(defect.defectH*0.34)}"
             insert_image_and_name(worksheet, row_num, offset, text, image,
                                   format_)
+            try:
+                image.close()
+            except Exception as e:
+                pass
             offset += 2
 
     # 输出统计信息
     print(
-        f"[Export] Total defects: {defect_count_total}, Images found: {image_found_count}, Skipped: {len(skipped_images)}"
+        f"[Export] Total defects: {defect_count_total}, "
+        f"Images found: {image_found_count}, Skipped: {len(skipped_images)}"
     )
+    print(f"[Export] Source images loaded for crop: {len(source_image_cache)}")
+    _close_source_image_cache(source_image_cache)
 
     # 输出跳过的图像统计
     if skipped_images:
@@ -211,6 +475,29 @@ def _is_2d_defect(defect: CoilDefect) -> bool:
 
 def _is_3d_defect(defect: CoilDefect) -> bool:
     return not _is_2d_defect(defect)
+
+
+def _is_show_defect_class(defect: CoilDefect) -> bool:
+    raw_name = str(getattr(defect, "defectName", "") or "")
+    try:
+        defect_name = CONFIG.defectClassesProperty.format_name(raw_name)
+    except Exception:
+        defect_name = raw_name
+
+    defect_config = CONFIG.defectClassesProperty.data.get(defect_name)
+    if defect_config is None:
+        defect_config = CONFIG.defectClassesProperty.data.get(raw_name)
+    if defect_config is None:
+        return bool(CONFIG.defectClassesProperty.default.get("show", True))
+    return bool(defect_config.get("show", True))
+
+
+def _is_3d_show_defect(defect: CoilDefect) -> bool:
+    return _is_3d_defect(defect) and _is_show_defect_class(defect)
+
+
+def _is_3d_un_show_defect(defect: CoilDefect) -> bool:
+    return _is_3d_defect(defect) and not _is_show_defect_class(defect)
 
 
 def _sheet_name(base_name: str, suffix: str) -> str:
@@ -352,6 +639,10 @@ def _defect_3d_sheet_name(base_name: str) -> str:
     return _sheet_name(base_name, "_3D")
 
 
+def _defect_3d_un_show_sheet_name(base_name: str) -> str:
+    return _sheet_name(_defect_3d_sheet_name(base_name), "_屏蔽")
+
+
 def export_3d_defect_image(coil_id_list,
                            workbook,
                            export_config: ExportConfig = None,
@@ -366,15 +657,28 @@ def export_3d_defect_image(coil_id_list,
     if not export_config.defect_show_info and not export_config.defect_un_show_info:
         return
 
-    worksheet = workbook.add_worksheet(
-        _defect_3d_sheet_name(export_config.worksheet_defect_image_name))
-    export_defect_image_by_names(coil_id_list,
-                                 worksheet,
-                                 export_config,
-                                 [],
-                                 False,
-                                 format_=format_,
-                                 defect_filter=_is_3d_defect)
+    if export_config.defect_show_info:
+        worksheet = workbook.add_worksheet(
+            _defect_3d_sheet_name(export_config.worksheet_defect_image_name))
+        export_defect_image_by_names(coil_id_list,
+                                     worksheet,
+                                     export_config,
+                                     [],
+                                     False,
+                                     format_=format_,
+                                     defect_filter=_is_3d_show_defect)
+
+    if export_config.defect_un_show_info:
+        worksheet = workbook.add_worksheet(
+            _defect_3d_un_show_sheet_name(
+                export_config.worksheet_defect_image_name))
+        export_defect_image_by_names(coil_id_list,
+                                     worksheet,
+                                     export_config,
+                                     [],
+                                     False,
+                                     format_=format_,
+                                     defect_filter=_is_3d_un_show_defect)
 
 
 def export_area_2d_defect_image(coil_id_list,
@@ -383,49 +687,15 @@ def export_area_2d_defect_image(coil_id_list,
                                 format_=None):
     worksheet = workbook.add_worksheet(
         _area_sheet_name(export_config.worksheet_defect_image_name))
-    headers = ["流水号", "卷号", "表面", "2D缺陷数", "缺陷明细", "AREA缺陷图"]
-    worksheet.write_row(0, 0, headers)
-    worksheet.freeze_panes(1, 0)
-    worksheet.set_column(0, 0, 12)
-    worksheet.set_column(1, 1, 18)
-    worksheet.set_column(2, 2, 8)
-    worksheet.set_column(3, 3, 10)
-    worksheet.set_column(4, 4, 48)
-    worksheet.set_column(5, 5, 105)
+    export_defect_image_by_names(coil_id_list,
+                                 worksheet,
+                                 export_config,
+                                 [],
+                                 False,
+                                 format_=format_,
+                                 defect_filter=_is_2d_defect)
+    return
 
-    row_num = 1
-    for secondary_coil in coil_id_list:
-        defects_by_surface = {"S": [], "L": []}
-        for defect in get_defects(secondary_coil):
-            if _is_2d_defect(defect) and getattr(defect, "surface",
-                                                 None) in defects_by_surface:
-                defects_by_surface[defect.surface].append(defect)
-
-        for surface, defects in defects_by_surface.items():
-            if not defects:
-                continue
-
-            area_image = _load_area_image(secondary_coil.Id, surface)
-            worksheet.set_row(row_num, 410)
-            worksheet.write(row_num, 0, secondary_coil.Id, format_.cell_format)
-            worksheet.write(row_num, 1, secondary_coil.CoilNo,
-                            format_.cell_format)
-            worksheet.write(row_num, 2, surface, format_.cell_format)
-            worksheet.write(row_num, 3, len(defects), format_.cell_format)
-            worksheet.write(row_num, 4, _format_area_defect_details(defects),
-                            format_.cell_format)
-
-            if area_image is None:
-                worksheet.write(row_num, 5, "AREA image not found",
-                                format_.cell_format)
-            else:
-                annotated_image = _draw_area_defects(area_image, defects)
-                _insert_area_defect_image(worksheet, row_num, 5,
-                                          annotated_image)
-            row_num += 1
-
-    if row_num == 1:
-        worksheet.write(1, 0, "无2D缺陷", format_.cell_format)
 
 
 def export_defect_show_image(coil_id_list,

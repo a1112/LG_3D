@@ -857,7 +857,10 @@ async def export_defects(request: dict):
         导出结果统计
     """
     from pathlib import Path
-    from Base.tools.DataGet import get_pil_image_by_defect
+    from Base.utils.export.export_image import (
+        _close_source_image_cache,
+        get_pil_image_for_export,
+    )
     from CoilDataBase.models.CoilDefect import CoilDefect
 
     # 安全检查：只允许本地路径
@@ -891,6 +894,7 @@ async def export_defects(request: dict):
 
     exported_count = 0
     error_count = 0
+    source_image_cache = {}
 
     # 导出每个缺陷
     for defect_name, defect_list in defect_groups.items():
@@ -917,6 +921,7 @@ async def export_defects(request: dict):
                 coil_defect.defectY = defect_y
                 coil_defect.defectW = defect_w
                 coil_defect.defectH = defect_h
+                coil_defect.defectData = defect_data.get("defectData", "")
 
                 # 获取缺陷图像
                 manual_image_path = _get_manual_image_path(defect_data)
@@ -924,7 +929,10 @@ async def export_defects(request: dict):
                     with Image.open(manual_image_path) as image:
                         defect_image = image.copy()
                 else:
-                    defect_image = get_pil_image_by_defect(coil_defect)
+                    defect_image = get_pil_image_for_export(
+                        coil_defect, source_image_cache, defect_name)
+                if defect_image is None:
+                    raise FileNotFoundError("defect image not found")
 
                 # 生成文件名：coil_id_类别_位置_序号.jpg
                 x_pos = int(defect_x)
@@ -934,11 +942,17 @@ async def export_defects(request: dict):
                 # 保存图像
                 save_path = category_folder / filename
                 defect_image.save(save_path, quality=95)
+                try:
+                    defect_image.close()
+                except Exception:
+                    pass
                 exported_count += 1
 
             except Exception as e:
                 error_count += 1
                 print(f"导出缺陷失败: {e}")
+
+    _close_source_image_cache(source_image_cache)
 
     return {
         "exported": exported_count,

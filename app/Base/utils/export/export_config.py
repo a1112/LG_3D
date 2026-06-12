@@ -19,7 +19,7 @@ class ExportConfig:
         self.export_alarm_loose = True
         self.export_defect_data = True
         self.defect_show_info = True
-        self.defect_un_show_info = True
+        self.defect_un_show_info = False
         self.export_defect_image = True
         self.export_area_defect_image = True
 
@@ -30,6 +30,8 @@ class ExportConfig:
             self.defect_show_info = self.export_config.defect_show_info
             self.defect_un_show_info = self.export_config.defect_un_show_info
             self.export_area_defect_image = self.get("area_defect_image", True)
+            # 确保图像导出始终启用
+            self.export_defect_image = True
 
     def get(self, key, default_value):
         if self.export_config is None:

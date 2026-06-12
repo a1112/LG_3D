@@ -126,12 +126,18 @@ def save_detection_item(info, image, save_url):
     #     sub_image_save_url = sub_image_save_folder / f"{label}_{xmin}_{ymin}_{xmax}_{ymax}.png"
     #     image.crop((xmin, ymin, xmax, ymax)).save(sub_image_save_url)
 
+def _classifier_coil_id_name(save_base_folder=None, id_str=None):
+    if save_base_folder is not None:
+        folder_name = Path(save_base_folder).name
+        if folder_name:
+            return folder_name
+    if id_str:
+        return str(id_str).split("_", 1)[0]
+    return "unknown"
+
+
 def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder=None, save_to_folders=True):
-    if not id_str:
-        id_str = ""
-    else:
-        id_str=id_str+"_"
-    id_str=""
+    coil_id_name = _classifier_coil_id_name(save_base_folder, id_str)
     save_base_folder_list = []
     if save_base_folder is not None:
         save_base_folder_list.append(save_base_folder)
@@ -144,11 +150,11 @@ def save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_fold
         index = 0
         for res, sub_image in zip(sub_info_list, sub_image_list):
             index += 1
-            coil_id_name = save_base_folder.name
-            for save_base_folder in save_base_folder_list:
+            for save_base_folder_item in save_base_folder_list:
                 xmin, ymin, xmax, ymax, label_index, source, name = res
-                save_base = Path(save_base_folder) /"classifier"/ name
-                save_url = save_base/f"{coil_id_name}_{xmin}_{ymin}_{xmax}_{ymax}.png" #  {id_str}{label_index}_{name}_{index}_
+                save_base = Path(save_base_folder_item) /"classifier"/ name
+                save_url = save_base / (
+                    f"{coil_id_name}_{xmin}_{ymin}_{xmax}_{ymax}.png")
                 executor.submit(save_classifier_item, sub_image, save_url)
 
 def save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder=None,save_to_folders=True):
@@ -273,8 +279,14 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
     res_list = cdm_.predict(clip_image_list)
     if control.detection_model == DetectionType.DetectionAndClassifiers:
         sub_info_list,sub_image_list = classifiers_data(clip_image_list, res_list, pil_image, clip_info_list)
-        if control.save_sub_image:
-            save_classifier_result(sub_info_list, sub_image_list, id_str, save_base_folder,save_to_folders=save_only)
+        if save_base_folder is not None or control.save_sub_image:
+            save_classifier_result(sub_info_list,
+                                   sub_image_list,
+                                   id_str,
+                                   save_base_folder,
+                                   save_to_folders=save_only or (
+                                       save_base_folder is None
+                                       and control.save_sub_image))
     if control.save_detection:
         save_detection(res_list, clip_image_list, clip_info_list, id_str, save_base_folder,save_to_folders=save_only)
 
