@@ -335,6 +335,38 @@ def test_grading_alarm_taper_shape_keeps_original_inner_outer_boundary_after_tri
     assert captured[0].in_taper_max_value == 0.0
 
 
+def test_grading_alarm_taper_shape_keeps_boundary_with_inner_mask_holes(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[:4, 2] = 0
+    ray_line[5, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        outer_max_point=_point(5, 0, 260),
+        outer_min_point=_point(6, 0, 100),
+        inner_max_point=_point(4, 0, 100),
+        inner_min_point=_point(4, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].out_taper_max_value == 80.0
+    assert captured[0].in_taper_max_value == 0.0
+
+
 def test_generate_error_image_uses_absolute_thresholds(tmp_path):
     npy_data = np.array([[1989, 2000, 2021]], dtype=np.uint16)
 

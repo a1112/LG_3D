@@ -97,7 +97,6 @@ def _trim_line_segments(data_integration: DataIntegration,
 
     if line_points.size == 0:
         return None, 0.0, 0.0, True
-    line_points = line_points[np.isfinite(line_points[:, 2]) & (line_points[:, 2] > 10)]
     if len(line_points) < 4:
         return None, 0.0, 0.0, True
 
@@ -116,6 +115,8 @@ def _trim_line_segments(data_integration: DataIntegration,
         inner_points = inner_points[inner_skip:]
     if outer_skip > 0:
         outer_points = outer_points[:-outer_skip]
+    inner_points = inner_points[np.isfinite(inner_points[:, 2]) & (inner_points[:, 2] > 10)]
+    outer_points = outer_points[np.isfinite(outer_points[:, 2]) & (outer_points[:, 2] > 10)]
     if len(inner_points) == 0 or len(outer_points) == 0:
         return None, ignored_inner_mm, ignored_outer_mm, True
     return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, True
