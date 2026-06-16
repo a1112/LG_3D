@@ -162,6 +162,12 @@ def _select_max_metrics(data_integration: DataIntegration,
     return max(valid_metrics, key=lambda metrics: _rel_mm(data_integration, getattr(metrics, point_attr).z))
 
 
+def _select_min_metrics(data_integration: DataIntegration,
+                        valid_metrics: list[TaperLineMetrics],
+                        point_attr: str) -> TaperLineMetrics:
+    return min(valid_metrics, key=lambda metrics: _rel_mm(data_integration, getattr(metrics, point_attr).z))
+
+
 def _grade_by_limits(value: float, height_limits: list[float]) -> int:
     grad = 1
     for index, height_limit in enumerate(reversed(height_limits)):
@@ -170,6 +176,13 @@ def _grade_by_limits(value: float, height_limits: list[float]) -> int:
             grad = max(grad, grading_level)
             break
     return grad
+
+
+def _matched_limit(value: float, height_limits: list[float]) -> float | None:
+    for height_limit in reversed(height_limits):
+        if value >= height_limit:
+            return height_limit
+    return None
 
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
@@ -183,49 +196,58 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         return AlarmGradResult(3, error_msg, taper_shape_config)
 
     max_outer_metrics = _select_max_metrics(data_integration, valid_metrics, "outer_max_point")
+    min_outer_metrics = _select_min_metrics(data_integration, valid_metrics, "outer_min_point")
     max_inner_metrics = _select_max_metrics(data_integration, valid_metrics, "inner_max_point")
+    min_inner_metrics = _select_min_metrics(data_integration, valid_metrics, "inner_min_point")
 
     out_taper_max_value = _rel_mm(data_integration, max_outer_metrics.outer_max_point.z)
-    out_taper_min_value = _rel_mm(data_integration, max_outer_metrics.outer_min_point.z)
+    out_taper_min_value = _rel_mm(data_integration, min_outer_metrics.outer_min_point.z)
     in_taper_max_value = _rel_mm(data_integration, max_inner_metrics.inner_max_point.z)
-    in_taper_min_value = _rel_mm(data_integration, max_inner_metrics.inner_min_point.z)
+    in_taper_min_value = _rel_mm(data_integration, min_inner_metrics.inner_min_point.z)
 
-    worst_value = max(out_taper_max_value, in_taper_max_value)
-    grad = _grade_by_limits(worst_value, height_limits)
+    deviations = [
+        ("外塔最高值", out_taper_max_value, max_outer_metrics),
+        ("外塔最低值", out_taper_min_value, min_outer_metrics),
+        ("内塔最高值", in_taper_max_value, max_inner_metrics),
+        ("内塔最低值", in_taper_min_value, min_inner_metrics),
+    ]
+    worst_label, worst_value, worst_metrics = max(deviations, key=lambda item: abs(item[1]))
+    selected_metrics = [max_outer_metrics, min_outer_metrics, max_inner_metrics, min_inner_metrics]
+
+    grad = _grade_by_limits(abs(worst_value), height_limits)
 
     messages = []
     if grad > 1:
-        for height_limit in reversed(height_limits):
-            if out_taper_max_value >= height_limit:
+        for label, value, metrics in deviations:
+            matched_limit = _matched_limit(abs(value), height_limits)
+            if matched_limit is None:
+                continue
+            if value >= 0:
                 messages.append(
-                    f"外塔最高值{out_taper_max_value:.2f} >= {height_limit:.2f} "
-                    f"检测角度{max_outer_metrics.line_data.rotation_angle}"
+                    f"{label}{value:.2f} >= {matched_limit:.2f} "
+                    f"检测角度{metrics.line_data.rotation_angle}"
                 )
-                break
-        for height_limit in reversed(height_limits):
-            if in_taper_max_value >= height_limit:
+            else:
                 messages.append(
-                    f"内塔最高值{in_taper_max_value:.2f} >= {height_limit:.2f} "
-                    f"检测角度{max_inner_metrics.line_data.rotation_angle}"
+                    f"{label}{value:.2f} <= -{matched_limit:.2f} "
+                    f"检测角度{metrics.line_data.rotation_angle}"
                 )
-                break
     error_msg = "\n".join(messages) if messages else "正常"
 
-    worst_metrics = max_outer_metrics if out_taper_max_value >= in_taper_max_value else max_inner_metrics
     add_obj(AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,
         surface=data_integration.surface,
         out_taper_max_x=max_outer_metrics.outer_max_point.x,
         out_taper_max_y=max_outer_metrics.outer_max_point.y,
         out_taper_max_value=out_taper_max_value,
-        out_taper_min_x=max_outer_metrics.outer_min_point.x,
-        out_taper_min_y=max_outer_metrics.outer_min_point.y,
+        out_taper_min_x=min_outer_metrics.outer_min_point.x,
+        out_taper_min_y=min_outer_metrics.outer_min_point.y,
         out_taper_min_value=out_taper_min_value,
         in_taper_max_x=max_inner_metrics.inner_max_point.x,
         in_taper_max_y=max_inner_metrics.inner_max_point.y,
         in_taper_max_value=in_taper_max_value,
-        in_taper_min_x=max_inner_metrics.inner_min_point.x,
-        in_taper_min_y=max_inner_metrics.inner_min_point.y,
+        in_taper_min_x=min_inner_metrics.inner_min_point.x,
+        in_taper_min_y=min_inner_metrics.inner_min_point.y,
         in_taper_min_value=in_taper_min_value,
         rotation_angle=worst_metrics.line_data.rotation_angle,
         level=grad,
@@ -235,15 +257,22 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "height_limits": height_limits,
             "inner_ignore": inner,
             "outer_ignore": outer,
-            "ignored_inner_mm": max(max_outer_metrics.ignored_inner_mm, max_inner_metrics.ignored_inner_mm),
-            "ignored_outer_mm": max(max_outer_metrics.ignored_outer_mm, max_inner_metrics.ignored_outer_mm),
+            "ignored_inner_mm": max(metrics.ignored_inner_mm for metrics in selected_metrics),
+            "ignored_outer_mm": max(metrics.ignored_outer_mm for metrics in selected_metrics),
             "config_info": info,
             "outer_angle": max_outer_metrics.line_data.rotation_angle,
             "inner_angle": max_inner_metrics.line_data.rotation_angle,
+            "outer_max_angle": max_outer_metrics.line_data.rotation_angle,
+            "inner_max_angle": max_inner_metrics.line_data.rotation_angle,
+            "outer_min_angle": min_outer_metrics.line_data.rotation_angle,
+            "inner_min_angle": min_inner_metrics.line_data.rotation_angle,
             "outer_max_mm": out_taper_max_value,
             "outer_min_mm": out_taper_min_value,
             "inner_max_mm": in_taper_max_value,
             "inner_min_mm": in_taper_min_value,
+            "worst_label": worst_label,
+            "worst_mm": worst_value,
+            "worst_abs_mm": abs(worst_value),
             "valid_line_count": len(valid_metrics),
         }, ensure_ascii=False)
     ))
