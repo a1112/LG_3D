@@ -43,6 +43,16 @@ def _point(x, y, z):
     return SimpleNamespace(x=x, y=y, z=float(z))
 
 
+class FakeAlarmData:
+    def __init__(self, center):
+        self.flatRollData = SimpleNamespace(get_center=lambda: center)
+        self.lineDataDict = None
+        self.taper_shape_disabled = False
+
+    def set_line_data_dict(self, line_data):
+        self.lineDataDict = line_data
+
+
 def test_taper_shape_config_uses_next_code_override():
     config = TaperShapeConfig({
         "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
@@ -73,6 +83,53 @@ def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):
 
     assert flat_roll_commits == [True]
     assert add_calls == []
+
+
+def test_taper_shape_detection_and_grading_synthetic_surface(monkeypatch):
+    height = 120
+    width = 120
+    center = Point2D(width // 2, height // 2)
+    yy, xx = np.indices((height, width))
+    distance = np.hypot(xx - center.x, yy - center.y)
+    mask = np.where(distance <= 52, 255, 0).astype(np.uint8)
+    npy_data = np.full((height, width), 2000, dtype=np.int32)
+    npy_data[(distance > 25) & (distance <= 52) & (xx > center.x + 8)] = 2180
+
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        surface="S",
+        key="S",
+        npy_data=npy_data,
+        npy_mask=mask,
+        alarmData=FakeAlarmData(center),
+        median_3d_mm=2000.0,
+        currentSecondaryCoil=SimpleNamespace(Thickness=0),
+        scan3dCoordinateScaleX=1.0,
+        scan3dCoordinateScaleY=1.0,
+        next_code="2",
+        z_to_mm=lambda z: float(z),
+        x_to_mm=lambda value: float(value),
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", DetectionTaperShapeType.LINE_TYPE)
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert data_integration.alarmData.taper_shape_disabled is False
+    assert len(data_integration.alarmData.lineDataDict) > 0
+    assert result.grad == 3
+    assert captured
+    assert captured[0].out_taper_max_value >= 80.0
 
 
 def test_find_line_max_min_filters_single_point_spike():
