@@ -16,7 +16,7 @@ class AlarmConfigProperty(BaseConfigProperty):
         return FlatRollConfig(self.config["FlatRoll"],data_integration)
 
     def get_taper_shape_config(self,data_integration):
-        return TaperShapeConfig(self.config["TaperShape"],data_integration)
+        return TaperShapeConfig(self.config.get("TaperShape", {}),data_integration)
 
     def get_loose_coil_config(self,data_integration):
         return LooseCoilConfig(self.config["LooseCoil"],data_integration)

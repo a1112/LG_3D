@@ -12,6 +12,7 @@ for path in (ROOT / "app", ROOT / "app" / "Base", ROOT / "app" / "algorithm_runt
     sys.path.insert(0, str(path))
 
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
+from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 from Base.utils.cache_generator import generate_error_image
 from Base.property.Data3D import LineData, find_line_max_min
 from Base.property.Types import DetectionTaperShapeType, Point2D
@@ -47,6 +48,15 @@ def test_taper_shape_config_uses_next_code_override():
     }, FakeDataIntegration())
 
     assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
+def test_alarm_config_property_uses_default_taper_shape_config_when_missing():
+    config_property = object.__new__(AlarmConfigProperty)
+    config_property.config = {}
+
+    config = config_property.get_taper_shape_config(FakeDataIntegration())
+
+    assert config.get_config().get_config() == ("默认判断规则", [60, 80], 0, 0, "")
 
 
 def test_find_line_max_min_filters_single_point_spike():
@@ -287,6 +297,38 @@ def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
         "_detectionTaperShapeA_",
         lambda item: (_ for _ in ()).throw(AssertionError("WK branch should not run")),
     )
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{"line": data_integration}]
+
+
+def test_string_none_taper_shape_type_disables_line_detection(monkeypatch):
+    captured = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", "none")
+    monkeypatch.setattr(
+        taper_processing,
+        "_detection_taper_shape_",
+        lambda item: (_ for _ in ()).throw(AssertionError("LINE branch should not run")),
+    )
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{}]
+
+
+def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
+    captured = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", "BAD_VALUE")
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
 
     taper_processing._detection_taper_shape_all_([data_integration])
 

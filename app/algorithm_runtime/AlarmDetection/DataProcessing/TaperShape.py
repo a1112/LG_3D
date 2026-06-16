@@ -386,7 +386,30 @@ def count_taper2(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
 
 
-
+def _normalize_taper_shape_type(value):
+    if isinstance(value, DetectionTaperShapeType):
+        return value
+    if value is None:
+        logger.warning("taper_shape_type is None, fallback to LINE_TYPE")
+        return DetectionTaperShapeType.LINE_TYPE
+    if isinstance(value, str):
+        if value.strip().isdigit():
+            return _normalize_taper_shape_type(int(value.strip()))
+        names = [item.strip() for item in value.replace(",", "|").split("|") if item.strip()]
+        result = None
+        for name in names:
+            member = DetectionTaperShapeType.__members__.get(name.upper())
+            if member is None:
+                logger.warning(f"unknown taper_shape_type item={name}, fallback to LINE_TYPE")
+                return DetectionTaperShapeType.LINE_TYPE
+            result = member if result is None else result | member
+        if result is not None:
+            return result
+    try:
+        return DetectionTaperShapeType(value)
+    except (TypeError, ValueError):
+        logger.warning(f"invalid taper_shape_type={value}, fallback to LINE_TYPE")
+        return DetectionTaperShapeType.LINE_TYPE
 
 
 def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
@@ -394,7 +417,7 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     no doc
     """
     print("塔形检测 all")
-    taper_shape_type = Globs.control.taper_shape_type
+    taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
     for dataIntegration in data_integration_list:
         if taper_shape_type == DetectionTaperShapeType.NONE:
             dataIntegration.alarmData.set_line_data_dict({})
