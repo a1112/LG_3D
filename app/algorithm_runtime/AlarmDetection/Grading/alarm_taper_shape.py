@@ -177,10 +177,7 @@ def _valid_line_metrics(data_integration: DataIntegration,
                         outer_ignore_count) -> list[TaperLineMetrics]:
     line_data_dict = getattr(data_integration.alarmData, "lineDataDict", None) or {}
     valid_metrics = []
-    required_attrs = ("outer_max_point", "outer_min_point", "inner_max_point", "inner_min_point")
     for line_data in line_data_dict.values():
-        if not all(getattr(line_data, attr, None) is not None for attr in required_attrs):
-            continue
         metrics = _metrics_from_line(data_integration, line_data, inner_ignore_count, outer_ignore_count)
         if metrics is not None:
             valid_metrics.append(metrics)
