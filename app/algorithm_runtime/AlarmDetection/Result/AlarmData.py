@@ -12,6 +12,7 @@ class AlarmData:
         self.data_integration = data_integration
         self.flatRollData: Optional[FlatRollData] = None
         self.lineDataDict:Optional[Dict[LineData]] = None
+        self.taper_shape_disabled = False
 
     def set_flat_roll_data(self,flat_roll_data):
         self.flatRollData = flat_roll_data

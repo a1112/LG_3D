@@ -214,6 +214,9 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     name, height_limit_list, inner, outer, info = taper_shape_config.get_config().get_config()
     height_limits = _height_limits(height_limit_list)
 
+    if getattr(data_integration.alarmData, "taper_shape_disabled", False):
+        return AlarmGradResult(1, "塔形检测关闭", taper_shape_config)
+
     valid_metrics = _valid_line_metrics(data_integration, inner, outer)
     if not valid_metrics:
         error_msg = "塔形检测失败: 无有效线数据"

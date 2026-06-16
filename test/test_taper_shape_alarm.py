@@ -306,7 +306,10 @@ def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
 def test_string_none_taper_shape_type_disables_line_detection(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(
-        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+        alarmData=SimpleNamespace(
+            taper_shape_disabled=False,
+            set_line_data_dict=captured.append,
+        )
     )
 
     monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", "none")
@@ -319,6 +322,28 @@ def test_string_none_taper_shape_type_disables_line_detection(monkeypatch):
     taper_processing._detection_taper_shape_all_([data_integration])
 
     assert captured == [{}]
+    assert data_integration.alarmData.taper_shape_disabled is True
+
+
+def test_disabled_taper_shape_grades_normal_without_alarm_record(monkeypatch):
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={}, taper_shape_disabled=True)
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert result.errorMsg == "塔形检测关闭"
+    assert captured == []
 
 
 def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):

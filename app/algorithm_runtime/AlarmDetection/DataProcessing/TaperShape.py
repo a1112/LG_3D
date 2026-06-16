@@ -420,8 +420,10 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
     for dataIntegration in data_integration_list:
         if taper_shape_type == DetectionTaperShapeType.NONE:
+            dataIntegration.alarmData.taper_shape_disabled = True
             dataIntegration.alarmData.set_line_data_dict({})
             continue
+        dataIntegration.alarmData.taper_shape_disabled = False
         if DetectionTaperShapeType.LINE_TYPE not in taper_shape_type:
             logger.warning(f"unsupported taper_shape_type={taper_shape_type}, fallback to LINE_TYPE")
         dataIntegration.alarmData.set_line_data_dict(_detection_taper_shape_(dataIntegration))
