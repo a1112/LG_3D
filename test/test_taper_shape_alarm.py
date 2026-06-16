@@ -13,6 +13,8 @@ for path in (ROOT / "app", ROOT / "app" / "Base", ROOT / "app" / "algorithm_runt
 
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
 from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
+from AlarmDetection.Result.AlarmData import AlarmData
+import AlarmDetection.Result.AlarmData as alarm_data_module
 from Base.utils.cache_generator import generate_error_image
 from Base.property.Data3D import LineData, find_line_max_min
 from Base.property.Types import DetectionTaperShapeType, Point2D
@@ -57,6 +59,20 @@ def test_alarm_config_property_uses_default_taper_shape_config_when_missing():
     config = config_property.get_taper_shape_config(FakeDataIntegration())
 
     assert config.get_config().get_config() == ("默认判断规则", [60, 80], 0, 0, "")
+
+
+def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):
+    flat_roll_commits = []
+    add_calls = []
+    alarm_data = AlarmData(FakeDataIntegration())
+    alarm_data.flatRollData = SimpleNamespace(commit=lambda: flat_roll_commits.append(True))
+    alarm_data.lineDataDict = None
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", add_calls.append)
+
+    alarm_data.commit()
+
+    assert flat_roll_commits == [True]
+    assert add_calls == []
 
 
 def test_find_line_max_min_filters_single_point_spike():

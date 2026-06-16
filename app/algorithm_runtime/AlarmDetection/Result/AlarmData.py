@@ -20,7 +20,7 @@ class AlarmData:
     def commit(self):
         self.flatRollData.commit()
 
-        line_data_dict = self.lineDataDict
+        line_data_dict = self.lineDataDict or {}
         model_list = []
         for lineData in line_data_dict.values():
             try:
@@ -28,7 +28,8 @@ class AlarmData:
                 model_list.extend(lineData.all_point_data_model(self.data_integration))
             except AttributeError as e:
                 print(e)
-        Alarm.addObj(model_list)
+        if model_list:
+            Alarm.addObj(model_list)
 
     def set_line_data_dict(self, line_data):
-        self.lineDataDict = line_data
+        self.lineDataDict = line_data or {}
