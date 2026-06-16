@@ -243,15 +243,14 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.imageSaver.join()
 
     def _get_taper_error_thresholds(self, data_integration: DataIntegration):
-        default_threshold = 100
+        default_threshold = 60
         try:
             from AlarmDetection.property import alarmConfigProperty
 
             _, height_limits, _, _, _ = alarmConfigProperty.get_taper_shape_config(
                 data_integration
             ).get_config().get_config()
-            return taper_error_threshold_from_limits(height_limits,
-                                                     default_threshold)
+            return taper_error_threshold_from_limits(height_limits)
         except Exception as e:
             logger.warning(f"get taper error thresholds failed, use default {default_threshold}: {e}")
         return default_threshold, default_threshold

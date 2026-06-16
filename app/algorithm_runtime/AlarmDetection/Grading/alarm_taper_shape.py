@@ -6,6 +6,7 @@ from CoilDataBase.Coil import add_obj
 from CoilDataBase.models import AlarmTaperShape
 
 from AlarmDetection.Result.GradResult import AlarmGradResult
+from AlarmDetection.Configs.TaperShapeConfig import DEFAULT_TAPER_HEIGHT_LIMITS
 from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
 from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
@@ -27,9 +28,9 @@ def _rel_mm(data_integration: DataIntegration, z_value: float) -> float:
     return float(data_integration.z_to_mm(z_value) - data_integration.median_3d_mm)
 
 
-def _height_limits(values) -> list[float]:
+def _height_limits(values, default_limits=DEFAULT_TAPER_HEIGHT_LIMITS) -> list[float]:
     if values is None:
-        return []
+        values = default_limits
     if not isinstance(values, (list, tuple)):
         values = [values]
     limits = []
@@ -40,7 +41,9 @@ def _height_limits(values) -> list[float]:
             continue
         if limit > 0:
             limits.append(limit)
-    return sorted(limits)
+    if limits:
+        return sorted(limits)
+    return sorted(abs(float(value)) for value in default_limits if float(value) > 0)
 
 
 def _non_negative_float(value) -> float:

@@ -2,12 +2,15 @@ from .ConfigBase import ConfigBase
 from Base.property.Base import DataIntegration
 
 
+DEFAULT_TAPER_HEIGHT_LIMITS = [60, 80]
+
+
 class TaperShapeConfigItem(ConfigBase):
     def __init__(self, config):
         super().__init__(config)
         self.config = config
         self.name = config.get("name", "默认判断规则")
-        self.height = config.get("height", [60, 80])
+        self.height = config.get("height", DEFAULT_TAPER_HEIGHT_LIMITS)
         self.inner = config.get("inner", 0)
         self.outer = config.get("outer", 0)
         self.info = config.get("info", "")
