@@ -84,10 +84,10 @@ def _line_unit_distance_mm(data_integration: DataIntegration, line_points: np.nd
     return distance_mm / max(len(line_points) - 1, 1)
 
 
-def _trim_line_points(data_integration: DataIntegration,
-                      line_data: LineData,
-                      inner_ignore_count,
-                      outer_ignore_count):
+def _trim_line_segments(data_integration: DataIntegration,
+                        line_data: LineData,
+                        inner_ignore_count,
+                        outer_ignore_count):
     try:
         line_points = np.asarray(line_data.ray_line)
     except AttributeError:
@@ -108,24 +108,30 @@ def _trim_line_points(data_integration: DataIntegration,
 
     inner_skip = int(np.ceil(ignored_inner_mm / unit_distance_mm)) if unit_distance_mm > 0 else 0
     outer_skip = int(np.ceil(ignored_outer_mm / unit_distance_mm)) if unit_distance_mm > 0 else 0
-    end_index = len(line_points) - outer_skip if outer_skip > 0 else len(line_points)
-    trimmed_points = line_points[inner_skip:end_index]
-    if len(trimmed_points) < 4:
+
+    center_index = len(line_points) // 2
+    inner_points = line_points[:center_index]
+    outer_points = line_points[center_index:]
+    if inner_skip > 0:
+        inner_points = inner_points[inner_skip:]
+    if outer_skip > 0:
+        outer_points = outer_points[:-outer_skip]
+    if len(inner_points) == 0 or len(outer_points) == 0:
         return None, ignored_inner_mm, ignored_outer_mm, True
-    return trimmed_points, ignored_inner_mm, ignored_outer_mm, True
+    return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, True
 
 
 def _metrics_from_line(data_integration: DataIntegration,
                        line_data: LineData,
                        inner_ignore_count,
                        outer_ignore_count):
-    trimmed_points, ignored_inner_mm, ignored_outer_mm, has_line_points = _trim_line_points(
+    line_segments, ignored_inner_mm, ignored_outer_mm, has_line_points = _trim_line_segments(
         data_integration,
         line_data,
         inner_ignore_count,
         outer_ignore_count
     )
-    if trimmed_points is None:
+    if line_segments is None:
         if has_line_points:
             return None
         required_attrs = ("outer_max_point", "outer_min_point", "inner_max_point", "inner_min_point")
@@ -142,9 +148,7 @@ def _metrics_from_line(data_integration: DataIntegration,
             used_point_count=0
         )
 
-    center_index = len(trimmed_points) // 2
-    inner_points = trimmed_points[:center_index]
-    outer_points = trimmed_points[center_index:]
+    inner_points, outer_points = line_segments
     inner_max_point, inner_min_point = find_line_max_min(inner_points, 10, True, type_="inner")
     outer_max_point, outer_min_point = find_line_max_min(outer_points, 10, True, type_="outer")
     if None in (inner_max_point, inner_min_point, outer_max_point, outer_min_point):
@@ -157,7 +161,7 @@ def _metrics_from_line(data_integration: DataIntegration,
         outer_min_point=outer_min_point,
         ignored_inner_mm=ignored_inner_mm,
         ignored_outer_mm=ignored_outer_mm,
-        used_point_count=len(trimmed_points)
+        used_point_count=len(inner_points) + len(outer_points)
     )
 
 
