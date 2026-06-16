@@ -358,6 +358,35 @@ def test_grading_alarm_taper_shape_uses_default_limits_when_config_limits_empty(
     assert json.loads(captured[0].data)["height_limits"] == [60.0, 80.0]
 
 
+def test_grading_alarm_taper_shape_uses_default_limits_when_config_limits_non_finite(monkeypatch):
+    line_positive = SimpleNamespace(
+        rotation_angle=20,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={20: line_positive})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [np.inf, "nan"], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured
+    assert captured[0].out_taper_max_value == 80.0
+    assert json.loads(captured[0].data)["height_limits"] == [60.0, 80.0]
+
+
 def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[-1, 2] = 260
@@ -603,6 +632,8 @@ def test_generate_error_image_uses_absolute_thresholds(tmp_path):
 def test_taper_error_image_uses_first_alarm_threshold():
     assert taper_error_threshold_from_limits([60, 80]) == (60.0, 60.0)
     assert taper_error_threshold_from_limits([]) == (60.0, 60.0)
+    assert taper_error_threshold_from_limits([np.inf, "nan"]) == (60.0, 60.0)
+    assert taper_error_threshold_from_limits([np.inf, 90]) == (90.0, 90.0)
     assert taper_error_threshold_from_limits(["bad", None], 120) == (120.0, 120.0)
 
 

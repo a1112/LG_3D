@@ -39,11 +39,19 @@ def _height_limits(values, default_limits=DEFAULT_TAPER_HEIGHT_LIMITS) -> list[f
             limit = abs(float(value))
         except (TypeError, ValueError):
             continue
-        if limit > 0:
+        if np.isfinite(limit) and limit > 0:
             limits.append(limit)
     if limits:
         return sorted(limits)
-    return sorted(abs(float(value)) for value in default_limits if float(value) > 0)
+    default_values = []
+    for value in default_limits:
+        try:
+            limit = abs(float(value))
+        except (TypeError, ValueError):
+            continue
+        if np.isfinite(limit) and limit > 0:
+            default_values.append(limit)
+    return sorted(default_values)
 
 
 def _non_negative_float(value) -> float:

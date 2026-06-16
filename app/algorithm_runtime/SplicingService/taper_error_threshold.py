@@ -1,4 +1,16 @@
+import math
+
 from AlarmDetection.Configs.TaperShapeConfig import DEFAULT_TAPER_HEIGHT_LIMITS
+
+
+def _positive_finite(value):
+    try:
+        limit = abs(float(value))
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(limit) or limit <= 0:
+        return None
+    return limit
 
 
 def taper_error_threshold_from_limits(height_limits,
@@ -9,18 +21,14 @@ def taper_error_threshold_from_limits(height_limits,
 
     limits = []
     for value in height_limits:
-        try:
-            limit = abs(float(value))
-        except (TypeError, ValueError):
-            continue
-        if limit > 0:
+        limit = _positive_finite(value)
+        if limit is not None:
             limits.append(limit)
 
     if not limits:
-        if default_threshold is None:
+        threshold = _positive_finite(default_threshold)
+        if threshold is None:
             threshold = float(min(DEFAULT_TAPER_HEIGHT_LIMITS))
-        else:
-            threshold = float(default_threshold)
         return threshold, threshold
 
     threshold = min(limits)
