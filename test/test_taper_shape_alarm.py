@@ -337,7 +337,7 @@ def test_grading_alarm_taper_shape_keeps_original_inner_outer_boundary_after_tri
 
 def test_grading_alarm_taper_shape_keeps_boundary_with_inner_mask_holes(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
-    ray_line[:4, 2] = 0
+    ray_line[1:4, 2] = 0
     ray_line[5, 2] = 260
     line_data = SimpleNamespace(
         rotation_angle=0,
@@ -365,6 +365,34 @@ def test_grading_alarm_taper_shape_keeps_boundary_with_inner_mask_holes(monkeypa
     assert result.grad == 3
     assert captured[0].out_taper_max_value == 80.0
     assert captured[0].in_taper_max_value == 0.0
+
+
+def test_line_data_detection_keeps_boundary_with_inner_mask_holes():
+    line_data = LineData(
+        npy_data=np.zeros((1, 10), dtype=np.int32),
+        mask_image=np.ones((1, 10), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(9, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 0],
+        [4, 0, 100],
+        [5, 0, 260],
+        [6, 0, 100],
+        [7, 0, 100],
+        [8, 0, 100],
+        [9, 0, 100],
+    ], dtype=np.int32)
+
+    line_data.det_taper_shape()
+
+    assert line_data.inner_max_point.x == 4
+    assert line_data.inner_max_point.z == 100.0
+    assert line_data.outer_max_point.x == 5
+    assert line_data.outer_max_point.z == 260.0
 
 
 def test_generate_error_image_uses_absolute_thresholds(tmp_path):
