@@ -264,6 +264,34 @@ def test_grading_alarm_taper_shape_grades_negative_deviation(monkeypatch):
     assert captured[0].out_taper_min_value == -90.0
 
 
+def test_grading_alarm_taper_shape_ignores_zero_and_normalizes_negative_limits(monkeypatch):
+    line_positive = SimpleNamespace(
+        rotation_angle=20,
+        outer_max_point=_point(10, 20, 140),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={20: line_positive})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [0, -60], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert result.errorMsg == "正常"
+    assert json.loads(captured[0].data)["height_limits"] == [60.0]
+
+
 def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[-1, 2] = 260

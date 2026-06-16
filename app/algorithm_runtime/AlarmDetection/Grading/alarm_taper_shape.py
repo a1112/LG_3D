@@ -35,9 +35,11 @@ def _height_limits(values) -> list[float]:
     limits = []
     for value in values:
         try:
-            limits.append(float(value))
+            limit = abs(float(value))
         except (TypeError, ValueError):
             continue
+        if limit > 0:
+            limits.append(limit)
     return sorted(limits)
 
 
