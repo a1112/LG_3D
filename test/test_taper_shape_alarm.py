@@ -13,10 +13,10 @@ for path in (ROOT / "app", ROOT / "app" / "Base", ROOT / "app" / "algorithm_runt
 
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
 from Base.utils.cache_generator import generate_error_image
-from Base.property.Data3D import find_line_max_min
+from Base.property.Data3D import LineData, find_line_max_min
+from Base.property.Types import DetectionTaperShapeType, Point2D
 import AlarmDetection.Grading.alarm_taper_shape as taper_grading
 import AlarmDetection.DataProcessing.TaperShape as taper_processing
-from Base.property.Types import DetectionTaperShapeType
 
 
 class FakeDataIntegration:
@@ -57,6 +57,28 @@ def test_find_line_max_min_filters_single_point_spike():
 
     assert max_point.z == 1000.0
     assert min_point.z == 1000.0
+
+
+def test_taper_shape_ray_points_cover_cardinal_angles():
+    npy_data = (np.arange(121).reshape(11, 11) + 1000).astype(np.int32)
+    mask = np.ones((11, 11), dtype=np.uint8) * 255
+    center = Point2D(5, 5)
+    targets = {
+        0: Point2D(105, 5),
+        90: Point2D(5, 105),
+        180: Point2D(-95, 5),
+        270: Point2D(5, -95),
+    }
+
+    for angle, target in targets.items():
+        line_data = LineData(npy_data, mask, center, target)
+        points = line_data.all_image_line_points(mask=True, ray=True)
+        direction = np.array([target.x - center.x, target.y - center.y], dtype=float)
+        vectors = points[:, :2].astype(float) - np.array([center.x, center.y], dtype=float)
+        dots = vectors @ direction
+
+        assert len(points) > 0, f"{angle} degree ray has no points"
+        assert np.all(dots > 0), f"{angle} degree ray includes points behind the center"
 
 
 def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatch):

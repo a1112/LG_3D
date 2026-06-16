@@ -204,12 +204,12 @@ class LineData:
         p1, p2 = self.get_edge_point()
         rr, cc = line(p1.x, p1.y, p2.x, p2.y)
         if ray:  # 射线模式,只对线段进行判断
-            def directionEqual(direction1, direction2):  # 计算两个方向是否相等
-                return direction1[0] == direction2[0] and direction1[1] == direction2[1]
-
-            direction = (self.p2[0] - self.p1[0] > 0, self.p2[1] - self.p1[1] > 0)
-            ray_points = [[r, c] for r, c in zip(rr, cc)
-                          if directionEqual(direction, (r - self.p1.x > 0, c - self.p1.y > 0))]
+            direction_x = float(self.p2[0] - self.p1[0])
+            direction_y = float(self.p2[1] - self.p1[1])
+            ray_points = [
+                [r, c] for r, c in zip(rr, cc)
+                if (r - self.p1.x) * direction_x + (c - self.p1.y) * direction_y > 0
+            ]
             if not ray_points:
                 return np.empty((0, 3), dtype=np.int32)
             ray_points.sort(key=lambda point: (point[0] - self.p1.x) ** 2 + (point[1] - self.p1.y) ** 2)
