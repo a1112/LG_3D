@@ -53,15 +53,35 @@ def _coil_thickness_mm(data_integration: DataIntegration) -> float:
     return _non_negative_float(getattr(secondary_coil, "Thickness", 0))
 
 
+def _positive_scale(value):
+    try:
+        scale = float(value)
+    except (TypeError, ValueError):
+        return None
+    if scale <= 0:
+        return None
+    return scale
+
+
 def _line_unit_distance_mm(data_integration: DataIntegration, line_points: np.ndarray) -> float:
     if len(line_points) < 2:
         return 0.0
     start = line_points[0]
     end = line_points[-1]
-    pixel_distance = float(np.hypot(end[0] - start[0], end[1] - start[1]))
-    if pixel_distance <= 0:
+    dx = float(end[0] - start[0])
+    dy = float(end[1] - start[1])
+    scale_x = _positive_scale(getattr(data_integration, "scan3dCoordinateScaleX", None))
+    scale_y = _positive_scale(getattr(data_integration, "scan3dCoordinateScaleY", None))
+    if scale_x is not None and scale_y is not None:
+        distance_mm = float(np.hypot(dx * scale_x, dy * scale_y))
+    else:
+        pixel_distance = float(np.hypot(dx, dy))
+        if pixel_distance <= 0:
+            return 0.0
+        distance_mm = float(data_integration.x_to_mm(pixel_distance))
+    if distance_mm <= 0:
         return 0.0
-    return float(data_integration.x_to_mm(pixel_distance) / max(len(line_points) - 1, 1))
+    return distance_mm / max(len(line_points) - 1, 1)
 
 
 def _trim_line_points(data_integration: DataIntegration,

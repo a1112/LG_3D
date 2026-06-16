@@ -26,12 +26,14 @@ class FakeDataIntegration:
     alarmData = SimpleNamespace(lineDataDict={})
     next_code = "2"
     currentSecondaryCoil = SimpleNamespace(Thickness=0)
+    scan3dCoordinateScaleX = 1.0
+    scan3dCoordinateScaleY = 1.0
 
     def z_to_mm(self, z):
         return 10.0 + 0.5 * float(z)
 
     def x_to_mm(self, value):
-        return float(value)
+        return float(value) * self.scan3dCoordinateScaleX
 
 
 def _point(x, y, z):
@@ -160,6 +162,40 @@ def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     assert result.grad == 1
     assert captured
     assert captured[0].out_taper_max_value == 0.0
+
+
+def test_grading_alarm_taper_shape_uses_y_scale_for_vertical_ignore_distance(monkeypatch):
+    ray_line = np.array([[0, i, 100] for i in range(10)], dtype=float)
+    ray_line[-2, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=90,
+        ray_line=ray_line,
+        outer_max_point=_point(0, 8, 260),
+        outer_min_point=_point(0, 5, 100),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(0, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.scan3dCoordinateScaleX = 0.5
+    data_integration.scan3dCoordinateScaleY = 2.0
+    data_integration.currentSecondaryCoil = SimpleNamespace(Thickness=2)
+    data_integration.alarmData = SimpleNamespace(lineDataDict={90: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 1, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].out_taper_max_value == 80.0
+    assert captured[0].rotation_angle == 90
 
 
 def test_generate_error_image_uses_absolute_thresholds(tmp_path):
