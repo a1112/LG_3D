@@ -29,6 +29,66 @@ def _decode_next_code(weight: float) -> str:
     return ""
 
 
+def _load_defect_class_config() -> tuple[dict, bool]:
+    try:
+        from Base.CONFIG import defectClassesProperty
+        return defectClassesProperty.data, bool(
+            defectClassesProperty.default.get("show", True))
+    except Exception:
+        return {}, True
+
+
+def _defect_level_and_show(defect_name: str,
+                           defect_config: dict,
+                           default_show: bool) -> tuple[int, bool]:
+    config = defect_config.get(defect_name) or {}
+    try:
+        defect_level = int(config.get("level", 1))
+    except (TypeError, ValueError):
+        defect_level = 1
+    return defect_level, bool(config.get("show", default_show))
+
+
+def _select_max_shown_defect(defects) -> tuple[Optional[CoilDefect], int]:
+    defect_config, default_show = _load_defect_class_config()
+    max_level = -1
+    max_defect = None
+
+    for defect in defects:
+        defect_name = getattr(defect, "defectName", "") or ""
+        defect_level, is_shown = _defect_level_and_show(
+            defect_name, defect_config, default_show)
+        if is_shown and defect_level > max_level:
+            max_level = defect_level
+            max_defect = defect
+
+    return max_defect, max(max_level, 0)
+
+
+def _apply_max_defect_summary(summary: CoilSummary, defects, coil_id: int) -> None:
+    defects = list(defects or [])
+    max_defect, max_level = _select_max_shown_defect(defects)
+
+    if max_defect:
+        summary.MaxDefectName = max_defect.defectName or ""
+        summary.MaxDefectLevel = max_level
+        summary.MaxDefectSurface = max_defect.surface or "S"
+        summary.MaxDefectIsShown = True
+        log.debug(
+            f"Coil {coil_id}: MaxDefect updated to '{summary.MaxDefectName}' "
+            f"(level={max_level}, shown=True)")
+        return
+
+    summary.MaxDefectName = ""
+    summary.MaxDefectLevel = 0
+    summary.MaxDefectSurface = ""
+    summary.MaxDefectIsShown = not defects
+    if defects:
+        log.debug(f"Coil {coil_id}: All defects filtered out")
+    else:
+        log.debug(f"Coil {coil_id}: No defects found")
+
+
 def sync_coil_summary(session: Session, coil_id: int) -> Optional[CoilSummary]:
     """
     同步单个卷材的摘要数据
@@ -231,6 +291,8 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
             log.debug(f"Coil {coil_id}: No defects found")
 
     # 在 no_autoflush 块外执行 flush/commit
+    _apply_max_defect_summary(summary, defects, coil_id)
+
     try:
         session.commit()
     except IntegrityError as e:
@@ -391,9 +453,6 @@ def get_coil_list_with_max_defect(
         # 基础查询 - 从摘要表获取
         query = session.query(CoilSummary)
         # 加载关系数据
-        query = query.options(
-            subqueryload(CoilSummary.childrenCoilDefect),
-        )
 
         # 过滤条件
         if coil_id:
@@ -404,7 +463,7 @@ def get_coil_list_with_max_defect(
 
         # 如果只查询已检测的卷材
         if by_coil:
-            last_coil = session.query(Coil).order_by(coil.Id.desc()).first()
+            last_coil = session.query(Coil).order_by(Coil.Id.desc()).first()
             if last_coil:
                 query = query.filter(CoilSummary.Id <= last_coil.SecondaryCoilId)
 
@@ -890,6 +949,7 @@ def sync_summaries_range(coil_ids: List[int]) -> int:
                     summary.MaxDefectIsShown = False
                     log.debug(f"Coil {coil_id}: All defects filtered out or no defects")
 
+            _apply_max_defect_summary(summary, defects, coil_id)
             updated_count += 1
 
         session.commit()
