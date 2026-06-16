@@ -346,6 +346,29 @@ def test_disabled_taper_shape_grades_normal_without_alarm_record(monkeypatch):
     assert captured == []
 
 
+def test_zero_taper_shape_type_disables_line_detection(monkeypatch):
+    for value in (0, "0", DetectionTaperShapeType(0)):
+        captured = []
+        data_integration = SimpleNamespace(
+            alarmData=SimpleNamespace(
+                taper_shape_disabled=False,
+                set_line_data_dict=captured.append,
+            )
+        )
+
+        monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", value)
+        monkeypatch.setattr(
+            taper_processing,
+            "_detection_taper_shape_",
+            lambda item: (_ for _ in ()).throw(AssertionError("LINE branch should not run")),
+        )
+
+        taper_processing._detection_taper_shape_all_([data_integration])
+
+        assert captured == [{}]
+        assert data_integration.alarmData.taper_shape_disabled is True
+
+
 def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(

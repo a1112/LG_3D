@@ -388,10 +388,16 @@ def count_taper2(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
 
 def _normalize_taper_shape_type(value):
     if isinstance(value, DetectionTaperShapeType):
+        if value == DetectionTaperShapeType(0):
+            return DetectionTaperShapeType.NONE
         return value
     if value is None:
         logger.warning("taper_shape_type is None, fallback to LINE_TYPE")
         return DetectionTaperShapeType.LINE_TYPE
+    if isinstance(value, (int, float)) and float(value).is_integer():
+        if int(value) == 0:
+            return DetectionTaperShapeType.NONE
+        value = int(value)
     if isinstance(value, str):
         if value.strip().isdigit():
             return _normalize_taper_shape_type(int(value.strip()))
