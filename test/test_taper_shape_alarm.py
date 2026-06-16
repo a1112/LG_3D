@@ -15,6 +15,7 @@ from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
 from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 from AlarmDetection.Result.AlarmData import AlarmData
 import AlarmDetection.Result.AlarmData as alarm_data_module
+from SplicingService.taper_error_threshold import taper_error_threshold_from_limits
 from Base.utils.cache_generator import generate_error_image
 from Base.property.Data3D import LineData, find_line_max_min
 from Base.property.Types import DetectionTaperShapeType, Point2D
@@ -474,6 +475,11 @@ def test_generate_error_image_uses_absolute_thresholds(tmp_path):
     assert metadata["threshold_down"] == 10.0
     assert metadata["threshold_up"] == 20.0
     assert metadata["scale_factor"] == 1.0
+
+
+def test_taper_error_image_uses_first_alarm_threshold():
+    assert taper_error_threshold_from_limits([60, 80]) == (60.0, 60.0)
+    assert taper_error_threshold_from_limits(["bad", None], 120) == (120.0, 120.0)
 
 
 def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):

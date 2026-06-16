@@ -22,6 +22,7 @@ from Base.CONFIG import isLoc, serverConfigProperty
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
+from .taper_error_threshold import taper_error_threshold_from_limits
 from Globs import control
 from Base.property.Base import DataIntegration
 
@@ -249,12 +250,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             _, height_limits, _, _, _ = alarmConfigProperty.get_taper_shape_config(
                 data_integration
             ).get_config().get_config()
-            if not isinstance(height_limits, (list, tuple)):
-                height_limits = [height_limits]
-            height_limits = [abs(float(value)) for value in height_limits]
-            if height_limits:
-                threshold = int(max(height_limits))
-                return threshold, threshold
+            return taper_error_threshold_from_limits(height_limits,
+                                                     default_threshold)
         except Exception as e:
             logger.warning(f"get taper error thresholds failed, use default {default_threshold}: {e}")
         return default_threshold, default_threshold
