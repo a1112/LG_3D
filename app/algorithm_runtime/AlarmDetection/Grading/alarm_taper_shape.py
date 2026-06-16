@@ -89,6 +89,28 @@ def _line_unit_distance_mm(data_integration: DataIntegration, line_points: np.nd
     return distance_mm / max(len(line_points) - 1, 1)
 
 
+def _is_finite_float(value) -> bool:
+    try:
+        return bool(np.isfinite(float(value)))
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+def _metrics_values_are_finite(data_integration: DataIntegration, metrics: TaperLineMetrics) -> bool:
+    point_attrs = ("inner_max_point", "inner_min_point", "outer_max_point", "outer_min_point")
+    for point_attr in point_attrs:
+        point = getattr(metrics, point_attr)
+        if not all(_is_finite_float(getattr(point, attr, None)) for attr in ("x", "y", "z")):
+            return False
+        try:
+            rel_value = _rel_mm(data_integration, point.z)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        if not _is_finite_float(rel_value):
+            return False
+    return True
+
+
 def _trim_line_segments(data_integration: DataIntegration,
                         line_data: LineData,
                         inner_ignore_count,
@@ -147,7 +169,7 @@ def _metrics_from_line(data_integration: DataIntegration,
         required_attrs = ("outer_max_point", "outer_min_point", "inner_max_point", "inner_min_point")
         if not all(getattr(line_data, attr, None) is not None for attr in required_attrs):
             return None
-        return TaperLineMetrics(
+        metrics = TaperLineMetrics(
             line_data=line_data,
             inner_max_point=line_data.inner_max_point,
             inner_min_point=line_data.inner_min_point,
@@ -157,13 +179,14 @@ def _metrics_from_line(data_integration: DataIntegration,
             ignored_outer_mm=ignored_outer_mm,
             used_point_count=0
         )
+        return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
     inner_points, outer_points = line_segments
     inner_max_point, inner_min_point = find_line_max_min(inner_points, 10, True, type_="inner")
     outer_max_point, outer_min_point = find_line_max_min(outer_points, 10, True, type_="outer")
     if None in (inner_max_point, inner_min_point, outer_max_point, outer_min_point):
         return None
-    return TaperLineMetrics(
+    metrics = TaperLineMetrics(
         line_data=line_data,
         inner_max_point=inner_max_point,
         inner_min_point=inner_min_point,
@@ -173,6 +196,7 @@ def _metrics_from_line(data_integration: DataIntegration,
         ignored_outer_mm=ignored_outer_mm,
         used_point_count=len(inner_points) + len(outer_points)
     )
+    return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
 
 def _valid_line_metrics(data_integration: DataIntegration,

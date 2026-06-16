@@ -233,6 +233,43 @@ def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatc
     assert alarm.in_taper_max_value == 75.0
 
 
+def test_grading_alarm_taper_shape_skips_non_finite_cached_metrics(monkeypatch):
+    invalid_line = SimpleNamespace(
+        rotation_angle=20,
+        outer_max_point=_point(10, 20, np.inf),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(30, 40, 260),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={20: invalid_line, 40: valid_line})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured
+    assert captured[0].rotation_angle == 40
+    assert captured[0].out_taper_max_value == 80.0
+    assert json.loads(captured[0].data)["valid_line_count"] == 1
+
+
 def test_grading_alarm_taper_shape_grades_negative_deviation(monkeypatch):
     line_negative = SimpleNamespace(
         rotation_angle=220,
