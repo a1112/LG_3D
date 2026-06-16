@@ -164,6 +164,32 @@ def test_taper_shape_ray_points_cover_cardinal_angles():
         assert np.all(dots > 0), f"{angle} degree ray includes points behind the center"
 
 
+def test_line_data_ray_line_ignores_low_value_edge_noise():
+    line_data = LineData(
+        npy_data=np.zeros((1, 10), dtype=np.int32),
+        mask_image=np.ones((1, 10), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(9, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 5],
+        [1, 0, 8],
+        [2, 0, 100],
+        [3, 0, 100],
+        [4, 0, 100],
+        [5, 0, 100],
+        [6, 0, 100],
+        [7, 0, 100],
+        [8, 0, 9],
+        [9, 0, 5],
+    ], dtype=np.int32)
+
+    ray_line = line_data.ray_line
+
+    assert ray_line[0, 0] == 2
+    assert ray_line[-1, 0] == 7
+
+
 def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatch):
     line_outer = SimpleNamespace(
         rotation_angle=40,
@@ -346,6 +372,39 @@ def test_grading_alarm_taper_shape_keeps_boundary_with_inner_mask_holes(monkeypa
         outer_min_point=_point(6, 0, 100),
         inner_max_point=_point(4, 0, 100),
         inner_min_point=_point(4, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].out_taper_max_value == 80.0
+    assert captured[0].in_taper_max_value == 0.0
+
+
+def test_grading_alarm_taper_shape_ignores_low_value_edge_noise_before_split(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(12)], dtype=float)
+    ray_line[:2, 2] = 5
+    ray_line[-2:, 2] = 5
+    ray_line[7, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        outer_max_point=_point(7, 0, 260),
+        outer_min_point=_point(6, 0, 100),
+        inner_max_point=_point(5, 0, 100),
+        inner_min_point=_point(2, 0, 100),
     )
     data_integration = FakeDataIntegration()
     data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})

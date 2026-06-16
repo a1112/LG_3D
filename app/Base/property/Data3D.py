@@ -14,6 +14,10 @@ from CoilDataBase.models import LineData as LineDataModel
 from CoilDataBase.models import PointData as PointDataModel
 
 
+def valid_line_height_mask(line_, none_data_value=10):
+    return np.isfinite(line_[:, 2]) & (line_[:, 2] > none_data_value)
+
+
 def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
     """
     找到线段的最大最小值
@@ -22,7 +26,7 @@ def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
         type_ = "_" + type_
     else:
         type_ = ""
-    line_ = line_[np.isfinite(line_[:, 2]) & (line_[:, 2] > none_data_value)]
+    line_ = line_[valid_line_height_mask(line_, none_data_value)]
     if line_.size == 0:
         return None, None
 
@@ -121,7 +125,7 @@ class LineData:
     def ray_line(self):
         if self._ray_line_ is None:
             arr = self.ray_data
-            non_zero_indices = np.where(arr[:, 2] != 0)[0]
+            non_zero_indices = np.where(valid_line_height_mask(arr, 10))[0]
             if non_zero_indices.size == 0:
                 raise ValueError("塔形检测失败: 线数据为空或全零")
             # 起始索引和结束索引
@@ -270,7 +274,7 @@ class LineData:
         """
         points = self.ray_data
         arr = points
-        non_zero_indices = np.where(arr[:, 2] != 0)[0]
+        non_zero_indices = np.where(valid_line_height_mask(arr, 10))[0]
         if non_zero_indices.size == 0:
             raise ValueError("塔形检测失败: 线数据为空或全零")
         # 起始索引和结束索引

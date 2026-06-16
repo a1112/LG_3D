@@ -8,7 +8,7 @@ from CoilDataBase.models import AlarmTaperShape
 from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
-from Base.property.Data3D import LineData, find_line_max_min
+from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
 
 
 @dataclass
@@ -97,6 +97,10 @@ def _trim_line_segments(data_integration: DataIntegration,
 
     if line_points.size == 0:
         return None, 0.0, 0.0, True
+    valid_indices = np.where(valid_line_height_mask(line_points, 10))[0]
+    if valid_indices.size == 0:
+        return None, 0.0, 0.0, True
+    line_points = line_points[valid_indices[0]:valid_indices[-1] + 1]
     if len(line_points) < 4:
         return None, 0.0, 0.0, True
 
@@ -115,8 +119,8 @@ def _trim_line_segments(data_integration: DataIntegration,
         inner_points = inner_points[inner_skip:]
     if outer_skip > 0:
         outer_points = outer_points[:-outer_skip]
-    inner_points = inner_points[np.isfinite(inner_points[:, 2]) & (inner_points[:, 2] > 10)]
-    outer_points = outer_points[np.isfinite(outer_points[:, 2]) & (outer_points[:, 2] > 10)]
+    inner_points = inner_points[valid_line_height_mask(inner_points, 10)]
+    outer_points = outer_points[valid_line_height_mask(outer_points, 10)]
     if len(inner_points) == 0 or len(outer_points) == 0:
         return None, ignored_inner_mm, ignored_outer_mm, True
     return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, True
