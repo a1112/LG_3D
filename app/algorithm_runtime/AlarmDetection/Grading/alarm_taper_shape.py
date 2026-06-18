@@ -56,9 +56,12 @@ def _height_limits(values, default_limits=DEFAULT_TAPER_HEIGHT_LIMITS) -> list[f
 
 def _non_negative_float(value) -> float:
     try:
-        return max(0.0, float(value))
-    except (TypeError, ValueError):
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
         return 0.0
+    if not np.isfinite(value):
+        return 0.0
+    return max(0.0, value)
 
 
 def _coil_thickness_mm(data_integration: DataIntegration) -> float:
@@ -69,9 +72,9 @@ def _coil_thickness_mm(data_integration: DataIntegration) -> float:
 def _positive_scale(value):
     try:
         scale = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
-    if scale <= 0:
+    if not np.isfinite(scale) or scale <= 0:
         return None
     return scale
 
@@ -83,16 +86,18 @@ def _line_unit_distance_mm(data_integration: DataIntegration, line_points: np.nd
     end = line_points[-1]
     dx = float(end[0] - start[0])
     dy = float(end[1] - start[1])
+    if not np.isfinite(dx) or not np.isfinite(dy):
+        return 0.0
     scale_x = _positive_scale(getattr(data_integration, "scan3dCoordinateScaleX", None))
     scale_y = _positive_scale(getattr(data_integration, "scan3dCoordinateScaleY", None))
     if scale_x is not None and scale_y is not None:
         distance_mm = float(np.hypot(dx * scale_x, dy * scale_y))
     else:
         pixel_distance = float(np.hypot(dx, dy))
-        if pixel_distance <= 0:
+        if not np.isfinite(pixel_distance) or pixel_distance <= 0:
             return 0.0
         distance_mm = float(data_integration.x_to_mm(pixel_distance))
-    if distance_mm <= 0:
+    if not np.isfinite(distance_mm) or distance_mm <= 0:
         return 0.0
     return distance_mm / max(len(line_points) - 1, 1)
 
@@ -124,13 +129,13 @@ def _trim_line_segments(data_integration: DataIntegration,
                         inner_ignore_count,
                         outer_ignore_count):
     try:
-        line_points = np.asarray(line_data.ray_line)
+        line_points = np.asarray(line_data.ray_line, dtype=float)
     except AttributeError:
         return None, 0.0, 0.0, False
-    except ValueError:
+    except (TypeError, ValueError, OverflowError):
         return None, 0.0, 0.0, True
 
-    if line_points.size == 0:
+    if line_points.size == 0 or line_points.ndim != 2 or line_points.shape[1] < 3:
         return None, 0.0, 0.0, True
     valid_indices = np.where(valid_line_height_mask(line_points, 10))[0]
     if valid_indices.size == 0:
