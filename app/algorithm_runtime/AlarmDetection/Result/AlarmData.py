@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Optional, Dict
 
 from CoilDataBase import Alarm
@@ -23,7 +24,14 @@ class AlarmData:
 
         line_data_dict = self.lineDataDict or {}
         model_list = []
-        for lineData in line_data_dict.values():
+        if isinstance(line_data_dict, Mapping):
+            line_data_values = line_data_dict.values()
+        elif isinstance(line_data_dict, (list, tuple, set)):
+            line_data_values = line_data_dict
+        else:
+            logger.warning(f"skip invalid taper line data container: {type(line_data_dict).__name__}")
+            line_data_values = []
+        for lineData in line_data_values:
             try:
                 model_list.append(lineData.line_data_model(self.data_integration))
                 model_list.extend(lineData.all_point_data_model(self.data_integration))

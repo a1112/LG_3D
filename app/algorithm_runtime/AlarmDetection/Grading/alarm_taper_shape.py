@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import numpy as np
@@ -227,7 +228,13 @@ def _valid_line_metrics(data_integration: DataIntegration,
                         outer_ignore_count) -> list[TaperLineMetrics]:
     line_data_dict = getattr(data_integration.alarmData, "lineDataDict", None) or {}
     valid_metrics = []
-    for line_data in line_data_dict.values():
+    if isinstance(line_data_dict, Mapping):
+        line_data_values = line_data_dict.values()
+    elif isinstance(line_data_dict, (list, tuple, set)):
+        line_data_values = line_data_dict
+    else:
+        return valid_metrics
+    for line_data in line_data_values:
         metrics = _metrics_from_line(data_integration, line_data, inner_ignore_count, outer_ignore_count)
         if metrics is not None:
             valid_metrics.append(metrics)
