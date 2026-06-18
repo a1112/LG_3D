@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 from PIL import Image
 
 
@@ -21,6 +22,7 @@ from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_
 from Base.property.Types import DetectionTaperShapeType, Point2D
 import AlarmDetection.Grading.alarm_taper_shape as taper_grading
 import AlarmDetection.DataProcessing.TaperShape as taper_processing
+import AlarmDetection.DataProcessing.TaperShapeLine as taper_line
 
 
 class FakeDataIntegration:
@@ -279,6 +281,19 @@ def test_taper_shape_ray_points_cover_cardinal_angles():
 
         assert len(points) > 0, f"{angle} degree ray has no points"
         assert np.all(dots > 0), f"{angle} degree ray includes points behind the center"
+
+
+def test_taper_shape_rotation_rejects_non_finite_center():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(np.inf, 5))
+        ),
+        npy_data=np.zeros((11, 11), dtype=np.int32),
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    with pytest.raises(ValueError, match="中心点坐标非有限"):
+        taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
 
 
 def test_line_data_ray_line_ignores_low_value_edge_noise():

@@ -9,6 +9,30 @@ from Base.utils.Log import logger
 TAPER_ROTATION_STEP = 10
 
 
+def _finite_center_coordinate(point, attr: str, index: int) -> float:
+    value = getattr(point, attr, None)
+    if value is None:
+        try:
+            value = point[index]
+        except (TypeError, IndexError, KeyError, AttributeError) as e:
+            raise ValueError("塔形检测失败: 中心点缺少坐标") from e
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError) as e:
+        raise ValueError("塔形检测失败: 中心点坐标无效") from e
+    if not np.isfinite(value):
+        raise ValueError("塔形检测失败: 中心点坐标非有限")
+    return value
+
+
+def validate_taper_center(point):
+    if point is None:
+        raise ValueError("塔形检测失败: 中心点为空")
+    _finite_center_coordinate(point, "x", 0)
+    _finite_center_coordinate(point, "y", 1)
+    return point
+
+
 def find_max_min_value(line, noneDataValue, offset=0):
     """
     找到线段的最大最小值
@@ -65,7 +89,7 @@ def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, r
     获取中心点 x,y ,根据角都计算.
     只适计算射线
     """
-    p_center = data_integration.alarmData.flatRollData.get_center()
+    p_center = validate_taper_center(data_integration.alarmData.flatRollData.get_center())
     npy_data = data_integration.npy_data
     mask = data_integration.npy_mask
 
