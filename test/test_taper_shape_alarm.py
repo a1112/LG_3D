@@ -1281,3 +1281,21 @@ def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
     taper_processing._detection_taper_shape_all_([data_integration])
 
     assert captured == [{"line": data_integration}]
+
+
+def test_taper_shape_all_accepts_single_data_integration(monkeypatch):
+    captured = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            taper_shape_disabled=False,
+            set_line_data_dict=captured.append,
+        )
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", DetectionTaperShapeType.LINE_TYPE)
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+
+    taper_processing._detection_taper_shape_all_(data_integration)
+
+    assert captured == [{"line": data_integration}]
+    assert data_integration.alarmData.taper_shape_disabled is False

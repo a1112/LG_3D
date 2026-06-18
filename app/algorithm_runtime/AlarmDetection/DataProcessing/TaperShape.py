@@ -4,7 +4,7 @@ from typing import Union
 import cv2
 
 import Globs
-from Base.property.Base import DataIntegrationList
+from Base.property.Base import DataIntegration, DataIntegrationList
 from Base.property.Types import Point2D, DetectionTaperShapeType
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
@@ -432,13 +432,22 @@ def _normalize_taper_shape_type(value):
         return DetectionTaperShapeType.LINE_TYPE
 
 
+def _iter_data_integrations(data_integration_list: Union[DataIntegrationList, DataIntegration]):
+    if isinstance(data_integration_list, DataIntegration):
+        return (data_integration_list,)
+    try:
+        return iter(data_integration_list)
+    except TypeError:
+        return (data_integration_list,)
+
+
 def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
     """
     no doc
     """
     print("塔形检测 all")
     taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
-    for dataIntegration in data_integration_list:
+    for dataIntegration in _iter_data_integrations(data_integration_list):
         if taper_shape_type == DetectionTaperShapeType.NONE:
             dataIntegration.alarmData.taper_shape_disabled = True
             dataIntegration.alarmData.set_line_data_dict({})
