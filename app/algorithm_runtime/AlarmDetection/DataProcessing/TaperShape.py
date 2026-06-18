@@ -14,6 +14,9 @@ from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from AlarmDetection.DataProcessing.TaperShapeLine import *
 
 
+TAPER_ANGLE_RECOVERABLE_ERRORS = (ValueError, IndexError, TypeError, OverflowError)
+
+
 def addAlarmTaperShape(dataIntegration: DataIntegration, alarmTaperShape: AlarmTaperShape):
     alarmTaperShape.secondaryCoilId = dataIntegration.coilId
     alarmTaperShape.surface = dataIntegration.key
@@ -32,8 +35,9 @@ def _detection_taper_shape_(data_integration: DataIntegration):
     for rotate in range(0, 360, TAPER_ROTATION_STEP):
         try:
             line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
-        except (ValueError, IndexError) as e:
-            logger.warning(f"{data_integration.coilId} {data_integration.surface} 塔形角度 {rotate} 跳过: {e}")
+        except TAPER_ANGLE_RECOVERABLE_ERRORS as e:
+            surface = getattr(data_integration, "surface", getattr(data_integration, "key", ""))
+            logger.warning(f"{data_integration.coilId} {surface} 塔形角度 {rotate} 跳过: {e}")
 
 
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
