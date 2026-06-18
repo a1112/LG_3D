@@ -27,6 +27,8 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
         calls.append(rotation_angle)
         if rotation_angle == 0:
             raise TypeError("bad center data")
+        if rotation_angle == 90:
+            raise AttributeError("missing flat roll center")
         if rotation_angle == 180:
             raise OverflowError("bad coordinate")
         return f"line-{rotation_angle}"
@@ -43,9 +45,11 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
     result = taper_processing._detection_taper_shape_(data_integration)
 
     assert calls == [0, 90, 180, 270]
-    assert result == {90: "line-90", 270: "line-270"}
-    assert len(warnings) == 2
+    assert result == {270: "line-270"}
+    assert len(warnings) == 3
     assert "0" in warnings[0]
     assert "bad center data" in warnings[0]
-    assert "180" in warnings[1]
-    assert "bad coordinate" in warnings[1]
+    assert "90" in warnings[1]
+    assert "missing flat roll center" in warnings[1]
+    assert "180" in warnings[2]
+    assert "bad coordinate" in warnings[2]

@@ -14,7 +14,7 @@ from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from AlarmDetection.DataProcessing.TaperShapeLine import *
 
 
-TAPER_ANGLE_RECOVERABLE_ERRORS = (ValueError, IndexError, TypeError, OverflowError)
+TAPER_ANGLE_RECOVERABLE_ERRORS = (ValueError, IndexError, TypeError, AttributeError, OverflowError)
 
 
 def addAlarmTaperShape(dataIntegration: DataIntegration, alarmTaperShape: AlarmTaperShape):
