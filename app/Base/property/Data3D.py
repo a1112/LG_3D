@@ -31,6 +31,28 @@ def json_safe_line_points(line_):
     return line_array.tolist()
 
 
+def _point_coordinate(point, attr: str, index: int) -> float:
+    value = getattr(point, attr, None)
+    if value is None:
+        try:
+            value = point[index]
+        except (TypeError, IndexError, KeyError, AttributeError) as e:
+            raise ValueError("塔形检测失败: 中心点缺少坐标") from e
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError) as e:
+        raise ValueError("塔形检测失败: 中心点坐标无效") from e
+    if not np.isfinite(value):
+        raise ValueError("塔形检测失败: 中心点坐标非有限")
+    return value
+
+
+def point_xy(point) -> tuple[float, float]:
+    if point is None:
+        raise ValueError("塔形检测失败: 中心点为空")
+    return _point_coordinate(point, "x", 0), _point_coordinate(point, "y", 1)
+
+
 def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
     """
     找到线段的最大最小值
@@ -315,12 +337,13 @@ class LineData:
         base_mm = data_integration.median_3d_mm
         def rel_mm(z_value: float) -> float:
             return data_integration.z_to_mm(z_value) - base_mm
+        center_x, center_y = point_xy(data_integration.alarmData.flatRollData.get_center())
         return LineDataModel(
             secondaryCoilId=data_integration.secondary_coil_id,
             surface=data_integration.key,
             type="TaperShape",
-            center_x=data_integration.alarmData.flatRollData.get_center().x,
-            center_y=data_integration.alarmData.flatRollData.get_center().y,
+            center_x=center_x,
+            center_y=center_y,
             width=data_integration.width,
             height=data_integration.height,
             rotation_angle=self.rotation_angle,

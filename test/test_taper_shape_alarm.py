@@ -973,6 +973,42 @@ def test_line_data_model_sanitizes_non_finite_ray_line_json():
     assert line_json[2][2] == 0.0
 
 
+def test_line_data_model_accepts_tuple_center():
+    line_data = LineData(
+        npy_data=np.zeros((1, 5), dtype=np.int32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 100],
+        [2, 0, 100],
+        [3, 0, 100],
+        [4, 0, 100],
+    ], dtype=float)
+    line_data.rotation_angle = 0
+    line_data.inner_min_point = _point(0, 0, 100)
+    line_data.inner_max_point = _point(1, 0, 100)
+    line_data.outer_min_point = _point(3, 0, 100)
+    line_data.outer_max_point = _point(4, 0, 100)
+
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        width=5,
+        height=1,
+        median_3d_mm=100.0,
+        alarmData=SimpleNamespace(flatRollData=SimpleNamespace(get_center=lambda: (2, 0))),
+        z_to_mm=lambda z: float(z),
+    )
+
+    model = line_data.line_data_model(data_integration)
+
+    assert model.center_x == 2.0
+    assert model.center_y == 0.0
+
+
 def test_generate_error_image_uses_absolute_thresholds(tmp_path):
     npy_data = np.array([[1989, 2000, 2021]], dtype=np.uint16)
 

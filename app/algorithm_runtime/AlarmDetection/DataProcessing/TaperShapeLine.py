@@ -1,7 +1,7 @@
 import numpy as np
 
 from Base.property.Base import CoilLineData, DataIntegration
-from Base.property.Data3D import LineData
+from Base.property.Data3D import LineData, point_xy
 from Base.property.Types import Point2D
 from Base.tools.data3dTool import getLengthData, getLengthDataByRotate
 from Base.utils.Log import logger
@@ -10,27 +10,8 @@ from Base.utils.Log import logger
 TAPER_ROTATION_STEP = 10
 
 
-def _finite_center_coordinate(point, attr: str, index: int) -> float:
-    value = getattr(point, attr, None)
-    if value is None:
-        try:
-            value = point[index]
-        except (TypeError, IndexError, KeyError, AttributeError) as e:
-            raise ValueError("塔形检测失败: 中心点缺少坐标") from e
-    try:
-        value = float(value)
-    except (TypeError, ValueError, OverflowError) as e:
-        raise ValueError("塔形检测失败: 中心点坐标无效") from e
-    if not np.isfinite(value):
-        raise ValueError("塔形检测失败: 中心点坐标非有限")
-    return value
-
-
 def validate_taper_center(point):
-    if point is None:
-        raise ValueError("塔形检测失败: 中心点为空")
-    x = _finite_center_coordinate(point, "x", 0)
-    y = _finite_center_coordinate(point, "y", 1)
+    x, y = point_xy(point)
     return Point2D(x, y)
 
 
