@@ -86,6 +86,34 @@ def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):
     assert add_calls == []
 
 
+def test_alarm_data_commit_skips_invalid_taper_line_data(monkeypatch):
+    class BadLineData:
+        def line_data_model(self, data_integration):
+            raise ValueError("bad taper line")
+
+    class GoodLineData:
+        def line_data_model(self, data_integration):
+            return "line_model"
+
+        def all_point_data_model(self, data_integration):
+            return ["point_model"]
+
+    flat_roll_commits = []
+    add_calls = []
+    alarm_data = AlarmData(FakeDataIntegration())
+    alarm_data.flatRollData = SimpleNamespace(commit=lambda: flat_roll_commits.append(True))
+    alarm_data.lineDataDict = {
+        "bad": BadLineData(),
+        "good": GoodLineData(),
+    }
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", add_calls.append)
+
+    alarm_data.commit()
+
+    assert flat_roll_commits == [True]
+    assert add_calls == [["line_model", "point_model"]]
+
+
 def test_taper_shape_detection_and_grading_synthetic_surface(monkeypatch):
     height = 120
     width = 120
@@ -668,6 +696,45 @@ def test_line_data_detection_keeps_boundary_with_inner_mask_holes():
     assert line_data.inner_max_point.z == 100.0
     assert line_data.outer_max_point.x == 5
     assert line_data.outer_max_point.z == 260.0
+
+
+def test_line_data_model_sanitizes_non_finite_ray_line_json():
+    line_data = LineData(
+        npy_data=np.zeros((1, 5), dtype=np.int32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, np.inf],
+        [2, 0, np.nan],
+        [3, 0, 100],
+        [4, 0, 100],
+    ], dtype=float)
+    line_data.rotation_angle = 0
+    line_data.inner_min_point = _point(0, 0, 100)
+    line_data.inner_max_point = _point(0, 0, 100)
+    line_data.outer_min_point = _point(4, 0, 100)
+    line_data.outer_max_point = _point(4, 0, 100)
+
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        width=5,
+        height=1,
+        median_3d_mm=100.0,
+        alarmData=SimpleNamespace(flatRollData=SimpleNamespace(get_center=lambda: Point2D(2, 0))),
+        z_to_mm=lambda z: float(z),
+    )
+
+    model = line_data.line_data_model(data_integration)
+
+    assert "Infinity" not in model.data
+    assert "NaN" not in model.data
+    line_json = json.loads(model.data)
+    assert line_json[1][2] == 0.0
+    assert line_json[2][2] == 0.0
 
 
 def test_generate_error_image_uses_absolute_thresholds(tmp_path):

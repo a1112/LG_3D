@@ -18,6 +18,12 @@ def valid_line_height_mask(line_, none_data_value=10):
     return np.isfinite(line_[:, 2]) & (line_[:, 2] > none_data_value)
 
 
+def json_safe_line_points(line_):
+    line_array = np.asarray(line_, dtype=float)
+    line_array = np.where(np.isfinite(line_array), line_array, 0.0)
+    return line_array.tolist()
+
+
 def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
     """
     找到线段的最大最小值
@@ -315,7 +321,7 @@ class LineData:
             y1=self.p1.y,
             x2=self.p2.x,
             y2=self.p2.y,
-            data=json.dumps(self.ray_line.tolist()),
+            data=json.dumps(json_safe_line_points(self.ray_line), allow_nan=False),
             inner_min_value=self.inner_min_point.z,
             inner_min_value_mm=rel_mm(self.inner_min_point.z),
             inner_max_value=self.inner_max_point.z,

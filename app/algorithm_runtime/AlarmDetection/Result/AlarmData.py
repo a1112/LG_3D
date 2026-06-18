@@ -3,6 +3,7 @@ from typing import Optional, Dict
 from CoilDataBase import Alarm
 
 from Base.property.Data3D import LineData
+from Base.utils.Log import logger
 from .FlatRollData import FlatRollData
 
 
@@ -26,8 +27,8 @@ class AlarmData:
             try:
                 model_list.append(lineData.line_data_model(self.data_integration))
                 model_list.extend(lineData.all_point_data_model(self.data_integration))
-            except AttributeError as e:
-                print(e)
+            except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
+                logger.warning(f"skip invalid taper line data: {e}")
         if model_list:
             Alarm.addObj(model_list)
 
