@@ -328,6 +328,21 @@ def test_taper_shape_ray_points_cover_cardinal_angles():
         assert np.all(dots > 0), f"{angle} degree ray includes points behind the center"
 
 
+def test_line_data_points_cache_can_be_read_repeatedly():
+    line_data = LineData(
+        npy_data=np.ones((5, 5), dtype=np.int32) * 100,
+        mask_image=np.ones((5, 5), dtype=np.uint8) * 255,
+        p1=Point2D(2, 2),
+        p2=Point2D(4, 2),
+    )
+
+    first_points = line_data.points
+    second_points = line_data.points
+
+    assert second_points is first_points
+    assert len(second_points) > 0
+
+
 def test_taper_shape_rotation_rejects_non_finite_center():
     data_integration = SimpleNamespace(
         alarmData=SimpleNamespace(

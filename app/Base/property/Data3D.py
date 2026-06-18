@@ -151,7 +151,7 @@ class LineData:
         self.inner_min_point = None
         self.inner_max_point = None
         self.dataIntegration = None
-        self._points_ = []
+        self._points_ = None
         self.npy_data = npy_data
         self.mask_image = mask_image
         self.p1 = p1
@@ -160,7 +160,7 @@ class LineData:
 
     @property
     def points(self):
-        if not self._points_:
+        if self._points_ is None:
             self._points_ = self.all_image_line_points()
         return self._points_
 
