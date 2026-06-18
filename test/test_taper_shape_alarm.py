@@ -296,6 +296,24 @@ def test_taper_shape_rotation_rejects_non_finite_center():
         taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
 
 
+def test_taper_shape_rotation_accepts_center_object_with_xy_attrs():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(
+                get_center=lambda: SimpleNamespace(x=5.0, y=5.0)
+            )
+        ),
+        npy_data=np.ones((11, 11), dtype=np.int32) * 100,
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    line_data = taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+    assert line_data.rotation_angle == 0
+    assert line_data.inner_max_point is not None
+    assert line_data.outer_max_point is not None
+
+
 def test_line_data_ray_line_ignores_low_value_edge_noise():
     line_data = LineData(
         npy_data=np.zeros((1, 10), dtype=np.int32),

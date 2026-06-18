@@ -2,6 +2,7 @@ import numpy as np
 
 from Base.property.Base import CoilLineData, DataIntegration
 from Base.property.Data3D import LineData
+from Base.property.Types import Point2D
 from Base.tools.data3dTool import getLengthData, getLengthDataByRotate
 from Base.utils.Log import logger
 
@@ -28,9 +29,9 @@ def _finite_center_coordinate(point, attr: str, index: int) -> float:
 def validate_taper_center(point):
     if point is None:
         raise ValueError("塔形检测失败: 中心点为空")
-    _finite_center_coordinate(point, "x", 0)
-    _finite_center_coordinate(point, "y", 1)
-    return point
+    x = _finite_center_coordinate(point, "x", 0)
+    y = _finite_center_coordinate(point, "y", 1)
+    return Point2D(x, y)
 
 
 def find_max_min_value(line, noneDataValue, offset=0):
