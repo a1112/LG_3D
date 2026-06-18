@@ -107,7 +107,10 @@ def _line_unit_distance_mm(data_integration: DataIntegration, line_points: np.nd
         pixel_distance = float(np.hypot(dx, dy))
         if not np.isfinite(pixel_distance) or pixel_distance <= 0:
             return 0.0
-        distance_mm = float(data_integration.x_to_mm(pixel_distance))
+        try:
+            distance_mm = float(data_integration.x_to_mm(pixel_distance))
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            return 0.0
     if not np.isfinite(distance_mm) or distance_mm <= 0:
         return 0.0
     return distance_mm / max(len(line_points) - 1, 1)

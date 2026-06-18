@@ -664,6 +664,38 @@ def test_grading_alarm_taper_shape_treats_non_finite_ignore_config_as_zero(monke
     assert metadata["outer_angle"] == 0.0
 
 
+def test_grading_alarm_taper_shape_treats_bad_distance_fallback_as_no_trim(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[-1, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.scan3dCoordinateScaleX = None
+    data_integration.scan3dCoordinateScaleY = None
+    data_integration.x_to_mm = lambda value: (_ for _ in ()).throw(ValueError("bad scale"))
+    data_integration.currentSecondaryCoil = SimpleNamespace(Thickness=2)
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 1, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].out_taper_max_value == 80.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["ignored_outer_mm"] == 2.0
+
+
 def test_grading_alarm_taper_shape_ignores_low_value_edge_noise_before_split(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(12)], dtype=float)
     ray_line[:2, 2] = 5
