@@ -86,6 +86,16 @@ def get_alarm_info(secondary_coil,alarm_info_dict):
                 })
     return res_data
 
+
+def _alarm_info_by_surface(secondary_coil):
+    alarm_info_dict = {"S": None, "L": None}
+    for alarm_info in getattr(secondary_coil, "childrenAlarmInfo", []) or []:
+        surface = getattr(alarm_info, "surface", None)
+        if surface in alarm_info_dict:
+            alarm_info_dict[surface] = alarm_info
+    return alarm_info_dict
+
+
 def get_taper_shape_info(secondary_coil,alarm_info_dict):
     res_data = {}
     alarm_taper_shape_dict = spit_data_list(secondary_coil.childrenAlarmTaperShape, one=True)
@@ -100,13 +110,13 @@ def get_taper_shape_info(secondary_coil,alarm_info_dict):
                 key + "端 内圈最大值": alarmTaperShape.in_taper_max_value,
                 key + "端 内圈最小值": alarmTaperShape.in_taper_min_value,
             })
-            if alarm_info_dict[key]:
-                alarm_info = alarm_info_dict[key]
-                alarm_info: AlarmInfo
-                res_data.update({
-                    key + "端 塔形报警等级": alarm_info.taperShapeGrad,
-                    key + "端 塔形报警信息": alarm_info.taperShapeMsg,
-                })
+        if alarm_info_dict[key]:
+            alarm_info = alarm_info_dict[key]
+            alarm_info: AlarmInfo
+            res_data.update({
+                key + "端 塔形报警等级": alarm_info.taperShapeGrad,
+                key + "端 塔形报警信息": alarm_info.taperShapeMsg,
+            })
     return res_data
 
 def add_alarm_loose_info(secondary_coil,alarm_info_dict):
@@ -183,7 +193,7 @@ def get_grad(alarm_info_dict):
 
 def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     res_data={}
-    alarm_info_dict={"S":None,"L":None}
+    alarm_info_dict=_alarm_info_by_surface(secondary_coil)
     if export_config.export_header_data:
         res_data.update(get_header_data(secondary_coil))   # 添加 二级数据信息
 
@@ -203,10 +213,6 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
     if export_config.export_defect_data:
         res_data.update(get_defect_data(secondary_coil))
 
-
-    # alarm_info_list = secondary_coil.childrenAlarmInfo
-    # for alarm_info in alarm_info_list:
-    #     alarm_info_dict[alarm_info.surface]=alarm_info
     return res_data
 
 
