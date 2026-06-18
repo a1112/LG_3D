@@ -611,7 +611,7 @@ def test_grading_alarm_taper_shape_treats_non_finite_ignore_config_as_zero(monke
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[6, 2] = 260
     line_data = SimpleNamespace(
-        rotation_angle=0,
+        rotation_angle=np.inf,
         ray_line=ray_line,
     )
     data_integration = FakeDataIntegration()
@@ -631,10 +631,16 @@ def test_grading_alarm_taper_shape_treats_non_finite_ignore_config_as_zero(monke
     result = taper_grading.grading_alarm_taper_shape(data_integration)
 
     assert result.grad == 3
+    assert captured[0].rotation_angle == 0.0
     assert captured[0].out_taper_max_value == 80.0
+    assert "Infinity" not in captured[0].data
+    assert "NaN" not in captured[0].data
     metadata = json.loads(captured[0].data)
+    assert metadata["inner_ignore"] == 0.0
+    assert metadata["outer_ignore"] == 0.0
     assert metadata["ignored_inner_mm"] == 0.0
     assert metadata["ignored_outer_mm"] == 0.0
+    assert metadata["outer_angle"] == 0.0
 
 
 def test_grading_alarm_taper_shape_ignores_low_value_edge_noise_before_split(monkeypatch):

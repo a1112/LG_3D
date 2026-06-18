@@ -64,6 +64,16 @@ def _non_negative_float(value) -> float:
     return max(0.0, value)
 
 
+def _safe_float(value, default: float = 0.0) -> float:
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return default
+    if not np.isfinite(value):
+        return default
+    return value
+
+
 def _coil_thickness_mm(data_integration: DataIntegration) -> float:
     secondary_coil = getattr(data_integration, "currentSecondaryCoil", None)
     return _non_negative_float(getattr(secondary_coil, "Thickness", 0))
@@ -293,17 +303,23 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             matched_limit = _matched_limit(abs(value), height_limits)
             if matched_limit is None:
                 continue
+            message_angle = _safe_float(getattr(metrics.line_data, "rotation_angle", 0.0))
             if value >= 0:
                 messages.append(
                     f"{label}{value:.2f} >= {matched_limit:.2f} "
-                    f"检测角度{metrics.line_data.rotation_angle}"
+                    f"检测角度{message_angle}"
                 )
             else:
                 messages.append(
                     f"{label}{value:.2f} <= -{matched_limit:.2f} "
-                    f"检测角度{metrics.line_data.rotation_angle}"
+                    f"检测角度{message_angle}"
                 )
     error_msg = "\n".join(messages) if messages else "正常"
+    worst_angle = _safe_float(getattr(worst_metrics.line_data, "rotation_angle", 0.0))
+    outer_angle = _safe_float(getattr(max_outer_metrics.line_data, "rotation_angle", 0.0))
+    inner_angle = _safe_float(getattr(max_inner_metrics.line_data, "rotation_angle", 0.0))
+    outer_min_angle = _safe_float(getattr(min_outer_metrics.line_data, "rotation_angle", 0.0))
+    inner_min_angle = _safe_float(getattr(min_inner_metrics.line_data, "rotation_angle", 0.0))
 
     add_obj(AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,
@@ -320,23 +336,23 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         in_taper_min_x=min_inner_metrics.inner_min_point.x,
         in_taper_min_y=min_inner_metrics.inner_min_point.y,
         in_taper_min_value=in_taper_min_value,
-        rotation_angle=worst_metrics.line_data.rotation_angle,
+        rotation_angle=worst_angle,
         level=grad,
         err_msg=error_msg,
         data=json.dumps({
             "config_name": name,
             "height_limits": height_limits,
-            "inner_ignore": inner,
-            "outer_ignore": outer,
+            "inner_ignore": _non_negative_float(inner),
+            "outer_ignore": _non_negative_float(outer),
             "ignored_inner_mm": max(metrics.ignored_inner_mm for metrics in selected_metrics),
             "ignored_outer_mm": max(metrics.ignored_outer_mm for metrics in selected_metrics),
             "config_info": info,
-            "outer_angle": max_outer_metrics.line_data.rotation_angle,
-            "inner_angle": max_inner_metrics.line_data.rotation_angle,
-            "outer_max_angle": max_outer_metrics.line_data.rotation_angle,
-            "inner_max_angle": max_inner_metrics.line_data.rotation_angle,
-            "outer_min_angle": min_outer_metrics.line_data.rotation_angle,
-            "inner_min_angle": min_inner_metrics.line_data.rotation_angle,
+            "outer_angle": outer_angle,
+            "inner_angle": inner_angle,
+            "outer_max_angle": outer_angle,
+            "inner_max_angle": inner_angle,
+            "outer_min_angle": outer_min_angle,
+            "inner_min_angle": inner_min_angle,
             "outer_max_mm": out_taper_max_value,
             "outer_min_mm": out_taper_min_value,
             "inner_max_mm": in_taper_max_value,
@@ -345,6 +361,6 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_mm": worst_value,
             "worst_abs_mm": abs(worst_value),
             "valid_line_count": len(valid_metrics),
-        }, ensure_ascii=False)
+        }, ensure_ascii=False, allow_nan=False)
     ))
     return AlarmGradResult(grad, error_msg, taper_shape_config)
