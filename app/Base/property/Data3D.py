@@ -212,7 +212,7 @@ class LineData:
 
     @property
     def unit_distance_mm(self):
-        return self.length_mm / self.count
+        return self.length_mm / max(self.count - 1, 1)
 
     @property
     def none_data_sub(self):

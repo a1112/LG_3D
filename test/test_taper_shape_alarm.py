@@ -1007,6 +1007,33 @@ def test_line_data_detection_keeps_boundary_with_inner_mask_holes():
     assert line_data.outer_max_point.z == 260.0
 
 
+def test_line_data_unit_distance_uses_intervals_between_points():
+    line_data = LineData(
+        npy_data=np.zeros((1, 5), dtype=np.int32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 100],
+        [4, 0, 100],
+    ], dtype=np.int32)
+    line_data.dataIntegration = SimpleNamespace(
+        x_to_mm=lambda value: float(value),
+        point_to_mm=lambda points: points.astype(float),
+        zero_mm=lambda: 10.0,
+    )
+
+    assert line_data.count == 5
+    assert line_data.length_mm == 4.0
+    assert line_data.unit_distance_mm == 1.0
+    assert line_data.none_data_sub == [(1, 2, 1.0, 2.0)]
+    assert line_data.max_zero_width_mm == 2.0
+
+
 def test_line_data_model_sanitizes_non_finite_ray_line_json():
     line_data = LineData(
         npy_data=np.zeros((1, 5), dtype=np.int32),
