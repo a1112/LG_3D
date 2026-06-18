@@ -256,7 +256,7 @@ class DataIntegration:
         return self.median_non_zero * self.scan3dCoordinateScaleZ + self.scan3dCoordinateOffsetZ
 
     def get_bd_xyz(self):
-        return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleZ]
+        return [self.scan3dCoordinateScaleX, self.scan3dCoordinateScaleY, self.scan3dCoordinateScaleZ]
 
     def set_start(self):
         self.startTime = datetime.datetime.now()
