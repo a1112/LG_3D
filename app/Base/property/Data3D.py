@@ -73,6 +73,26 @@ def point_xy(point) -> tuple[float, float]:
     return _point_coordinate(point, "x", 0), _point_coordinate(point, "y", 1)
 
 
+def _outlier_cluster_size(values: np.ndarray, index: int, outlier_values: set[float]) -> int:
+    if values[index] not in outlier_values:
+        return 0
+
+    count = 1
+    left = index - 1
+    while left >= 0 and values[left] in outlier_values:
+        count += 1
+        left -= 1
+    right = index + 1
+    while right < len(values) and values[right] in outlier_values:
+        count += 1
+        right += 1
+    return count
+
+
+def _is_isolated_iqr_outlier(values: np.ndarray, index: int, outlier_values: set[float]) -> bool:
+    return _outlier_cluster_size(values, index, outlier_values) == 1
+
+
 def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
     """
     找到线段的最大最小值
@@ -96,12 +116,12 @@ def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
         iqr_max_outliers = set(IQR_outliers(values[max_indices]).tolist())
         iqr_min_outliers = set(IQR_outliers(values[min_indices]).tolist())
         for i in max_indices:
-            if values[i] in iqr_max_outliers:
+            if _is_isolated_iqr_outlier(values, int(i), iqr_max_outliers):
                 continue
             max_index = int(i)
             break
         for i in min_indices:
-            if values[i] in iqr_min_outliers:
+            if _is_isolated_iqr_outlier(values, int(i), iqr_min_outliers):
                 continue
             min_index = int(i)
             break

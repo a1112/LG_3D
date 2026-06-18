@@ -283,6 +283,28 @@ def test_find_line_max_min_filters_single_point_spike():
     assert min_point.z == 1000.0
 
 
+def test_find_line_max_min_keeps_clustered_taper_extremes():
+    high_line = np.array([[i, 0, 1000] for i in range(120)], dtype=float)
+    high_line[60, 2] = 50000
+    high_line[61, 2] = 49000
+
+    max_point, min_point = find_line_max_min(high_line, 10, use_iqr=True, type_="outer")
+
+    assert max_point.x == 60
+    assert max_point.z == 50000.0
+    assert min_point.z == 1000.0
+
+    low_line = np.array([[i, 0, 1000] for i in range(120)], dtype=float)
+    low_line[60, 2] = 20
+    low_line[61, 2] = 25
+
+    max_point, min_point = find_line_max_min(low_line, 10, use_iqr=True, type_="outer")
+
+    assert max_point.z == 1000.0
+    assert min_point.x == 60
+    assert min_point.z == 20.0
+
+
 def test_valid_line_height_mask_rejects_non_finite_coordinates():
     line = np.array([
         [0, 0, 100],
