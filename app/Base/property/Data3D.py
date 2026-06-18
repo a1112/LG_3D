@@ -15,7 +15,8 @@ from CoilDataBase.models import PointData as PointDataModel
 
 
 def valid_line_height_mask(line_, none_data_value=10):
-    return np.isfinite(line_[:, 2]) & (line_[:, 2] > none_data_value)
+    line_array = np.asarray(line_, dtype=float)
+    return np.all(np.isfinite(line_array[:, :3]), axis=1) & (line_array[:, 2] > none_data_value)
 
 
 def json_safe_line_points(line_):

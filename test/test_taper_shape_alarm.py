@@ -17,7 +17,7 @@ from AlarmDetection.Result.AlarmData import AlarmData
 import AlarmDetection.Result.AlarmData as alarm_data_module
 from SplicingService.taper_error_threshold import taper_error_threshold_from_limits
 from Base.utils.cache_generator import generate_error_image
-from Base.property.Data3D import LineData, find_line_max_min
+from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
 from Base.property.Types import DetectionTaperShapeType, Point2D
 import AlarmDetection.Grading.alarm_taper_shape as taper_grading
 import AlarmDetection.DataProcessing.TaperShape as taper_processing
@@ -212,6 +212,18 @@ def test_find_line_max_min_filters_single_point_spike():
 
     assert max_point.z == 1000.0
     assert min_point.z == 1000.0
+
+
+def test_valid_line_height_mask_rejects_non_finite_coordinates():
+    line = np.array([
+        [0, 0, 100],
+        [np.nan, 1, 100],
+        [2, np.inf, 100],
+        [3, 0, np.nan],
+        [4, 0, 0],
+    ], dtype=float)
+
+    assert valid_line_height_mask(line, 10).tolist() == [True, False, False, False, False]
 
 
 def test_taper_shape_ray_points_cover_cardinal_angles():
@@ -646,6 +658,35 @@ def test_grading_alarm_taper_shape_skips_malformed_ray_line(monkeypatch):
     assert result.grad == 3
     assert captured
     assert captured[0].rotation_angle == 40
+    assert captured[0].out_taper_max_value == 80.0
+    assert json.loads(captured[0].data)["valid_line_count"] == 1
+
+
+def test_grading_alarm_taper_shape_ignores_non_finite_coordinate_points(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[0, 0] = np.nan
+    ray_line[6, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured
     assert captured[0].out_taper_max_value == 80.0
     assert json.loads(captured[0].data)["valid_line_count"] == 1
 
