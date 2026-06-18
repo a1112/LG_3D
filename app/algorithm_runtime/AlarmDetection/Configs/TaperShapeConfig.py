@@ -7,6 +7,58 @@ from Base.property.Base import DataIntegration
 DEFAULT_TAPER_HEIGHT_LIMITS = [60, 80]
 
 
+def iter_taper_height_values(values):
+    if values is None:
+        return
+    if isinstance(values, (list, tuple, set)):
+        for value in values:
+            yield from iter_taper_height_values(value)
+        return
+    if isinstance(values, str):
+        text = values.strip()
+        if not text:
+            return
+        if len(text) >= 2 and text[0] in "[(" and text[-1] in "])":
+            text = text[1:-1].strip()
+        normalized_text = (
+            text
+            .replace("，", ",")
+            .replace("；", ",")
+            .replace(";", ",")
+        )
+        if "," in normalized_text:
+            for item in normalized_text.split(","):
+                yield from iter_taper_height_values(item)
+            return
+        yield text
+        return
+    yield values
+
+
+def normalize_taper_height_limits(values,
+                                  default_limits=DEFAULT_TAPER_HEIGHT_LIMITS):
+    limits = []
+    for value in iter_taper_height_values(values):
+        try:
+            limit = abs(float(value))
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(limit) and limit > 0:
+            limits.append(limit)
+    if limits:
+        return sorted(limits)
+
+    default_values = []
+    for value in iter_taper_height_values(default_limits):
+        try:
+            limit = abs(float(value))
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(limit) and limit > 0:
+            default_values.append(limit)
+    return sorted(default_values)
+
+
 class TaperShapeConfigItem(ConfigBase):
     def __init__(self, config):
         super().__init__(config)

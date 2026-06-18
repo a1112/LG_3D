@@ -1,6 +1,9 @@
 import math
 
-from AlarmDetection.Configs.TaperShapeConfig import DEFAULT_TAPER_HEIGHT_LIMITS
+from AlarmDetection.Configs.TaperShapeConfig import (
+    DEFAULT_TAPER_HEIGHT_LIMITS,
+    iter_taper_height_values,
+)
 
 
 def _positive_finite(value):
@@ -16,11 +19,8 @@ def _positive_finite(value):
 def taper_error_threshold_from_limits(height_limits,
                                       default_threshold: float | None = None
                                       ) -> tuple[float, float]:
-    if not isinstance(height_limits, (list, tuple)):
-        height_limits = [height_limits]
-
     limits = []
-    for value in height_limits:
+    for value in iter_taper_height_values(height_limits):
         limit = _positive_finite(value)
         if limit is not None:
             limits.append(limit)
