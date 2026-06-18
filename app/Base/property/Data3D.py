@@ -31,6 +31,16 @@ def json_safe_line_points(line_):
     return line_array.tolist()
 
 
+def finite_model_number(value, field_name: str) -> float:
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError) as e:
+        raise ValueError(f"塔形检测失败: {field_name}无效") from e
+    if not np.isfinite(value):
+        raise ValueError(f"塔形检测失败: {field_name}非有限")
+    return value
+
+
 def _point_coordinate(point, attr: str, index: int) -> float:
     value = getattr(point, attr, None)
     if value is None:
@@ -99,14 +109,17 @@ class PointData(Point3D):
 
     def pointDataModel(self, dataIntegration):
         base_mm = dataIntegration.median_3d_mm
-        z_mm = float(dataIntegration.z_to_mm(self.z) - base_mm)
+        x = finite_model_number(self.x, "点X坐标")
+        y = finite_model_number(self.y, "点Y坐标")
+        z = finite_model_number(self.z, "点高度")
+        z_mm = finite_model_number(dataIntegration.z_to_mm(z) - base_mm, "点毫米高度")
         return PointDataModel(
             secondaryCoilId=dataIntegration.secondary_coil_id,
             surface=dataIntegration.key,
             type=self.type_,
-            x=float(self.x),
-            y=float(self.y),
-            z=float(self.z),
+            x=x,
+            y=y,
+            z=z,
             z_mm=z_mm
         )
 
@@ -336,7 +349,10 @@ class LineData:
     def line_data_model(self, data_integration):
         base_mm = data_integration.median_3d_mm
         def rel_mm(z_value: float) -> float:
-            return data_integration.z_to_mm(z_value) - base_mm
+            return finite_model_number(
+                data_integration.z_to_mm(z_value) - base_mm,
+                "线数据毫米高度",
+            )
         center_x, center_y = point_xy(data_integration.alarmData.flatRollData.get_center())
         return LineDataModel(
             secondaryCoilId=data_integration.secondary_coil_id,

@@ -160,6 +160,51 @@ def test_alarm_data_commit_skips_invalid_taper_line_data(monkeypatch):
     assert add_calls == [["line_model", "point_model"]]
 
 
+def test_alarm_data_commit_skips_non_finite_taper_model_values(monkeypatch):
+    line_data = LineData(
+        npy_data=np.zeros((1, 5), dtype=np.int32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 100],
+        [2, 0, 100],
+        [3, 0, 100],
+        [4, 0, 100],
+    ], dtype=float)
+    line_data.rotation_angle = 0
+    line_data.inner_min_point = _point(0, 0, 100)
+    line_data.inner_max_point = _point(1, 0, 100)
+    line_data.outer_min_point = _point(3, 0, 100)
+    line_data.outer_max_point = _point(4, 0, 100)
+
+    flat_roll_commits = []
+    add_calls = []
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        width=5,
+        height=1,
+        median_3d_mm=100.0,
+        z_to_mm=lambda z: np.inf,
+    )
+    alarm_data = AlarmData(data_integration)
+    alarm_data.flatRollData = SimpleNamespace(
+        commit=lambda: flat_roll_commits.append(True),
+        get_center=lambda: Point2D(2, 0),
+    )
+    alarm_data.lineDataDict = {0: line_data}
+    data_integration.alarmData = alarm_data
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", add_calls.append)
+
+    alarm_data.commit()
+
+    assert flat_roll_commits == [True]
+    assert add_calls == []
+
+
 def test_alarm_data_commit_accepts_sequence_taper_line_data(monkeypatch):
     class GoodLineData:
         def line_data_model(self, data_integration):
