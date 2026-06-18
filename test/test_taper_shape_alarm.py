@@ -1049,6 +1049,34 @@ def test_line_data_unit_distance_uses_intervals_between_points():
     assert line_data.max_zero_width_mm == 2.0
 
 
+def test_line_data_length_mm_uses_y_scale_for_vertical_lines():
+    line_data = LineData(
+        npy_data=np.zeros((5, 1), dtype=np.int32),
+        mask_image=np.ones((5, 1), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(0, 4),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [0, 1, 0],
+        [0, 2, 0],
+        [0, 3, 100],
+        [0, 4, 100],
+    ], dtype=np.int32)
+    line_data.dataIntegration = SimpleNamespace(
+        scan3dCoordinateScaleX=0.5,
+        scan3dCoordinateScaleY=2.0,
+        x_to_mm=lambda value: float(value) * 0.5,
+        point_to_mm=lambda points: points.astype(float),
+        zero_mm=lambda: 10.0,
+    )
+
+    assert line_data.length_mm == 8.0
+    assert line_data.unit_distance_mm == 2.0
+    assert line_data.none_data_sub == [(1, 2, 2.0, 4.0)]
+    assert line_data.max_zero_width_mm == 4.0
+
+
 def test_line_data_model_sanitizes_non_finite_ray_line_json():
     line_data = LineData(
         npy_data=np.zeros((1, 5), dtype=np.int32),

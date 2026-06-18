@@ -41,6 +41,16 @@ def finite_model_number(value, field_name: str) -> float:
     return value
 
 
+def _positive_scale(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not np.isfinite(value) or value <= 0:
+        return None
+    return value
+
+
 def _point_coordinate(point, attr: str, index: int) -> float:
     value = getattr(point, attr, None)
     if value is None:
@@ -208,6 +218,15 @@ class LineData:
 
     @property
     def length_mm(self):
+        ray_line = self.ray_line
+        p_start = ray_line[0]
+        p_end = ray_line[-1]
+        dx = float(p_start[0] - p_end[0])
+        dy = float(p_start[1] - p_end[1])
+        scale_x = _positive_scale(getattr(self.dataIntegration, "scan3dCoordinateScaleX", None))
+        scale_y = _positive_scale(getattr(self.dataIntegration, "scan3dCoordinateScaleY", None))
+        if scale_x is not None and scale_y is not None:
+            return float(np.hypot(dx * scale_x, dy * scale_y))
         return self.dataIntegration.x_to_mm(self.length)
 
     @property
