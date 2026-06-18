@@ -9,13 +9,18 @@ Row {
     property int defectCount: coilModel ? coilModel.coilDefectCountTotal : 0
     property int defectCountS: coilModel ? coilModel.coilDefectCountS : 0
     property int defectCountL: coilModel ? coilModel.coilDefectCountL : 0
+    property bool hasMaxDefectName: maxDefectName.length > 0
+    property string statusText: hasMaxDefectName ? defectCount + " " + maxDefectName : defectCount + ""
+    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 112 : 34
     property string defectStatusTip: "S: " + defectCountS
                                     + "  L: " + defectCountL
                                     + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
 
-    Layout.minimumWidth: defectCount > 0 && maxDefectName.length > 0 ? 86 : 28
-    Layout.preferredWidth: Math.min(140, implicitWidth)
-    Layout.maximumWidth: 150
+    Layout.minimumWidth: statusMinimumWidth
+    Layout.preferredWidth: listItemCoil.hasCoilData
+                           ? Math.min(190, Math.max(statusMinimumWidth, statusTextLabel.implicitWidth + 22))
+                           : implicitWidth
+    Layout.maximumWidth: 210
     clip: true
     spacing:1
     Label{
@@ -35,10 +40,13 @@ Row {
     }
 
     Row{
-        spacing:1
+        spacing:4
         Label{
+            id: statusTextLabel
             visible: listItemCoil.hasCoilData
-            text: defectCount + ""
+            width: Math.min(170, implicitWidth)
+            text: root.statusText
+            elide: Text.ElideRight
             font.pointSize: 11
             color: defectCount > 0 ? listItemCoil.defectNameColor : Material.color(Material.Lime)
             font.bold: true
@@ -47,24 +55,6 @@ Row {
             ToolTip.text: defectStatusTip
             MouseArea {
                 id: ma
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
-            }
-        }
-        Label {
-            visible: listItemCoil.hasCoilData && defectCount > 0 && maxDefectName.length > 0
-            width: Math.min(100, implicitWidth)
-            text: maxDefectName
-            elide: Text.ElideRight
-            font.pointSize: 9
-            color: listItemCoil.defectNameColor
-            font.bold: true
-            font.family: "Microsoft YaHei"
-            ToolTip.visible: maxDefectMa.containsMouse
-            ToolTip.text: defectStatusTip
-            MouseArea {
-                id: maxDefectMa
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton

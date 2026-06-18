@@ -191,6 +191,16 @@ def _sync_summary_counts(coil_ids: List[int]) -> None:
         print(f"sync_summaries_range failed: {e}")
 
 
+def _summary_coil_ids_from_defects(defects: List[dict]) -> List[int]:
+    coil_ids = set()
+    for defect in defects:
+        try:
+            coil_ids.add(int(defect["secondaryCoilId"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return sorted(coil_ids)
+
+
 def _escape_like(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
@@ -222,11 +232,16 @@ def add_defects(defects: List[dict]):
     Returns:
 
     """
-    if len(defects):
-        print(fr"add_defects = {defects}")
+    if not defects:
+        return
+
+    print(fr"add_defects = {defects}")
+    coil_ids = _summary_coil_ids_from_defects(defects)
     with Session() as session:
         session.add_all([_create_coil_defect(defect) for defect in defects])
         session.commit()
+    if coil_ids:
+        _sync_summary_counts(coil_ids)
 
 
 def replace_defects(defects: List[dict],
