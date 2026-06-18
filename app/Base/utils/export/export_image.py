@@ -14,6 +14,7 @@ from Base.tools.DataGet import DataGet, get_pil_image
 from Base.tools.tool import expansion_box
 
 
+# Per side; exported crop width/height can grow by up to 80 px.
 AREA_2D_DEFECT_CROP_MARGIN_PX = 40
 
 

@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import QtQuick.Layouts
 Row {
+    id: root
     // 直接绑定到 listItemCoil.maxDefectName，避免手动同步
     property string maxDefectName: listItemCoil.maxDefectName || ""
     property int defectCount: coilModel ? coilModel.coilDefectCountTotal : 0
@@ -11,6 +13,10 @@ Row {
                                     + "  L: " + defectCountL
                                     + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
 
+    Layout.minimumWidth: defectCount > 0 && maxDefectName.length > 0 ? 86 : 28
+    Layout.preferredWidth: Math.min(140, implicitWidth)
+    Layout.maximumWidth: 150
+    clip: true
     spacing:1
     Label{
         visible:!listItemCoil.hasCoilData
@@ -48,7 +54,7 @@ Row {
         }
         Label {
             visible: listItemCoil.hasCoilData && defectCount > 0 && maxDefectName.length > 0
-            width: Math.min(90, implicitWidth)
+            width: Math.min(100, implicitWidth)
             text: maxDefectName
             elide: Text.ElideRight
             font.pointSize: 9

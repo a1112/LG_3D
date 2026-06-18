@@ -46,3 +46,30 @@ def test_2d_export_crop_expands_40_pixels_on_each_side(monkeypatch):
 
     # 2D defect (50, 60, 10, 20) expands to x=10..100 and y=20..120.
     assert cropped.size == (90, 100)
+
+
+def test_2d_export_crop_clamps_40_pixel_margin_at_image_edges(monkeypatch):
+    from Base.utils.export import export_image
+
+    source_image = Image.new("RGB", (80, 70), "white")
+    defect = SimpleNamespace(
+        secondaryCoilId=456,
+        surface="L",
+        defectName="2D_EDGE",
+        defectX=5,
+        defectY=8,
+        defectW=12,
+        defectH=15,
+    )
+
+    monkeypatch.setattr(
+        export_image,
+        "_get_cached_source_image",
+        lambda defect_, source_image_cache=None: source_image,
+    )
+
+    cropped = export_image._crop_defect_image_cached(defect, {})
+
+    # The requested box would extend past the top-left edge, so it clamps to
+    # x=0..57 and y=0..63 while still keeping the 40 px right/bottom margin.
+    assert cropped.size == (57, 63)

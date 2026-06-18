@@ -82,20 +82,53 @@ QtObject {
         if (!defect) {
             return 0
         }
-        if (defect.defectLevel !== undefined && defect.defectLevel !== null && defect.defectLevel > 0) {
-            return defect.defectLevel
+        let level = _firstNumber(defect, ["defectLevel", "DefectLevel", "level", "Level"], 0)
+        if (level > 0) {
+            return level
         }
-        if (defect.defectName) {
-            return global.defectClassProperty.getDefectLevelByDefectName(defect.defectName)
+        let defectName = _getDefectName(defect)
+        if (defectName) {
+            return global.defectClassProperty.getDefectLevelByDefectName(defectName)
         }
         return 0
+    }
+
+    function _firstValue(source, keys, defaultValue) {
+        if (!source) {
+            return defaultValue
+        }
+        for (let i = 0; i < keys.length; i++) {
+            let key = keys[i]
+            if (source[key] !== undefined && source[key] !== null) {
+                return source[key]
+            }
+        }
+        return defaultValue
+    }
+
+    function _firstNumber(source, keys, defaultValue) {
+        let value = _firstValue(source, keys, defaultValue)
+        let numberValue = Number(value)
+        return isFinite(numberValue) ? numberValue : defaultValue
+    }
+
+    function _getDefectName(defect) {
+        return _firstValue(defect, [
+            "defectName",
+            "DefectName",
+            "configDefectName",
+            "ConfigDefectName",
+            "name",
+            "Name"
+        ], "")
     }
 
     function checkDefectShow(fliterDict) {
         let items = _normalizeDefectsData(defectsData)
         for (let i = 0; i < items.length; i++) {
             let defect = items[i]
-            if (defect && fliterDict[defect.defectName]) {
+            let defectName = _getDefectName(defect)
+            if (defectName && fliterDict[defectName]) {
                 return true
             }
         }
@@ -131,8 +164,8 @@ QtObject {
         nextInfo = coil.NextInfo || ""
         nextCode = coil.NextCode || ""
         hasCoil = coil.hasCoil || false
-        maxDefectName = coil.maxDefectName || ""
-        maxDefectLevel = coil.maxDefectLevel || 0
+        maxDefectName = _firstValue(coil, ["maxDefectName", "MaxDefectName"], "")
+        maxDefectLevel = _firstNumber(coil, ["maxDefectLevel", "MaxDefectLevel"], 0)
 
         coilData = coil
 
@@ -147,7 +180,7 @@ QtObject {
 
         defectsData = normalizedDefects
         if (!maxDefectName && defectsData.length > 0) {
-            maxDefectName = defectsData[0].defectName || ""
+            maxDefectName = _getDefectName(defectsData[0])
         }
         if (maxDefectLevel <= 0 && defectsData.length > 0) {
             maxDefectLevel = _getDefectLevel(defectsData[0])
@@ -168,8 +201,9 @@ QtObject {
         let nameList = []
         let items = _normalizeDefectsData(defectItems)
         items.forEach((value) => {
-            if (value && value.defectName) {
-                nameList.push(value.defectName)
+            let defectName = _getDefectName(value)
+            if (defectName) {
+                nameList.push(defectName)
             }
         })
         return nameList
@@ -195,7 +229,7 @@ QtObject {
 
         if (foundDefect) {
             maxDefect.init(foundDefect)
-            maxDefectName = foundDefect.defectName || maxDefectName
+            maxDefectName = _getDefectName(foundDefect) || maxDefectName
             maxDefectLevel = _getDefectLevel(foundDefect)
         } else {
             maxDefect.init(null)
