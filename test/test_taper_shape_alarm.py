@@ -75,6 +75,18 @@ def test_taper_shape_config_normalizes_next_code_variants():
         assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
 
 
+def test_taper_shape_config_accepts_ascii_encoded_next_code():
+    config_data = {
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "2": {"name": "code2", "height": [50, 70], "inner": 3, "outer": 1, "info": "code2"},
+    }
+
+    for next_code in (50, 50.0, "50"):
+        config = TaperShapeConfig(config_data, SimpleNamespace(next_code=next_code))
+
+        assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
 def test_taper_shape_config_prefers_exact_next_code_before_numeric_normalization():
     config = TaperShapeConfig({
         "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
@@ -83,6 +95,16 @@ def test_taper_shape_config_prefers_exact_next_code_before_numeric_normalization
     }, SimpleNamespace(next_code="02"))
 
     assert config.get_config().get_config() == ("code02", [40], 1, 0, "code02")
+
+
+def test_taper_shape_config_prefers_exact_numeric_key_before_ascii_decode():
+    config = TaperShapeConfig({
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "50": {"name": "code50", "height": [45], "inner": 2, "outer": 0, "info": "code50"},
+        "2": {"name": "code2", "height": [50, 70], "inner": 3, "outer": 1, "info": "code2"},
+    }, SimpleNamespace(next_code=50))
+
+    assert config.get_config().get_config() == ("code50", [45], 2, 0, "code50")
 
 
 def test_alarm_config_property_uses_default_taper_shape_config_when_missing():

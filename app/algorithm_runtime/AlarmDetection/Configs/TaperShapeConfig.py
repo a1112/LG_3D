@@ -45,9 +45,14 @@ class TaperShapeConfig(ConfigBase):
         except (TypeError, ValueError):
             return
         if math.isfinite(numeric_value) and numeric_value.is_integer():
-            int_text = str(int(numeric_value))
+            int_value = int(numeric_value)
+            int_text = str(int_value)
             if int_text not in candidates:
                 candidates.append(int_text)
+            if 32 <= int_value <= 126:
+                ascii_text = chr(int_value)
+                if ascii_text and ascii_text not in candidates:
+                    candidates.append(ascii_text)
 
     def _next_code_candidates(self):
         candidates = []
