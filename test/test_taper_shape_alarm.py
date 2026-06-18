@@ -248,6 +248,17 @@ def test_valid_line_height_mask_rejects_non_finite_coordinates():
     assert valid_line_height_mask(line, 10).tolist() == [True, False, False, False, False]
 
 
+def test_valid_line_height_mask_rejects_malformed_line_arrays():
+    assert valid_line_height_mask([], 10).tolist() == []
+    assert valid_line_height_mask(np.array([0, 0, 100]), 10).tolist() == [False, False, False]
+    assert valid_line_height_mask(np.array([[0, 100], [1, 120]]), 10).tolist() == [False, False]
+
+    max_point, min_point = find_line_max_min(np.array([[0, 100], [1, 120]]), 10, use_iqr=True)
+
+    assert max_point is None
+    assert min_point is None
+
+
 def test_taper_shape_ray_points_cover_cardinal_angles():
     npy_data = (np.arange(121).reshape(11, 11) + 1000).astype(np.int32)
     mask = np.ones((11, 11), dtype=np.uint8) * 255

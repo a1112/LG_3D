@@ -15,7 +15,13 @@ from CoilDataBase.models import PointData as PointDataModel
 
 
 def valid_line_height_mask(line_, none_data_value=10):
-    line_array = np.asarray(line_, dtype=float)
+    try:
+        line_array = np.asarray(line_, dtype=float)
+    except (TypeError, ValueError, OverflowError):
+        return np.zeros(0, dtype=bool)
+    if line_array.ndim != 2 or line_array.shape[1] < 3:
+        row_count = line_array.shape[0] if line_array.ndim > 0 else 0
+        return np.zeros(row_count, dtype=bool)
     return np.all(np.isfinite(line_array[:, :3]), axis=1) & (line_array[:, 2] > none_data_value)
 
 
