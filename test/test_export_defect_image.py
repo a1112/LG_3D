@@ -36,10 +36,13 @@ def test_2d_export_crop_expands_40_pixels_on_each_side(monkeypatch):
         lambda defect_, source_image_cache=None: source_image,
     )
 
-    assert export_image._crop_margin_for_defect(defect) == 40
-    assert export_image._classifier_file_names(defect, 40)[0].endswith(
-        "_m40.png")
+    assert export_image._crop_margin_for_defect(
+        defect) == export_image.AREA_2D_DEFECT_CROP_MARGIN_PX
+    assert export_image._classifier_file_names(
+        defect, export_image.AREA_2D_DEFECT_CROP_MARGIN_PX)[0].endswith(
+            "_m40.png")
 
     cropped = export_image._crop_defect_image_cached(defect, {})
 
+    # 2D defect (50, 60, 10, 20) expands to x=10..100 and y=20..120.
     assert cropped.size == (90, 100)

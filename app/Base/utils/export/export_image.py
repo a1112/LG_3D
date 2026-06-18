@@ -14,6 +14,9 @@ from Base.tools.DataGet import DataGet, get_pil_image
 from Base.tools.tool import expansion_box
 
 
+AREA_2D_DEFECT_CROP_MARGIN_PX = 40
+
+
 def _defect_int(value, default=0) -> int:
     try:
         return int(float(value))
@@ -49,7 +52,7 @@ def _defect_name_candidates(defect: CoilDefect,
 
 def _crop_margin_for_defect(defect: CoilDefect) -> int | None:
     if _is_2d_defect(defect):
-        return 40
+        return AREA_2D_DEFECT_CROP_MARGIN_PX
     return None
 
 

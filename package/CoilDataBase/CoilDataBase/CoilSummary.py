@@ -89,6 +89,29 @@ def _apply_max_defect_summary(summary: CoilSummary, defects, coil_id: int) -> No
         log.debug(f"Coil {coil_id}: No defects found")
 
 
+def _summary_needs_max_defect_fill(summary: CoilSummary) -> bool:
+    defect_count = (summary.DefectCountS or 0) + (summary.DefectCountL or 0)
+    return defect_count > 0 and not (summary.MaxDefectName or "").strip()
+
+
+def _summary_list_json(session: Session, summaries) -> List[dict]:
+    result = []
+    max_defect_updated = False
+
+    for summary in summaries:
+        if _summary_needs_max_defect_fill(summary):
+            defects = session.query(CoilDefect).filter_by(
+                secondaryCoilId=summary.Id).all()
+            _apply_max_defect_summary(summary, defects, summary.Id)
+            max_defect_updated = True
+        result.append(summary.get_json())
+
+    if max_defect_updated:
+        session.commit()
+
+    return result
+
+
 def sync_coil_summary(session: Session, coil_id: int) -> Optional[CoilSummary]:
     """
     同步单个卷材的摘要数据
@@ -368,12 +391,8 @@ def get_coil_list_with_summary(
             # 这里可以触发批量同步，但为避免长时间阻塞，先返回空
             # 由后台任务批量创建摘要
 
-        # 转换为前端格式
-        result = []
-        for summary in summaries:
-            result.append(summary.get_json())
-
-        return result
+        # 历史摘要可能只有缺陷数量，没有 MaxDefect 字段；按需补齐后再返回。
+        return _summary_list_json(session, summaries)
 
 
 def search_coils_by_coil_no_summary(
@@ -388,7 +407,7 @@ def search_coils_by_coil_no_summary(
         if by_coil:
             query = query.filter(CoilSummary.HasCoil == True)
         summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
-        return [summary.get_json() for summary in summaries]
+        return _summary_list_json(session, summaries)
 
 
 def search_coils_by_id_summary(
@@ -409,7 +428,7 @@ def search_coils_by_id_summary(
         if by_coil:
             query = query.filter(CoilSummary.HasCoil == True)
         summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
-        return [summary.get_json() for summary in summaries]
+        return _summary_list_json(session, summaries)
 
 
 def search_coils_by_datetime_summary(
@@ -428,7 +447,7 @@ def search_coils_by_datetime_summary(
         if by_coil:
             query = query.filter(CoilSummary.HasCoil == True)
         summaries = query.order_by(CoilSummary.Id.desc()).limit(limit).all()
-        return [summary.get_json() for summary in summaries]
+        return _summary_list_json(session, summaries)
 
 
 def get_coil_list_with_max_defect(
@@ -747,12 +766,7 @@ def get_coil_list_hybrid(
             CoilSummary.Id.in_(coil_ids)
         ).order_by(CoilSummary.Id.desc() if rev else CoilSummary.Id.asc()).all()
 
-        # 转换为前端格式
-        result = []
-        for summary in summaries:
-            result.append(summary.get_json())
-
-        return result
+        return _summary_list_json(session, summaries)
 
 
 def get_coil_detail(coil_id: int) -> dict:
@@ -911,43 +925,12 @@ def sync_summaries_range(coil_ids: List[int]) -> int:
             # 计算最严重缺陷
             defects = session.query(CoilDefect).filter_by(secondaryCoilId=coil_id).all()
             if defects:
-                log.debug(f"Coil {coil_id}: Found {len(defects)} defects, updating summary (S={defect_count_s}, L={defect_count_l})")
+                log.debug(
+                    f"Coil {coil_id}: Found {len(defects)} defects, "
+                    f"updating summary (S={defect_count_s}, L={defect_count_l})"
+                )
             else:
                 log.debug(f"Coil {coil_id}: No defects found")
-                try:
-                    from Base.CONFIG import defectClassesProperty
-                    defect_config = defectClassesProperty.data
-                except Exception:
-                    defect_config = {}
-
-                max_level = 0
-                max_defect = None
-
-                for defect in defects:
-                    defect_name = defect.defectName
-                    if defect_name in defect_config:
-                        defect_level = defect_config[defect_name].get("level", 1)
-                        is_shown = defect_config[defect_name].get("show", True)
-                    else:
-                        defect_level = 1
-                        is_shown = True
-
-                    if is_shown and defect_level > max_level:
-                        max_level = defect_level
-                        max_defect = defect
-
-                if max_defect:
-                    summary.MaxDefectName = max_defect.defectName or ""
-                    summary.MaxDefectLevel = max_level
-                    summary.MaxDefectSurface = max_defect.surface or "S"
-                    summary.MaxDefectIsShown = is_shown
-                    log.debug(f"Coil {coil_id}: MaxDefect updated to '{max_defect.defectName}' (level={max_level}, shown={is_shown})")
-                else:
-                    summary.MaxDefectName = ""
-                    summary.MaxDefectLevel = 0
-                    summary.MaxDefectSurface = ""
-                    summary.MaxDefectIsShown = False
-                    log.debug(f"Coil {coil_id}: All defects filtered out or no defects")
 
             _apply_max_defect_summary(summary, defects, coil_id)
             updated_count += 1
