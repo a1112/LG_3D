@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 for path in (ROOT / "app", ROOT / "app" / "Base", ROOT / "app" / "algorithm_runtime"):
     sys.path.insert(0, str(path))
 
-from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig
+from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig, normalize_taper_height_limits
 from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
 from AlarmDetection.Result.AlarmData import AlarmData
 import AlarmDetection.Result.AlarmData as alarm_data_module
@@ -607,6 +607,21 @@ def test_grading_alarm_taper_shape_parses_string_height_limits(monkeypatch):
     assert result.grad == 2
     assert "外塔最高值55.00 >= 50.00" in result.errorMsg
     assert json.loads(captured[0].data)["height_limits"] == [50.0, 80.0]
+
+
+@pytest.mark.parametrize(
+    ("height_limits", "expected"),
+    [
+        ("50、80", [50.0, 80.0]),
+        ("50mm/80mm", [50.0, 80.0]),
+        ("±60 mm", [60.0]),
+        ("height: 45 ; 90", [45.0, 90.0]),
+    ],
+)
+def test_taper_shape_height_limits_parse_common_text_formats(height_limits, expected):
+    assert normalize_taper_height_limits(height_limits) == expected
+    threshold = min(expected)
+    assert taper_error_threshold_from_limits(height_limits) == (threshold, threshold)
 
 
 def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):

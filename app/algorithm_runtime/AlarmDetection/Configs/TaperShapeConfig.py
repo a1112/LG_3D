@@ -1,10 +1,14 @@
 import math
+import re
 
 from .ConfigBase import ConfigBase
 from Base.property.Base import DataIntegration
 
 
 DEFAULT_TAPER_HEIGHT_LIMITS = [60, 80]
+_NUMBER_PATTERN = re.compile(
+    r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+)
 
 
 def iter_taper_height_values(values):
@@ -29,6 +33,12 @@ def iter_taper_height_values(values):
         if "," in normalized_text:
             for item in normalized_text.split(","):
                 yield from iter_taper_height_values(item)
+            return
+        numeric_tokens = _NUMBER_PATTERN.findall(normalized_text)
+        if numeric_tokens and (
+                len(numeric_tokens) > 1 or numeric_tokens[0] != normalized_text):
+            for item in numeric_tokens:
+                yield item
             return
         yield text
         return
