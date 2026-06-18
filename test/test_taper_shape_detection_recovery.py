@@ -53,3 +53,28 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
     assert "missing flat roll center" in warnings[1]
     assert "180" in warnings[2]
     assert "bad coordinate" in warnings[2]
+
+
+def test_taper_shape_detection_recovery_logs_without_coil_id(monkeypatch):
+    warnings = []
+
+    def fake_detection(data_integration, rotation_angle):
+        raise ValueError("invalid taper line")
+
+    data_integration = SimpleNamespace(key="L")
+    monkeypatch.setattr(taper_processing, "TAPER_ROTATION_STEP", 180)
+    monkeypatch.setattr(
+        taper_processing,
+        "detection_taper_shape_by_rotation_angle",
+        fake_detection,
+    )
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    result = taper_processing._detection_taper_shape_(data_integration)
+
+    assert result == {}
+    assert len(warnings) == 2
+    assert "L" in warnings[0]
+    assert "0" in warnings[0]
+    assert "invalid taper line" in warnings[0]
+    assert "180" in warnings[1]

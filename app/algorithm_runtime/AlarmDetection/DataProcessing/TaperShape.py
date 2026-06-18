@@ -27,6 +27,16 @@ def detection_taper_shape_by_area(data_integration: DataIntegration):
     pass
 
 
+def _data_integration_log_fields(data_integration: DataIntegration):
+    coil_id = getattr(data_integration, "coilId", None)
+    if coil_id is None:
+        coil_id = getattr(data_integration, "secondaryCoilId", "")
+    surface = getattr(data_integration, "surface", None)
+    if surface is None:
+        surface = getattr(data_integration, "key", "")
+    return coil_id, surface
+
+
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detection_taper_shape_(data_integration: DataIntegration):
     print("塔形检测")
@@ -36,8 +46,8 @@ def _detection_taper_shape_(data_integration: DataIntegration):
         try:
             line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
         except TAPER_ANGLE_RECOVERABLE_ERRORS as e:
-            surface = getattr(data_integration, "surface", getattr(data_integration, "key", ""))
-            logger.warning(f"{data_integration.coilId} {surface} 塔形角度 {rotate} 跳过: {e}")
+            coil_id, surface = _data_integration_log_fields(data_integration)
+            logger.warning(f"{coil_id} {surface} 塔形角度 {rotate} 跳过: {e}")
 
 
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
