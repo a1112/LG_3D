@@ -485,6 +485,32 @@ def test_taper_shape_rotation_rejects_non_finite_center():
         taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
 
 
+def test_taper_shape_rotation_rejects_center_outside_image_bounds():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(12, 5))
+        ),
+        npy_data=np.zeros((11, 11), dtype=np.int32),
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    with pytest.raises(ValueError, match="center out of image bounds"):
+        taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+
+def test_taper_shape_rotation_rejects_mismatched_image_shapes():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(5, 5))
+        ),
+        npy_data=np.zeros((11, 11), dtype=np.int32),
+        npy_mask=np.ones((10, 11), dtype=np.uint8) * 255,
+    )
+
+    with pytest.raises(ValueError, match="3D/mask shape mismatch"):
+        taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+
 def test_taper_shape_rotation_accepts_center_object_with_xy_attrs():
     data_integration = SimpleNamespace(
         alarmData=SimpleNamespace(

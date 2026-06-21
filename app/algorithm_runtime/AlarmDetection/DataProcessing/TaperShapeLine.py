@@ -15,6 +15,32 @@ def validate_taper_center(point):
     return Point2D(x, y)
 
 
+def _validate_taper_image_array(value, label):
+    try:
+        array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as e:
+        raise ValueError(f"塔形检测失败: {label} image invalid") from e
+    if array.ndim != 2 or array.shape[0] <= 0 or array.shape[1] <= 0:
+        raise ValueError(f"塔形检测失败: {label} image must be non-empty 2D")
+    return array
+
+
+def validate_taper_detection_inputs(npy_data, mask, center):
+    npy_data = _validate_taper_image_array(npy_data, "3D")
+    mask = _validate_taper_image_array(mask, "mask")
+    if npy_data.shape != mask.shape:
+        raise ValueError(
+            f"塔形检测失败: 3D/mask shape mismatch {npy_data.shape} != {mask.shape}"
+        )
+    height, width = npy_data.shape
+    if not (0 <= center.x < width and 0 <= center.y < height):
+        raise ValueError(
+            f"塔形检测失败: center out of image bounds "
+            f"({center.x}, {center.y}) for shape ({height}, {width})"
+        )
+    return npy_data, mask
+
+
 def find_max_min_value(line, noneDataValue, offset=0):
     """
     找到线段的最大最小值
@@ -74,6 +100,7 @@ def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, r
     p_center = validate_taper_center(data_integration.alarmData.flatRollData.get_center())
     npy_data = data_integration.npy_data
     mask = data_integration.npy_mask
+    npy_data, mask = validate_taper_detection_inputs(npy_data, mask, p_center)
 
     line_data = getLengthDataByRotate(npy_data, mask, p_center, rotation_angle, ray=True)
     line_data: LineData
