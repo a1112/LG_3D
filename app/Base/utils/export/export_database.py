@@ -1,4 +1,5 @@
 import json
+import math
 from collections import OrderedDict, defaultdict
 
 from CoilDataBase import Coil
@@ -110,10 +111,39 @@ def _alarm_taper_shape_data(alarm_taper_shape):
     return parsed if isinstance(parsed, dict) else {}
 
 
+def _safe_abs_number(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+    return abs(number) if math.isfinite(number) else 0.0
+
+
+def _taper_alarm_severity(alarm_taper_shape):
+    alarm_data = _alarm_taper_shape_data(alarm_taper_shape)
+    level = _safe_abs_number(getattr(alarm_taper_shape, "level", 0))
+    worst_abs = _safe_abs_number(alarm_data.get("worst_abs_mm"))
+    value_abs = max(
+        _safe_abs_number(getattr(alarm_taper_shape, "out_taper_max_value", 0)),
+        _safe_abs_number(getattr(alarm_taper_shape, "out_taper_min_value", 0)),
+        _safe_abs_number(getattr(alarm_taper_shape, "in_taper_max_value", 0)),
+        _safe_abs_number(getattr(alarm_taper_shape, "in_taper_min_value", 0)),
+    )
+    return level, worst_abs, value_abs
+
+
+def _select_taper_alarm_shape(alarm_taper_shapes):
+    shapes = [shape for shape in (alarm_taper_shapes or []) if shape is not None]
+    if not shapes:
+        return None
+    return max(shapes, key=_taper_alarm_severity)
+
+
 def get_taper_shape_info(secondary_coil,alarm_info_dict):
     res_data = {}
-    alarm_taper_shape_dict = spit_data_list(secondary_coil.childrenAlarmTaperShape, one=True)
-    for key, alarmTaperShape in alarm_taper_shape_dict.items():
+    alarm_taper_shape_dict = spit_data_list(secondary_coil.childrenAlarmTaperShape, one=False)
+    for key, alarm_taper_shapes in alarm_taper_shape_dict.items():
+        alarmTaperShape = _select_taper_alarm_shape(alarm_taper_shapes)
         alarmTaperShape: AlarmTaperShape
         if alarmTaperShape:
             alarmTaperShape: AlarmTaperShape

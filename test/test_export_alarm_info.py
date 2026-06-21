@@ -106,15 +106,61 @@ class _FakeWorkbook:
         return self.worksheet
 
 
-def _taper_alarm(surface):
+def _taper_alarm(
+    surface,
+    *,
+    level=1,
+    rotation_angle=40.0,
+    out_taper_max_value=80.0,
+    worst_abs_mm=80.0,
+    marker="outer_max_point",
+):
     return SimpleNamespace(
         surface=surface,
-        rotation_angle=40.0,
-        out_taper_max_value=80.0,
+        level=level,
+        rotation_angle=rotation_angle,
+        out_taper_max_value=out_taper_max_value,
         out_taper_min_value=-2.5,
         in_taper_max_value=75.0,
         in_taper_min_value=-10.0,
+        data=json.dumps({
+            "worst_abs_mm": worst_abs_mm,
+            "worst_point_type": marker,
+            "worst_angle": rotation_angle,
+        }, ensure_ascii=False),
     )
+
+
+def test_export_taper_info_uses_most_severe_alarm_for_same_surface():
+    from Base.utils.export.export_database import get_item_data
+
+    secondary_coil = SimpleNamespace(
+        childrenAlarmInfo=[],
+        childrenAlarmTaperShape=[
+            _taper_alarm(
+                "S",
+                level=1,
+                rotation_angle=10.0,
+                out_taper_max_value=120.0,
+                worst_abs_mm=120.0,
+                marker="light_taper_alarm",
+            ),
+            _taper_alarm(
+                "S",
+                level=3,
+                rotation_angle=40.0,
+                out_taper_max_value=80.0,
+                worst_abs_mm=80.0,
+                marker="severe_taper_alarm",
+            ),
+        ],
+    )
+
+    item_data = get_item_data(secondary_coil, _export_config())
+    values = set(item_data.values())
+
+    assert "severe_taper_alarm" in values
+    assert "light_taper_alarm" not in values
 
 
 def test_export_info_data_uses_union_headers_for_surface_specific_taper_fields():
