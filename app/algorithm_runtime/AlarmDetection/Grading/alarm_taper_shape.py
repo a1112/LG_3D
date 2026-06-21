@@ -209,21 +209,47 @@ def _metrics_from_line(data_integration: DataIntegration,
     return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
 
+def _line_error_label(line_key, line_data) -> str:
+    angle = getattr(line_data, "rotation_angle", line_key)
+    if angle is None:
+        return "未知角度"
+    return f"{angle}度"
+
+
+def _set_taper_grading_errors(data_integration: DataIntegration, errors):
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is not None:
+        alarm_data.taper_shape_grading_errors = list(errors)
+
+
 def _valid_line_metrics(data_integration: DataIntegration,
                         inner_ignore_count,
                         outer_ignore_count) -> list[TaperLineMetrics]:
     line_data_dict = getattr(data_integration.alarmData, "lineDataDict", None) or {}
     valid_metrics = []
+    grading_errors = []
     if isinstance(line_data_dict, Mapping):
-        line_data_values = line_data_dict.values()
+        line_items = line_data_dict.items()
     elif isinstance(line_data_dict, (list, tuple, set)):
-        line_data_values = line_data_dict
+        line_items = enumerate(line_data_dict)
     else:
+        _set_taper_grading_errors(
+            data_integration,
+            [f"lineDataDict容器无效: {type(line_data_dict).__name__}"],
+        )
         return valid_metrics
-    for line_data in line_data_values:
-        metrics = _metrics_from_line(data_integration, line_data, inner_ignore_count, outer_ignore_count)
+    for line_key, line_data in line_items:
+        line_label = _line_error_label(line_key, line_data)
+        try:
+            metrics = _metrics_from_line(data_integration, line_data, inner_ignore_count, outer_ignore_count)
+        except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
+            grading_errors.append(f"{line_label}: {e}")
+            continue
         if metrics is not None:
             valid_metrics.append(metrics)
+        else:
+            grading_errors.append(f"{line_label}: 无有效塔形线指标")
+    _set_taper_grading_errors(data_integration, grading_errors)
     return valid_metrics
 
 
@@ -275,6 +301,25 @@ def _taper_detection_error_message(data_integration: DataIntegration, limit: int
     return message
 
 
+def _taper_grading_error_message(data_integration: DataIntegration, limit: int = 3) -> str:
+    alarm_data = getattr(data_integration, "alarmData", None)
+    errors = getattr(alarm_data, "taper_shape_grading_errors", None) or []
+    messages = []
+    for error in errors:
+        text = str(error).strip()
+        if text:
+            messages.append(text)
+        if len(messages) >= limit:
+            break
+    if not messages:
+        return ""
+    remaining = max(0, len(errors) - len(messages))
+    message = "；".join(messages)
+    if remaining:
+        message += f"；另有{remaining}条线无效"
+    return message
+
+
 def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
     try:
         add_obj(alarm_taper_shape)
@@ -295,9 +340,15 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     valid_metrics = _valid_line_metrics(data_integration, inner, outer)
     if not valid_metrics:
         error_msg = "塔形检测失败: 无有效线数据"
-        detection_error_msg = _taper_detection_error_message(data_integration)
-        if detection_error_msg:
-            error_msg = f"{error_msg}；{detection_error_msg}"
+        detail_messages = [
+            message for message in (
+                _taper_detection_error_message(data_integration),
+                _taper_grading_error_message(data_integration),
+            )
+            if message
+        ]
+        if detail_messages:
+            error_msg = f"{error_msg}；{'；'.join(detail_messages)}"
         return AlarmGradResult(3, error_msg, taper_shape_config)
 
     max_outer_metrics = _select_max_metrics(data_integration, valid_metrics, "outer_max_point")

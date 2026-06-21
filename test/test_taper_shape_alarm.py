@@ -1274,6 +1274,36 @@ def test_grading_alarm_taper_shape_invalid_line_container_returns_failure(monkey
 
     assert result.grad == 3
     assert "有效线数据" in result.errorMsg
+    assert "lineDataDict容器无效" in result.errorMsg
+    assert captured == []
+
+
+def test_grading_alarm_taper_shape_reports_invalid_line_metrics(monkeypatch):
+    malformed_line = SimpleNamespace(
+        rotation_angle=10,
+        ray_line=np.array([0, 0, 260], dtype=float),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={10: malformed_line})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "无有效线数据" in result.errorMsg
+    assert "10度: 无有效塔形线指标" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "10度: 无有效塔形线指标"
+    ]
     assert captured == []
 
 

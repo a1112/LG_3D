@@ -16,6 +16,7 @@ class AlarmData:
         self.lineDataDict:Optional[Dict[LineData]] = None
         self.taper_shape_disabled = False
         self.taper_shape_errors = []
+        self.taper_shape_grading_errors = []
 
     def set_flat_roll_data(self,flat_roll_data):
         self.flatRollData = flat_roll_data
