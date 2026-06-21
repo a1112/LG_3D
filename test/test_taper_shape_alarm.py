@@ -853,6 +853,71 @@ def test_grading_alarm_taper_shape_skips_malformed_ray_line(monkeypatch):
     assert json.loads(captured[0].data)["valid_line_count"] == 1
 
 
+def test_grading_alarm_taper_shape_uses_cached_metrics_when_ray_line_fails(monkeypatch):
+    class CachedLineData:
+        rotation_angle = 30
+        outer_max_point = _point(10, 20, 260)
+        outer_min_point = _point(11, 21, 100)
+        inner_max_point = _point(12, 22, 100)
+        inner_min_point = _point(13, 23, 100)
+
+        @property
+        def ray_line(self):
+            raise ValueError("raw ray line unavailable")
+
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={30: CachedLineData()})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured
+    assert captured[0].rotation_angle == 30
+    assert captured[0].out_taper_max_value == 80.0
+    assert json.loads(captured[0].data)["valid_line_count"] == 1
+
+
+def test_grading_alarm_taper_shape_does_not_use_cache_after_trim_exhausts_side(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[-1, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        outer_max_point=_point(9, 0, 260),
+        outer_min_point=_point(5, 0, 100),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(0, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.currentSecondaryCoil = SimpleNamespace(Thickness=10)
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 1, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+
+
 def test_grading_alarm_taper_shape_ignores_non_finite_coordinate_points(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[0, 0] = np.nan

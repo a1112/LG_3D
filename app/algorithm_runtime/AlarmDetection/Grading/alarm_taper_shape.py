@@ -126,7 +126,7 @@ def _trim_line_segments(data_integration: DataIntegration,
     try:
         line_points = np.asarray(line_data.ray_line, dtype=float)
     except AttributeError:
-        return None, 0.0, 0.0, False
+        return None, 0.0, 0.0, True
     except (TypeError, ValueError, OverflowError):
         return None, 0.0, 0.0, True
 
@@ -157,22 +157,23 @@ def _trim_line_segments(data_integration: DataIntegration,
     inner_points = inner_points[valid_line_height_mask(inner_points, 10)]
     outer_points = outer_points[valid_line_height_mask(outer_points, 10)]
     if len(inner_points) == 0 or len(outer_points) == 0:
-        return None, ignored_inner_mm, ignored_outer_mm, True
-    return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, True
+        return None, ignored_inner_mm, ignored_outer_mm, False
+    return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, False
 
 
 def _metrics_from_line(data_integration: DataIntegration,
                        line_data: LineData,
                        inner_ignore_count,
                        outer_ignore_count):
-    line_segments, ignored_inner_mm, ignored_outer_mm, has_line_points = _trim_line_segments(
+    line_segments, ignored_inner_mm, ignored_outer_mm, allow_cached_metrics = _trim_line_segments(
         data_integration,
         line_data,
         inner_ignore_count,
         outer_ignore_count
     )
     if line_segments is None:
-        if has_line_points:
+        # Use cached extrema only when raw line points are unavailable, not when configured trimming removed a side.
+        if not allow_cached_metrics:
             return None
         required_attrs = ("outer_max_point", "outer_min_point", "inner_max_point", "inner_min_point")
         if not all(getattr(line_data, attr, None) is not None for attr in required_attrs):
