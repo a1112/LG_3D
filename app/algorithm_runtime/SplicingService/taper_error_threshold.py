@@ -9,7 +9,7 @@ from AlarmDetection.Configs.TaperShapeConfig import (
 def _positive_finite(value):
     try:
         limit = abs(float(value))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     if not math.isfinite(limit) or limit <= 0:
         return None

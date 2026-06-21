@@ -2023,6 +2023,14 @@ def test_taper_error_image_uses_first_alarm_threshold():
     assert taper_error_threshold_from_limits("[45；90]") == (45.0, 45.0)
 
 
+def test_taper_error_threshold_ignores_overflowing_values():
+    class OverflowingValue:
+        def __float__(self):
+            raise OverflowError("too large")
+
+    assert taper_error_threshold_from_limits([OverflowingValue()], 120) == (120.0, 120.0)
+
+
 def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(
