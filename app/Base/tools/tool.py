@@ -480,6 +480,8 @@ def get_intersection_points(p1, p2, width, height):
         # 线水平时，只会与左右边界相交
         add_point_if_on_boundary(0, y1)
         add_point_if_on_boundary(width, y1)
+    unique_points = []
+    seen_points = set()
     for p in intersection_points:
         if p[0] < 0:
             p[0] = 0
@@ -489,7 +491,25 @@ def get_intersection_points(p1, p2, width, height):
             p[0] = width - 1
         if p[1] >= height:
             p[1] = height - 1
-    return intersection_points[:2]
+
+        point_key = (p[0], p[1])
+        if point_key in seen_points:
+            continue
+        seen_points.add(point_key)
+        unique_points.append(p)
+
+    if len(unique_points) <= 2:
+        return unique_points
+
+    max_pair = unique_points[:2]
+    max_distance = -1
+    for index, p1_ in enumerate(unique_points):
+        for p2_ in unique_points[index + 1:]:
+            distance = (p1_[0] - p2_[0]) ** 2 + (p1_[1] - p2_[1]) ** 2
+            if distance > max_distance:
+                max_distance = distance
+                max_pair = [p1_, p2_]
+    return max_pair
 
 def bound_box(box, image_size):
     """

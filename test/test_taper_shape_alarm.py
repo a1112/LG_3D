@@ -441,6 +441,22 @@ def test_taper_shape_ray_points_cover_cardinal_angles():
         assert np.all(dots > 0), f"{angle} degree ray includes points behind the center"
 
 
+def test_taper_shape_ray_points_deduplicate_corner_intersections_on_rectangular_image():
+    npy_data = (np.arange(160).reshape(20, 8) + 1000).astype(np.int32)
+    mask = np.ones((20, 8), dtype=np.uint8) * 255
+    center = Point2D(5, 5)
+    target = Point2D(15, 15)
+
+    line_data = LineData(npy_data, mask, center, target)
+    points = line_data.all_image_line_points(mask=True, ray=True)
+    direction = np.array([target.x - center.x, target.y - center.y], dtype=float)
+    vectors = points[:, :2].astype(float) - np.array([center.x, center.y], dtype=float)
+    dots = vectors @ direction
+
+    assert len(points) > 0
+    assert np.all(dots > 0)
+
+
 def test_line_data_points_cache_can_be_read_repeatedly():
     line_data = LineData(
         npy_data=np.ones((5, 5), dtype=np.int32) * 100,
