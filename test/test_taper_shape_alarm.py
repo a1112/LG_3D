@@ -58,6 +58,54 @@ class FakeAlarmData:
         self.lineDataDict = line_data
 
 
+def test_data_integration_next_code_decodes_current_secondary_coil_weight():
+    from Base.property.Base import DataIntegration
+
+    data_integration = object.__new__(DataIntegration)
+    data_integration.currentSecondaryCoil = SimpleNamespace(Weight=50.0)
+    data_integration.coilData = None
+
+    assert data_integration.next_code == "2"
+
+
+def test_data_integration_next_code_falls_back_to_coil_data_weight():
+    from Base.property.Base import DataIntegration
+
+    data_integration = object.__new__(DataIntegration)
+    data_integration.currentSecondaryCoil = None
+    data_integration.coilData = {"Weight": "50.0"}
+
+    assert data_integration.next_code == "2"
+
+
+def test_data_integration_next_code_skips_bad_current_weight_for_coil_data():
+    from Base.property.Base import DataIntegration
+
+    data_integration = object.__new__(DataIntegration)
+    data_integration.currentSecondaryCoil = SimpleNamespace(Weight="bad")
+    data_integration.coilData = {"Weight": "50.0"}
+
+    assert data_integration.next_code == "2"
+
+
+def test_data_integration_next_code_returns_string_default_on_missing_weight(monkeypatch):
+    from Base.property.Base import DataIntegration
+    import Base.property.Base as base_module
+
+    warnings = []
+    data_integration = object.__new__(DataIntegration)
+    data_integration.coilId = 1001
+    data_integration.direction = "R"
+    data_integration.key = "S"
+    data_integration.currentSecondaryCoil = SimpleNamespace(Weight="bad")
+    data_integration.coilData = {}
+    monkeypatch.setattr(base_module.logger, "warning", warnings.append)
+
+    assert data_integration.next_code == "1"
+    assert len(warnings) == 1
+    assert "next_code" in warnings[0]
+
+
 def test_taper_shape_config_uses_next_code_override():
     config = TaperShapeConfig({
         "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},

@@ -184,7 +184,7 @@ class TaperShapeConfig(ConfigBase):
                         "next_code_value", "NextCodeValue"):
                 self._append_mapping_candidate_value(alias_values, source, key)
 
-        # DataIntegration.next_code returns integer 49 when the source coil is
+        # Legacy integrations may return integer 49 when the source coil is
         # unavailable. Keep real aliases ahead of that failure sentinel so the
         # alarm rule does not accidentally fall back to code "1".
         if values == [49] and alias_values:

@@ -142,10 +142,23 @@ class DataIntegration:
 
     @property
     def next_code(self):
-        try:
-            return str(chr(int(self.currentSecondaryCoil.Weight)))
-        except:
-            return 49
+        weight_candidates = [
+            getattr(self.currentSecondaryCoil, "Weight", None),
+        ]
+        if isinstance(self.coilData, dict):
+            weight_candidates.append(self.coilData.get("Weight"))
+
+        last_error = None
+        for weight in weight_candidates:
+            if weight is None:
+                continue
+            try:
+                return str(chr(int(float(weight))))
+            except (TypeError, ValueError, OverflowError) as e:
+                last_error = e
+
+        logger.warning(f"{self.id_str} next_code failed, use default code 1: {last_error or 'missing weight'}")
+        return "1"
 
     @property
     def next_name(self):
