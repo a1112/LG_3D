@@ -188,6 +188,7 @@ class CoilSummary(Base):
             # 添加 maxDefectName 和 maxDefectLevel 字段，用于状态列直接显示
             "maxDefectName": self.MaxDefectName or "",
             "maxDefectLevel": self.MaxDefectLevel or 0,
+            "maxDefectSurface": self.MaxDefectSurface or "",
             "childrenCoilCheck": [],
         }
 

@@ -7,6 +7,7 @@ Item {
     property var alarmInfo: null  // 从 coilModel.coilData.alarmInfo 传入（QML属性名不能用大写开头）
     property string maxDefectName: ""  // 从 coilModel.maxDefectName 传入
     property int maxDefectLevel: 0  // 从 coilModel.maxDefectLevel 传入
+    property string maxDefectSurface: ""
 
     property bool hasAlarmData:true// hasalarmInfo
     property bool hasCoilData: hasCoil

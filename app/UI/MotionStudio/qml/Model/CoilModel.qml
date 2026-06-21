@@ -33,6 +33,7 @@ QtObject {
     property bool hasCoil: true
     property string maxDefectName: ""
     property int maxDefectLevel: 0
+    property string maxDefectSurface: ""
 
     property AlarmItemInfo alarmItemInfo_L: AlarmItemInfo {}
     property AlarmItemInfo alarmItemInfo_S: AlarmItemInfo {}
@@ -123,6 +124,10 @@ QtObject {
         ], "")
     }
 
+    function _getDefectSurface(defect) {
+        return _firstValue(defect, ["surface", "Surface"], "")
+    }
+
     function checkDefectShow(fliterDict) {
         let items = _normalizeDefectsData(defectsData)
         for (let i = 0; i < items.length; i++) {
@@ -166,6 +171,7 @@ QtObject {
         hasCoil = coil.hasCoil || false
         maxDefectName = _firstValue(coil, ["maxDefectName", "MaxDefectName"], "")
         maxDefectLevel = _firstNumber(coil, ["maxDefectLevel", "MaxDefectLevel"], 0)
+        maxDefectSurface = _firstValue(coil, ["maxDefectSurface", "MaxDefectSurface"], "")
 
         coilData = coil
 
@@ -184,6 +190,9 @@ QtObject {
         }
         if (maxDefectLevel <= 0 && defectsData.length > 0) {
             maxDefectLevel = _getDefectLevel(defectsData[0])
+        }
+        if (!maxDefectSurface && defectsData.length > 0) {
+            maxDefectSurface = _getDefectSurface(defectsData[0])
         }
 
         coilCreateTime.initByDict(coil.CreateTime)
@@ -231,6 +240,7 @@ QtObject {
             maxDefect.init(foundDefect)
             maxDefectName = _getDefectName(foundDefect) || maxDefectName
             maxDefectLevel = _getDefectLevel(foundDefect)
+            maxDefectSurface = _getDefectSurface(foundDefect) || maxDefectSurface
         } else {
             maxDefect.init(null)
         }

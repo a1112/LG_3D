@@ -6,21 +6,25 @@ Row {
     id: root
     // 直接绑定到 listItemCoil.maxDefectName，避免手动同步
     property string maxDefectName: listItemCoil.maxDefectName || ""
+    property string maxDefectSurface: listItemCoil.maxDefectSurface || ""
+    property int maxDefectLevel: listItemCoil.maxDefectLevel || 0
     property int defectCount: coilModel ? coilModel.coilDefectCountTotal : 0
     property int defectCountS: coilModel ? coilModel.coilDefectCountS : 0
     property int defectCountL: coilModel ? coilModel.coilDefectCountL : 0
     property bool hasMaxDefectName: maxDefectName.length > 0
-    property string statusText: hasMaxDefectName ? defectCount + " " + maxDefectName : defectCount + ""
-    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 112 : 34
+    property string statusText: hasMaxDefectName ? defectCount + " / " + maxDefectName : defectCount + ""
+    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 132 : 34
     property string defectStatusTip: "S: " + defectCountS
                                     + "  L: " + defectCountL
                                     + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
+                                    + (maxDefectSurface ? " (" + maxDefectSurface + ")" : "")
+                                    + (maxDefectLevel > 0 ? "  等级: " + maxDefectLevel : "")
 
     Layout.minimumWidth: statusMinimumWidth
     Layout.preferredWidth: listItemCoil.hasCoilData
-                           ? Math.min(190, Math.max(statusMinimumWidth, statusTextLabel.implicitWidth + 22))
+                           ? Math.min(230, Math.max(statusMinimumWidth, statusTextLabel.implicitWidth + 22))
                            : implicitWidth
-    Layout.maximumWidth: 210
+    Layout.maximumWidth: 250
     clip: true
     spacing:1
     Label{
@@ -44,7 +48,7 @@ Row {
         Label{
             id: statusTextLabel
             visible: listItemCoil.hasCoilData
-            width: Math.min(170, implicitWidth)
+            width: Math.min(210, implicitWidth)
             text: root.statusText
             elide: Text.ElideRight
             font.pointSize: 11

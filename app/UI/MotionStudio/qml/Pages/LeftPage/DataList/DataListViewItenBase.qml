@@ -39,6 +39,7 @@ Item {
         alarmInfo: coilModel.coilData ? coilModel.coilData.AlarmInfo : null
         maxDefectName: coilModel.maxDefectName || ""
         maxDefectLevel: coilModel.maxDefectLevel || 0
+        maxDefectSurface: coilModel.maxDefectSurface || ""
     }
 
     Pane{

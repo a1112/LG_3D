@@ -502,6 +502,7 @@ def get_coil_list_with_max_defect(
 
             # 计算最严重缺陷名称（用于状态列显示）
             max_defect_name = ""
+            max_defect_surface = ""
             if summary_dict["childrenCoilDefect"] and len(summary_dict["childrenCoilDefect"]) > 0:
                 defects = summary_dict["childrenCoilDefect"]
                 max_level = -1
@@ -519,9 +520,12 @@ def get_coil_list_with_max_defect(
                         if level > max_level:
                             max_level = level
                             max_defect_name = defect_name
+                            max_defect_surface = defect.get("surface", "")
 
                 # 添加到结果中
                 summary_dict["maxDefectName"] = max_defect_name
+                summary_dict["maxDefectLevel"] = max_level if max_level >= 0 else 0
+                summary_dict["maxDefectSurface"] = max_defect_surface
 
             result.append(summary_dict)
 
