@@ -529,6 +529,68 @@ def test_taper_shape_rotation_accepts_center_object_with_xy_attrs():
     assert line_data.outer_max_point is not None
 
 
+def test_taper_shape_rotation_rounds_float_center_to_nearest_pixel(monkeypatch):
+    captured_centers = []
+
+    class FakeLineData:
+        def set_data_integration(self, data_integration):
+            self.data_integration = data_integration
+
+        def det_taper_shape(self):
+            pass
+
+        def set_rotation_angle(self, angle):
+            self.rotation_angle = angle
+
+    def fake_get_length_data_by_rotate(npy_data, mask, center, rotation_angle, ray=True):
+        captured_centers.append((center.x, center.y))
+        return FakeLineData()
+
+    monkeypatch.setattr(taper_line, "getLengthDataByRotate", fake_get_length_data_by_rotate)
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(5.7, 4.2))
+        ),
+        npy_data=np.ones((11, 11), dtype=np.int32) * 100,
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+    assert captured_centers == [(6, 4)]
+
+
+def test_taper_shape_rotation_clamps_rounded_center_to_image_bounds(monkeypatch):
+    captured_centers = []
+
+    class FakeLineData:
+        def set_data_integration(self, data_integration):
+            self.data_integration = data_integration
+
+        def det_taper_shape(self):
+            pass
+
+        def set_rotation_angle(self, angle):
+            self.rotation_angle = angle
+
+    def fake_get_length_data_by_rotate(npy_data, mask, center, rotation_angle, ray=True):
+        captured_centers.append((center.x, center.y))
+        return FakeLineData()
+
+    monkeypatch.setattr(taper_line, "getLengthDataByRotate", fake_get_length_data_by_rotate)
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(10.8, 10.6))
+        ),
+        npy_data=np.ones((11, 11), dtype=np.int32) * 100,
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+    assert captured_centers == [(10, 10)]
+
+
 def test_line_data_ray_line_ignores_low_value_edge_noise():
     line_data = LineData(
         npy_data=np.zeros((1, 10), dtype=np.int32),

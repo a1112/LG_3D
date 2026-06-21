@@ -15,6 +15,14 @@ def validate_taper_center(point):
     return Point2D(x, y)
 
 
+def _center_to_pixel(center, width: int, height: int) -> Point2D:
+    x = int(np.floor(float(center.x) + 0.5))
+    y = int(np.floor(float(center.y) + 0.5))
+    x = min(max(x, 0), width - 1)
+    y = min(max(y, 0), height - 1)
+    return Point2D(x, y)
+
+
 def _validate_taper_image_array(value, label):
     try:
         array = np.asarray(value)
@@ -38,7 +46,7 @@ def validate_taper_detection_inputs(npy_data, mask, center):
             f"塔形检测失败: center out of image bounds "
             f"({center.x}, {center.y}) for shape ({height}, {width})"
         )
-    return npy_data, mask
+    return npy_data, mask, _center_to_pixel(center, width, height)
 
 
 def find_max_min_value(line, noneDataValue, offset=0):
@@ -100,7 +108,7 @@ def detection_taper_shape_by_rotation_angle(data_integration: DataIntegration, r
     p_center = validate_taper_center(data_integration.alarmData.flatRollData.get_center())
     npy_data = data_integration.npy_data
     mask = data_integration.npy_mask
-    npy_data, mask = validate_taper_detection_inputs(npy_data, mask, p_center)
+    npy_data, mask, p_center = validate_taper_detection_inputs(npy_data, mask, p_center)
 
     line_data = getLengthDataByRotate(npy_data, mask, p_center, rotation_angle, ray=True)
     line_data: LineData
