@@ -162,12 +162,29 @@ def _trim_line_segments(data_integration: DataIntegration,
                         line_data: LineData,
                         inner_ignore_count,
                         outer_ignore_count):
+    inner_ignore_factor = _non_negative_float(inner_ignore_count)
+    outer_ignore_factor = _non_negative_float(outer_ignore_count)
+    thickness_mm = _coil_thickness_mm(data_integration)
+    ignored_inner_mm = inner_ignore_factor * thickness_mm
+    ignored_outer_mm = outer_ignore_factor * thickness_mm
+    allow_cached_metrics = inner_ignore_factor == 0.0 and outer_ignore_factor == 0.0
+
     try:
         raw_line_points = line_data.ray_line
     except AttributeError:
-        return TaperTrimResult(None, allow_cached_metrics=True)
+        return TaperTrimResult(
+            None,
+            ignored_inner_mm=ignored_inner_mm,
+            ignored_outer_mm=ignored_outer_mm,
+            allow_cached_metrics=allow_cached_metrics,
+        )
     except (TypeError, ValueError, OverflowError):
-        return TaperTrimResult(None, allow_cached_metrics=True)
+        return TaperTrimResult(
+            None,
+            ignored_inner_mm=ignored_inner_mm,
+            ignored_outer_mm=ignored_outer_mm,
+            allow_cached_metrics=allow_cached_metrics,
+        )
 
     try:
         line_points = np.asarray(raw_line_points, dtype=float)
@@ -189,9 +206,6 @@ def _trim_line_segments(data_integration: DataIntegration,
             f"coverage={coverage_ratio:.2f} min={MIN_TAPER_VALID_COVERAGE_RATIO:.2f}"
         )
 
-    thickness_mm = _coil_thickness_mm(data_integration)
-    ignored_inner_mm = _non_negative_float(inner_ignore_count) * thickness_mm
-    ignored_outer_mm = _non_negative_float(outer_ignore_count) * thickness_mm
     unit_distance_mm = _line_unit_distance_mm(data_integration, line_points)
 
     inner_skip = int(np.ceil(ignored_inner_mm / unit_distance_mm)) if unit_distance_mm > 0 else 0
