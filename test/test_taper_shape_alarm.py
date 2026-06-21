@@ -604,6 +604,41 @@ def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatc
     assert metadata["worst_used_point_count"] == 0
 
 
+def test_grading_alarm_taper_shape_preserves_result_when_detail_save_fails(monkeypatch):
+    line_positive = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={40: line_positive})
+
+    warnings = []
+
+    def fail_save(_alarm_taper_shape):
+        raise RuntimeError("db unavailable")
+
+    monkeypatch.setattr(taper_grading, "add_obj", fail_save)
+    monkeypatch.setattr(taper_grading.logger, "warning", warnings.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "80.00 >= 80.00" in result.errorMsg
+    assert "db unavailable" in result.errorMsg
+    assert warnings
+    assert "db unavailable" in warnings[0]
+
+
 def test_grading_alarm_taper_shape_skips_non_finite_cached_metrics(monkeypatch):
     invalid_line = SimpleNamespace(
         rotation_angle=20,

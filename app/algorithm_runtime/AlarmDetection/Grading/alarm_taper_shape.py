@@ -14,6 +14,7 @@ from AlarmDetection.Configs.TaperShapeConfig import (
 from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
 from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
+from Base.utils.Log import logger
 
 
 @dataclass
@@ -274,6 +275,15 @@ def _taper_detection_error_message(data_integration: DataIntegration, limit: int
     return message
 
 
+def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
+    try:
+        add_obj(alarm_taper_shape)
+    except Exception as e:
+        logger.warning(f"save taper alarm detail failed: {e}")
+        return f"塔形明细保存失败: {e}"
+    return ""
+
+
 def grading_alarm_taper_shape(data_integration: DataIntegration):
     taper_shape_config = alarmConfigProperty.get_taper_shape_config(data_integration)
     name, height_limit_list, inner, outer, info = taper_shape_config.get_config().get_config()
@@ -342,7 +352,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     outer_min_angle = _safe_float(getattr(min_outer_metrics.line_data, "rotation_angle", 0.0))
     inner_min_angle = _safe_float(getattr(min_inner_metrics.line_data, "rotation_angle", 0.0))
 
-    add_obj(AlarmTaperShape(
+    alarm_taper_shape = AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,
         surface=data_integration.surface,
         out_taper_max_x=max_outer_metrics.outer_max_point.x,
@@ -389,5 +399,12 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_used_point_count": worst_metrics.used_point_count,
             "valid_line_count": len(valid_metrics),
         }, ensure_ascii=False, allow_nan=False)
-    ))
+    )
+    save_error_msg = _save_taper_alarm_detail(alarm_taper_shape)
+    if save_error_msg:
+        return AlarmGradResult(
+            max(grad, 3),
+            f"{error_msg}\n{save_error_msg}",
+            taper_shape_config,
+        )
     return AlarmGradResult(grad, error_msg, taper_shape_config)
