@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+import math
 import time
 from pathlib import Path
 
@@ -49,17 +50,32 @@ def _get_error_render_baseline(coil_id: str, surface_key: str, npy_data: np.ndar
     return median_z_int, scale_factor
 
 
-def _error_cache_matches(error_cache_path: Path, threshold_down_mm: int, threshold_up_mm: int) -> bool:
+def _abs_threshold_mm(value):
+    try:
+        threshold = abs(float(value))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return threshold if math.isfinite(threshold) else None
+
+
+def _error_cache_matches(error_cache_path: Path, threshold_down_mm: float, threshold_up_mm: float) -> bool:
     meta_path = error_cache_path.with_suffix(".json")
     if not meta_path.exists():
         return False
     try:
         data = json.loads(meta_path.read_text(encoding="utf-8"))
-        cached_down = abs(float(data.get("threshold_down")))
-        cached_up = abs(float(data.get("threshold_up")))
+        cached_down = _abs_threshold_mm(data.get("threshold_down"))
+        cached_up = _abs_threshold_mm(data.get("threshold_up"))
     except (OSError, TypeError, ValueError, json.JSONDecodeError):
         return False
-    return cached_down == abs(float(threshold_down_mm)) and cached_up == abs(float(threshold_up_mm))
+    request_down = _abs_threshold_mm(threshold_down_mm)
+    request_up = _abs_threshold_mm(threshold_up_mm)
+    if None in (cached_down, cached_up, request_down, request_up):
+        return False
+    return (
+        math.isclose(cached_down, request_down, rel_tol=0.0, abs_tol=1e-9)
+        and math.isclose(cached_up, request_up, rel_tol=0.0, abs_tol=1e-9)
+    )
 
 
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
@@ -334,8 +350,8 @@ async def get_error(
         coil_id: str,
         scale: float = 1.0,
         mask: bool = True,
-        minValue: int = 0,
-        maxValue: int = 255,
+        minValue: float = 0,
+        maxValue: float = 255,
         force_cache: bool = False  # 强制使用缓存，如果缓存不存在则返回空白
 ):
     """
@@ -350,8 +366,8 @@ async def get_error(
     """
     mask = get_bool(mask)
     scale = float(scale)
-    threshold_down_mm = abs(int(minValue))
-    threshold_up_mm = abs(int(maxValue))
+    threshold_down_mm = _abs_threshold_mm(minValue) or 0.0
+    threshold_up_mm = _abs_threshold_mm(maxValue) or 0.0
     sT = time.time()
 
     # ========== 优先读取预生成的缓存 ==========

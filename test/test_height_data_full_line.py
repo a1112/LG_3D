@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -7,6 +8,8 @@ from PIL import Image
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SERVER_ROOT = PROJECT_ROOT / "app" / "Server"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 if str(SERVER_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVER_ROOT))
 if str(PROJECT_ROOT / "app") not in sys.path:
@@ -43,3 +46,17 @@ def test_height_data_returns_full_cross_line_segments(monkeypatch):
     assert result[0]["pointR"] == [139, 5]
     assert result[1]["pointL"] == [260, 5]
     assert result[1]["pointR"] == [379, 5]
+
+
+def test_error_cache_match_preserves_float_thresholds(tmp_path):
+    error_path = tmp_path / "Error.png"
+    error_path.write_bytes(b"")
+    error_path.with_suffix(".json").write_text(json.dumps({
+        "threshold_down": 50.5,
+        "threshold_up": 80.25,
+    }), encoding="utf-8")
+
+    assert ApiDataServer._error_cache_matches(error_path, 50.5, 80.25)
+    assert ApiDataServer._error_cache_matches(error_path, -50.5, -80.25)
+    assert not ApiDataServer._error_cache_matches(error_path, 50.0, 80.25)
+    assert not ApiDataServer._error_cache_matches(error_path, 50.5, 80.0)
