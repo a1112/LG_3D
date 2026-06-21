@@ -118,22 +118,21 @@ def find_line_max_min(line_, none_data_value, use_iqr=True, type_=None):
         return None, None
 
     values = line_[:, 2].astype(float)
-    n = min(100, len(values))
-    max_indices = np.argsort(values)[-n:][::-1]
-    min_indices = np.argsort(values)[:n]
+    sorted_indices = np.argsort(values)
+    max_indices = sorted_indices[::-1]
+    min_indices = sorted_indices
 
     max_index = int(max_indices[0])
     min_index = int(min_indices[0])
     if use_iqr:
-        iqr_max_outliers = set(IQR_outliers(values[max_indices]).tolist())
-        iqr_min_outliers = set(IQR_outliers(values[min_indices]).tolist())
+        iqr_outliers = set(IQR_outliers(values).tolist())
         for i in max_indices:
-            if _is_isolated_iqr_outlier(values, int(i), iqr_max_outliers):
+            if _is_isolated_iqr_outlier(values, int(i), iqr_outliers):
                 continue
             max_index = int(i)
             break
         for i in min_indices:
-            if _is_isolated_iqr_outlier(values, int(i), iqr_min_outliers):
+            if _is_isolated_iqr_outlier(values, int(i), iqr_outliers):
                 continue
             min_index = int(i)
             break

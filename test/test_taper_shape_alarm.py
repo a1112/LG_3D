@@ -457,6 +457,24 @@ def test_find_line_max_min_filters_single_point_spike():
     assert min_point.z == 1000.0
 
 
+def test_find_line_max_min_filters_many_isolated_spikes_beyond_top_window():
+    line = np.array([[i, 0, 1000] for i in range(1200)], dtype=float)
+    line[1:203:2, 2] = 50000
+
+    max_point, min_point = find_line_max_min(line, 10, use_iqr=True, type_="outer")
+
+    assert max_point.z == 1000.0
+    assert min_point.z == 1000.0
+
+    low_line = np.array([[i, 0, 1000] for i in range(1200)], dtype=float)
+    low_line[1:203:2, 2] = 20
+
+    max_point, min_point = find_line_max_min(low_line, 10, use_iqr=True, type_="outer")
+
+    assert max_point.z == 1000.0
+    assert min_point.z == 1000.0
+
+
 def test_find_line_max_min_keeps_clustered_taper_extremes():
     high_line = np.array([[i, 0, 1000] for i in range(120)], dtype=float)
     high_line[60, 2] = 50000
