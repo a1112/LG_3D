@@ -1034,6 +1034,57 @@ def test_grading_alarm_taper_shape_skips_malformed_ray_line(monkeypatch):
     assert json.loads(captured[0].data)["valid_line_count"] == 1
 
 
+def test_grading_alarm_taper_shape_records_partial_error_metadata(monkeypatch):
+    malformed_line = SimpleNamespace(
+        rotation_angle=10,
+        ray_line=np.array([0, 0, 260], dtype=float),
+    )
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    detection_errors = [
+        "0度: center out of image bounds",
+        "20度: 3D/mask shape mismatch",
+        "30度: line data empty",
+        "50度: line data empty",
+    ]
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={10: malformed_line, 40: valid_line},
+        taper_shape_errors=detection_errors,
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "80.00 >= 80.00" in result.errorMsg
+    assert "塔形检测部分角度失败" in result.errorMsg
+    assert "另有1个角度失败" in result.errorMsg
+    assert "塔形分级部分线无效" in result.errorMsg
+    assert "10度: 无有效塔形线指标" in result.errorMsg
+
+    metadata = json.loads(captured[0].data)
+    assert metadata["valid_line_count"] == 1
+    assert metadata["detection_error_count"] == 4
+    assert metadata["detection_error_preview"] == detection_errors[:3]
+    assert metadata["grading_error_count"] == 1
+    assert metadata["grading_error_preview"] == ["10度: 无有效塔形线指标"]
+
+
 def test_grading_alarm_taper_shape_uses_cached_metrics_when_ray_line_fails(monkeypatch):
     class CachedLineData:
         rotation_angle = 30

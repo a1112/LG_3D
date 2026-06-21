@@ -282,42 +282,40 @@ def _matched_limit(value: float, height_limits: list[float]) -> float | None:
     return None
 
 
-def _taper_detection_error_message(data_integration: DataIntegration, limit: int = 3) -> str:
+def _taper_error_messages(data_integration: DataIntegration, attr: str) -> list[str]:
     alarm_data = getattr(data_integration, "alarmData", None)
-    errors = getattr(alarm_data, "taper_shape_errors", None) or []
+    errors = getattr(alarm_data, attr, None) or []
     messages = []
     for error in errors:
         text = str(error).strip()
         if text:
             messages.append(text)
-        if len(messages) >= limit:
-            break
+    return messages
+
+
+def _limited_taper_error_message(messages: list[str], limit: int, remaining_label: str) -> str:
+    limited_messages = messages[:limit]
+    if not limited_messages:
+        return ""
+    remaining = max(0, len(messages) - len(limited_messages))
+    message = "；".join(limited_messages)
+    if remaining:
+        message += f"；另有{remaining}{remaining_label}"
+    return message
+
+
+def _taper_detection_error_message(data_integration: DataIntegration, limit: int = 3) -> str:
+    messages = _taper_error_messages(data_integration, "taper_shape_errors")
     if not messages:
         return ""
-    remaining = max(0, len(errors) - len(messages))
-    message = "；".join(messages)
-    if remaining:
-        message += f"；另有{remaining}个角度失败"
-    return message
+    return _limited_taper_error_message(messages, limit, "个角度失败")
 
 
 def _taper_grading_error_message(data_integration: DataIntegration, limit: int = 3) -> str:
-    alarm_data = getattr(data_integration, "alarmData", None)
-    errors = getattr(alarm_data, "taper_shape_grading_errors", None) or []
-    messages = []
-    for error in errors:
-        text = str(error).strip()
-        if text:
-            messages.append(text)
-        if len(messages) >= limit:
-            break
+    messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
     if not messages:
         return ""
-    remaining = max(0, len(errors) - len(messages))
-    message = "；".join(messages)
-    if remaining:
-        message += f"；另有{remaining}条线无效"
-    return message
+    return _limited_taper_error_message(messages, limit, "条线无效")
 
 
 def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
@@ -396,6 +394,17 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
                     f"检测角度{message_angle}"
                 )
     error_msg = "\n".join(messages) if messages else "正常"
+    detection_error_messages = _taper_error_messages(data_integration, "taper_shape_errors")
+    grading_error_messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
+    quality_messages = []
+    detection_error_summary = _limited_taper_error_message(detection_error_messages, 3, "个角度失败")
+    grading_error_summary = _limited_taper_error_message(grading_error_messages, 3, "条线无效")
+    if detection_error_summary:
+        quality_messages.append(f"塔形检测部分角度失败：{detection_error_summary}")
+    if grading_error_summary:
+        quality_messages.append(f"塔形分级部分线无效：{grading_error_summary}")
+    if quality_messages:
+        error_msg = "\n".join([error_msg, *quality_messages])
     worst_angle = _safe_float(getattr(worst_metrics.line_data, "rotation_angle", 0.0))
     worst_point = getattr(worst_metrics, worst_point_attr)
     outer_angle = _safe_float(getattr(max_outer_metrics.line_data, "rotation_angle", 0.0))
@@ -449,6 +458,10 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_angle": worst_angle,
             "worst_used_point_count": worst_metrics.used_point_count,
             "valid_line_count": len(valid_metrics),
+            "detection_error_count": len(detection_error_messages),
+            "detection_error_preview": detection_error_messages[:3],
+            "grading_error_count": len(grading_error_messages),
+            "grading_error_preview": grading_error_messages[:3],
         }, ensure_ascii=False, allow_nan=False)
     )
     save_error_msg = _save_taper_alarm_detail(alarm_taper_shape)
