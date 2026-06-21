@@ -160,6 +160,55 @@ def test_alarm_data_commit_skips_invalid_taper_line_data(monkeypatch):
     assert add_calls == [["line_model", "point_model"]]
 
 
+def test_alarm_data_commit_accepts_missing_flat_roll_data(monkeypatch):
+    class GoodLineData:
+        def line_data_model(self, data_integration):
+            return "line_model"
+
+        def all_point_data_model(self, data_integration):
+            return ["point_model"]
+
+    warnings = []
+    add_calls = []
+    alarm_data = AlarmData(FakeDataIntegration())
+    alarm_data.lineDataDict = {0: GoodLineData()}
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", add_calls.append)
+    monkeypatch.setattr(alarm_data_module.logger, "warning", warnings.append)
+
+    alarm_data.commit()
+
+    assert add_calls == [["line_model", "point_model"]]
+    assert len(warnings) == 1
+    assert "missing flat roll data" in warnings[0]
+
+
+def test_alarm_data_commit_continues_after_invalid_flat_roll_data(monkeypatch):
+    class BadFlatRollData:
+        def commit(self):
+            raise ValueError("bad flat roll")
+
+    class GoodLineData:
+        def line_data_model(self, data_integration):
+            return "line_model"
+
+        def all_point_data_model(self, data_integration):
+            return ["point_model"]
+
+    warnings = []
+    add_calls = []
+    alarm_data = AlarmData(FakeDataIntegration())
+    alarm_data.flatRollData = BadFlatRollData()
+    alarm_data.lineDataDict = {0: GoodLineData()}
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", add_calls.append)
+    monkeypatch.setattr(alarm_data_module.logger, "warning", warnings.append)
+
+    alarm_data.commit()
+
+    assert add_calls == [["line_model", "point_model"]]
+    assert len(warnings) == 1
+    assert "bad flat roll" in warnings[0]
+
+
 def test_alarm_data_commit_skips_non_finite_taper_model_values(monkeypatch):
     line_data = LineData(
         npy_data=np.zeros((1, 5), dtype=np.int32),

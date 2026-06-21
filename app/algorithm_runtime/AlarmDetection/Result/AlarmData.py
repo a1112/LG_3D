@@ -19,8 +19,17 @@ class AlarmData:
     def set_flat_roll_data(self,flat_roll_data):
         self.flatRollData = flat_roll_data
 
+    def _commit_flat_roll_data(self):
+        if self.flatRollData is None:
+            logger.warning("skip missing flat roll data before taper line commit")
+            return
+        try:
+            self.flatRollData.commit()
+        except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
+            logger.warning(f"skip invalid flat roll data before taper line commit: {e}")
+
     def commit(self):
-        self.flatRollData.commit()
+        self._commit_flat_roll_data()
 
         line_data_dict = self.lineDataDict or {}
         model_list = []
