@@ -14,12 +14,14 @@ for path in (ROOT / "app", ROOT / "app" / "Base", ROOT / "app" / "algorithm_runt
 
 from AlarmDetection.Configs.TaperShapeConfig import TaperShapeConfig, normalize_taper_height_limits
 from AlarmDetection.Configs.AlarmConfigProperty import AlarmConfigProperty
+from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.Result.AlarmData import AlarmData
 import AlarmDetection.Result.AlarmData as alarm_data_module
 from SplicingService.taper_error_threshold import taper_error_threshold_from_limits
 from Base.utils.cache_generator import generate_error_image
 from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
 from Base.property.Types import DetectionTaperShapeType, Point2D
+import AlarmDetection.Grading.CoilGrading as coil_grading
 import AlarmDetection.Grading.alarm_taper_shape as taper_grading
 import AlarmDetection.DataProcessing.TaperShape as taper_processing
 import AlarmDetection.DataProcessing.TaperShapeLine as taper_line
@@ -116,6 +118,46 @@ def test_alarm_config_property_uses_default_taper_shape_config_when_missing():
     config = config_property.get_taper_shape_config(FakeDataIntegration())
 
     assert config.get_config().get_config() == ("默认判断规则", [60, 80], 0, 0, "")
+
+
+def test_coil_grading_continues_taper_when_flat_roll_grading_fails(monkeypatch):
+    taper_calls = []
+    add_calls = []
+    warnings = []
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        key="S",
+        next_code="2",
+        next_name="next",
+    )
+
+    def bad_flat_roll(_data_integration):
+        raise ValueError("bad flat roll data")
+
+    def good_taper(_data_integration):
+        taper_calls.append(_data_integration)
+        return AlarmGradResult(3, "taper alarm", "")
+
+    def normal_loose(_data_integration):
+        return AlarmGradResult(1, "", "")
+
+    monkeypatch.setattr(coil_grading, "grading_alarm_flat_roll", bad_flat_roll)
+    monkeypatch.setattr(coil_grading, "grading_alarm_taper_shape", good_taper)
+    monkeypatch.setattr(coil_grading, "grading_alarm_loose_coil", normal_loose)
+    monkeypatch.setattr(coil_grading.logger, "warning", warnings.append)
+    monkeypatch.setattr("CoilDataBase.Coil.add_obj", add_calls.append)
+
+    coil_grading.grading(data_integration)
+
+    assert taper_calls == [data_integration]
+    assert len(add_calls) == 1
+    alarm_info = add_calls[0]
+    assert alarm_info.flatRollGrad == 3
+    assert "bad flat roll data" in alarm_info.flatRollMsg
+    assert alarm_info.taperShapeGrad == 3
+    assert alarm_info.taperShapeMsg == "taper alarm"
+    assert alarm_info.grad == 3
+    assert len(warnings) == 1
 
 
 def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):

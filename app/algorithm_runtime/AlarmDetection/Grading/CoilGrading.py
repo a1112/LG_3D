@@ -3,8 +3,31 @@ from CoilDataBase.models import AlarmInfo
 from AlarmDetection.Grading.alarm_flat_roll import grading_alarm_flat_roll
 from AlarmDetection.Grading.alarm_loose_coil import grading_alarm_loose_coil
 from AlarmDetection.Grading.alarm_taper_shape import grading_alarm_taper_shape
+from AlarmDetection.Result.GradResult import AlarmGradResult
 
 from Base.property.Base import CoilLineData, DataIntegration, DataIntegrationList
+from Base.utils.Log import logger
+
+
+GRADING_RECOVERABLE_ERRORS = (
+    AttributeError,
+    TypeError,
+    ValueError,
+    IndexError,
+    OverflowError,
+    ZeroDivisionError,
+)
+
+
+def _safe_grading(data_integration: DataIntegration, label: str, grading_func):
+    try:
+        return grading_func(data_integration)
+    except GRADING_RECOVERABLE_ERRORS as e:
+        coil_id = getattr(data_integration, "coilId", "")
+        surface = getattr(data_integration, "key", getattr(data_integration, "surface", ""))
+        error_msg = f"{label}检测失败: {e}"
+        logger.warning(f"{coil_id} {surface} {error_msg}")
+        return AlarmGradResult(3, error_msg, "")
 
 
 def grading(data_integration: DataIntegration):
@@ -18,9 +41,9 @@ def grading(data_integration: DataIntegration):
     # 获取去向
 
 
-    flat_roll_grad_info = grading_alarm_flat_roll(data_integration)
-    taper_shape_grad_info = grading_alarm_taper_shape(data_integration)
-    alarm_loose_coil_info = grading_alarm_loose_coil(data_integration)
+    flat_roll_grad_info = _safe_grading(data_integration, "扁卷", grading_alarm_flat_roll)
+    taper_shape_grad_info = _safe_grading(data_integration, "塔形", grading_alarm_taper_shape)
+    alarm_loose_coil_info = _safe_grading(data_integration, "松卷", grading_alarm_loose_coil)
 
 
     alarm_info = AlarmInfo(
