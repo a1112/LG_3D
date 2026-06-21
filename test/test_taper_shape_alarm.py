@@ -1193,6 +1193,41 @@ def test_grading_alarm_taper_shape_rejects_low_coverage_line(monkeypatch):
     ]
 
 
+def test_grading_alarm_taper_shape_rejects_low_side_coverage_line(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(12)], dtype=float)
+    ray_line[1:5, 2] = 0
+    ray_line[8, 2] = 260
+    low_side_coverage_line = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        outer_max_point=_point(8, 0, 260),
+        outer_min_point=_point(6, 0, 100),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(5, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: low_side_coverage_line})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+    assert "塔形线单侧有效覆盖率不足 inner=0.33 outer=1.00 min=0.40" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "0度: 塔形线单侧有效覆盖率不足 inner=0.33 outer=1.00 min=0.40"
+    ]
+
+
 def test_grading_alarm_taper_shape_flags_low_angle_coverage(monkeypatch):
     valid_line = SimpleNamespace(
         rotation_angle=40,
@@ -1656,6 +1691,34 @@ def test_line_data_detection_rejects_low_coverage_line():
     ], dtype=np.int32)
 
     with pytest.raises(ValueError, match="塔形线有效覆盖率不足 coverage=0.33 min=0.50"):
+        line_data.det_taper_shape()
+
+
+def test_line_data_detection_rejects_low_side_coverage_line():
+    line_data = LineData(
+        npy_data=np.zeros((1, 12), dtype=np.int32),
+        mask_image=np.ones((1, 12), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(11, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 0],
+        [4, 0, 0],
+        [5, 0, 100],
+        [6, 0, 100],
+        [7, 0, 100],
+        [8, 0, 260],
+        [9, 0, 100],
+        [10, 0, 100],
+        [11, 0, 100],
+    ], dtype=np.int32)
+
+    with pytest.raises(
+            ValueError,
+            match="塔形线单侧有效覆盖率不足 inner=0.33 outer=1.00 min=0.40"):
         line_data.det_taper_shape()
 
 

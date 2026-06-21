@@ -16,6 +16,7 @@ from CoilDataBase.models import PointData as PointDataModel
 
 MIN_TAPER_SIDE_VALID_POINTS = 2
 MIN_TAPER_VALID_COVERAGE_RATIO = 0.5
+MIN_TAPER_SIDE_VALID_COVERAGE_RATIO = 0.4
 
 
 def valid_line_height_mask(line_, none_data_value=10):
@@ -390,6 +391,14 @@ class LineData:
         center_index = len(line_points) // 2
         inner_points = line_points[:center_index]
         outer_points = line_points[center_index:]
+        inner_coverage_ratio = taper_valid_coverage_ratio(inner_points, 10)
+        outer_coverage_ratio = taper_valid_coverage_ratio(outer_points, 10)
+        if min(inner_coverage_ratio, outer_coverage_ratio) < MIN_TAPER_SIDE_VALID_COVERAGE_RATIO:
+            raise ValueError(
+                f"塔形检测失败: 塔形线单侧有效覆盖率不足 "
+                f"inner={inner_coverage_ratio:.2f} outer={outer_coverage_ratio:.2f} "
+                f"min={MIN_TAPER_SIDE_VALID_COVERAGE_RATIO:.2f}"
+            )
         inner_valid_count = int(np.count_nonzero(valid_line_height_mask(inner_points, 10)))
         outer_valid_count = int(np.count_nonzero(valid_line_height_mask(outer_points, 10)))
         if min(inner_valid_count, outer_valid_count) < MIN_TAPER_SIDE_VALID_POINTS:
