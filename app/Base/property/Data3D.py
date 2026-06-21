@@ -15,6 +15,7 @@ from CoilDataBase.models import PointData as PointDataModel
 
 
 MIN_TAPER_SIDE_VALID_POINTS = 2
+MIN_TAPER_VALID_COVERAGE_RATIO = 0.5
 
 
 def valid_line_height_mask(line_, none_data_value=10):
@@ -26,6 +27,13 @@ def valid_line_height_mask(line_, none_data_value=10):
         row_count = line_array.shape[0] if line_array.ndim > 0 else 0
         return np.zeros(row_count, dtype=bool)
     return np.all(np.isfinite(line_array[:, :3]), axis=1) & (line_array[:, 2] > none_data_value)
+
+
+def taper_valid_coverage_ratio(line_, none_data_value=10) -> float:
+    valid_mask = valid_line_height_mask(line_, none_data_value)
+    if valid_mask.size == 0:
+        return 0.0
+    return float(np.count_nonzero(valid_mask) / valid_mask.size)
 
 
 def json_safe_line_points(line_):
@@ -372,9 +380,16 @@ class LineData:
         end_index = non_zero_indices[-1]
         if end_index - start_index < 2:
             raise ValueError("塔形检测失败: 有效线数据过短")
-        center_index = (start_index + end_index + 1) // 2
-        inner_points = arr[start_index:center_index]
-        outer_points = arr[center_index:end_index + 1]
+        line_points = arr[start_index:end_index + 1]
+        coverage_ratio = taper_valid_coverage_ratio(line_points, 10)
+        if coverage_ratio < MIN_TAPER_VALID_COVERAGE_RATIO:
+            raise ValueError(
+                f"塔形检测失败: 塔形线有效覆盖率不足 "
+                f"coverage={coverage_ratio:.2f} min={MIN_TAPER_VALID_COVERAGE_RATIO:.2f}"
+            )
+        center_index = len(line_points) // 2
+        inner_points = line_points[:center_index]
+        outer_points = line_points[center_index:]
         inner_valid_count = int(np.count_nonzero(valid_line_height_mask(inner_points, 10)))
         outer_valid_count = int(np.count_nonzero(valid_line_height_mask(outer_points, 10)))
         if min(inner_valid_count, outer_valid_count) < MIN_TAPER_SIDE_VALID_POINTS:

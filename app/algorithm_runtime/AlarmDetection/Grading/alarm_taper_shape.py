@@ -15,8 +15,10 @@ from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
 from Base.property.Data3D import (
     MIN_TAPER_SIDE_VALID_POINTS,
+    MIN_TAPER_VALID_COVERAGE_RATIO,
     LineData,
     find_line_max_min,
+    taper_valid_coverage_ratio,
     valid_line_height_mask,
 )
 from Base.utils.Log import logger
@@ -144,6 +146,12 @@ def _trim_line_segments(data_integration: DataIntegration,
     line_points = line_points[valid_indices[0]:valid_indices[-1] + 1]
     if len(line_points) < 4:
         return None, 0.0, 0.0, True
+    coverage_ratio = taper_valid_coverage_ratio(line_points, 10)
+    if coverage_ratio < MIN_TAPER_VALID_COVERAGE_RATIO:
+        raise ValueError(
+            f"塔形线有效覆盖率不足 "
+            f"coverage={coverage_ratio:.2f} min={MIN_TAPER_VALID_COVERAGE_RATIO:.2f}"
+        )
 
     thickness_mm = _coil_thickness_mm(data_integration)
     ignored_inner_mm = _non_negative_float(inner_ignore_count) * thickness_mm
