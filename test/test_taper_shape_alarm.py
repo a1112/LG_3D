@@ -91,6 +91,41 @@ def test_taper_shape_config_accepts_ascii_encoded_next_code():
         assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
 
 
+def test_taper_shape_config_accepts_common_next_code_aliases():
+    config_data = {
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "2": {"name": "code2", "height": [50, 70], "inner": 3, "outer": 1, "info": "code2"},
+    }
+
+    for data_integration in (
+            SimpleNamespace(nextCode="2"),
+            SimpleNamespace(NextCode="2"),
+            {"nextCode": "2"},
+            {"NextCode": "2"},
+    ):
+        config = TaperShapeConfig(config_data, data_integration)
+
+        assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
+def test_taper_shape_config_prefers_next_code_alias_over_failure_default():
+    class NextCodeAliasData:
+        NextCode = "2"
+
+        @property
+        def next_code(self):
+            return 49
+
+    config = TaperShapeConfig({
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "49": {"name": "bad49", "height": [30], "inner": 0, "outer": 0, "info": "bad49"},
+        "1": {"name": "bad1", "height": [40], "inner": 0, "outer": 0, "info": "bad1"},
+        "2": {"name": "code2", "height": [50, 70], "inner": 3, "outer": 1, "info": "code2"},
+    }, NextCodeAliasData())
+
+    assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
 def test_taper_shape_config_prefers_exact_next_code_before_numeric_normalization():
     config = TaperShapeConfig({
         "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},

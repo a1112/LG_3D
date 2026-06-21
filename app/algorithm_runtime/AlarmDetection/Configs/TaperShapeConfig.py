@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 import math
 import re
 
@@ -89,39 +90,115 @@ class TaperShapeConfig(ConfigBase):
         self.data_integration = data_integration
 
     @staticmethod
-    def _append_candidate(candidates: list[str], value) -> None:
+    def _candidate_text(value) -> str:
         if value is None:
-            return
+            return ""
         if isinstance(value, bytes):
             try:
                 value = value.decode("utf-8")
             except UnicodeDecodeError:
                 value = value.decode("utf-8", errors="ignore")
 
-        text = str(value).strip()
+        return str(value).strip()
+
+    @staticmethod
+    def _append_unique_candidate(candidates: list[str], text: str) -> None:
         if text and text not in candidates:
             candidates.append(text)
 
+    @staticmethod
+    def _integer_candidate(text: str):
         try:
             numeric_value = float(text)
         except (TypeError, ValueError):
-            return
+            return None
         if math.isfinite(numeric_value) and numeric_value.is_integer():
-            int_value = int(numeric_value)
-            int_text = str(int_value)
-            if int_text not in candidates:
-                candidates.append(int_text)
-            if 32 <= int_value <= 126:
-                ascii_text = chr(int_value)
-                if ascii_text and ascii_text not in candidates:
-                    candidates.append(ascii_text)
+            return int(numeric_value)
+        return None
+
+    @staticmethod
+    def _append_candidate(candidates: list[str], value) -> None:
+        text = TaperShapeConfig._candidate_text(value)
+        TaperShapeConfig._append_unique_candidate(candidates, text)
+
+        int_value = TaperShapeConfig._integer_candidate(text)
+        if int_value is None:
+            return
+
+        TaperShapeConfig._append_unique_candidate(candidates, str(int_value))
+        if 32 <= int_value <= 126:
+            TaperShapeConfig._append_unique_candidate(candidates,
+                                                     chr(int_value))
+
+    @staticmethod
+    def _append_candidates(candidates: list[str], values) -> None:
+        texts = []
+        for value in values:
+            text = TaperShapeConfig._candidate_text(value)
+            if text:
+                texts.append(text)
+                TaperShapeConfig._append_unique_candidate(candidates, text)
+
+        for text in texts:
+            int_value = TaperShapeConfig._integer_candidate(text)
+            if int_value is not None:
+                TaperShapeConfig._append_unique_candidate(
+                    candidates, str(int_value))
+
+        for text in texts:
+            int_value = TaperShapeConfig._integer_candidate(text)
+            if int_value is not None and 32 <= int_value <= 126:
+                TaperShapeConfig._append_unique_candidate(
+                    candidates, chr(int_value))
+
+    @staticmethod
+    def _append_attr_candidate_value(values: list, source, attr: str) -> None:
+        try:
+            value = getattr(source, attr)
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            return
+        if value is not None:
+            values.append(value)
+
+    @staticmethod
+    def _append_mapping_candidate_value(values: list, source, key: str) -> None:
+        try:
+            value = source.get(key)
+        except (AttributeError, TypeError, ValueError):
+            return
+        if value is not None:
+            values.append(value)
+
+    def _next_code_candidate_values(self):
+        source = self.data_integration
+        values = []
+        alias_values = []
+
+        self._append_attr_candidate_value(values, source, "next_code")
+        for attr in ("nextCode", "NextCode", "next_code_value",
+                     "NextCodeValue"):
+            self._append_attr_candidate_value(alias_values, source, attr)
+
+        if isinstance(source, Mapping):
+            for key in ("next_code", "nextCode", "NextCode",
+                        "next_code_value", "NextCodeValue"):
+                self._append_mapping_candidate_value(alias_values, source, key)
+
+        # DataIntegration.next_code returns integer 49 when the source coil is
+        # unavailable. Keep real aliases ahead of that failure sentinel so the
+        # alarm rule does not accidentally fall back to code "1".
+        if values == [49] and alias_values:
+            values = alias_values + values
+        else:
+            values.extend(alias_values)
+
+        if not values:
+            values.append(source)
+        return values
 
     def _next_code_candidates(self):
         candidates = []
-        if hasattr(self.data_integration, "next_code"):
-            self._append_candidate(candidates, self.data_integration.next_code)
-        else:
-            self._append_candidate(candidates, self.data_integration)
+        self._append_candidates(candidates, self._next_code_candidate_values())
         return candidates
 
     def _get_item_config(self):
