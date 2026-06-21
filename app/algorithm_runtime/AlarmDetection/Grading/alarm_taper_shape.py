@@ -147,20 +147,25 @@ def _trim_line_segments(data_integration: DataIntegration,
                         inner_ignore_count,
                         outer_ignore_count):
     try:
-        line_points = np.asarray(line_data.ray_line, dtype=float)
+        raw_line_points = line_data.ray_line
     except AttributeError:
         return None, 0.0, 0.0, True
     except (TypeError, ValueError, OverflowError):
         return None, 0.0, 0.0, True
 
+    try:
+        line_points = np.asarray(raw_line_points, dtype=float)
+    except (TypeError, ValueError, OverflowError):
+        return None, 0.0, 0.0, False
+
     if line_points.size == 0 or line_points.ndim != 2 or line_points.shape[1] < 3:
-        return None, 0.0, 0.0, True
+        return None, 0.0, 0.0, False
     valid_indices = np.where(valid_line_height_mask(line_points, 10))[0]
     if valid_indices.size == 0:
-        return None, 0.0, 0.0, True
+        return None, 0.0, 0.0, False
     line_points = line_points[valid_indices[0]:valid_indices[-1] + 1]
     if len(line_points) < 4:
-        return None, 0.0, 0.0, True
+        return None, 0.0, 0.0, False
     coverage_ratio = taper_valid_coverage_ratio(line_points, 10)
     if coverage_ratio < MIN_TAPER_VALID_COVERAGE_RATIO:
         raise ValueError(

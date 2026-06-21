@@ -1351,6 +1351,38 @@ def test_grading_alarm_taper_shape_uses_cached_metrics_when_ray_line_fails(monke
     assert json.loads(captured[0].data)["valid_line_count"] == 1
 
 
+def test_grading_alarm_taper_shape_does_not_use_cache_for_malformed_raw_line(monkeypatch):
+    malformed_cached_line = SimpleNamespace(
+        rotation_angle=30,
+        ray_line=np.array([0, 0, 260], dtype=float),
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={30: malformed_cached_line})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+    assert "无有效线数据" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "30度: 无有效塔形线指标"
+    ]
+
+
 def test_grading_alarm_taper_shape_does_not_use_cache_after_trim_exhausts_side(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[-1, 2] = 260
