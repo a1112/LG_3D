@@ -1614,6 +1614,50 @@ def test_zero_taper_shape_type_disables_line_detection(monkeypatch):
         assert data_integration.alarmData.taper_shape_disabled is True
 
 
+def test_boolean_taper_shape_type_controls_line_detection(monkeypatch):
+    enabled_captured = []
+    enabled_alarm_data = SimpleNamespace(
+        taper_shape_disabled=True,
+        taper_shape_errors=["old detection error"],
+        taper_shape_grading_errors=["old grading error"],
+        set_line_data_dict=enabled_captured.append,
+    )
+    enabled_data_integration = SimpleNamespace(alarmData=enabled_alarm_data)
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", True)
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+
+    taper_processing._detection_taper_shape_all_([enabled_data_integration])
+
+    assert enabled_captured == [{"line": enabled_data_integration}]
+    assert enabled_alarm_data.taper_shape_disabled is False
+    assert enabled_alarm_data.taper_shape_errors == []
+    assert enabled_alarm_data.taper_shape_grading_errors == []
+
+    disabled_captured = []
+    disabled_alarm_data = SimpleNamespace(
+        taper_shape_disabled=False,
+        taper_shape_errors=["old detection error"],
+        taper_shape_grading_errors=["old grading error"],
+        set_line_data_dict=disabled_captured.append,
+    )
+    disabled_data_integration = SimpleNamespace(alarmData=disabled_alarm_data)
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", False)
+    monkeypatch.setattr(
+        taper_processing,
+        "_detection_taper_shape_",
+        lambda item: (_ for _ in ()).throw(AssertionError("LINE branch should not run")),
+    )
+
+    taper_processing._detection_taper_shape_all_([disabled_data_integration])
+
+    assert disabled_captured == [{}]
+    assert disabled_alarm_data.taper_shape_disabled is True
+    assert disabled_alarm_data.taper_shape_errors == []
+    assert disabled_alarm_data.taper_shape_grading_errors == []
+
+
 def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(

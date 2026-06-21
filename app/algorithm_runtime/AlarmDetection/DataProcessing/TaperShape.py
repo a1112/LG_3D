@@ -43,6 +43,13 @@ def _set_taper_shape_errors(data_integration: DataIntegration, errors):
         alarm_data.taper_shape_errors = list(errors)
 
 
+def _clear_taper_shape_errors(data_integration: DataIntegration):
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is not None:
+        alarm_data.taper_shape_errors = []
+        alarm_data.taper_shape_grading_errors = []
+
+
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detection_taper_shape_(data_integration: DataIntegration):
     print("塔形检测")
@@ -414,6 +421,8 @@ def _normalize_taper_shape_type(value):
         if value == DetectionTaperShapeType(0):
             return DetectionTaperShapeType.NONE
         return value
+    if isinstance(value, bool):
+        return DetectionTaperShapeType.LINE_TYPE if value else DetectionTaperShapeType.NONE
     if value is None:
         logger.warning("taper_shape_type is None, fallback to LINE_TYPE")
         return DetectionTaperShapeType.LINE_TYPE
@@ -457,6 +466,7 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     print("塔形检测 all")
     taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
     for dataIntegration in _iter_data_integrations(data_integration_list):
+        _clear_taper_shape_errors(dataIntegration)
         if taper_shape_type == DetectionTaperShapeType.NONE:
             dataIntegration.alarmData.taper_shape_disabled = True
             dataIntegration.alarmData.set_line_data_dict({})
