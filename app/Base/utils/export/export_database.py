@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict, defaultdict
 
 from CoilDataBase import Coil
@@ -96,6 +97,19 @@ def _alarm_info_by_surface(secondary_coil):
     return alarm_info_dict
 
 
+def _alarm_taper_shape_data(alarm_taper_shape):
+    raw_data = getattr(alarm_taper_shape, "data", None)
+    if isinstance(raw_data, dict):
+        return raw_data
+    if not raw_data:
+        return {}
+    try:
+        parsed = json.loads(raw_data)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
 def get_taper_shape_info(secondary_coil,alarm_info_dict):
     res_data = {}
     alarm_taper_shape_dict = spit_data_list(secondary_coil.childrenAlarmTaperShape, one=True)
@@ -110,6 +124,20 @@ def get_taper_shape_info(secondary_coil,alarm_info_dict):
                 key + "端 内圈最大值": alarmTaperShape.in_taper_max_value,
                 key + "端 内圈最小值": alarmTaperShape.in_taper_min_value,
             })
+            alarm_data = _alarm_taper_shape_data(alarmTaperShape)
+            if alarm_data:
+                res_data.update({
+                    key + "端 塔形最严重类型": alarm_data.get("worst_label", ""),
+                    key + "端 塔形最严重值": alarm_data.get("worst_mm", ""),
+                    key + "端 塔形最严重绝对值": alarm_data.get("worst_abs_mm", ""),
+                    key + "端 塔形最严重点类型": alarm_data.get("worst_point_type", ""),
+                    key + "端 塔形最严重点X": alarm_data.get("worst_x", ""),
+                    key + "端 塔形最严重点Y": alarm_data.get("worst_y", ""),
+                    key + "端 塔形最严重点Z": alarm_data.get("worst_z", ""),
+                    key + "端 塔形最严重角度": alarm_data.get(
+                        "worst_angle", alarmTaperShape.rotation_angle
+                    ),
+                })
         if alarm_info_dict[key]:
             alarm_info = alarm_info_dict[key]
             alarm_info: AlarmInfo
@@ -219,12 +247,15 @@ def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
 def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
     data_all = []
     head_key_list = []
+    head_key_set = set()
     worksheet = workbook.add_worksheet(export_config.worksheet_name)
     for secondaryCoil in coil_id_list:
         item_dict = get_item_data(secondaryCoil,export_config)
         data_all.append(item_dict)
-        if len(item_dict.keys()) > len(head_key_list):
-            head_key_list = item_dict.keys()
+        for key in item_dict.keys():
+            if key not in head_key_set:
+                head_key_set.add(key)
+                head_key_list.append(key)
     data = [head_key_list]
     for itemData in data_all:
         row=[]
