@@ -569,6 +569,13 @@ def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatc
     assert alarm.rotation_angle == 40
     assert alarm.out_taper_max_value == 80.0
     assert alarm.in_taper_max_value == 75.0
+    metadata = json.loads(alarm.data)
+    assert metadata["worst_point_type"] == "outer_max_point"
+    assert metadata["worst_x"] == 10.0
+    assert metadata["worst_y"] == 20.0
+    assert metadata["worst_z"] == 260.0
+    assert metadata["worst_angle"] == 40.0
+    assert metadata["worst_used_point_count"] == 0
 
 
 def test_grading_alarm_taper_shape_skips_non_finite_cached_metrics(monkeypatch):
@@ -637,6 +644,12 @@ def test_grading_alarm_taper_shape_grades_negative_deviation(monkeypatch):
     assert "外塔最低值-90.00 <= -80.00" in result.errorMsg
     assert captured[0].rotation_angle == 220
     assert captured[0].out_taper_min_value == -90.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["worst_point_type"] == "outer_min_point"
+    assert metadata["worst_x"] == 11.0
+    assert metadata["worst_y"] == 21.0
+    assert metadata["worst_z"] == 10.0
+    assert metadata["worst_angle"] == 220.0
 
 
 def test_grading_alarm_taper_shape_ignores_zero_and_normalizes_negative_limits(monkeypatch):

@@ -279,19 +279,25 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     in_taper_min_value = _rel_mm(data_integration, min_inner_metrics.inner_min_point.z)
 
     deviations = [
-        ("外塔最高值", out_taper_max_value, max_outer_metrics),
-        ("外塔最低值", out_taper_min_value, min_outer_metrics),
-        ("内塔最高值", in_taper_max_value, max_inner_metrics),
-        ("内塔最低值", in_taper_min_value, min_inner_metrics),
+        ("外塔最高值", out_taper_max_value, max_outer_metrics,
+         "outer_max_point"),
+        ("外塔最低值", out_taper_min_value, min_outer_metrics,
+         "outer_min_point"),
+        ("内塔最高值", in_taper_max_value, max_inner_metrics,
+         "inner_max_point"),
+        ("内塔最低值", in_taper_min_value, min_inner_metrics,
+         "inner_min_point"),
     ]
-    worst_label, worst_value, worst_metrics = max(deviations, key=lambda item: abs(item[1]))
+    worst_label, worst_value, worst_metrics, worst_point_attr = max(
+        deviations, key=lambda item: abs(item[1])
+    )
     selected_metrics = [max_outer_metrics, min_outer_metrics, max_inner_metrics, min_inner_metrics]
 
     grad = _grade_by_limits(abs(worst_value), height_limits)
 
     messages = []
     if grad > 1:
-        for label, value, metrics in deviations:
+        for label, value, metrics, _point_attr in deviations:
             matched_limit = _matched_limit(abs(value), height_limits)
             if matched_limit is None:
                 continue
@@ -308,6 +314,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
                 )
     error_msg = "\n".join(messages) if messages else "正常"
     worst_angle = _safe_float(getattr(worst_metrics.line_data, "rotation_angle", 0.0))
+    worst_point = getattr(worst_metrics, worst_point_attr)
     outer_angle = _safe_float(getattr(max_outer_metrics.line_data, "rotation_angle", 0.0))
     inner_angle = _safe_float(getattr(max_inner_metrics.line_data, "rotation_angle", 0.0))
     outer_min_angle = _safe_float(getattr(min_outer_metrics.line_data, "rotation_angle", 0.0))
@@ -352,6 +359,12 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_label": worst_label,
             "worst_mm": worst_value,
             "worst_abs_mm": abs(worst_value),
+            "worst_point_type": worst_point_attr,
+            "worst_x": _safe_float(getattr(worst_point, "x", 0.0)),
+            "worst_y": _safe_float(getattr(worst_point, "y", 0.0)),
+            "worst_z": _safe_float(getattr(worst_point, "z", 0.0)),
+            "worst_angle": worst_angle,
+            "worst_used_point_count": worst_metrics.used_point_count,
             "valid_line_count": len(valid_metrics),
         }, ensure_ascii=False, allow_nan=False)
     ))
