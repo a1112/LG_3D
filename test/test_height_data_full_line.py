@@ -60,3 +60,40 @@ def test_error_cache_match_preserves_float_thresholds(tmp_path):
     assert ApiDataServer._error_cache_matches(error_path, -50.5, -80.25)
     assert not ApiDataServer._error_cache_matches(error_path, 50.0, 80.25)
     assert not ApiDataServer._error_cache_matches(error_path, 50.5, 80.0)
+
+
+def test_error_render_baseline_ignores_invalid_coil_state(monkeypatch):
+    monkeypatch.setattr(
+        ApiDataServer,
+        "get_coil_state_by_coil_id",
+        lambda *_args: type("BadState", (), {
+            "scan3dCoordinateScaleZ": float("nan"),
+            "median_3d": float("nan"),
+        })(),
+    )
+    npy_data = np.array([
+        [0, 1000, 2000],
+        [3000, 4000, 0],
+    ], dtype=np.int32)
+
+    median_z_int, scale_factor = ApiDataServer._get_error_render_baseline("1001", "S", npy_data)
+
+    assert median_z_int == 3000
+    assert scale_factor == ApiDataServer.DEFAULT_ERROR_SCALE_FACTOR
+
+
+def test_error_render_baseline_prefers_valid_coil_state(monkeypatch):
+    monkeypatch.setattr(
+        ApiDataServer,
+        "get_coil_state_by_coil_id",
+        lambda *_args: type("GoodState", (), {
+            "scan3dCoordinateScaleZ": 0.02,
+            "median_3d": 2500,
+        })(),
+    )
+    npy_data = np.array([[2000, 3000, 4000]], dtype=np.int32)
+
+    median_z_int, scale_factor = ApiDataServer._get_error_render_baseline("1001", "S", npy_data)
+
+    assert median_z_int == 2500
+    assert scale_factor == 0.02

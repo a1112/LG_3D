@@ -24,10 +24,24 @@ from cache import cacheProvider
 
 router = APIRouter(tags=["深度数据访问服务"])
 log = logging.getLogger(__name__)
+DEFAULT_ERROR_SCALE_FACTOR = 0.016229506582021713
+
+
+def _positive_finite_float(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) and number > 0 else None
+
+
+def _positive_finite_int(value):
+    number = _positive_finite_float(value)
+    return int(number) if number is not None else None
 
 
 def _get_error_render_baseline(coil_id: str, surface_key: str, npy_data: np.ndarray):
-    scale_factor = 0.016229506582021713
+    scale_factor = DEFAULT_ERROR_SCALE_FACTOR
     median_z_int = None
 
     try:
@@ -36,10 +50,12 @@ def _get_error_render_baseline(coil_id: str, surface_key: str, npy_data: np.ndar
         coil_state = None
 
     if coil_state is not None:
-        if coil_state.scan3dCoordinateScaleZ:
-            scale_factor = float(coil_state.scan3dCoordinateScaleZ)
-        if coil_state.median_3d:
-            median_z_int = int(coil_state.median_3d)
+        scale_value = _positive_finite_float(getattr(coil_state, "scan3dCoordinateScaleZ", None))
+        if scale_value is not None:
+            scale_factor = scale_value
+        median_value = _positive_finite_int(getattr(coil_state, "median_3d", None))
+        if median_value is not None:
+            median_z_int = median_value
 
     if median_z_int is None:
         valid_data = npy_data[npy_data > 1000]
