@@ -1458,6 +1458,26 @@ def test_line_data_detection_keeps_boundary_with_inner_mask_holes():
     assert line_data.outer_max_point.z == 260.0
 
 
+def test_line_data_detection_rejects_sparse_side_points():
+    line_data = LineData(
+        npy_data=np.zeros((1, 6), dtype=np.int32),
+        mask_image=np.ones((1, 6), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(5, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 0],
+        [4, 0, 0],
+        [5, 0, 260],
+    ], dtype=np.int32)
+
+    with pytest.raises(ValueError, match="塔形线有效点不足 inner=1 outer=1 min=2"):
+        line_data.det_taper_shape()
+
+
 def test_line_data_unit_distance_uses_intervals_between_points():
     line_data = LineData(
         npy_data=np.zeros((1, 5), dtype=np.int32),

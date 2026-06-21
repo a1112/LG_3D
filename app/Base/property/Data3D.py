@@ -14,6 +14,9 @@ from CoilDataBase.models import LineData as LineDataModel
 from CoilDataBase.models import PointData as PointDataModel
 
 
+MIN_TAPER_SIDE_VALID_POINTS = 2
+
+
 def valid_line_height_mask(line_, none_data_value=10):
     try:
         line_array = np.asarray(line_, dtype=float)
@@ -372,6 +375,13 @@ class LineData:
         center_index = (start_index + end_index + 1) // 2
         inner_points = arr[start_index:center_index]
         outer_points = arr[center_index:end_index + 1]
+        inner_valid_count = int(np.count_nonzero(valid_line_height_mask(inner_points, 10)))
+        outer_valid_count = int(np.count_nonzero(valid_line_height_mask(outer_points, 10)))
+        if min(inner_valid_count, outer_valid_count) < MIN_TAPER_SIDE_VALID_POINTS:
+            raise ValueError(
+                f"塔形检测失败: 塔形线有效点不足 inner={inner_valid_count} "
+                f"outer={outer_valid_count} min={MIN_TAPER_SIDE_VALID_POINTS}"
+            )
         # 最值检测
         self.inner_max_point, self.inner_min_point = find_line_max_min(inner_points, 10, self.useIQR, type_="inner")
         self.outer_max_point, self.outer_min_point = find_line_max_min(outer_points, 10, self.useIQR, type_="outer")

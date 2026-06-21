@@ -13,11 +13,13 @@ from AlarmDetection.Configs.TaperShapeConfig import (
 )
 from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
-from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
+from Base.property.Data3D import (
+    MIN_TAPER_SIDE_VALID_POINTS,
+    LineData,
+    find_line_max_min,
+    valid_line_height_mask,
+)
 from Base.utils.Log import logger
-
-
-MIN_TAPER_SIDE_VALID_POINTS = 2
 
 
 @dataclass
