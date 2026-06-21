@@ -12,8 +12,11 @@ Row {
     property int defectCountS: coilModel ? coilModel.coilDefectCountS : 0
     property int defectCountL: coilModel ? coilModel.coilDefectCountL : 0
     property bool hasMaxDefectName: maxDefectName.length > 0
-    property string statusText: hasMaxDefectName ? defectCount + " / " + maxDefectName : defectCount + ""
-    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 132 : 34
+    property string maxDefectLabel: hasMaxDefectName
+                                    ? ((maxDefectSurface ? maxDefectSurface + ":" : "") + maxDefectName)
+                                    : ""
+    property string statusText: hasMaxDefectName ? defectCount + " / " + maxDefectLabel : defectCount + ""
+    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 150 : 34
     property string defectStatusTip: "S: " + defectCountS
                                     + "  L: " + defectCountL
                                     + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
@@ -48,7 +51,7 @@ Row {
         Label{
             id: statusTextLabel
             visible: listItemCoil.hasCoilData
-            width: Math.min(210, implicitWidth)
+            width: Math.min(225, implicitWidth)
             text: root.statusText
             elide: Text.ElideRight
             font.pointSize: 11

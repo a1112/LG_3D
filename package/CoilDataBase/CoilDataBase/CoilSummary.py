@@ -89,6 +89,25 @@ def _apply_max_defect_summary(summary: CoilSummary, defects, coil_id: int) -> No
         log.debug(f"Coil {coil_id}: No defects found")
 
 
+def _max_defect_json_fields(defects) -> dict:
+    max_defect, max_level = _select_max_shown_defect(defects or [])
+    if not max_defect:
+        return {
+            "maxDefectName": "",
+            "maxDefectLevel": 0,
+            "maxDefectSurface": "",
+        }
+    return {
+        "maxDefectName": getattr(max_defect, "defectName", "") or "",
+        "maxDefectLevel": max_level,
+        "maxDefectSurface": getattr(max_defect, "surface", "") or "S",
+    }
+
+
+def _apply_max_defect_json_fields(item_data: dict, defects) -> None:
+    item_data.update(_max_defect_json_fields(defects))
+
+
 def _summary_needs_max_defect_fill(summary: CoilSummary) -> bool:
     defect_count = (summary.DefectCountS or 0) + (summary.DefectCountL or 0)
     return defect_count > 0 and not (summary.MaxDefectName or "").strip()
@@ -658,6 +677,7 @@ def _format_coil_data(coil: SecondaryCoil) -> dict:
     # 更新基本数据
     coil_dict = tool.to_dict(coil)
     c_data.update(coil_dict)
+    _apply_max_defect_json_fields(c_data, coil.childrenCoilDefect)
 
     return c_data
 
@@ -878,6 +898,7 @@ def _format_coil_detail(coil: SecondaryCoil) -> dict:
     # 更新基本数据
     coil_dict = tool.to_dict(coil)
     c_data.update(coil_dict)
+    _apply_max_defect_json_fields(c_data, coil.childrenCoilDefect)
 
     # 确保 SecondaryCoilId 存在
     if "SecondaryCoilId" not in c_data and "Id" in c_data:
