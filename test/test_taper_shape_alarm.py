@@ -1034,6 +1034,46 @@ def test_grading_alarm_taper_shape_skips_malformed_ray_line(monkeypatch):
     assert json.loads(captured[0].data)["valid_line_count"] == 1
 
 
+def test_grading_alarm_taper_shape_rejects_sparse_side_points(monkeypatch):
+    sparse_line = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=np.array([
+            [0, 0, 100],
+            [1, 0, 0],
+            [2, 0, 0],
+            [3, 0, 0],
+            [4, 0, 0],
+            [5, 0, 260],
+        ], dtype=float),
+        outer_max_point=_point(5, 0, 260),
+        outer_min_point=_point(5, 0, 260),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(0, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: sparse_line})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+    assert "无有效线数据" in result.errorMsg
+    assert "塔形线有效点不足 inner=1 outer=1 min=2" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "0度: 塔形线有效点不足 inner=1 outer=1 min=2"
+    ]
+
+
 def test_grading_alarm_taper_shape_records_partial_error_metadata(monkeypatch):
     malformed_line = SimpleNamespace(
         rotation_angle=10,

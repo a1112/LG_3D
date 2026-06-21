@@ -17,6 +17,9 @@ from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_
 from Base.utils.Log import logger
 
 
+MIN_TAPER_SIDE_VALID_POINTS = 2
+
+
 @dataclass
 class TaperLineMetrics:
     line_data: LineData
@@ -159,6 +162,11 @@ def _trim_line_segments(data_integration: DataIntegration,
     outer_points = outer_points[valid_line_height_mask(outer_points, 10)]
     if len(inner_points) == 0 or len(outer_points) == 0:
         return None, ignored_inner_mm, ignored_outer_mm, False
+    if min(len(inner_points), len(outer_points)) < MIN_TAPER_SIDE_VALID_POINTS:
+        raise ValueError(
+            f"塔形线有效点不足 inner={len(inner_points)} "
+            f"outer={len(outer_points)} min={MIN_TAPER_SIDE_VALID_POINTS}"
+        )
     return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, False
 
 
