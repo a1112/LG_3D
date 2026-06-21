@@ -37,16 +37,24 @@ def _data_integration_log_fields(data_integration: DataIntegration):
     return coil_id, surface
 
 
+def _set_taper_shape_errors(data_integration: DataIntegration, errors):
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is not None:
+        alarm_data.taper_shape_errors = list(errors)
+
+
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detection_taper_shape_(data_integration: DataIntegration):
     print("塔形检测")
     # 角度检测
     line_data_dict = {}
+    taper_shape_errors = []
     for rotate in range(0, 360, TAPER_ROTATION_STEP):
         try:
             line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
         except TAPER_ANGLE_RECOVERABLE_ERRORS as e:
             coil_id, surface = _data_integration_log_fields(data_integration)
+            taper_shape_errors.append(f"{int(rotate)}度: {e}")
             logger.warning(f"{coil_id} {surface} 塔形角度 {rotate} 跳过: {e}")
 
 
@@ -64,6 +72,7 @@ def _detection_taper_shape_(data_integration: DataIntegration):
 
     # 提交全部深度检测点
     #
+    _set_taper_shape_errors(data_integration, taper_shape_errors)
     return line_data_dict
     #
     # x_cet_mm,y_cet_mm,accuracy_x=(dataIntegration.flatRollData.inner_circle_center_x,

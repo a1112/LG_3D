@@ -255,6 +255,25 @@ def _matched_limit(value: float, height_limits: list[float]) -> float | None:
     return None
 
 
+def _taper_detection_error_message(data_integration: DataIntegration, limit: int = 3) -> str:
+    alarm_data = getattr(data_integration, "alarmData", None)
+    errors = getattr(alarm_data, "taper_shape_errors", None) or []
+    messages = []
+    for error in errors:
+        text = str(error).strip()
+        if text:
+            messages.append(text)
+        if len(messages) >= limit:
+            break
+    if not messages:
+        return ""
+    remaining = max(0, len(errors) - len(messages))
+    message = "；".join(messages)
+    if remaining:
+        message += f"；另有{remaining}个角度失败"
+    return message
+
+
 def grading_alarm_taper_shape(data_integration: DataIntegration):
     taper_shape_config = alarmConfigProperty.get_taper_shape_config(data_integration)
     name, height_limit_list, inner, outer, info = taper_shape_config.get_config().get_config()
@@ -266,6 +285,9 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     valid_metrics = _valid_line_metrics(data_integration, inner, outer)
     if not valid_metrics:
         error_msg = "塔形检测失败: 无有效线数据"
+        detection_error_msg = _taper_detection_error_message(data_integration)
+        if detection_error_msg:
+            error_msg = f"{error_msg}；{detection_error_msg}"
         return AlarmGradResult(3, error_msg, taper_shape_config)
 
     max_outer_metrics = _select_max_metrics(data_integration, valid_metrics, "outer_max_point")

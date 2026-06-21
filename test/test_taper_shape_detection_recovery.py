@@ -33,7 +33,7 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
             raise OverflowError("bad coordinate")
         return f"line-{rotation_angle}"
 
-    data_integration = SimpleNamespace(coilId=1001, surface="S")
+    data_integration = SimpleNamespace(coilId=1001, surface="S", alarmData=SimpleNamespace())
     monkeypatch.setattr(taper_processing, "TAPER_ROTATION_STEP", 90)
     monkeypatch.setattr(
         taper_processing,
@@ -46,6 +46,11 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
 
     assert calls == [0, 90, 180, 270]
     assert result == {270: "line-270"}
+    assert data_integration.alarmData.taper_shape_errors == [
+        "0度: bad center data",
+        "90度: missing flat roll center",
+        "180度: bad coordinate",
+    ]
     assert len(warnings) == 3
     assert "0" in warnings[0]
     assert "bad center data" in warnings[0]
@@ -61,7 +66,7 @@ def test_taper_shape_detection_recovery_logs_without_coil_id(monkeypatch):
     def fake_detection(data_integration, rotation_angle):
         raise ValueError("invalid taper line")
 
-    data_integration = SimpleNamespace(key="L")
+    data_integration = SimpleNamespace(key="L", alarmData=SimpleNamespace())
     monkeypatch.setattr(taper_processing, "TAPER_ROTATION_STEP", 180)
     monkeypatch.setattr(
         taper_processing,
@@ -73,6 +78,10 @@ def test_taper_shape_detection_recovery_logs_without_coil_id(monkeypatch):
     result = taper_processing._detection_taper_shape_(data_integration)
 
     assert result == {}
+    assert data_integration.alarmData.taper_shape_errors == [
+        "0度: invalid taper line",
+        "180度: invalid taper line",
+    ]
     assert len(warnings) == 2
     assert "L" in warnings[0]
     assert "0" in warnings[0]
