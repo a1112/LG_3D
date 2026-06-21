@@ -617,6 +617,20 @@ def test_line_data_ray_line_ignores_low_value_edge_noise():
     assert ray_line[-1, 0] == 7
 
 
+def test_line_data_ray_data_preserves_float_depth_values():
+    line_data = LineData(
+        npy_data=np.array([[0.0, 100.75, 101.25, 102.5, 103.0]], dtype=np.float32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+
+    ray_data = line_data.ray_data
+
+    assert ray_data[0, 2] == pytest.approx(100.75)
+    assert ray_data[1, 2] == pytest.approx(101.25)
+
+
 def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatch):
     line_outer = SimpleNamespace(
         rotation_angle=40,

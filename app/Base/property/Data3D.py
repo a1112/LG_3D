@@ -190,7 +190,7 @@ class LineData:
     @property
     def ray_data(self):
         if self._ray_data_ is None:
-            self._ray_data_ = self.all_image_line_points(mask=True, ray=True).astype(np.int32)
+            self._ray_data_ = self.all_image_line_points(mask=True, ray=True)
         return self._ray_data_
 
     @property
