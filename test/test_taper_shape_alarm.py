@@ -612,6 +612,50 @@ def test_taper_shape_rotation_rejects_mismatched_image_shapes():
         taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
 
 
+def test_taper_shape_rotation_rejects_non_numeric_3d_image():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(5, 5))
+        ),
+        npy_data=np.full((11, 11), "bad-depth", dtype=object),
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    with pytest.raises(ValueError, match="3D image must be real numeric"):
+        taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+
+def test_taper_shape_rotation_accepts_bool_mask(monkeypatch):
+    captured_mask_dtype = []
+
+    class FakeLineData:
+        def set_data_integration(self, data_integration):
+            self.data_integration = data_integration
+
+        def det_taper_shape(self):
+            pass
+
+        def set_rotation_angle(self, angle):
+            self.rotation_angle = angle
+
+    def fake_get_length_data_by_rotate(npy_data, mask, center, rotation_angle, ray=True):
+        captured_mask_dtype.append(mask.dtype)
+        return FakeLineData()
+
+    monkeypatch.setattr(taper_line, "getLengthDataByRotate", fake_get_length_data_by_rotate)
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(get_center=lambda: Point2D(5, 5))
+        ),
+        npy_data=np.ones((11, 11), dtype=np.float32) * 100,
+        npy_mask=np.ones((11, 11), dtype=bool),
+    )
+
+    taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+    assert captured_mask_dtype == [np.dtype("bool")]
+
+
 def test_taper_shape_rotation_accepts_center_object_with_xy_attrs():
     data_integration = SimpleNamespace(
         alarmData=SimpleNamespace(

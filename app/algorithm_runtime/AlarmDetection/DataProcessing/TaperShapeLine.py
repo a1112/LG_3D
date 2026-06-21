@@ -23,19 +23,26 @@ def _center_to_pixel(center, width: int, height: int) -> Point2D:
     return Point2D(x, y)
 
 
-def _validate_taper_image_array(value, label):
+def _validate_taper_image_array(value, label, allow_bool: bool = False):
     try:
         array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as e:
         raise ValueError(f"塔形检测失败: {label} image invalid") from e
     if array.ndim != 2 or array.shape[0] <= 0 or array.shape[1] <= 0:
         raise ValueError(f"塔形检测失败: {label} image must be non-empty 2D")
+    is_real_number = (
+        np.issubdtype(array.dtype, np.number)
+        and not np.issubdtype(array.dtype, np.complexfloating)
+    )
+    is_allowed_bool = allow_bool and np.issubdtype(array.dtype, np.bool_)
+    if not (is_real_number or is_allowed_bool):
+        raise ValueError(f"塔形检测失败: {label} image must be real numeric")
     return array
 
 
 def validate_taper_detection_inputs(npy_data, mask, center):
     npy_data = _validate_taper_image_array(npy_data, "3D")
-    mask = _validate_taper_image_array(mask, "mask")
+    mask = _validate_taper_image_array(mask, "mask", allow_bool=True)
     if npy_data.shape != mask.shape:
         raise ValueError(
             f"塔形检测失败: 3D/mask shape mismatch {npy_data.shape} != {mask.shape}"
