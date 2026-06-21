@@ -17,6 +17,7 @@ class AlarmData:
         self.taper_shape_disabled = False
         self.taper_shape_errors = []
         self.taper_shape_grading_errors = []
+        self.taper_shape_attempt_count = 0
 
     def set_flat_roll_data(self,flat_roll_data):
         self.flatRollData = flat_roll_data

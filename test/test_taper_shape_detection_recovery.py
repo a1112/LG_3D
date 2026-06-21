@@ -51,6 +51,7 @@ def test_taper_shape_detection_skips_recoverable_angle_errors(monkeypatch):
         "90度: missing flat roll center",
         "180度: bad coordinate",
     ]
+    assert data_integration.alarmData.taper_shape_attempt_count == 4
     assert len(warnings) == 3
     assert "0" in warnings[0]
     assert "bad center data" in warnings[0]
@@ -82,6 +83,7 @@ def test_taper_shape_detection_recovery_logs_without_coil_id(monkeypatch):
         "0度: invalid taper line",
         "180度: invalid taper line",
     ]
+    assert data_integration.alarmData.taper_shape_attempt_count == 2
     assert len(warnings) == 2
     assert "L" in warnings[0]
     assert "0" in warnings[0]

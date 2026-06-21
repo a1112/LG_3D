@@ -43,11 +43,18 @@ def _set_taper_shape_errors(data_integration: DataIntegration, errors):
         alarm_data.taper_shape_errors = list(errors)
 
 
+def _set_taper_shape_attempt_count(data_integration: DataIntegration, attempt_count: int):
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is not None:
+        alarm_data.taper_shape_attempt_count = int(attempt_count)
+
+
 def _clear_taper_shape_errors(data_integration: DataIntegration):
     alarm_data = getattr(data_integration, "alarmData", None)
     if alarm_data is not None:
         alarm_data.taper_shape_errors = []
         alarm_data.taper_shape_grading_errors = []
+        alarm_data.taper_shape_attempt_count = 0
 
 
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
@@ -56,7 +63,9 @@ def _detection_taper_shape_(data_integration: DataIntegration):
     # 角度检测
     line_data_dict = {}
     taper_shape_errors = []
-    for rotate in range(0, 360, TAPER_ROTATION_STEP):
+    rotations = list(range(0, 360, TAPER_ROTATION_STEP))
+    _set_taper_shape_attempt_count(data_integration, len(rotations))
+    for rotate in rotations:
         try:
             line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
         except TAPER_ANGLE_RECOVERABLE_ERRORS as e:

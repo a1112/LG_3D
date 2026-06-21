@@ -1193,6 +1193,44 @@ def test_grading_alarm_taper_shape_rejects_low_coverage_line(monkeypatch):
     ]
 
 
+def test_grading_alarm_taper_shape_flags_low_angle_coverage(monkeypatch):
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 100),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={40: valid_line},
+        taper_shape_attempt_count=36,
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "塔形检测质量不足" in result.errorMsg
+    assert "塔形有效角度覆盖不足" in result.errorMsg
+    assert "valid=1 total=36 coverage=0.03 min=0.50" in result.errorMsg
+
+    metadata = json.loads(captured[0].data)
+    assert metadata["valid_line_count"] == 1
+    assert metadata["taper_attempt_count"] == 36
+    assert metadata["valid_angle_coverage_ratio"] == pytest.approx(1 / 36)
+    assert metadata["valid_angle_coverage_min"] == 0.5
+
+
 def test_grading_alarm_taper_shape_records_partial_error_metadata(monkeypatch):
     malformed_line = SimpleNamespace(
         rotation_angle=10,

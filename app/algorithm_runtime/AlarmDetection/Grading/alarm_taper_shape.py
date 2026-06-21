@@ -24,6 +24,10 @@ from Base.property.Data3D import (
 from Base.utils.Log import logger
 
 
+MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE = 8
+MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO = 0.5
+
+
 @dataclass
 class TaperLineMetrics:
     line_data: LineData
@@ -52,6 +56,16 @@ def _non_negative_float(value) -> float:
     if not np.isfinite(value):
         return 0.0
     return max(0.0, value)
+
+
+def _non_negative_int(value) -> int:
+    try:
+        value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    if not np.isfinite(value):
+        return 0
+    return max(0, int(value))
 
 
 def _safe_float(value, default: float = 0.0) -> float:
@@ -336,6 +350,16 @@ def _taper_grading_error_message(data_integration: DataIntegration, limit: int =
     return _limited_taper_error_message(messages, limit, "条线无效")
 
 
+def _taper_attempt_count(data_integration: DataIntegration,
+                         valid_line_count: int,
+                         detection_error_count: int,
+                         grading_error_count: int) -> int:
+    alarm_data = getattr(data_integration, "alarmData", None)
+    recorded_count = _non_negative_int(getattr(alarm_data, "taper_shape_attempt_count", 0))
+    observed_count = valid_line_count + detection_error_count + grading_error_count
+    return max(recorded_count, observed_count, valid_line_count)
+
+
 def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
     try:
         add_obj(alarm_taper_shape)
@@ -414,9 +438,28 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     error_msg = "\n".join(messages) if messages else "正常"
     detection_error_messages = _taper_error_messages(data_integration, "taper_shape_errors")
     grading_error_messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
+    valid_line_count = len(valid_metrics)
+    taper_attempt_count = _taper_attempt_count(
+        data_integration,
+        valid_line_count,
+        len(detection_error_messages),
+        len(grading_error_messages),
+    )
+    valid_angle_coverage_ratio = (
+        valid_line_count / taper_attempt_count if taper_attempt_count > 0 else 1.0
+    )
     quality_messages = []
     detection_error_summary = _limited_taper_error_message(detection_error_messages, 3, "个角度失败")
     grading_error_summary = _limited_taper_error_message(grading_error_messages, 3, "条线无效")
+    if (taper_attempt_count >= MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE
+            and valid_angle_coverage_ratio < MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO):
+        grad = max(grad, 3)
+        if error_msg == "正常":
+            error_msg = "塔形检测质量不足"
+        quality_messages.append(
+            f"塔形有效角度覆盖不足：valid={valid_line_count} total={taper_attempt_count} "
+            f"coverage={valid_angle_coverage_ratio:.2f} min={MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO:.2f}"
+        )
     if detection_error_summary:
         quality_messages.append(f"塔形检测部分角度失败：{detection_error_summary}")
     if grading_error_summary:
@@ -475,7 +518,10 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_z": _safe_float(getattr(worst_point, "z", 0.0)),
             "worst_angle": worst_angle,
             "worst_used_point_count": worst_metrics.used_point_count,
-            "valid_line_count": len(valid_metrics),
+            "valid_line_count": valid_line_count,
+            "taper_attempt_count": taper_attempt_count,
+            "valid_angle_coverage_ratio": valid_angle_coverage_ratio,
+            "valid_angle_coverage_min": MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO,
             "detection_error_count": len(detection_error_messages),
             "detection_error_preview": detection_error_messages[:3],
             "grading_error_count": len(grading_error_messages),
