@@ -948,6 +948,10 @@ def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     assert result.grad == 1
     assert captured
     assert captured[0].out_taper_max_value == 0.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["ignored_outer_mm"] == 1.0
+    assert metadata["applied_ignored_outer_mm"] == 1.0
+    assert metadata["outer_skip_count"] == 1
 
 
 def test_grading_alarm_taper_shape_uses_y_scale_for_vertical_ignore_distance(monkeypatch):
@@ -1509,6 +1513,8 @@ def test_grading_alarm_taper_shape_treats_bad_distance_fallback_as_no_trim(monke
     assert captured[0].out_taper_max_value == 80.0
     metadata = json.loads(captured[0].data)
     assert metadata["ignored_outer_mm"] == 2.0
+    assert metadata["applied_ignored_outer_mm"] == 0.0
+    assert metadata["outer_skip_count"] == 0
 
 
 def test_grading_alarm_taper_shape_ignores_low_value_edge_noise_before_split(monkeypatch):

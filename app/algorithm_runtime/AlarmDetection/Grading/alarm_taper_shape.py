@@ -38,7 +38,23 @@ class TaperLineMetrics:
     outer_min_point: object
     ignored_inner_mm: float
     ignored_outer_mm: float
+    applied_ignored_inner_mm: float
+    applied_ignored_outer_mm: float
+    inner_skip_count: int
+    outer_skip_count: int
     used_point_count: int
+
+
+@dataclass
+class TaperTrimResult:
+    line_segments: tuple | None
+    ignored_inner_mm: float = 0.0
+    ignored_outer_mm: float = 0.0
+    applied_ignored_inner_mm: float = 0.0
+    applied_ignored_outer_mm: float = 0.0
+    inner_skip_count: int = 0
+    outer_skip_count: int = 0
+    allow_cached_metrics: bool = False
 
 
 def _rel_mm(data_integration: DataIntegration, z_value: float) -> float:
@@ -149,23 +165,23 @@ def _trim_line_segments(data_integration: DataIntegration,
     try:
         raw_line_points = line_data.ray_line
     except AttributeError:
-        return None, 0.0, 0.0, True
+        return TaperTrimResult(None, allow_cached_metrics=True)
     except (TypeError, ValueError, OverflowError):
-        return None, 0.0, 0.0, True
+        return TaperTrimResult(None, allow_cached_metrics=True)
 
     try:
         line_points = np.asarray(raw_line_points, dtype=float)
     except (TypeError, ValueError, OverflowError):
-        return None, 0.0, 0.0, False
+        return TaperTrimResult(None)
 
     if line_points.size == 0 or line_points.ndim != 2 or line_points.shape[1] < 3:
-        return None, 0.0, 0.0, False
+        return TaperTrimResult(None)
     valid_indices = np.where(valid_line_height_mask(line_points, 10))[0]
     if valid_indices.size == 0:
-        return None, 0.0, 0.0, False
+        return TaperTrimResult(None)
     line_points = line_points[valid_indices[0]:valid_indices[-1] + 1]
     if len(line_points) < 4:
-        return None, 0.0, 0.0, False
+        return TaperTrimResult(None)
     coverage_ratio = taper_valid_coverage_ratio(line_points, 10)
     if coverage_ratio < MIN_TAPER_VALID_COVERAGE_RATIO:
         raise ValueError(
@@ -184,6 +200,10 @@ def _trim_line_segments(data_integration: DataIntegration,
     center_index = len(line_points) // 2
     inner_points = line_points[:center_index]
     outer_points = line_points[center_index:]
+    applied_inner_skip = min(inner_skip, len(inner_points))
+    applied_outer_skip = min(outer_skip, len(outer_points))
+    applied_ignored_inner_mm = applied_inner_skip * unit_distance_mm if unit_distance_mm > 0 else 0.0
+    applied_ignored_outer_mm = applied_outer_skip * unit_distance_mm if unit_distance_mm > 0 else 0.0
     if inner_skip > 0:
         inner_points = inner_points[inner_skip:]
     if outer_skip > 0:
@@ -199,28 +219,44 @@ def _trim_line_segments(data_integration: DataIntegration,
     inner_points = inner_points[valid_line_height_mask(inner_points, 10)]
     outer_points = outer_points[valid_line_height_mask(outer_points, 10)]
     if len(inner_points) == 0 or len(outer_points) == 0:
-        return None, ignored_inner_mm, ignored_outer_mm, False
+        return TaperTrimResult(
+            None,
+            ignored_inner_mm=ignored_inner_mm,
+            ignored_outer_mm=ignored_outer_mm,
+            applied_ignored_inner_mm=applied_ignored_inner_mm,
+            applied_ignored_outer_mm=applied_ignored_outer_mm,
+            inner_skip_count=applied_inner_skip,
+            outer_skip_count=applied_outer_skip,
+        )
     if min(len(inner_points), len(outer_points)) < MIN_TAPER_SIDE_VALID_POINTS:
         raise ValueError(
             f"塔形线有效点不足 inner={len(inner_points)} "
             f"outer={len(outer_points)} min={MIN_TAPER_SIDE_VALID_POINTS}"
         )
-    return (inner_points, outer_points), ignored_inner_mm, ignored_outer_mm, False
+    return TaperTrimResult(
+        (inner_points, outer_points),
+        ignored_inner_mm=ignored_inner_mm,
+        ignored_outer_mm=ignored_outer_mm,
+        applied_ignored_inner_mm=applied_ignored_inner_mm,
+        applied_ignored_outer_mm=applied_ignored_outer_mm,
+        inner_skip_count=applied_inner_skip,
+        outer_skip_count=applied_outer_skip,
+    )
 
 
 def _metrics_from_line(data_integration: DataIntegration,
                        line_data: LineData,
                        inner_ignore_count,
                        outer_ignore_count):
-    line_segments, ignored_inner_mm, ignored_outer_mm, allow_cached_metrics = _trim_line_segments(
+    trim_result = _trim_line_segments(
         data_integration,
         line_data,
         inner_ignore_count,
         outer_ignore_count
     )
-    if line_segments is None:
+    if trim_result.line_segments is None:
         # Use cached extrema only when raw line points are unavailable, not when configured trimming removed a side.
-        if not allow_cached_metrics:
+        if not trim_result.allow_cached_metrics:
             return None
         required_attrs = ("outer_max_point", "outer_min_point", "inner_max_point", "inner_min_point")
         if not all(getattr(line_data, attr, None) is not None for attr in required_attrs):
@@ -231,13 +267,17 @@ def _metrics_from_line(data_integration: DataIntegration,
             inner_min_point=line_data.inner_min_point,
             outer_max_point=line_data.outer_max_point,
             outer_min_point=line_data.outer_min_point,
-            ignored_inner_mm=ignored_inner_mm,
-            ignored_outer_mm=ignored_outer_mm,
+            ignored_inner_mm=trim_result.ignored_inner_mm,
+            ignored_outer_mm=trim_result.ignored_outer_mm,
+            applied_ignored_inner_mm=trim_result.applied_ignored_inner_mm,
+            applied_ignored_outer_mm=trim_result.applied_ignored_outer_mm,
+            inner_skip_count=trim_result.inner_skip_count,
+            outer_skip_count=trim_result.outer_skip_count,
             used_point_count=0
         )
         return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
-    inner_points, outer_points = line_segments
+    inner_points, outer_points = trim_result.line_segments
     inner_max_point, inner_min_point = find_line_max_min(inner_points, 10, True, type_="inner")
     outer_max_point, outer_min_point = find_line_max_min(outer_points, 10, True, type_="outer")
     if None in (inner_max_point, inner_min_point, outer_max_point, outer_min_point):
@@ -248,8 +288,12 @@ def _metrics_from_line(data_integration: DataIntegration,
         inner_min_point=inner_min_point,
         outer_max_point=outer_max_point,
         outer_min_point=outer_min_point,
-        ignored_inner_mm=ignored_inner_mm,
-        ignored_outer_mm=ignored_outer_mm,
+        ignored_inner_mm=trim_result.ignored_inner_mm,
+        ignored_outer_mm=trim_result.ignored_outer_mm,
+        applied_ignored_inner_mm=trim_result.applied_ignored_inner_mm,
+        applied_ignored_outer_mm=trim_result.applied_ignored_outer_mm,
+        inner_skip_count=trim_result.inner_skip_count,
+        outer_skip_count=trim_result.outer_skip_count,
         used_point_count=len(inner_points) + len(outer_points)
     )
     return metrics if _metrics_values_are_finite(data_integration, metrics) else None
@@ -512,6 +556,14 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "outer_ignore": _non_negative_float(outer),
             "ignored_inner_mm": max(metrics.ignored_inner_mm for metrics in selected_metrics),
             "ignored_outer_mm": max(metrics.ignored_outer_mm for metrics in selected_metrics),
+            "applied_ignored_inner_mm": max(
+                metrics.applied_ignored_inner_mm for metrics in selected_metrics
+            ),
+            "applied_ignored_outer_mm": max(
+                metrics.applied_ignored_outer_mm for metrics in selected_metrics
+            ),
+            "inner_skip_count": max(metrics.inner_skip_count for metrics in selected_metrics),
+            "outer_skip_count": max(metrics.outer_skip_count for metrics in selected_metrics),
             "config_info": info,
             "outer_angle": outer_angle,
             "inner_angle": inner_angle,
