@@ -1537,6 +1537,44 @@ def test_grading_alarm_taper_shape_records_partial_error_metadata(monkeypatch):
     assert metadata["grading_error_preview"] == ["10度: 无有效塔形线指标"]
 
 
+def test_grading_alarm_taper_shape_treats_single_error_string_as_one_message(monkeypatch):
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 100),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    detection_error = "0度: center out of image bounds"
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={40: valid_line},
+        taper_shape_errors=detection_error,
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert "塔形检测部分角度失败：0度: center out of image bounds" in result.errorMsg
+    assert "塔形有效角度覆盖不足" not in result.errorMsg
+
+    metadata = json.loads(captured[0].data)
+    assert metadata["valid_line_count"] == 1
+    assert metadata["taper_attempt_count"] == 2
+    assert metadata["detection_error_count"] == 1
+    assert metadata["detection_error_preview"] == [detection_error]
+
+
 def test_grading_alarm_taper_shape_uses_cached_metrics_when_ray_line_fails(monkeypatch):
     class CachedLineData:
         rotation_angle = 30

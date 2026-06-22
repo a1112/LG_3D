@@ -397,11 +397,29 @@ def _matched_limit(value: float, height_limits: list[float]) -> float | None:
     return None
 
 
+def _iter_taper_error_entries(errors):
+    if errors is None:
+        return ()
+    if isinstance(errors, bytes):
+        try:
+            return (errors.decode("utf-8"),)
+        except UnicodeDecodeError:
+            return (errors.decode("utf-8", errors="ignore"),)
+    if isinstance(errors, str):
+        return (errors,)
+    if isinstance(errors, Mapping):
+        return errors.values()
+    try:
+        return iter(errors)
+    except TypeError:
+        return (errors,)
+
+
 def _taper_error_messages(data_integration: DataIntegration, attr: str) -> list[str]:
     alarm_data = getattr(data_integration, "alarmData", None)
-    errors = getattr(alarm_data, attr, None) or []
+    errors = getattr(alarm_data, attr, None)
     messages = []
-    for error in errors:
+    for error in _iter_taper_error_entries(errors):
         text = str(error).strip()
         if text:
             messages.append(text)
