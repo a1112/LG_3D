@@ -2519,6 +2519,44 @@ def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
     assert captured == [{"line": data_integration}]
 
 
+def test_negative_numeric_taper_shape_type_falls_back_to_line(monkeypatch):
+    captured = []
+    warnings = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", -1)
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{"line": data_integration}]
+    assert any("invalid taper_shape_type=-1" in warning for warning in warnings)
+
+
+def test_line_with_unsupported_taper_shape_type_warns_and_uses_line(monkeypatch):
+    captured = []
+    warnings = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+    )
+
+    monkeypatch.setattr(
+        taper_processing.Globs.control,
+        "taper_shape_type",
+        DetectionTaperShapeType.LINE_TYPE | DetectionTaperShapeType.AREA_TYPE,
+    )
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{"line": data_integration}]
+    assert any("use LINE_TYPE branch only" in warning for warning in warnings)
+
+
 def test_taper_shape_all_accepts_single_data_integration(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(

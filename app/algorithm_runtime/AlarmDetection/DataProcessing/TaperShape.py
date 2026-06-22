@@ -443,9 +443,13 @@ def _normalize_taper_shape_type(value):
         logger.warning("taper_shape_type is None, fallback to LINE_TYPE")
         return DetectionTaperShapeType.LINE_TYPE
     if isinstance(value, (int, float)) and float(value).is_integer():
-        if int(value) == 0:
+        int_value = int(value)
+        if int_value < 0:
+            logger.warning(f"invalid taper_shape_type={value}, fallback to LINE_TYPE")
+            return DetectionTaperShapeType.LINE_TYPE
+        if int_value == 0:
             return DetectionTaperShapeType.NONE
-        value = int(value)
+        value = int_value
     if isinstance(value, str):
         if value.strip().isdigit():
             return _normalize_taper_shape_type(int(value.strip()))
@@ -485,6 +489,17 @@ def _normalize_taper_shape_type(value):
         return DetectionTaperShapeType.LINE_TYPE
 
 
+def _unsupported_taper_shape_type_items(taper_shape_type):
+    supported_types = {
+        DetectionTaperShapeType.NONE,
+        DetectionTaperShapeType.LINE_TYPE,
+    }
+    try:
+        return [item for item in taper_shape_type if item not in supported_types]
+    except TypeError:
+        return []
+
+
 def _iter_data_integrations(data_integration_list: Union[DataIntegrationList, DataIntegration]):
     if isinstance(data_integration_list, DataIntegration):
         return (data_integration_list,)
@@ -507,8 +522,14 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
             dataIntegration.alarmData.set_line_data_dict({})
             continue
         dataIntegration.alarmData.taper_shape_disabled = False
+        unsupported_items = _unsupported_taper_shape_type_items(taper_shape_type)
         if DetectionTaperShapeType.LINE_TYPE not in taper_shape_type:
             logger.warning(f"unsupported taper_shape_type={taper_shape_type}, fallback to LINE_TYPE")
+        elif unsupported_items:
+            logger.warning(
+                f"unsupported taper_shape_type={taper_shape_type}, "
+                f"use LINE_TYPE branch only"
+            )
         dataIntegration.alarmData.set_line_data_dict(_detection_taper_shape_(dataIntegration))
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
 
