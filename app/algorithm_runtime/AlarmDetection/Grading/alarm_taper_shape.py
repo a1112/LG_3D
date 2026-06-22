@@ -222,6 +222,12 @@ def _trim_line_segments(data_integration: DataIntegration,
         inner_points = inner_points[inner_skip:]
     if outer_skip > 0:
         outer_points = outer_points[:-outer_skip]
+    if len(inner_points) == 0 or len(outer_points) == 0:
+        raise ValueError(
+            f"塔形线配置忽略距离过大 "
+            f"inner_skip={applied_inner_skip}/{center_index} "
+            f"outer_skip={applied_outer_skip}/{len(line_points) - center_index}"
+        )
     inner_coverage_ratio = taper_valid_coverage_ratio(inner_points, 10)
     outer_coverage_ratio = taper_valid_coverage_ratio(outer_points, 10)
     if min(inner_coverage_ratio, outer_coverage_ratio) < MIN_TAPER_SIDE_VALID_COVERAGE_RATIO:

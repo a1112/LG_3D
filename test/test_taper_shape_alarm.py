@@ -1597,6 +1597,10 @@ def test_grading_alarm_taper_shape_does_not_use_cache_after_trim_exhausts_side(m
 
     assert result.grad == 3
     assert captured == []
+    assert "塔形线配置忽略距离过大" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "0度: 塔形线配置忽略距离过大 inner_skip=0/5 outer_skip=5/5"
+    ]
 
 
 def test_grading_alarm_taper_shape_ignores_non_finite_coordinate_points(monkeypatch):
