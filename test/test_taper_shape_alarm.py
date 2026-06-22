@@ -2152,6 +2152,48 @@ def test_string_none_taper_shape_type_disables_line_detection(monkeypatch):
     assert data_integration.alarmData.taper_shape_disabled is True
 
 
+@pytest.mark.parametrize("value", ["false", "False", "off", "disabled", "disable", "no"])
+def test_boolean_string_taper_shape_type_disables_line_detection(monkeypatch, value):
+    captured = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            taper_shape_disabled=False,
+            set_line_data_dict=captured.append,
+        )
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", value)
+    monkeypatch.setattr(
+        taper_processing,
+        "_detection_taper_shape_",
+        lambda item: (_ for _ in ()).throw(AssertionError("LINE branch should not run")),
+    )
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{}]
+    assert data_integration.alarmData.taper_shape_disabled is True
+
+
+@pytest.mark.parametrize("value", ["true", "True", "on", "enabled", "enable", "yes", "line"])
+def test_boolean_string_taper_shape_type_enables_line_detection(monkeypatch, value):
+    captured = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            taper_shape_disabled=True,
+            set_line_data_dict=captured.append,
+        )
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", value)
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{"line": data_integration}]
+    assert data_integration.alarmData.taper_shape_disabled is False
+
+
 def test_disabled_taper_shape_grades_normal_without_alarm_record(monkeypatch):
     data_integration = FakeDataIntegration()
     data_integration.alarmData = SimpleNamespace(lineDataDict={}, taper_shape_disabled=True)

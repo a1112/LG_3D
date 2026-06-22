@@ -445,7 +445,26 @@ def _normalize_taper_shape_type(value):
         names = [item.strip() for item in value.replace(",", "|").split("|") if item.strip()]
         result = None
         for name in names:
-            member = DetectionTaperShapeType.__members__.get(name.upper())
+            normalized_name = name.replace("-", "_").upper()
+            aliases = {
+                "FALSE": DetectionTaperShapeType.NONE,
+                "NO": DetectionTaperShapeType.NONE,
+                "OFF": DetectionTaperShapeType.NONE,
+                "DISABLE": DetectionTaperShapeType.NONE,
+                "DISABLED": DetectionTaperShapeType.NONE,
+                "TRUE": DetectionTaperShapeType.LINE_TYPE,
+                "YES": DetectionTaperShapeType.LINE_TYPE,
+                "ON": DetectionTaperShapeType.LINE_TYPE,
+                "ENABLE": DetectionTaperShapeType.LINE_TYPE,
+                "ENABLED": DetectionTaperShapeType.LINE_TYPE,
+                "LINE": DetectionTaperShapeType.LINE_TYPE,
+                "WK": DetectionTaperShapeType.WK_TYPE,
+                "POINT": DetectionTaperShapeType.POINT_TYPE,
+                "AREA": DetectionTaperShapeType.AREA_TYPE,
+            }
+            member = DetectionTaperShapeType.__members__.get(normalized_name)
+            if member is None:
+                member = aliases.get(normalized_name)
             if member is None:
                 logger.warning(f"unknown taper_shape_type item={name}, fallback to LINE_TYPE")
                 return DetectionTaperShapeType.LINE_TYPE
