@@ -467,6 +467,7 @@ def _normalize_taper_shape_type(value):
             return _normalize_taper_shape_type(numeric_value)
         names = [item.strip() for item in text.replace(",", "|").split("|") if item.strip()]
         result = None
+        unknown_names = []
         for name in names:
             numeric_value = _integer_taper_shape_type_value(name)
             if numeric_value is not None:
@@ -494,11 +495,16 @@ def _normalize_taper_shape_type(value):
             if member is None:
                 member = aliases.get(normalized_name)
             if member is None:
-                logger.warning(f"unknown taper_shape_type item={name}, fallback to LINE_TYPE")
-                return DetectionTaperShapeType.LINE_TYPE
+                unknown_names.append(name)
+                continue
             result = member if result is None else result | member
         if result is not None:
+            if unknown_names:
+                logger.warning(f"unknown taper_shape_type item={','.join(unknown_names)}, ignore unknown items")
             return result
+        if unknown_names:
+            logger.warning(f"unknown taper_shape_type item={','.join(unknown_names)}, fallback to LINE_TYPE")
+            return DetectionTaperShapeType.LINE_TYPE
     try:
         return DetectionTaperShapeType(value)
     except (TypeError, ValueError):

@@ -2491,6 +2491,32 @@ def test_none_taper_shape_type_disables_even_when_combined(monkeypatch, value):
     assert any("contains NONE" in warning for warning in warnings)
 
 
+@pytest.mark.parametrize("value", ["none|bad", "bad|none"])
+def test_none_taper_shape_type_disables_even_with_unknown_items(monkeypatch, value):
+    captured = []
+    warnings = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            taper_shape_disabled=False,
+            set_line_data_dict=captured.append,
+        )
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", value)
+    monkeypatch.setattr(
+        taper_processing,
+        "_detection_taper_shape_",
+        lambda item: (_ for _ in ()).throw(AssertionError("LINE branch should not run")),
+    )
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{}]
+    assert data_integration.alarmData.taper_shape_disabled is True
+    assert any("unknown taper_shape_type item=bad" in warning for warning in warnings)
+
+
 def test_boolean_taper_shape_type_controls_line_detection(monkeypatch):
     enabled_captured = []
     enabled_alarm_data = SimpleNamespace(
