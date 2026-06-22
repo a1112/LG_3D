@@ -15,6 +15,10 @@ _NUMBER_PATTERN = re.compile(
 def iter_taper_height_values(values):
     if values is None:
         return
+    if isinstance(values, Mapping):
+        for value in values.values():
+            yield from iter_taper_height_values(value)
+        return
     if isinstance(values, (list, tuple, set)):
         for value in values:
             yield from iter_taper_height_values(value)

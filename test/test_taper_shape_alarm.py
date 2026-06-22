@@ -1119,6 +1119,40 @@ def test_grading_alarm_taper_shape_parses_string_height_limits(monkeypatch):
     assert json.loads(captured[0].data)["height_limits"] == [50.0, 80.0]
 
 
+def test_grading_alarm_taper_shape_parses_mapping_height_limits(monkeypatch):
+    line_positive = SimpleNamespace(
+        rotation_angle=20,
+        outer_max_point=_point(10, 20, 210),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={20: line_positive})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": {"warn": "50", "alarm": "80"},
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 2
+    assert "外塔最高值55.00 >= 50.00" in result.errorMsg
+    assert json.loads(captured[0].data)["height_limits"] == [50.0, 80.0]
+
+
 @pytest.mark.parametrize(
     ("height_limits", "expected"),
     [
@@ -1126,6 +1160,8 @@ def test_grading_alarm_taper_shape_parses_string_height_limits(monkeypatch):
         ("50mm/80mm", [50.0, 80.0]),
         ("±60 mm", [60.0]),
         ("height: 45 ; 90", [45.0, 90.0]),
+        ({"warn": "45", "alarm": "90"}, [45.0, 90.0]),
+        ({"limits": ["45", "90"]}, [45.0, 90.0]),
     ],
 )
 def test_taper_shape_height_limits_parse_common_text_formats(height_limits, expected):
