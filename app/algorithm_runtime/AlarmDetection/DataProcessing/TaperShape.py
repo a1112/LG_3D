@@ -517,6 +517,15 @@ def _unsupported_taper_shape_type_items(taper_shape_type):
         return []
 
 
+def _taper_shape_type_is_disabled(taper_shape_type) -> bool:
+    if taper_shape_type == DetectionTaperShapeType.NONE:
+        return True
+    try:
+        return DetectionTaperShapeType.NONE in taper_shape_type
+    except TypeError:
+        return False
+
+
 def _iter_data_integrations(data_integration_list: Union[DataIntegrationList, DataIntegration]):
     if isinstance(data_integration_list, DataIntegration):
         return (data_integration_list,)
@@ -534,7 +543,9 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
     for dataIntegration in _iter_data_integrations(data_integration_list):
         _clear_taper_shape_errors(dataIntegration)
-        if taper_shape_type == DetectionTaperShapeType.NONE:
+        if _taper_shape_type_is_disabled(taper_shape_type):
+            if taper_shape_type != DetectionTaperShapeType.NONE:
+                logger.warning(f"taper_shape_type contains NONE, disable taper detection: {taper_shape_type}")
             dataIntegration.alarmData.taper_shape_disabled = True
             dataIntegration.alarmData.set_line_data_dict({})
             continue
