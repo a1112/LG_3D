@@ -100,6 +100,11 @@ def _coil_thickness_mm(data_integration: DataIntegration) -> float:
     return _non_negative_float(getattr(secondary_coil, "Thickness", 0))
 
 
+def _data_integration_surface(data_integration: DataIntegration) -> str:
+    return str(getattr(data_integration, "key", None)
+               or getattr(data_integration, "surface", ""))
+
+
 def _positive_scale(value):
     try:
         scale = float(value)
@@ -553,7 +558,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
 
     alarm_taper_shape = AlarmTaperShape(
         secondaryCoilId=data_integration.coilId,
-        surface=data_integration.surface,
+        surface=_data_integration_surface(data_integration),
         out_taper_max_x=max_outer_metrics.outer_max_point.x,
         out_taper_max_y=max_outer_metrics.outer_max_point.y,
         out_taper_max_value=out_taper_max_value,

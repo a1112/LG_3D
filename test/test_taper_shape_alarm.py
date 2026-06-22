@@ -859,6 +859,43 @@ def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatc
     assert metadata["worst_used_point_count"] == 0
 
 
+def test_grading_alarm_taper_shape_accepts_key_without_surface(monkeypatch):
+    line_positive = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        key="L",
+        next_code="2",
+        currentSecondaryCoil=SimpleNamespace(Thickness=0),
+        median_3d_mm=50.0,
+        scan3dCoordinateScaleX=1.0,
+        scan3dCoordinateScaleY=1.0,
+        alarmData=SimpleNamespace(lineDataDict={40: line_positive}),
+        z_to_mm=lambda z: 10.0 + 0.5 * float(z),
+        x_to_mm=lambda value: float(value),
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].surface == "L"
+
+
 def test_grading_alarm_taper_shape_preserves_result_when_detail_save_fails(monkeypatch):
     line_positive = SimpleNamespace(
         rotation_angle=40,
