@@ -1,6 +1,7 @@
 """
 封装3D数据拼接
 """
+from collections.abc import Mapping
 import json
 
 import numpy as np
@@ -65,6 +66,11 @@ def _positive_scale(value):
 
 def _point_coordinate(point, attr: str, index: int) -> float:
     value = getattr(point, attr, None)
+    if value is None:
+        if isinstance(point, Mapping):
+            value = point.get(attr)
+            if value is None:
+                value = point.get(attr.upper())
     if value is None:
         try:
             value = point[index]
