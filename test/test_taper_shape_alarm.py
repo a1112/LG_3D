@@ -2439,7 +2439,7 @@ def test_disabled_taper_shape_grades_normal_without_alarm_record(monkeypatch):
 
 
 def test_zero_taper_shape_type_disables_line_detection(monkeypatch):
-    for value in (0, "0", DetectionTaperShapeType(0)):
+    for value in (0, "0", "0.0", "+0.0", DetectionTaperShapeType(0)):
         captured = []
         data_integration = SimpleNamespace(
             alarmData=SimpleNamespace(
@@ -2519,6 +2519,24 @@ def test_invalid_taper_shape_type_falls_back_to_line(monkeypatch):
     assert captured == [{"line": data_integration}]
 
 
+@pytest.mark.parametrize("value", ["8.0", "+8", " 8.0 "])
+def test_numeric_string_taper_shape_type_enables_line(monkeypatch, value):
+    captured = []
+    warnings = []
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+    )
+
+    monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", value)
+    monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    taper_processing._detection_taper_shape_all_([data_integration])
+
+    assert captured == [{"line": data_integration}]
+    assert warnings == []
+
+
 def test_negative_numeric_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
     warnings = []
@@ -2546,7 +2564,7 @@ def test_line_with_unsupported_taper_shape_type_warns_and_uses_line(monkeypatch)
     monkeypatch.setattr(
         taper_processing.Globs.control,
         "taper_shape_type",
-        DetectionTaperShapeType.LINE_TYPE | DetectionTaperShapeType.AREA_TYPE,
+        "line|16.0",
     )
     monkeypatch.setattr(taper_processing, "_detection_taper_shape_", lambda item: {"line": item})
     monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)

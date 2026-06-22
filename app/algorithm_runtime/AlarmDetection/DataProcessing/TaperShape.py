@@ -432,6 +432,16 @@ def count_taper2(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
     return inner_taper, inner_ind_max_r, inner_ind_max_a, outer_taper, outer_ind_max_r, outer_ind_max_a, Point2D(cx, cy)
 
 
+def _integer_taper_shape_type_value(value):
+    try:
+        numeric_value = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not np.isfinite(numeric_value) or not numeric_value.is_integer():
+        return None
+    return int(numeric_value)
+
+
 def _normalize_taper_shape_type(value):
     if isinstance(value, DetectionTaperShapeType):
         if value == DetectionTaperShapeType(0):
@@ -451,11 +461,18 @@ def _normalize_taper_shape_type(value):
             return DetectionTaperShapeType.NONE
         value = int_value
     if isinstance(value, str):
-        if value.strip().isdigit():
-            return _normalize_taper_shape_type(int(value.strip()))
-        names = [item.strip() for item in value.replace(",", "|").split("|") if item.strip()]
+        text = value.strip()
+        numeric_value = _integer_taper_shape_type_value(text)
+        if numeric_value is not None:
+            return _normalize_taper_shape_type(numeric_value)
+        names = [item.strip() for item in text.replace(",", "|").split("|") if item.strip()]
         result = None
         for name in names:
+            numeric_value = _integer_taper_shape_type_value(name)
+            if numeric_value is not None:
+                member = _normalize_taper_shape_type(numeric_value)
+                result = member if result is None else result | member
+                continue
             normalized_name = name.replace("-", "_").upper()
             aliases = {
                 "FALSE": DetectionTaperShapeType.NONE,
