@@ -2302,6 +2302,38 @@ def test_taper_error_threshold_ignores_overflowing_values():
     assert taper_error_threshold_from_limits([OverflowingValue()], 120) == (120.0, 120.0)
 
 
+def test_detection_taper_shape_skips_zero_division_angle(monkeypatch):
+    alarm_data = SimpleNamespace()
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        surface="S",
+        alarmData=alarm_data,
+    )
+    valid_line = SimpleNamespace(rotation_angle=180)
+    warnings = []
+
+    def fake_detection_by_angle(_data_integration, rotation_angle):
+        if rotation_angle == 0:
+            raise ZeroDivisionError("degenerate ray")
+        return valid_line
+
+    monkeypatch.setattr(taper_processing, "TAPER_ROTATION_STEP", 180)
+    monkeypatch.setattr(
+        taper_processing,
+        "detection_taper_shape_by_rotation_angle",
+        fake_detection_by_angle,
+    )
+    monkeypatch.setattr(taper_processing.logger, "warning", warnings.append)
+
+    line_data_dict = taper_processing._detection_taper_shape_(data_integration)
+
+    assert line_data_dict == {180: valid_line}
+    assert alarm_data.taper_shape_attempt_count == 2
+    assert alarm_data.taper_shape_errors == ["0度: degenerate ray"]
+    assert len(warnings) == 1
+    assert "塔形角度 0 跳过" in warnings[0]
+
+
 def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
     data_integration = SimpleNamespace(
