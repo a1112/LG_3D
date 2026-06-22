@@ -690,6 +690,24 @@ def test_taper_shape_rotation_accepts_center_mapping():
     assert line_data.outer_max_point is not None
 
 
+def test_taper_shape_rotation_accepts_center_mapping_aliases():
+    data_integration = SimpleNamespace(
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(
+                get_center=lambda: {"center_x": "5.0", "center_y": 5}
+            )
+        ),
+        npy_data=np.ones((11, 11), dtype=np.int32) * 100,
+        npy_mask=np.ones((11, 11), dtype=np.uint8) * 255,
+    )
+
+    line_data = taper_line.detection_taper_shape_by_rotation_angle(data_integration, 0)
+
+    assert line_data.rotation_angle == 0
+    assert line_data.inner_max_point is not None
+    assert line_data.outer_max_point is not None
+
+
 def test_taper_shape_rotation_rounds_float_center_to_nearest_pixel(monkeypatch):
     captured_centers = []
 
@@ -2119,6 +2137,46 @@ def test_line_data_model_accepts_mapping_center():
         median_3d_mm=100.0,
         alarmData=SimpleNamespace(
             flatRollData=SimpleNamespace(get_center=lambda: {"x": "2.0", "y": 0})
+        ),
+        z_to_mm=lambda z: float(z),
+    )
+
+    model = line_data.line_data_model(data_integration)
+
+    assert model.center_x == 2.0
+    assert model.center_y == 0.0
+
+
+def test_line_data_model_accepts_center_object_aliases():
+    line_data = LineData(
+        npy_data=np.zeros((1, 5), dtype=np.int32),
+        mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
+        p1=Point2D(0, 0),
+        p2=Point2D(4, 0),
+    )
+    line_data._ray_data_ = np.array([
+        [0, 0, 100],
+        [1, 0, 100],
+        [2, 0, 100],
+        [3, 0, 100],
+        [4, 0, 100],
+    ], dtype=float)
+    line_data.rotation_angle = 0
+    line_data.inner_min_point = _point(0, 0, 100)
+    line_data.inner_max_point = _point(1, 0, 100)
+    line_data.outer_min_point = _point(3, 0, 100)
+    line_data.outer_max_point = _point(4, 0, 100)
+
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        width=5,
+        height=1,
+        median_3d_mm=100.0,
+        alarmData=SimpleNamespace(
+            flatRollData=SimpleNamespace(
+                get_center=lambda: SimpleNamespace(centerX="2.0", centerY=0)
+            )
         ),
         z_to_mm=lambda z: float(z),
     )

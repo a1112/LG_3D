@@ -18,6 +18,10 @@ from CoilDataBase.models import PointData as PointDataModel
 MIN_TAPER_SIDE_VALID_POINTS = 2
 MIN_TAPER_VALID_COVERAGE_RATIO = 0.5
 MIN_TAPER_SIDE_VALID_COVERAGE_RATIO = 0.4
+POINT_COORDINATE_ALIASES = {
+    "x": ("x", "X", "center_x", "centerX", "CenterX", "centre_x", "centreX", "cx", "cX"),
+    "y": ("y", "Y", "center_y", "centerY", "CenterY", "centre_y", "centreY", "cy", "cY"),
+}
 
 
 def valid_line_height_mask(line_, none_data_value=10):
@@ -65,12 +69,15 @@ def _positive_scale(value):
 
 
 def _point_coordinate(point, attr: str, index: int) -> float:
-    value = getattr(point, attr, None)
-    if value is None:
+    value = None
+    aliases = POINT_COORDINATE_ALIASES.get(attr, (attr, attr.upper()))
+    for name in aliases:
         if isinstance(point, Mapping):
-            value = point.get(attr)
-            if value is None:
-                value = point.get(attr.upper())
+            value = point.get(name)
+        else:
+            value = getattr(point, name, None)
+        if value is not None:
+            break
     if value is None:
         try:
             value = point[index]
