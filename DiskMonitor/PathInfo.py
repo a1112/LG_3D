@@ -33,6 +33,8 @@ class PathInfo(QObject, Thread):
     def __init__(self, parent=None):
         super().__init__(parent)
         Thread.__init__(self)
+        self.daemon = True
+        self._running = True
         self._path = ""
         self._exists = False
         self._content = 0
@@ -84,13 +86,21 @@ class PathInfo(QObject, Thread):
     size = Property(int, getSize, setSize, notify=sizeChanged)
 
     def run(self):
-        while True:
+        while self._running:
             path = Path(self._path)
             self.setExists(path.exists())
             if path.exists():
-                self.setContent(len(list(path.iterdir())))
-                self.setSize(get_folder_size(str(path)))  # path.stat().st_size)
+                try:
+                    self.setContent(len(list(path.iterdir())))
+                    self.setSize(get_folder_size(str(path)))  # path.stat().st_size)
+                except (OSError, PermissionError):
+                    self.setContent(0)
+                    self.setSize(0)
             else:
                 self.setContent(0)
                 self.setSize(0)  # path.stat().st_size)
             time.sleep(5)
+
+    @Slot()
+    def stop(self):
+        self._running = False

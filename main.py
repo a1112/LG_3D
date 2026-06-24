@@ -1,5 +1,6 @@
 # This Python file uses the following encoding: utf-8
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,7 +24,10 @@ class OS(QObject):
 
     @Slot(str)
     def system(self, cmd):
-        os.system(cmd)
+        try:
+            subprocess.Popen(str(cmd), shell=False, close_fds=True)
+        except OSError:
+            os.startfile(str(cmd))
 
 
 if __name__ == "__main__":
@@ -37,7 +41,8 @@ if __name__ == "__main__":
 
     engine = QQmlApplicationEngine()
     engine.addImageProvider("icon", IconImageProvider())
-    qml_file = Path(__file__).resolve().parent / "main.qml"
+    resource_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    qml_file = resource_root / "main.qml"
     engine.rootContext().setContextProperty("Os", OS())
     engine.load(qml_file)
     if not engine.rootObjects():

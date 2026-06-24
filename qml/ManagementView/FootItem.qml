@@ -21,6 +21,13 @@ Item {
                     startAll()
                 }
             }
+            ButtonBase {
+                text: "一键重启"
+                Material.background: Material.Teal
+                onClicked: {
+                    restartAll()
+                }
+            }
         }
         Item{
             Layout.fillWidth: true

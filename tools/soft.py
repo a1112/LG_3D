@@ -1,6 +1,31 @@
 import os
+import subprocess
+import time
+from pathlib import Path
 
 import psutil
+
+
+PROCESS_ATTRS = [
+    'pid', 'name', 'exe', 'cmdline'
+]
+
+
+def normalize_path(path):
+    if not path:
+        return ""
+    path = str(path).replace("file:///", "").strip().strip('"')
+    return os.path.normcase(os.path.normpath(path))
+
+
+def _cmdline_matches_targets(cmdline, target_paths):
+    if not cmdline or not target_paths:
+        return False
+    normalized_items = {normalize_path(item) for item in cmdline if item}
+    if normalized_items.intersection(target_paths):
+        return True
+    normalized_text = normalize_path(" ".join(str(item) for item in cmdline))
+    return any(target and target in normalized_text for target in target_paths)
 
 
 def get_process(pid):
@@ -14,55 +39,103 @@ def get_process(pid):
     except psutil.NoSuchProcess:
         return None
 
-def kill_process_and_children(pid):
+def kill_process_and_children(pid, timeout=5):
+    if pid == os.getpid():
+        return False
     try:
         parent = psutil.Process(pid)
     except psutil.NoSuchProcess:
         print(f"进程 {pid} 不存在")
-        return
+        return False
 
-    # 递归获取所有子进程
-    children = parent.children(recursive=True)
+    try:
+        children = parent.children(recursive=True)
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        children = []
 
-    # 先终止子进程
-    for child in children:
+    processes = children + [parent]
+    pids = {process.pid for process in processes}
+
+    for process in processes:
         try:
-            child.terminate()
-        except psutil.NoSuchProcess:
+            process.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
 
-    # 终止父进程
-    parent.terminate()
+    _, alive = psutil.wait_procs(processes, timeout=timeout)
+    for process in alive:
+        try:
+            process.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    _, alive = psutil.wait_procs(alive, timeout=2)
 
-    # # 强制杀死残留进程（可选）
-    # _, alive = psutil.wait_procs(children + [parent], timeout=5)
-    # for p in alive:
-    #     try:
-    #         p.kill()
-    #         print(f"强制杀死进程 {p.pid}")
-    #     except psutil.NoSuchProcess:
-    #         pass
+    for process in alive:
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=timeout,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    deadline = time.time() + 2
+    while time.time() < deadline:
+        if not any(psutil.pid_exists(pid) for pid in pids):
+            return True
+        time.sleep(0.1)
+    return not any(psutil.pid_exists(pid) for pid in pids)
 
 
-def getProcessDict():
-    process = getProcess()
+def getProcessDict(targets=None):
+    process = getProcess(targets)
     processDict = {}
     for pro in process:
-        try:
-            if "exe" in pro:
-                processDict[os.path.normpath(pro["exe"])] = pro
-                if pro["name"] == "cmd.exe":
-                    if "cmdline" in pro:
-                        processDict[os.path.normpath(pro["cmdline"][-1]).strip()] = pro
-        except BaseException as e:
-            print(e)
+        exe = normalize_path(pro.get("exe"))
+        if exe:
+            processDict[exe] = pro
+        cmdline = pro.get("cmdline") or []
+        if pro.get("name") == "cmd.exe" and cmdline:
+            cmd_target = normalize_path(cmdline[-1])
+            if cmd_target:
+                processDict[cmd_target] = pro
     return processDict
 
 
-def getProcess():
-    all_processes_ = psutil.process_iter()
-    all_processes_ = list(all_processes_)
-    return [toDict(process) for process in all_processes_]
+def getProcessesByTargets(targets):
+    return getProcess(targets)
+
+
+def getProcess(targets=None):
+    processes = []
+    target_paths = {normalize_path(target) for target in (targets or []) if target}
+    target_names = {Path(target).name.lower() for target in target_paths if target}
+    for process in psutil.process_iter():
+        try:
+            name = process.name()
+            if target_names and name.lower() not in target_names and name != "cmd.exe":
+                continue
+            exe = process.exe()
+            normalized_exe = normalize_path(exe)
+            if target_paths and normalized_exe not in target_paths and name != "cmd.exe":
+                continue
+            process_info = {
+                "pid": process.pid,
+                "name": name,
+                "exe": exe,
+                "cmdline": []
+            }
+            if process_info["name"] == "cmd.exe":
+                process_info["cmdline"] = process.cmdline()
+                if target_paths and not _cmdline_matches_targets(process_info["cmdline"], target_paths):
+                    continue
+            processes.append(process_info)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+    return processes
 
 
 def toDict(process: psutil.Process):
@@ -76,8 +149,4 @@ def toDict(process: psutil.Process):
     return processDict
 
 
-allAttrs = ['pid', 'name', 'ppid',
-            'username', 'create_time', 'cpu_percent',
-            'memory_percent',
-            'exe', 'cmdline', 'status', 'cwd'
-            ]
+allAttrs = PROCESS_ATTRS

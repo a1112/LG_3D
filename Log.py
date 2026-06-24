@@ -24,11 +24,12 @@ class DailyLogger:
             self.logger = logging.getLogger(today)
             self.logger.setLevel(logging.INFO)
             # 创建FileHandler
-            file_handler = logging.FileHandler(log_file_path)
+            file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
             formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
             file_handler.setFormatter(formatter)
             # 清理现有的handlers
             self.logger.handlers.clear()
+            self.logger.propagate = False
             # 添加新的handler
             self.logger.addHandler(file_handler)
 

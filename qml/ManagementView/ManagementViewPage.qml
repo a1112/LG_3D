@@ -54,6 +54,9 @@ Item {
     function startAll(){
         return monitor.startAll()
     }
+    function restartAll(){
+        return monitor.restartAll()
+    }
     function stopAll(){
         return monitor.closeAll()
     }
@@ -106,6 +109,12 @@ Item {
             text:"全部关闭"
             onTriggered: {
                 stopAll()
+            }
+        }
+        MenuItem{
+            text:"全部重启"
+            onTriggered: {
+                restartAll()
             }
         }
         Menu{

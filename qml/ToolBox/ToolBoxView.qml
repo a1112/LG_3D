@@ -11,7 +11,7 @@ Item {
     FolderDialog{
         id: folderDialog
         onAccepted: {
-            folder_source = folderDialog.folder
+            folder_source = folderDialog.selectedFolder
         }
     }
     Menu{

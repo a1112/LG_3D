@@ -10,6 +10,7 @@ Popup {
 
     property int editTpye: 0
     property int editIndex: 0
+    property string editMountpoint: ""
 
     function initExe(exe){
         editTpye=0
@@ -21,11 +22,12 @@ Popup {
         open()
     }
 
-    function editExe(index){
+    function editExe(mountpoint, index){
         editTpye=1
         editIndex=index
+        editMountpoint=mountpoint
         title_id.text="编辑文件夹监听"
-        let exeData = monitor.index(index)
+        let exeData = monitor.index(mountpoint, index)
         exe_id.text=exeData.source
         minSize_id.text=exeData.minCount
         del_id.text =exeData.delete_size
@@ -81,19 +83,24 @@ Popup {
             onClicked: {
                 let exeData = {
                     source:exe_id.text,
-                    del_size:del_id.text,
-                    sort: "time",
+                    delete_size:parseInt(del_id.text),
+                    delete_type:"%",
+                    sort_type: "time",
+                    minCount:parseInt(minSize_id.text),
                     monitorAble:true
                 }
                 if (editTpye==0){
                     monitor.addApp(exeData)
-                    appModel.set(editIndex, exeData)
+                    initMonitor()
                     root.close()
                 }
                 else{
-                    changeValue(editIndex,"args",exeData.args)
-                    changeValue(editIndex,"monitorAble",true)
-                    appModel.setProperty(editIndex,"monitorAble",true)
+                    changeMonitorValue(editMountpoint, editIndex, "source", exeData.source)
+                    changeMonitorValue(editMountpoint, editIndex, "delete_size", exeData.delete_size)
+                    changeMonitorValue(editMountpoint, editIndex, "minCount", exeData.minCount)
+                    changeMonitorValue(editMountpoint, editIndex, "sort_type", exeData.sort_type)
+                    changeMonitorValue(editMountpoint, editIndex, "monitorAble", true)
+                    initMonitor()
                 }
                 root.close()
 

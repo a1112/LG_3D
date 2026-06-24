@@ -5,6 +5,7 @@ import DiskMonitor 1.0
 ItemDelegate {
     width: parent.width
     height: 30
+    property string diskMountpoint: ""
     onClicked: {
         Qt.openUrlExternally("file:///"+source)
     }
@@ -54,6 +55,9 @@ ItemDelegate {
                 currentIndex: sortEnum.indexOf(sort_type)
                 font.bold: true
                 font.family: "Microsoft YaHei"
+                onActivated: {
+                    changeMonitorValue(diskMountpoint, index, "sort_type", sortEnum[currentIndex])
+                }
             }
         }
         Row{
@@ -111,6 +115,9 @@ ItemDelegate {
                 font.bold: true
                 checked: monitorAble
                 font.family: "Microsoft YaHei"
+                onToggled: {
+                    changeMonitorValue(diskMountpoint, index, "monitorAble", checked)
+                }
             }
         }
 

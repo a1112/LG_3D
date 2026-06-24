@@ -40,8 +40,11 @@ Item {
     function getState_(name){
         return monitor.getState_(name)
     }
-    function changeValue(index,key,value){
-        return monitor.changeValue(index,key,value)
+    function changeValue(mountpoint,key,value){
+        return monitor.changeValue(mountpoint,key,value)
+    }
+    function changeMonitorValue(mountpoint,index,key,value){
+        return monitor.changeMonitorValue(mountpoint,index,key,value)
     }
     function initMonitor(){
         appModel.clear()
@@ -57,9 +60,10 @@ Item {
     ListModel{
         id: appModel
     }
-    FileDialog{
-        id:fileDialog
+    FolderDialog{
+        id:folderDialog
         onAccepted: {
+            dialogPop.initExe(selectedFolder)
         }
     }
     Menu{
@@ -67,7 +71,7 @@ Item {
         MenuItem{
             text:"添加"
             onTriggered: {
-                fileDialog.open()
+                folderDialog.open()
             }
         }
         Menu{

@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 from enum_types.enums import SoftRunStateEnum
+from tools.soft import normalize_path
 
 
 class GlobSoftConfig:
@@ -9,12 +10,16 @@ class GlobSoftConfig:
         self.pid_map = defaultdict(set)
 
     def get_pip_list(self,exe):
-        return list(self.pid_map[os.path.normpath(exe)])
+        return self.get_pid_list(exe)
 
-    def set_soft_state(self,url,pp_id,state):
-        if state==SoftRunStateEnum.RUNNING and pp_id > 42:
-            self.pid_map[url].add(pp_id)
+    def get_pid_list(self, exe):
+        return list(self.pid_map[normalize_path(exe)])
+
+    def set_soft_state(self,url,pid,state):
+        url = normalize_path(url)
+        if state==SoftRunStateEnum.RUNNING and pid > 0:
+            self.pid_map[url].add(pid)
         else:
-            self.pid_map[url].copy()
+            self.pid_map.pop(url, None)
 
 globSoftConfig = GlobSoftConfig()

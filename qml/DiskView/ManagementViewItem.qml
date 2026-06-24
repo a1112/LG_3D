@@ -78,7 +78,7 @@ Column{
             value: threshold
             onValueChanged: {
             threshold = value
-            changeValue(index,"threshold",value)
+            changeValue(mountpoint,"threshold",value)
             }
         }
         Label{
@@ -106,6 +106,6 @@ Column{
     }
 }
     DiskMonItem{
-
+        diskMountpoint: mountpoint
     }
 }

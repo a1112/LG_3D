@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -23,11 +24,18 @@ class ProcessObj(QObject):
     def getProcessList(self):
         return []
 
-    @Slot(str)
+    @Slot(str, result=int)
     def system_(self, cmd):
         print("cmd:", cmd)
-        return os.system(cmd)
-        # return subprocess.Popen(cmd)
+        try:
+            return subprocess.Popen(str(cmd), shell=False, close_fds=True).pid
+        except OSError:
+            try:
+                os.startfile(str(cmd))
+                return 0
+            except OSError as e:
+                print("cmd error:", e)
+                return -1
 
 # {'name': 'cmd.exe', 'ppid': 10664,
 #  'username': 'DESKTOP-TEM8G6F\\dell',
