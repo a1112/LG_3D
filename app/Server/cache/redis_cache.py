@@ -87,13 +87,13 @@ class RedisImageCache(BaseImageCache):
     def shutdown(self) -> None:
         try:
             self.client.close()
-        except Exception:  # pragma: no cover
-            pass
+        except Exception as exc:  # pragma: no cover
+            logging.debug("redis cache close failed: %s", exc)
         # 关闭异步写入线程池
         try:
             _write_executor.shutdown(wait=False)
-        except Exception:  # pragma: no cover
-            pass
+        except Exception as exc:  # pragma: no cover
+            logging.debug("redis cache write executor shutdown failed: %s", exc)
 
     def clear_cache(self) -> None:
         super().clear_cache()

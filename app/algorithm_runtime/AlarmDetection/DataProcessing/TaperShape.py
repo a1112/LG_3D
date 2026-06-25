@@ -210,8 +210,18 @@ def _detectionTaperShapeA_(dataIntegration: DataIntegration):
         img_2d)
 
     logger.debug("%s  %s", dataIntegration.coilId, dataIntegration.surface)
-    logger.debug(["内圈塔形:", inner_taper, "半径:", inner_ind_max_r, "角度:", inner_ind_max_a])
-    logger.debug(["外圈塔形:", outer_taper, "半径:", outer_ind_max_r, "角度:", outer_ind_max_a])
+    logger.debug(
+        "inner taper=%s radius=%s angle=%s",
+        inner_taper,
+        inner_ind_max_r,
+        inner_ind_max_a,
+    )
+    logger.debug(
+        "outer taper=%s radius=%s angle=%s",
+        outer_taper,
+        outer_ind_max_r,
+        outer_ind_max_a,
+    )
 
     # p_center error :  中心点由 count_taper 返回
     p_inner = getP2ByRotate(p_c, np.pi / 180 * inner_ind_max_a, inner_ind_max_a)

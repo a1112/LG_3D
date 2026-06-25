@@ -21,14 +21,32 @@ from cache.base import _resolve_image_path
 from .api_core import app
 from Base.tools.tool import expansion_box, bound_box
 
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["图像访问服务"])
 
 # 线程池用于IO密集型操作 - 根据 CPU 核心数动态调整
 cpu_count = os.cpu_count() or 4
-thread_pool = ThreadPoolExecutor(max_workers=cpu_count * 3)
-log = logging.getLogger(__name__)
+
+
+def _get_image_api_thread_workers() -> int:
+    default_workers = min(max(cpu_count * 2, 4), 16)
+    raw_workers = os.getenv("IMAGE_API_THREAD_POOL_WORKERS")
+    if not raw_workers:
+        return default_workers
+    try:
+        workers = int(raw_workers)
+    except ValueError:
+        log.warning("invalid IMAGE_API_THREAD_POOL_WORKERS=%s, use default=%s",
+                    raw_workers,
+                    default_workers)
+        return default_workers
+    return min(max(workers, 1), 64)
+
+
+thread_pool = ThreadPoolExecutor(max_workers=_get_image_api_thread_workers())
 
 # 预取开关 - 默认禁用以减少后台负载
 ENABLE_PREFETCH = os.getenv("ENABLE_IMAGE_PREFETCH", "false").lower() == "true"
@@ -85,7 +103,7 @@ async def _get_image_async(data_get: DataGet,
                            pil: bool = False,
                            clip_num: int = 0):
     """将阻塞的磁盘/解码操作放入线程池，避免阻塞事件循环。"""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         get_pool(), lambda: data_get.get_image(pil=pil, clip_num=clip_num))
 
@@ -116,7 +134,7 @@ def _schedule_prefetch(source_type: str,
     neighbors = _neighbor_ids(coil_id)
     if not neighbors:
         return
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     for nid in neighbors:
         data_get = DataGet(source_type, surface_key, nid, type_, mask)
@@ -209,15 +227,12 @@ async def get_area_tiled(surface_key: str,
     col = int(col)
     count = int(count)
     level = int(level)
+    requested_count = count
     tile_count = 3
+    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
 
     if count > 0:
         count = tile_count
-
-    if count == 1:
-        return None
-
-    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
 
     # 处理预览图像请求
     if row == -2:
@@ -229,6 +244,12 @@ async def get_area_tiled(surface_key: str,
 
     # 返回完整图像
     if row == -1:
+        image_bytes = await _get_image_async(data_get)
+        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
+        return Response(image_bytes or noFindImageByte,
+                        media_type="image/jpeg")
+
+    if requested_count == 1:
         image_bytes = await _get_image_async(data_get)
         _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
         return Response(image_bytes or noFindImageByte,
@@ -249,9 +270,11 @@ async def get_area_tiled(surface_key: str,
                         "height": tile_h * tile_count
                     }
         except Exception:
-            pass
+            log.debug("failed to read AREA tile cache size: %s",
+                      data_get.url,
+                      exc_info=True)
 
-        size = await asyncio.get_event_loop().run_in_executor(
+        size = await asyncio.get_running_loop().run_in_executor(
             get_pool(), lambda: _get_image_size_from_path(data_get.url))
         if size is None:
             return Response(content=noFindImageByte, media_type="image/jpeg")
@@ -284,9 +307,8 @@ async def get_area_tiled(surface_key: str,
                         })
 
     # 2. 缓存未命中，回退到原来的实时生成模式
-    log.info(
-        f"Cache miss L{level} ({col},{row}), falling back to real-time generation"
-    )
+    log.info("Cache miss L%s (%s,%s), falling back to real-time generation",
+             level, col, row)
 
     # 获取所有瓦片（会触发多级缓存生成）
     image_dict = await _get_image_async(data_get, clip_num=count)
@@ -315,6 +337,13 @@ async def get_area_tiled(surface_key: str,
                                 "X-Cache": "miss"
                             })
         except Exception:
+            log.debug("failed to read generated AREA tile: %s row=%s col=%s count=%s level=%s",
+                      data_get.url,
+                      row,
+                      col,
+                      count,
+                      level,
+                      exc_info=True)
             return Response(content=noFindImageByte, media_type="image/jpeg")
 
     # 3. 从原始图像切分（最后的备选方案）
@@ -335,10 +364,10 @@ async def get_area_tiled(surface_key: str,
         return Response(content=noFindImageByte, media_type="image/jpeg")
 
     # 切分瓦片
-    x1 = row * w_width
-    y1 = col * h_height
-    x2 = x1 + w_width
-    y2 = y1 + h_height
+    x1 = col * w_width
+    y1 = row * h_height
+    x2 = w if col == count - 1 else x1 + w_width
+    y2 = h if row == count - 1 else y1 + h_height
     tile = image[y1:y2, x1:x2]
 
     # 根据等级调整尺寸和质量
@@ -390,13 +419,15 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         tile = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
 
         if tile is None:
-            log.warning(
-                f"Resize failed: imdecode returned None, target_size={target_size}"
-            )
+            log.warning("Resize failed: imdecode returned None, target_size=%s",
+                        target_size)
             return tile_bytes
 
         # 计算缩放比例
         original_size = max(tile.shape[0], tile.shape[1])
+        if original_size <= 0:
+            log.warning("Resize failed: empty tile, target_size=%s", target_size)
+            return tile_bytes
         scale = target_size / original_size
 
         if scale >= 1.0:
@@ -405,7 +436,9 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
                                    [cv2.IMWRITE_JPEG_QUALITY, quality])
             result = buf.tobytes() if ok else tile_bytes
             log.debug(
-                f"Resize: scale={scale:.2f}>=1.0, no resize needed, returning {len(result)} bytes"
+                "Resize: scale=%.2f>=1.0, no resize needed, returning %s bytes",
+                scale,
+                len(result),
             )
             return result
 
@@ -421,15 +454,21 @@ def _resize_tile(tile_bytes: bytes, target_size: int, quality: int) -> bytes:
         result = buf.tobytes() if ok else tile_bytes
         if ok:
             log.debug(
-                f"Resize: {tile.shape} -> ({new_w},{new_h}), {len(result)} bytes at quality={quality}"
+                "Resize: %s -> (%s,%s), %s bytes at quality=%s",
+                tile.shape,
+                new_w,
+                new_h,
+                len(result),
+                quality,
             )
         else:
-            log.warning(
-                f"Resize: imencode failed for resized image ({new_w},{new_h})")
+            log.warning("Resize: imencode failed for resized image (%s,%s)",
+                        new_w,
+                        new_h)
         return result
 
     except Exception as e:
-        log.error(f"Failed to resize tile: {e}", exc_info=True)
+        log.error("Failed to resize tile: %s", e, exc_info=True)
         return tile_bytes
 
 
@@ -486,13 +525,12 @@ def _get_defect_image_from_detection(coil_id: int, surface_key: str, x: int,
                 if path.exists():
                     return path
 
-        log.debug(
-            f"No matching defect image found in detection folder for coil {coil_id}"
-        )
+        log.debug("No matching defect image found in detection folder for coil %s",
+                  coil_id)
         return None
 
     except Exception as e:
-        log.debug(f"Error reading from detection folder: {e}")
+        log.debug("Error reading from detection folder: %s", e)
         return None
 
 
@@ -571,7 +609,7 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str,
     except (ValueError, TypeError):
         return Response(noFindImageByte, media_type="image/jpeg")
 
-    detection_image = await asyncio.get_event_loop().run_in_executor(
+    detection_image = await asyncio.get_running_loop().run_in_executor(
         get_pool(), lambda: _get_defect_image_from_detection(
             coil_id, surface_key, x, y, w, h))
     if detection_image is not None:
@@ -582,7 +620,7 @@ async def get_defect_image(surface_key, coil_id: int, type_: str, x: str,
     if cache_key is None:
         return Response(noFindImageByte, media_type="image/jpeg")
 
-    crop_bytes = await asyncio.get_event_loop().run_in_executor(
+    crop_bytes = await asyncio.get_running_loop().run_in_executor(
         get_pool(),
         lambda: _crop_defect_image_cached(surface_key, coil_id, type_, x, y, w,
                                           h, cache_key[0], cache_key[1]),

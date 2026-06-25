@@ -8,7 +8,7 @@ import numpy as np
 
 from utils.MultiprocessColorLogger import logger
 
-from configs.CONFIG import DEBUG
+from configs import CONFIG
 
 
 class ThreadImageShow(Thread):
@@ -32,7 +32,7 @@ class ThreadImageShow(Thread):
                 cv2.namedWindow(name, cv2.WINDOW_NORMAL)
                 cv2.resizeWindow(name,480,480)
                 cv2.imshow(name,image)
-                cv2.waitKey(0)
+                cv2.waitKey(CONFIG.image_show_wait_ms)
 
             except Exception as e:
                 logger.exception("debug image display failed: %s", e)
@@ -42,7 +42,7 @@ threadImageShow = None
 
 def _get_image_show_thread():
     global threadImageShow
-    if not DEBUG:
+    if not (CONFIG.DEBUG and CONFIG.enable_image_show):
         return None
     if threadImageShow is None:
         threadImageShow = ThreadImageShow()
@@ -283,7 +283,7 @@ def hconcat_list(image_list, ins_int_list,debug=False):
             else:
                 item_image = image_list[index + 1][:, d_count:]
 
-            if DEBUG:
+            if CONFIG.DEBUG:
                 item_image = draw_debug_image(item_image,ins_int,d_count)
             add_image_list.append(item_image)
         except IndexError:
@@ -311,7 +311,7 @@ def get_intersections(mask_list,key_):
         ins_value = get_the_difference_int(ins)
         intersections.append(ins_value)
 
-        if DEBUG:
+        if CONFIG.DEBUG:
             logger.debug("get_the_difference %s %s %s", gray_index, key_, ins)
             logger.debug("get_the_difference_int %s %s %s", gray_index, key_, ins_value)
     format_intersections_ = format_intersections_list(intersections)

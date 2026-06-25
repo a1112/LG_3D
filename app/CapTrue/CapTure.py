@@ -23,16 +23,22 @@ class CapTureBase(Thread):
         self.running = True
         self._last_empty_coil_log_time = 0.0
         super().__init__()
+        self.daemon = True
 
-    def get_current_coil_or_placeholder(self):
+    def get_active_coil(self):
         coil = self.parent.coil
-        if coil is None:
+        if not self.parent.captureRunning or coil is None:
             now = time.time()
             if now - self._last_empty_coil_log_time >= 5:
-                logger.debug("coil is empty: camera=%s", self.cameraInfo.key)
+                logger.debug(
+                    "capture idle: camera=%s capture_running=%s has_coil=%s",
+                    self.cameraInfo.key,
+                    self.parent.captureRunning,
+                    coil is not None,
+                )
                 self._last_empty_coil_log_time = now
             time.sleep(0.1)
-            return 1
+            return None
         return coil
 
 
@@ -43,7 +49,9 @@ class CapTure2D(CapTureBase):
     def run(self):
         while self.running:
             try:
-                coil = self.get_current_coil_or_placeholder()
+                coil = self.get_active_coil()
+                if coil is None:
+                    continue
                 try:
                     area_cap, last_time = self.camera.get_last_frame(timeout=2)
                 except TimeoutError:
@@ -65,7 +73,7 @@ class CapTure2D(CapTureBase):
                 self.parent.reconnect_attempts = 0
             except Exception as e:
                 self.parent.last_error_2d = str(e)
-                logger.debug("camera %s exception: %s", self.cameraInfo.key, e)
+                logger.exception("2D capture loop failed: camera=%s error=%s", self.cameraInfo.key, e)
                 time.sleep(5)
 
 
@@ -82,7 +90,9 @@ class CapTure3D(CapTureBase):
                     while self.running:
                         buffer = None
                         try:
-                            coil = self.get_current_coil_or_placeholder()
+                            coil = self.get_active_coil()
+                            if coil is None:
+                                continue
                             buffer = cap.get_buffer()
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
@@ -96,7 +106,7 @@ class CapTure3D(CapTureBase):
                                 buffer.queue()
             except Exception as e:
                 self.parent.last_error_3d = str(e)
-                logger.debug("camera %s exception: %s", self.cameraInfo.key, e)
+                logger.exception("3D capture loop failed: camera=%s error=%s", self.cameraInfo.key, e)
                 time.sleep(5)
 
 
@@ -114,6 +124,7 @@ class CapTure(Thread):
         self.coil = None
         self.camera_3d = None
         self.camera_2d = None
+        self.capture_threads = []
         self.camera_info = camera_info
         self.start_camera_server = start_camera_server
         self.last_frame_time_2d = 0
@@ -215,14 +226,32 @@ class CapTure(Thread):
 
         if camera_2d is not None:
             logger.debug("starting 2D capture: %s", self.cameraInfo.key)
-            CapTure2D(self.dataSave, camera_2d, self, self.cameraInfo).start()
+            capture_2d = CapTure2D(self.dataSave, camera_2d, self, self.cameraInfo)
+            self.capture_threads.append(capture_2d)
+            capture_2d.start()
 
         if camera_3d is not None:
             logger.debug("starting 3D capture: %s", self.cameraInfo.key)
-            CapTure3D(self.dataSave, camera_3d, self, self.cameraInfo).start()
+            capture_3d = CapTure3D(self.dataSave, camera_3d, self, self.cameraInfo)
+            self.capture_threads.append(capture_3d)
+            capture_3d.start()
 
     def release(self):
-        pass
+        self.running = False
+        self.captureRunning = False
+        for capture_thread in self.capture_threads:
+            capture_thread.running = False
+        if self.dataSave is not None:
+            self.dataSave.stop()
+        if self.camera_2d is not None and hasattr(self.camera_2d, "stop"):
+            self.camera_2d.stop()
+        if self.camera_3d is not None and hasattr(self.camera_3d, "release"):
+            try:
+                self.camera_3d.release()
+            except Exception as e:
+                logger.debug("3D camera release ignored: camera=%s error=%s", self.cameraInfo.key, e)
+        for capture_thread in self.capture_threads:
+            capture_thread.join(timeout=2)
 
     def getCreatedFile(self, clear=False):
         if self.dataSave is None:

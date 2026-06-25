@@ -18,6 +18,17 @@ from .SaverWork import SaverWork
 from .cv_count_tool import im_show
 from alg_2d.detection import detection
 from CoilDataBase.Coil import get_coilState
+
+
+def _camera_position_key(camera_work: CameraWork) -> str:
+    key = str(camera_work.config.key)
+    position = key.rsplit("_", 1)[-1]
+    if position in {"U", "M", "D"}:
+        return position
+    logger.warning("2D camera key has unexpected format: %s", key)
+    return key
+
+
 class SurfaceWork(WorkBaseThread):
     """
     单表面
@@ -39,14 +50,19 @@ class SurfaceWork(WorkBaseThread):
 
         intersections = camera_image_grop_dict[1].intersections
 
+        skipped = 0
         for i in range(camera_image_grop_dict[0].left_index,camera_image_grop_dict[0].right_index):
-            try:
+            if i >= len(camera_image_grop_dict[0].intersections):
+                skipped += 1
+                continue
+            if i < len(intersections):
                 intersections[i] = camera_image_grop_dict[0].intersections[i]
-            except IndexError:
-                try:
-                    intersections.append(camera_image_grop_dict[0].intersections[i])
-                except IndexError:
-                    pass
+            else:
+                intersections.append(camera_image_grop_dict[0].intersections[i])
+        if skipped:
+            logger.debug("2D intersections skipped out-of-range points: surface=%s count=%s",
+                         self.key,
+                         skipped)
         return intersections,left_index,right_index
 
     def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop],coil_id):
@@ -133,9 +149,9 @@ class SurfaceWork(WorkBaseThread):
                 if camera_wolk.add_work(coil_id):
                     submitted_cameras.append(camera_wolk)
                 else:
-                    image_dict[camera_wolk.config.key[6]] = None
+                    image_dict[_camera_position_key(camera_wolk)] = None
             for camera_wolk in submitted_cameras:
-                image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
+                image_dict[_camera_position_key(camera_wolk)] = camera_wolk.get()
             missing_keys = [key for key, image_grop in image_dict.items() if image_grop is None]
             if missing_keys:
                 logger.warning(

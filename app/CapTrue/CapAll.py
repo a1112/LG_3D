@@ -28,8 +28,9 @@ def main():
     ]
     cap_map = {camera_config.key: cap for camera_config, cap in zip(CONFIG.capTureConfig.camera_config_list, cap_list)}
     logger.debug(
-        f"Starting unified capture API on "
-        f"{CONFIG.capTureConfig.apiServerIp}:{CONFIG.capTureConfig.apiServerPort}"
+        "Starting unified capture API on %s:%s",
+        CONFIG.capTureConfig.apiServerIp,
+        CONFIG.capTureConfig.apiServerPort,
     )
     Server.start_capture_api(CONFIG.capTureConfig, cap_map)
 

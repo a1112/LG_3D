@@ -431,7 +431,7 @@ def main():
             'Training in distributed mode with multiple processes, 1 device per process.'
             f'Process {args.rank}, total {args.world_size}, device {args.device}.')
     else:
-        _logger.info(f'Training with a single process on 1 device ({args.device}).')
+        _logger.info('Training with a single process on 1 device (%s).', args.device)
     assert args.rank >= 0
 
     # resolve AMP arguments based on PyTorch / Apex availability

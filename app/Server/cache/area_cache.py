@@ -43,6 +43,13 @@ class DiskAreaImageCache(MemoryImageCache):
         """获取瓦片文件路径"""
         return cache_dir / f"{col}_{row}.jpg"
 
+    def _read_tile_bytes(self, tile_path: Path) -> Optional[bytes]:
+        try:
+            return tile_path.read_bytes()
+        except OSError as e:
+            logging.warning("Failed to read AREA tile cache %s: %s", tile_path, e)
+            return None
+
     def _read_tile_cache(self, cache_dir: Path, count: int) -> Optional[dict]:
         """读取指定目录下的所有瓦片"""
         re_dict = defaultdict(dict)
@@ -51,7 +58,10 @@ class DiskAreaImageCache(MemoryImageCache):
                 tile_path = self._tile_path(cache_dir, col, row)
                 if not tile_path.exists():
                     return None
-                re_dict[col][row] = tile_path.read_bytes()
+                tile_bytes = self._read_tile_bytes(tile_path)
+                if tile_bytes is None:
+                    return None
+                re_dict[col][row] = tile_bytes
         return re_dict
 
     def get_tile(self, path: str, row: int, col: int, count: int, level: int = 4) -> Optional[bytes]:
@@ -70,7 +80,7 @@ class DiskAreaImageCache(MemoryImageCache):
         # 从缓存读取
         tile_path = self._tile_path(cache_dir, col, row)
         if tile_path.exists():
-            return tile_path.read_bytes()
+            return self._read_tile_bytes(tile_path)
 
         # 缓存不存在，记录日志并返回 None
         logging.debug("Tile cache not found: L%s tile (%s,%s) for %s", level, col, row, path)

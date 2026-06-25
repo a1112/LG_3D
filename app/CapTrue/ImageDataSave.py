@@ -1,8 +1,9 @@
 import json
+import os
 from collections import deque
 from pathlib import Path
+from queue import Full, Queue
 from threading import Thread
-from queue import Queue
 
 from PIL import Image
 
@@ -17,6 +18,10 @@ from Camera import SickCamera
 from Log import logger
 
 
+CAPTURE_SAVE_QUEUE_PUT_TIMEOUT = float(os.getenv("LG3D_CAPTURE_SAVE_QUEUE_PUT_TIMEOUT", "2.0"))
+CAPTURE_MAX_SAVE_INDEX = int(os.getenv("LG3D_CAPTURE_MAX_SAVE_INDEX", "20"))
+
+
 class ImageDataSave(Thread):
     def __init__(self, save_folder):
         super().__init__()
@@ -26,8 +31,10 @@ class ImageDataSave(Thread):
         self.save_index_2d = 0
         self.queue = Queue(maxsize=30)
         self.running = True
+        self.daemon = True
         self.camera:SickCamera|None = None
         self.created_files = deque(maxlen=200)
+        self.dropped_buffers = 0
         self.start()
 
     def set_camera(self, camera):
@@ -46,23 +53,52 @@ class ImageDataSave(Thread):
         self.save_index_2d = 0
 
     def trigger_out(self, coil):
-        pass
+        logger.debug("triggerOut %s", coil)
+
+    def stop(self):
+        self.running = False
+        try:
+            self.queue.put(None, timeout=0.2)
+        except Full:
+            logger.debug("capture save queue full while stopping: camera=%s", self.name)
+
+    def _queue_size(self):
+        try:
+            return self.queue.qsize()
+        except NotImplementedError:
+            return None
+
+    def _queue_buffer(self, buffer) -> bool:
+        try:
+            self.queue.put(buffer, timeout=CAPTURE_SAVE_QUEUE_PUT_TIMEOUT)
+            return True
+        except Full:
+            self.dropped_buffers += 1
+            logger.error(
+                "capture save queue full, drop buffer: camera=%s coil_id=%s index=%s type=%s dropped=%s queue_size=%s",
+                self.name,
+                getattr(buffer, "coilId", ""),
+                getattr(buffer, "save_index", ""),
+                type(buffer).__name__,
+                self.dropped_buffers,
+                self._queue_size(),
+            )
+            return False
 
     def put(self, buffer: SickBuffer | DaHengBuffer):
         if isinstance(buffer, SickBuffer):
-            buffer.data2D_mean = buffer.data2D.mean()
             buffer.save_index = self.save_index
-            if self.save_index<20:
-                self.queue.put(buffer)
+            if self.save_index < CAPTURE_MAX_SAVE_INDEX:
+                self._queue_buffer(buffer)
             else:
-                logger.error("<save_index out >%s <max 20>", self.save_index)
+                logger.error("<save_index out >%s <max %s>", self.save_index, CAPTURE_MAX_SAVE_INDEX)
             self.save_index += 1
-        if isinstance(buffer, DaHengBuffer):
+        elif isinstance(buffer, DaHengBuffer):
             buffer.save_index = self.save_index_2d
-            if self.save_index_2d<20:
-                self.queue.put(buffer)
+            if self.save_index_2d < CAPTURE_MAX_SAVE_INDEX:
+                self._queue_buffer(buffer)
             else:
-                logger.error("<save_index_2d out >%s <max 20>", self.save_index_2d)
+                logger.error("<save_index_2d out >%s <max %s>", self.save_index_2d, CAPTURE_MAX_SAVE_INDEX)
             self.save_index_2d += 1
 
     def save_camera_config(self, buffer):
@@ -91,6 +127,8 @@ class ImageDataSave(Thread):
         if not should_store_capture_raw_files():
             return
         buffer: SickBuffer
+        buffer.data2D_mean = float(buffer.data2D.mean())
+        buffer.data3D_mean = float(buffer.data3D.mean())
         save_file = self.saveFolder / buffer.coilId / "json" / f"{buffer.save_index}.json"
         save_file.parent.mkdir(parents=True, exist_ok=True)
         with save_file.open("w", encoding="utf-8") as f:
@@ -105,25 +143,38 @@ class ImageDataSave(Thread):
         save_compressed_numpy(buffer.data3D, save_file)
         self._record_created_file(save_file, "3d", buffer)
 
+    def _save_array_image(self, image_array, save_file, file_type, buffer):
+        image = Image.fromarray(image_array)
+        try:
+            save_compressed_image(image, save_file)
+        finally:
+            image.close()
+        self._record_created_file(save_file, file_type, buffer)
+
     def save_area_2d(self, buffer):
         buffer: DaHengBuffer
         if buffer.if_save_index():
-                save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.jpg"
-                save_compressed_image(Image.fromarray(buffer.data2D), save_file)
-                self._record_created_file(save_file, "area", buffer)
+            save_file = self.saveFolder / buffer.coilId / "area" / f"{buffer.save_index}.jpg"
+            self._save_array_image(buffer.data2D, save_file, "area", buffer)
 
     def save2_d(self, buffer):
         save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.jpg"
-        save_compressed_image(Image.fromarray(buffer.data2D), save_file)
-        self._record_created_file(save_file, "2d", buffer)
+        self._save_array_image(buffer.data2D, save_file, "2d", buffer)
 
     def save_area_2d_(self,buffer):
         if buffer.area_cap is not None:
             save_file = self.saveFolder / buffer.coilId / "2d" / f"{buffer.save_index}.jpg"
-            save_compressed_image(Image.fromarray(buffer.area_cap), save_file)
-            self._record_created_file(save_file, "2d_area", buffer)
+            self._save_array_image(buffer.area_cap, save_file, "2d_area", buffer)
 
     def save_database(self, buffer):
+        if getattr(buffer, "coilData", None) is None:
+            logger.debug(
+                "skip capture database log without coil object: camera=%s coil_id=%s index=%s",
+                self.name,
+                buffer.coilId,
+                buffer.save_index,
+            )
+            return None
         try:
             return add_obj(CapTrueLogItem(
                 secondaryCoilId=buffer.coilId,
@@ -141,12 +192,20 @@ class ImageDataSave(Thread):
             )
 
     def save(self, buffer):
-        if isinstance(buffer, SickBuffer ):
+        if isinstance(buffer, SickBuffer):
             logger.debug("save folder: %s index: %s", self.saveFolder / buffer.coilId, buffer.save_index)
             self.save_database(buffer)
             buffer: SickBuffer
-            self.save_json(buffer)
-            self.save3_d(buffer)
+            try:
+                self.save_json(buffer)
+            except Exception as e:
+                logger.exception("save capture json failed: camera=%s coil_id=%s index=%s error=%s",
+                                 self.name, buffer.coilId, buffer.save_index, e)
+            try:
+                self.save3_d(buffer)
+            except Exception as e:
+                logger.exception("save 3D data failed: camera=%s coil_id=%s index=%s error=%s",
+                                 self.name, buffer.coilId, buffer.save_index, e)
             try:
                 self.save2_d(buffer)
             except Exception as e:
@@ -154,13 +213,33 @@ class ImageDataSave(Thread):
                                  self.name, buffer.coilId, buffer.save_index, e)
             if buffer.save_index == 0:
                 if self.camera:
-                    self.save_camera_config(buffer)
+                    try:
+                        self.save_camera_config(buffer)
+                    except Exception as e:
+                        logger.exception("save camera config failed: camera=%s coil_id=%s error=%s",
+                                         self.name, buffer.coilId, e)
         if isinstance(buffer, DaHengBuffer):
             logger.debug("save folder: %s index: %s", self.saveFolder / buffer.coilId, buffer.save_index)
             buffer: DaHengBuffer
-            self.save_area_2d(buffer)
+            try:
+                self.save_area_2d(buffer)
+            except Exception as e:
+                logger.exception("save 2D AREA image failed: camera=%s coil_id=%s index=%s error=%s",
+                                 self.name, buffer.coilId, buffer.save_index, e)
 
     def run(self):
         while self.running:
             data = self.queue.get()
-            self.save(data)
+            if data is None:
+                break
+            try:
+                self.save(data)
+            except Exception as e:
+                logger.exception(
+                    "capture save worker failed: camera=%s buffer_type=%s coil_id=%s index=%s error=%s",
+                    self.name,
+                    type(data).__name__,
+                    getattr(data, "coilId", ""),
+                    getattr(data, "save_index", ""),
+                    e,
+                )

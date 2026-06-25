@@ -107,9 +107,7 @@ class YoloModelSegResults(YoloModelResultsBase):
         draw_image = self.get_draw()
         resized_image = cv2.resize(draw_image, (512, 512))  # 例如，将图像大小调整为640x480像素
 
-        Image.fromarray(resized_image).show()
+        from JoinService.cv_count_tool import im_show
+        im_show(resized_image, "Object Contours")
         # # 显示结果
-        # cv2.imshow(f"Object Contours", resized_image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 

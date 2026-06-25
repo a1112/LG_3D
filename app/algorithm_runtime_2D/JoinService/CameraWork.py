@@ -20,6 +20,14 @@ from configs import CONFIG
 model = SteelSegModel()
 MIN_IMAGES_PER_CAMERA = int(os.getenv("ALG_2D_MIN_IMAGES_PER_CAMERA", "2"))
 
+
+def _image_sort_key(path: Path):
+    try:
+        return 0, int(path.stem)
+    except ValueError:
+        return 1, path.stem
+
+
 class CameraWork(WorkBaseThread):
     """
     相机加载线程
@@ -65,7 +73,7 @@ class CameraWork(WorkBaseThread):
             logger.warning("2D camera folder missing: %s coil_id=%s", folder, coil_id)
             return []
         image_url_list = list(folder.glob("*.jpg"))
-        image_url_list.sort(key=lambda i: int(Path(i).stem))
+        image_url_list.sort(key=_image_sort_key)
         image_url_list = self.config.get_url_list(image_url_list)
         image_pairs = [(url_, self.opem_image(url_)) for url_ in image_url_list]
         image_pairs = [(url_, image) for url_, image in image_pairs if image is not None]
@@ -81,8 +89,8 @@ class CameraWork(WorkBaseThread):
             for image in image_list:
                 try:
                     image.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("2D image close failed: %s", e)
             return []
 
         if self.debug_work is not None:
@@ -144,8 +152,8 @@ class CameraWork(WorkBaseThread):
             for image in images:
                 try:
                     image.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("2D image close failed: %s", e)
 
         # seg_result_list = []
         # for i, image in enumerate(images):

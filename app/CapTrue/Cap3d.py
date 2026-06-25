@@ -31,7 +31,6 @@ def main():
     Signal.signal.start()
     while not Signal.signal.coil:
         time.sleep(0.1)
-        pass
     logger.debug("启动采集... ...%s", cap_list)
     for cap in cap_list:
         cap.start()

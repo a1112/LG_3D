@@ -41,3 +41,9 @@ def test_hconcat_list_handles_zero_intersections_without_recursion():
     result = cv_count_tool.hconcat_list(images, [0, 0])
 
     assert result.shape == (2, 12, 3)
+
+
+def test_debug_image_show_is_disabled_by_default():
+    assert cv_count_tool._get_image_show_thread() is None
+    assert cv_count_tool.CONFIG.enable_image_show is False
+    assert cv_count_tool.CONFIG.image_show_wait_ms >= 1

@@ -111,10 +111,16 @@ def set_clip_config(payload: ClipConfigPayload):
 
 
 def _enqueue(surface, coil_id: int) -> bool:
+    if hasattr(surface, "add_work"):
+        return bool(surface.add_work(coil_id, timeout=1))
     try:
         surface.queue_in.put(coil_id, timeout=1)
         return True
-    except Exception:
+    except Exception as e:
+        logger.warning("2D enqueue failed: target=%s coil_id=%s error=%s",
+                       type(surface).__name__,
+                       coil_id,
+                       e)
         return False
 
 
@@ -239,7 +245,7 @@ def _auto_scan_loop() -> None:
         try:
             _scan_and_enqueue()
         except Exception as e:
-            logger.error("2D auto scan failed: %s", e)
+            logger.exception("2D auto scan failed: %s", e)
         time.sleep(max(int(scanner_stats["scanInterval"]), 2))
 
 

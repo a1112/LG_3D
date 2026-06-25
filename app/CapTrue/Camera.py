@@ -129,6 +129,7 @@ class DaHengCamera(Thread): # Process
         self.empty_frame_count = 0
         self.frame_error_count = 0
         self.dropped_frames = 0
+        self.running = True
         self.width = 0
         self.height = 0
         self.payload_size = 0
@@ -391,6 +392,14 @@ class DaHengCamera(Thread): # Process
         self.last_reconnect_request_time = time.time()
         self._reconnect_event.set()
 
+    def stop(self):
+        self.running = False
+        self._reconnect_event.set()
+        with self._sdk_lock:
+            cam = self.capter
+            self.capter = None
+        self._safe_release_camera(cam)
+
     def set_params(self, exposure_time=None, gain=None, save=True):
         with self._sdk_lock:
             if self.capter is None:
@@ -447,7 +456,7 @@ class DaHengCamera(Thread): # Process
 
         reconnect_delay = 1
 
-        while True:
+        while self.running:
             cam = None
             try:
                 self._reconnect_event.clear()
@@ -463,7 +472,7 @@ class DaHengCamera(Thread): # Process
                 self._clear_queue()
                 reconnect_delay = 1
                 last_wait_log = 0
-                while True:
+                while self.running:
                     if self._reconnect_event.is_set():
                         raise RuntimeError("Manual reconnect requested")
                     with self._sdk_lock:
@@ -474,8 +483,10 @@ class DaHengCamera(Thread): # Process
                         self._set_state("waiting_trigger", "", connected=True)
                         if now - last_wait_log >= 60:
                             logger.debug(
-                                f"2D camera {self.camera_key} waiting external trigger "
-                                f"(no image, ret=0x{ret:08X}, empty={self.empty_frame_count})"
+                                "2D camera %s waiting external trigger (no image, ret=0x%08X, empty=%s)",
+                                self.camera_key,
+                                ret,
+                                self.empty_frame_count,
                             )
                             last_wait_log = now
                         continue
@@ -494,5 +505,7 @@ class DaHengCamera(Thread): # Process
                                self.camera_key, reconnect_delay, e)
                 self._clear_queue()
                 self._safe_release_camera(cam)
+                if not self.running:
+                    break
                 time.sleep(reconnect_delay)
                 reconnect_delay = min(reconnect_delay * 2, 5)

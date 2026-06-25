@@ -67,8 +67,8 @@ def _test_mode_config_enabled() -> bool:
             config = json.loads(test_mode_config_path.read_text(encoding="utf-8"))
             if bool(config.get("test_mode", False)):
                 return True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("test mode config read failed: %s", e)
     return False
 
 
@@ -588,8 +588,9 @@ def _camera_service_get(camera: dict, path: str) -> dict:
                 data = response.json()
                 data["legacyService"] = True
                 return data
-            except (requests.RequestException, ValueError):
-                pass
+            except (requests.RequestException, ValueError) as legacy_exc:
+                logger.debug("legacy camera status request failed: %s",
+                             legacy_exc)
         return {"ok": False, "connected": False, "message": str(e), "serviceUrl": url}
     except ValueError as e:
         return {"ok": False, "connected": False, "message": f"响应解析失败: {e}"}
@@ -1221,8 +1222,9 @@ async def export_defects(request: dict):
                 defect_image.save(save_path, quality=95)
                 try:
                     defect_image.close()
-                except Exception:
-                    pass
+                except Exception as close_exc:
+                    logger.debug("manual defect image close failed: %s",
+                                 close_exc)
                 exported_count += 1
 
             except Exception as e:

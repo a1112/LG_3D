@@ -6,15 +6,14 @@ from CoilDataBase.models.SecondaryCoil import SecondaryCoil
 
 
 class BufferBase:
-    pass
-
     def __init__(self):
         self.coilData: SecondaryCoil|None = None
         self.coilId = None
         
-    def setCoil(self, coil_data: SecondaryCoil):
-        self.coilData = coil_data
-        self.coilId = str(coil_data.Id)
+    def setCoil(self, coil_data):
+        coil_id = getattr(coil_data, "Id", coil_data)
+        self.coilData = coil_data if hasattr(coil_data, "get_json") else None
+        self.coilId = str(coil_id)
 
 class SickBuffer(BufferBase):
     def __init__(self, buffer):

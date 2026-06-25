@@ -82,8 +82,8 @@ class SaverWork(WorkBaseThread):
                 for col in range(self.tile_count):
                     left = col * tile_width
                     top = row * tile_height
-                    right = left + tile_width
-                    bottom = top + tile_height
+                    right = width if col == self.tile_count - 1 else left + tile_width
+                    bottom = height if row == self.tile_count - 1 else top + tile_height
                     tile = image_l.crop((left, top, right, bottom))
                     try:
                         for level, (target_size, quality) in TILE_LEVELS.items():
@@ -119,8 +119,8 @@ class SaverWork(WorkBaseThread):
                 if image is not None:
                     try:
                         image.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("2D AREA image close failed: %s", e)
                 self._save_count += 1
                 if self._save_count % 20 == 0:
                     gc.collect()
@@ -148,5 +148,5 @@ class DebugSaveWork(WorkBaseThread):
                 if image is not None:
                     try:
                         image.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("2D debug image close failed: %s", e)

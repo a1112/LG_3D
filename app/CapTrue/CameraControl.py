@@ -1,3 +1,4 @@
+import logging
 import time
 from threading import Thread
 
@@ -7,6 +8,11 @@ except ImportError:
     yaml = None
 
 import CONFIG
+
+try:
+    from Log import logger
+except ImportError:  # pragma: no cover - used by isolated unit tests
+    logger = logging.getLogger(__name__)
 
 
 class CameraControl(Thread):
@@ -36,7 +42,8 @@ class CameraControl(Thread):
                 "exposureTime": camera_config.get("exposureTime"),
                 "gain": camera_config.get("gain"),
             }
-        except Exception:
+        except Exception as e:
+            logger.debug("2D camera config params read failed: %s", e)
             return {}
 
     def _live_capter(self):
@@ -92,13 +99,15 @@ class CameraControl(Thread):
 
         try:
             status["queueSize"] = camera.frame_queue.qsize()
-        except Exception:
+        except Exception as e:
+            logger.debug("2D camera queue size read failed: %s", e)
             status["queueSize"] = None
 
         if hasattr(camera, "get_status"):
             try:
                 status.update(camera.get_status())
             except Exception as e:
+                logger.debug("2D camera status read failed: %s", e)
                 status["message"] = str(e)
 
         capter = self._live_capter()
