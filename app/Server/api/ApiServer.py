@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from queue import Queue
 from threading import Thread
 
@@ -10,6 +11,8 @@ from starlette.websockets import WebSocketDisconnect
 
 import Globs
 from .api_core import app
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["算法服务-与算法同步运行"])
 
@@ -61,9 +64,8 @@ async def ws_re_detection_task(websocket: WebSocket):
 
     async def receive_messages():
         while True:
-            print("Received start")
             data = await websocket.receive_text()  # 非阻塞的接收消息
-            print(f"Received: {data}")
+            logger.debug("websocket received: %s", data)
             data = json.loads(data)
             from_id = data["from_id"]
             to_id = data["to_id"]
@@ -124,9 +126,8 @@ async def ws_detection_state(websocket: WebSocket):
 
     async def receive_messages():
         while True:
-            print("Received start")
             data = await websocket.receive_text()  # 非阻塞的接收消息
-            print(f"Received: {data}")
+            logger.debug("websocket received: %s", data)
             data = json.loads(data)
             from_id = data["from_id"]
             to_id = data["to_id"]

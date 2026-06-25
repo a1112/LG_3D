@@ -22,6 +22,13 @@ Item {
     property int currentLevel: 0
     property int loadedLevel: -1
     property int targetLevel: 0
+    property bool debugLog: coreSetting ? coreSetting.showTileDebugBorders : false
+
+    function debugLogMessage(message) {
+        if (debugLog) {
+            console.log(message)
+        }
+    }
 
     // ========== 视口检测 ==========
     readonly property bool isInViewport: {
@@ -262,7 +269,7 @@ Item {
             else if (targetLevel === 3) levelSource3 = buildImageUrl(3)
             else levelSource4 = buildImageUrl(4)
 
-            console.log("[Tile " + row_ + "," + col_ + "] CoilNo:" + coilNo + " Loading L" + targetLevel)
+            debugLogMessage("[Tile " + row_ + "," + col_ + "] CoilNo:" + coilNo + " Loading L" + targetLevel)
         }
     }
 

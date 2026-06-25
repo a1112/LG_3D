@@ -164,8 +164,8 @@ class SaverWork(WorkBaseThread):
                 self._write_tile_cache(save_f, image)
                 self.save_thumbnail(save_t,image)
                 logger.info("2D AREA saved: %s", save_f)
-            except BaseException as e:
-                logger.error("2D AREA save failed: %s", e)
+            except Exception as e:
+                logger.exception("2D AREA save failed: %s", e)
             finally:
                 if image is not None:
                     try:

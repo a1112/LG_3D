@@ -1,45 +1,49 @@
 import time
+from pathlib import Path
 from threading import Thread
 from typing import Any
+
 import CONFIG
-from CoilDataBase.models.SecondaryCoil import SecondaryCoil
-from ImageDataSave import ImageDataSave
-from ImageBuffer import SickBuffer, DaHengBuffer
-from Signal import signal, lastTimeDict
-from pathlib import Path
-from Camera import SickCamera, DaHengCamera
-from Log import logger
 import Server
+from Camera import DaHengCamera, SickCamera
 from CameraControl import CameraControl
+from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from ImageBuffer import DaHengBuffer, SickBuffer
+from ImageDataSave import ImageDataSave
+from Log import logger
+from Signal import lastTimeDict, signal
 
 
 class CapTureBase(Thread):
-    def __init__(self, dataSave:ImageDataSave,camera, parent, cameraInfo):
+    def __init__(self, dataSave: ImageDataSave, camera, parent, cameraInfo):
         self.parent = parent
         self.camera = camera
         self.dataSave = dataSave
         self.cameraInfo = cameraInfo
         self.running = True
+        self._last_empty_coil_log_time = 0.0
         super().__init__()
-        pass
+
+    def get_current_coil_or_placeholder(self):
+        coil = self.parent.coil
+        if coil is None:
+            now = time.time()
+            if now - self._last_empty_coil_log_time >= 5:
+                logger.debug("coil is empty: camera=%s", self.cameraInfo.key)
+                self._last_empty_coil_log_time = now
+            time.sleep(0.1)
+            return 1
+        return coil
+
 
 class CapTure2D(CapTureBase):
-    def __init__(self, dataSave:ImageDataSave, camera, parent, cameraInfo):
+    def __init__(self, dataSave: ImageDataSave, camera, parent, cameraInfo):
         super().__init__(dataSave, camera, parent, cameraInfo)
-        pass
 
     def run(self):
         while self.running:
             try:
-                # if not self.c:
-                #     time.sleep(0.1)
-                #     continue
-
-                coil = self.parent.coil
-                if coil is None:
-                    print(f"coil 为空: ",self.parent.coil)
-                    time.sleep(0.1)
-                    coil = 1
+                coil = self.get_current_coil_or_placeholder()
                 try:
                     area_cap, last_time = self.camera.get_last_frame(timeout=2)
                 except TimeoutError:
@@ -50,8 +54,8 @@ class CapTure2D(CapTureBase):
                         self.parent.last_error_2d = camera_status.get("lastError", "2D camera disconnected")
                     time.sleep(0.05)
                     continue
-                bf = DaHengBuffer(area_cap,last_time)
-                # bf.setBDconfig(cap.getBDconfig())
+
+                bf = DaHengBuffer(area_cap, last_time)
                 bf.setCoil(coil)
                 self.dataSave.put(bf)
                 lastTimeDict[self.cameraInfo.key] = time.time()
@@ -59,55 +63,45 @@ class CapTure2D(CapTureBase):
                 self.parent.last_error_2d = ""
                 self.parent.missed_in_without_frame = 0
                 self.parent.reconnect_attempts = 0
-
-            except BaseException as e:
+            except Exception as e:
                 self.parent.last_error_2d = str(e)
-                logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
+                logger.debug("camera %s exception: %s", self.cameraInfo.key, e)
                 time.sleep(5)
 
+
 class CapTure3D(CapTureBase):
-    def __init__(self, dataSave:ImageDataSave, camera, parent, cameraInfo):
+    def __init__(self, dataSave: ImageDataSave, camera, parent, cameraInfo):
         super().__init__(dataSave, camera, parent, cameraInfo)
-        pass
 
     def run(self):
         while self.running:
             try:
-                # if not self.c:
-                #     time.sleep(0.1)
-                #     continue
-                logger.debug(f"启动相机 ...  ")
-
+                logger.debug("starting 3D camera loop")
                 with self.camera as cap:
-                    logger.debug(f"启动相机 {self.camera}... ...")
-                    while True:
+                    logger.debug("3D camera opened: %s", self.camera)
+                    while self.running:
+                        buffer = None
                         try:
-                            coil = self.parent.coil
-                            if coil is None:
-                                print(f"coil 为空: ",self.parent.coil)
-                                time.sleep(0.1)
-                                coil = 1
+                            coil = self.get_current_coil_or_placeholder()
                             buffer = cap.get_buffer()
                             bf = SickBuffer(buffer)
                             bf.setBDconfig(cap.getBDconfig())
                             bf.setCoil(coil)
-                            # bf.area_cap = self.camera.get_last_frame()
                             self.dataSave.put(bf)
                             lastTimeDict[self.cameraInfo.key] = time.time()
                             self.parent.last_frame_time_3d = time.time()
                             self.parent.last_error_3d = ""
                         finally:
-                            buffer.queue()
-            except BaseException as e:
+                            if buffer is not None:
+                                buffer.queue()
+            except Exception as e:
                 self.parent.last_error_3d = str(e)
-                logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
+                logger.debug("camera %s exception: %s", self.cameraInfo.key, e)
                 time.sleep(5)
 
+
 class CapTure(Thread):
-    """
-        多线程的主循环
-    """
-    def __init__(self, camera_info:CONFIG.CameraConfig, start_camera_server=True):
+    def __init__(self, camera_info: CONFIG.CameraConfig, start_camera_server=True):
         super().__init__()
         self.cameraControl = None
         self.dataSave = None
@@ -131,7 +125,6 @@ class CapTure(Thread):
         self.missed_in_without_frame = 0
         self.reconnect_attempts = 0
 
-
     def set_camera_3d(self):
         if self.cameraInfo.cap3D:
             camera = SickCamera(self.cameraInfo.sn)
@@ -141,8 +134,6 @@ class CapTure(Thread):
 
     def set_camera_2d(self):
         if self.cameraInfo.cap2D:
-            # if self.cameraInfo.key not in ["Cap_L_D","Cap_L_U","Cap_L_M"]:
-            #     return None
             yaml_config = self.cameraInfo.yaml_config
             camera = DaHengCamera(yaml_config, camera_key=self.cameraInfo.key)
             return camera
@@ -154,7 +145,6 @@ class CapTure(Thread):
         return default
 
     def on_signal(self, sig_type, coil):
-        # 接收到新的信号
         coilData: SecondaryCoil
         self.coil = coil
         if sig_type == "init":
@@ -166,7 +156,11 @@ class CapTure(Thread):
             now = time.time()
             if self.last_frame_time_2d <= self.last_trigger_in_time:
                 self.missed_in_without_frame += 1
-                logger.warning(f"2D camera {self.cameraInfo.key} no frame between triggerIn, count={self.missed_in_without_frame}")
+                logger.warning(
+                    "2D camera %s no frame between triggerIn, count=%s",
+                    self.cameraInfo.key,
+                    self.missed_in_without_frame,
+                )
                 last_frame_age = now - self.last_frame_time_2d if self.last_frame_time_2d else None
                 if (
                     self.missed_in_without_frame >= 10
@@ -176,16 +170,19 @@ class CapTure(Thread):
                 ):
                     self.reconnect_attempts += 1
                     logger.warning(
-                        f"2D camera {self.cameraInfo.key} forcing reconnect after repeated missing frames "
-                        f"(count={self.missed_in_without_frame}, last_frame_age={last_frame_age}, "
-                        f"attempt={self.reconnect_attempts})"
+                        "2D camera %s forcing reconnect after repeated missing frames "
+                        "(count=%s, last_frame_age=%s, attempt=%s)",
+                        self.cameraInfo.key,
+                        self.missed_in_without_frame,
+                        last_frame_age,
+                        self.reconnect_attempts,
                     )
                     self.camera_2d.request_reconnect()
                     self.missed_in_without_frame = 0
                     if self.reconnect_attempts > 5:
                         logger.error(
-                            f"2D camera {self.cameraInfo.key} exceeded 5 reconnect attempts, "
-                            "keep retrying this camera only"
+                            "2D camera %s exceeded 5 reconnect attempts, keep retrying this camera only",
+                            self.cameraInfo.key,
                         )
             else:
                 self.missed_in_without_frame = 0
@@ -204,14 +201,12 @@ class CapTure(Thread):
         self.camera = None
         self.dataSave = ImageDataSave(self.saveFolder)
         self.cameraControl = CameraControl(self)
-        self.coil:SecondaryCoil|None = None
+        self.coil: SecondaryCoil | None = None
         signal.register(self.on_signal)
-
 
         if self.start_camera_server:
             Server.start_server(camera_info, self)
-        logger.debug(f"启动采集 线程 {self.cameraInfo.key}... ...")
-
+        logger.debug("capture thread started: %s", self.cameraInfo.key)
 
         camera_3d = self.set_camera_3d()
         camera_2d = self.set_camera_2d()
@@ -219,41 +214,12 @@ class CapTure(Thread):
         self.camera_2d = camera_2d
 
         if camera_2d is not None:
-            logger.debug("启动 2D CapTrue")
-            CapTure2D(self.dataSave,camera_2d, self, self.cameraInfo).start()
+            logger.debug("starting 2D capture: %s", self.cameraInfo.key)
+            CapTure2D(self.dataSave, camera_2d, self, self.cameraInfo).start()
 
         if camera_3d is not None:
-            logger.debug("启动 3D CapTrue")
-            CapTure3D(self.dataSave,camera_3d, self, self.cameraInfo).start()
-
-
-        # while self.running:
-        #     try:
-        #         # if not self.c:
-        #         #     time.sleep(0.1)
-        #         #     continue
-        #         logger.debug(f"启动相机 ...  ")
-        #
-        #         with camera_3d as cap:
-        #             logger.debug(f"启动相机 {camera_3d}... ...")
-        #             while True:
-        #                 try:
-        #                     if self.coil is None:
-        #                         print(f"coil 为空 ")
-        #                         time.sleep(0.1)
-        #                         self.coil = 1
-        #                     buffer = cap.get_buffer()
-        #                     bf = SickBuffer(buffer)
-        #                     bf.setBDconfig(cap.getBDconfig())
-        #                     bf.setCoil(self.coil)
-        #                     bf.area_cap = camera_2d.get_last_frame()
-        #                     self.dataSave.put(bf)
-        #                     lastTimeDict[self.cameraInfo.key] = time.time()
-        #                 finally:
-        #                     buffer.queue()
-        #     except BaseException as e:
-        #         logger.debug(f"相机 {self.cameraInfo.key} 异常 {e}")
-        #         time.sleep(5)
+            logger.debug("starting 3D capture: %s", self.cameraInfo.key)
+            CapTure3D(self.dataSave, camera_3d, self, self.cameraInfo).start()
 
     def release(self):
         pass

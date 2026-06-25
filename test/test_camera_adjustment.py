@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import threading
 import time
@@ -195,7 +196,7 @@ def test_camera_adjustment_api_aggregates_capture_service_status(monkeypatch, tm
     assert result["cameras"][1]["status"]["message"] == "相机服务端口未配置"
 
 
-def test_camera_adjustment_api_forwards_params_and_reconnect(monkeypatch):
+def test_camera_adjustment_api_forwards_params_and_reconnect(monkeypatch, tmp_path):
     posts = []
 
     def fake_post(url, json, timeout):
@@ -203,6 +204,9 @@ def test_camera_adjustment_api_forwards_params_and_reconnect(monkeypatch):
         return FakeResponse({"ok": True, "path": url.rsplit("/", 2)[-2:]})
 
     monkeypatch.setattr(ApiDataBase, "_load_capture_cameras", capture_cameras)
+    capture_config = tmp_path / "CapTure.json"
+    capture_config.write_text(json.dumps({"apiServerIp": "0.0.0.0", "apiServerPort": 6100}), encoding="utf-8")
+    monkeypatch.setattr(ApiDataBase, "_capture_config_file", lambda: capture_config)
     monkeypatch.setattr(ApiDataBase.requests, "post", fake_post)
 
     params = ApiDataBase.CameraAdjustmentPayload(exposureTime=700, gain=13, save=True)
@@ -213,12 +217,12 @@ def test_camera_adjustment_api_forwards_params_and_reconnect(monkeypatch):
     assert reconnect["ok"] is True
     assert posts == [
         (
-            "http://127.0.0.1:6101/camera/params",
+            "http://127.0.0.1:6100/cameras/Cap_A/params",
             {"exposureTime": 700, "gain": 13, "save": True},
             ApiDataBase._CAMERA_SERVICE_TIMEOUT,
         ),
         (
-            "http://127.0.0.1:6101/camera/reconnect",
+            "http://127.0.0.1:6100/cameras/Cap_A/reconnect",
             {},
             ApiDataBase._CAMERA_SERVICE_TIMEOUT,
         ),
@@ -246,7 +250,9 @@ def test_camera_adjustment_http_routes_forward_to_capture_services(monkeypatch, 
         return FakeResponse({"ok": True})
 
     monkeypatch.setattr(ApiDataBase, "_load_capture_cameras", capture_cameras)
-    monkeypatch.setattr(ApiDataBase, "_capture_config_file", lambda: tmp_path / "CapTure.json")
+    capture_config = tmp_path / "CapTure.json"
+    capture_config.write_text(json.dumps({"apiServerIp": "0.0.0.0", "apiServerPort": 6100}), encoding="utf-8")
+    monkeypatch.setattr(ApiDataBase, "_capture_config_file", lambda: capture_config)
     monkeypatch.setattr(ApiDataBase.requests, "get", fake_get)
     monkeypatch.setattr(ApiDataBase.requests, "post", fake_post)
 
@@ -268,12 +274,12 @@ def test_camera_adjustment_http_routes_forward_to_capture_services(monkeypatch, 
     assert reconnect_response.status_code == 200
     assert posts == [
         (
-            "http://127.0.0.1:6101/camera/params",
+            "http://127.0.0.1:6100/cameras/Cap_A/params",
             {"exposureTime": 800, "gain": 14, "save": False},
             ApiDataBase._CAMERA_SERVICE_TIMEOUT,
         ),
         (
-            "http://127.0.0.1:6101/camera/reconnect",
+            "http://127.0.0.1:6100/cameras/Cap_A/reconnect",
             {},
             ApiDataBase._CAMERA_SERVICE_TIMEOUT,
         ),

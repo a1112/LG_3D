@@ -74,6 +74,18 @@ def test_database_url_env_overrides_config_url(monkeypatch):
     assert get_url() == database_url
 
 
+def test_database_url_is_not_printed_to_stdout(monkeypatch, capsys):
+    from CoilDataBase.config import get_url
+
+    database_url = "postgresql+psycopg://lg3d_app:secret@127.0.0.1:5432/Coil"
+    monkeypatch.setenv("COIL_DATABASE_URL", database_url)
+
+    assert get_url() == database_url
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "secret" not in captured.err
+
+
 def test_default_database_url_points_to_postgresql(monkeypatch):
     from sqlalchemy.engine import make_url
 

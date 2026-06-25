@@ -10,7 +10,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 # 创建控制台处理器
-print("采集日志")
 log_dir_base = Path("log")
 # 创建 TimedRotatingFileHandler
 log_dir = log_dir_base/"CapTrue"/f"{CONFIG.configFile.stem}_{os.getpid()}"

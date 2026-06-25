@@ -129,7 +129,7 @@ def _taper_detection_rotations(data_integration: DataIntegration):
 
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
 def _detection_taper_shape_(data_integration: DataIntegration):
-    print("塔形检测")
+    logger.debug("塔形检测")
     # 角度检测
     line_data_dict = {}
     taper_shape_errors = []
@@ -201,7 +201,7 @@ def _detection_taper_shape_(data_integration: DataIntegration):
 
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShapeA_")
 def _detectionTaperShapeA_(dataIntegration: DataIntegration):
-    print("塔形检测A")
+    logger.debug("塔形检测A")
     lineDataDict = {}
     # p_center = dataIntegration.flatRollData.get_center()
     npyData = (dataIntegration.npy_data - dataIntegration.__median_non_zero__) * dataIntegration.scan3dCoordinateScaleZ
@@ -608,7 +608,7 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
     """
     no doc
     """
-    print("塔形检测 all")
+    logger.debug("塔形检测 all")
     taper_shape_type = _normalize_taper_shape_type(Globs.control.taper_shape_type)
     for dataIntegration in _iter_data_integrations(data_integration_list):
         _clear_taper_shape_errors(dataIntegration)

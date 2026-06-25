@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import traceback
 
 from fastapi import APIRouter, WebSocket
@@ -11,6 +12,8 @@ from Base.CONFIG import serverConfigProperty
 from Base.utils import Backup, export
 from .Models import ExportXlsxConfigModel
 from .api_core import app
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["备份服务"])
 
@@ -29,7 +32,7 @@ def _stream_xlsx(output, file_size: int, filename: str) -> StreamingResponse:
 
 def _export_error_response(exc: Exception) -> PlainTextResponse:
     detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    print(detail)
+    logger.error("export xlsx failed: %s", detail)
     return PlainTextResponse(detail, status_code=500)
 
 
@@ -59,7 +62,7 @@ async def ws_backup_image_task(websocket: WebSocket):
             await Backup.backup_image_task(from_id, to_id, save_folder)
             await websocket.send_text("100")
         except Exception as exc:
-            print(f"Connection error: {exc}")
+            logger.warning("backup image websocket closed after error: %s", exc)
             break
 
 
@@ -96,7 +99,7 @@ async def export_xlsx_by_datetime(start, end, export_type="3D", export_config=No
 @router.post("/export_xlsx")
 async def export_xlsx_post(export_xlsx_config: ExportXlsxConfigModel):
     try:
-        print(export_xlsx_config)
+        logger.info("export xlsx requested: %s", export_xlsx_config)
         start_dt = datetime.datetime.strptime(export_xlsx_config.startDate, "%Y%m%d%H%M")
         end_dt = datetime.datetime.strptime(export_xlsx_config.endDate, "%Y%m%d%H%M")
         output, file_size = export.export_data_by_time(

@@ -4,6 +4,7 @@ from CoilDataBase.models import AlarmLooseCoil
 from Base.property.Base import DataIntegration, DataIntegrationList
 from Base.property.Data3D import LineData
 from CoilDataBase.Alarm import addAlarmLooseCoil
+from Base.utils.Log import logger
 import numpy as np
 
 
@@ -83,5 +84,5 @@ def _detectionAlarmLooseCoilAll_(data_integration_list: Union[DataIntegrationLis
         alarm_loose_data = AlarmLooseData(line_datas)
         alarm_loose_data.detection()
     else:
-        print("暂不支持")
+        logger.debug("loose coil cross-surface detection requires exactly 2 surfaces, got %s", len(line_datas))
         return

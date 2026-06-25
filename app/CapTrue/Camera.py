@@ -54,9 +54,9 @@ class SickCamera:
             try:
                 item = getattr(self.camera.remote_device.node_map, itemName)
                 re_dict[itemName] = item.value
-            except BaseException as e:
-                pass
-        print(re_dict)
+            except Exception as e:
+                logger.debug("skip camera config item %s: %s", itemName, e)
+        logger.debug("loaded sick camera config: sn=%s item_count=%s", self.sn, len(re_dict))
 
         return re_dict
 
@@ -86,7 +86,7 @@ class SickCamera:
         sT = time.time()
         self.camera.start()
         eT = time.time()
-        print(f"start: {eT-sT} mm")
+        logger.info("sick camera started: sn=%s elapsed_s=%.3f", self.sn, eT - sT)
 
     def release(self):
         self.camera.stop()
@@ -486,7 +486,7 @@ class DaHengCamera(Thread): # Process
                     self.frame_id += 1
                     self._set_state("streaming", "", connected=True)
                     self._put_latest_frame(frame, now)
-            except BaseException as e:
+            except Exception as e:
                 with self._sdk_lock:
                     self.capter = None
                     self.last_disconnect_time = time.time()

@@ -1,9 +1,11 @@
+import logging
 import socket
 from pathlib import Path
 import numpy as np
 from PIL import Image
 
 # from utils.MultiprocessColorLogger import logger
+log = logging.getLogger(__name__)
 
 
 class DebugConfig:
@@ -21,7 +23,7 @@ class DebugConfig:
             self.save_simple_folder = self.FolderPath.parent / "save_simple"
             self.debug = True
         if self.debug:
-            print(fr"使用离线测试模式 {self.FolderPath} {self.save_folder}")
+            log.info("offline test mode enabled: folder=%s save_folder=%s", self.FolderPath, self.save_folder)
 
 
     def get_surface_folder(self, surface_key):

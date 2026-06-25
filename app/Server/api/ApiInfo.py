@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 import sys
 import platform
 
@@ -13,6 +14,8 @@ from cache import get_cache_mode
 from CoilDataBase.Coil import get_coil, list_data_keys, get_coil_list, get_grad_list
 from CoilDataBase.tool import to_dict
 from testdata_config import get_testdata_asset_dir
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(tags=["参数服务"])
@@ -97,8 +100,8 @@ async def database_info():
     coil_last = None
     try:
         coil_last = to_dict(get_coil(1)[0])
-    except BaseException as e:  # noqa: BLE001
-        print(e)
+    except Exception as e:
+        logger.warning("failed to load last coil for database_info: %s", e)
     return {
         "url": engine.url,
         "echo": engine.echo,

@@ -8,6 +8,7 @@ from configs import CONFIG
 from configs.CONFIG import DEBUG
 from configs.CameraConfig import CameraConfig
 from configs.DebugConfigs import debug_config
+from utils.MultiprocessColorLogger import logger
 
 
 def _image_line_has_data_(line:np.ndarray) -> bool:
@@ -36,7 +37,7 @@ class CameraImageGrop:
                     try:
                         debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{self.coil_id}_{i}.jpg")
                     except Exception as e:
-                        print(f"Error saving mask image: {e}")
+                        logger.warning("Error saving mask image: %s", e)
 
 
         self.mask_list=[]
@@ -79,7 +80,13 @@ class CameraImageGrop:
                 right_index = i+1
                 break
 
-        print(fr"mask_list {len(self.mask_list)} format_images {in_list} {left_index} {right_index}")
+        logger.debug(
+            "mask_list %s format_images %s left=%s right=%s",
+            len(self.mask_list),
+            in_list,
+            left_index,
+            right_index,
+        )
 
         self.left_index = left_index
         self.right_index = right_index
@@ -104,7 +111,7 @@ class CameraImageGrop:
         #     self.intersections=[440 for i in self.intersections]
 
 
-        print(fr"intersections {self.coil_id} {self.config.key} {self.intersections}")
+        logger.debug("intersections %s %s %s", self.coil_id, self.config.key, self.intersections)
         image = hconcat_list(self.image_list, self.intersections,False)
         # im_show(image, fr"join_image {self.config.key}")
 

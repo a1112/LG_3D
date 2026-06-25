@@ -3,6 +3,7 @@ from threading import Thread
 import CONFIG
 from CoilDataBase import Coil
 from CoilDataBase.models.SecondaryCoil import SecondaryCoil
+from Log import logger
 
 lastTimeDict = {
     "t":0
@@ -48,8 +49,8 @@ class Signal(Thread):
                             self.triggerIn()
                             break
                         time.sleep(1)
-            except BaseException as e:
-                print(e)
+            except Exception as e:
+                logger.warning("signal polling failed: %s", e)
             time.sleep(1)
 
 

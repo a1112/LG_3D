@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 from pathlib import Path
@@ -10,17 +11,16 @@ else:
     CONFIG_FOLDER = Path("config")
 JOIN_CONFIG_FILE = CONFIG_FOLDER / "area_join.json"
 hostname = socket.gethostname()
+log = logging.getLogger(__name__)
 
 WorkClass = Thread
-
-print(hostname)
 
 if hostname in ["DESKTOP-3VCH6DO", "DESKTOP-94ADH1G"]:
     DEBUG = True
 else:
     DEBUG = False
 
-print(CONFIG_FOLDER)
+log.debug("2D config host=%s folder=%s debug=%s", hostname, CONFIG_FOLDER, DEBUG)
 ModelFolder = CONFIG_FOLDER.parent / "model"
 
 base_config_folder = Path(fr"D:\CONFIG_3D")

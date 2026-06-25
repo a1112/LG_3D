@@ -1,9 +1,13 @@
 import json
+import logging
 from pathlib import Path
 
 from configs import CONFIG
 from .BaseConfig import BaseConfig
 from .SurfaceConfig import SurfaceConfig
+
+
+log = logging.getLogger(__name__)
 
 def sort_folder(image_url_list):
     image_url_list.sort(key=lambda i: int(Path(i).stem),reverse = True)
@@ -19,7 +23,7 @@ class JoinConfig(BaseConfig):
 
     def get_source_min_coil(self):
         camera_folder = list(self.surfaces.values())[0].camera_configs[0].folder
-        print(camera_folder)
+        log.debug("source camera folder: %s", camera_folder)
         folders = list(camera_folder.iterdir())
         folders = sort_folder(folders)
         return int(folders[-1].stem)
@@ -27,7 +31,7 @@ class JoinConfig(BaseConfig):
 
     def get_source_max_coil(self):
         camera_folder = list(self.surfaces.values())[0].camera_configs[0].folder
-        print(camera_folder)
+        log.debug("source camera folder: %s", camera_folder)
         folders = list(camera_folder.iterdir())
         folders = sort_folder(folders)
         return int(folders[0].stem)

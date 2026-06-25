@@ -646,7 +646,7 @@ def _format_coil_data(coil: SecondaryCoil) -> dict:
                 try:
                     code = chr(int(coil_dict["Weight"]))
                     coil_dict["NextCode"] = code
-                except:
+                except (TypeError, ValueError, OverflowError):
                     coil_dict["NextCode"] = ""
             c_data.update(coil_dict)
 
@@ -847,7 +847,7 @@ def _format_coil_detail(coil: SecondaryCoil) -> dict:
                 try:
                     code = chr(int(coil_dict["Weight"]))
                     coil_dict["NextCode"] = code
-                except:
+                except (TypeError, ValueError, OverflowError):
                     coil_dict["NextCode"] = ""
             c_data.update(coil_dict)
 

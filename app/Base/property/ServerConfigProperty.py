@@ -84,7 +84,7 @@ class ServerConfigProperty(BaseConfigProperty):
                 return self.config[property_]
             except KeyError:
                 if current_process().name == "MainProcess":
-                    logging.warn(f"{property_} 参数获取失败，使用默认参数 {default}")
+                    logging.warning(f"{property_} 参数获取失败，使用默认参数 {default}")
                 return default
 
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}

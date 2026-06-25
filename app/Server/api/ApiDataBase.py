@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 import re
 from collections import defaultdict
@@ -42,6 +43,7 @@ router = APIRouter(tags=["数据库服务"])
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _CAMERA_SERVICE_TIMEOUT = 1.5
+logger = logging.getLogger(__name__)
 
 
 class CameraAdjustmentPayload(BaseModel):
@@ -170,7 +172,7 @@ def get_coil_item_info(c):
             try:
                 c["NextInfo"] = CONFIG.infoConfigProperty.get_next(str(code))
             except (Exception, ) as e:
-                print(e)
+                logger.debug("failed to resolve next info: code=%s error=%s", code, e)
                 c["NextInfo"] = "未知去向，" + str(code)
     return c
 
@@ -501,8 +503,11 @@ def _normalize_service_host(host: str) -> str:
     return host
 
 
-def _capture_service_base_url() -> str:
-    config = _load_capture_config()
+def _capture_service_base_url() -> Optional[str]:
+    try:
+        config = _load_capture_config()
+    except HTTPException:
+        return None
     host = _normalize_service_host(str(config.get("apiServerIp") or "127.0.0.1"))
     port = int(config.get("apiServerPort") or 6100)
     return f"http://{host}:{port}"
@@ -516,8 +521,12 @@ def _legacy_camera_service_base_url(camera: dict) -> Optional[str]:
     return f"http://{host}:{int(server_port)}"
 
 
+def _camera_service_base_url(camera: dict) -> Optional[str]:
+    return _legacy_camera_service_base_url(camera)
+
+
 def _camera_public_info(camera: dict) -> dict:
-    service_url = _capture_service_base_url()
+    service_url = _capture_service_base_url() or _camera_service_base_url(camera) or ""
     legacy_service_url = _legacy_camera_service_base_url(camera)
     return {
         "key": camera.get("key", ""),
@@ -532,7 +541,10 @@ def _camera_public_info(camera: dict) -> dict:
 
 
 def _capture_service_get(path: str) -> dict:
-    url = _capture_service_base_url() + path
+    base_url = _capture_service_base_url()
+    if not base_url:
+        return {"ok": False, "message": "capture service config not found", "serviceUrl": ""}
+    url = base_url + path
     try:
         response = requests.get(url, timeout=_CAMERA_SERVICE_TIMEOUT * 6)
         response.raise_for_status()
@@ -552,16 +564,23 @@ def _find_capture_camera(camera_key: str) -> dict:
 
 def _camera_service_get(camera: dict, path: str) -> dict:
     camera_key = camera.get("key", "")
-    if path == "/camera/status":
-        url = _capture_service_base_url() + f"/cameras/{camera_key}/status"
+    capture_base_url = _capture_service_base_url()
+    legacy_base_url = _legacy_camera_service_base_url(camera)
+    if path == "/camera/status" and not camera_key and not legacy_base_url:
+        return {"ok": False, "connected": False, "message": "相机服务端口未配置"}
+    if not capture_base_url:
+        if not legacy_base_url:
+            return {"ok": False, "connected": False, "message": "相机服务端口未配置", "serviceUrl": ""}
+        url = legacy_base_url + path
+    elif path == "/camera/status":
+        url = capture_base_url + f"/cameras/{camera_key}/status"
     else:
-        url = _capture_service_base_url() + path
+        url = capture_base_url + path
     try:
         response = requests.get(url, timeout=_CAMERA_SERVICE_TIMEOUT)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
-        legacy_base_url = _legacy_camera_service_base_url(camera)
         if legacy_base_url and path == "/camera/status":
             try:
                 response = requests.get(legacy_base_url + path, timeout=_CAMERA_SERVICE_TIMEOUT)
@@ -578,12 +597,18 @@ def _camera_service_get(camera: dict, path: str) -> dict:
 
 def _camera_service_post(camera: dict, path: str, payload: dict | None = None) -> dict:
     camera_key = camera.get("key", "")
-    if path == "/camera/params":
-        url = _capture_service_base_url() + f"/cameras/{camera_key}/params"
+    capture_base_url = _capture_service_base_url()
+    legacy_base_url = _legacy_camera_service_base_url(camera)
+    if not capture_base_url:
+        if not legacy_base_url:
+            raise HTTPException(status_code=502, detail="相机服务端口未配置")
+        url = legacy_base_url + path
+    elif path == "/camera/params":
+        url = capture_base_url + f"/cameras/{camera_key}/params"
     elif path == "/camera/reconnect":
-        url = _capture_service_base_url() + f"/cameras/{camera_key}/reconnect"
+        url = capture_base_url + f"/cameras/{camera_key}/reconnect"
     else:
-        url = _capture_service_base_url() + path
+        url = capture_base_url + path
     try:
         response = requests.post(url, json=payload or {}, timeout=_CAMERA_SERVICE_TIMEOUT)
         response.raise_for_status()
@@ -762,9 +787,12 @@ async def get_camera_data(coil_id: int, camera_key: str):
 
 @router.get("/backupImageTask/{from_id:int}/{to_id:int}/{save_folder:path}")
 async def backup_image_task(from_id: int, to_id: int, save_folder: str):
-    print(from_id)
-    print(to_id)
-    print(save_folder)
+    logger.info(
+        "backup image task requested: from_id=%s to_id=%s save_folder=%s",
+        from_id,
+        to_id,
+        save_folder,
+    )
     return Backup.backup_image_task(from_id, to_id, save_folder)
 
 
@@ -1199,7 +1227,12 @@ async def export_defects(request: dict):
 
             except Exception as e:
                 error_count += 1
-                print(f"导出缺陷失败: {e}")
+                logger.warning(
+                    "export defect image failed: coil_id=%s defect=%s error=%s",
+                    coil_id,
+                    defect_name,
+                    e,
+                )
 
     _close_source_image_cache(source_image_cache)
 

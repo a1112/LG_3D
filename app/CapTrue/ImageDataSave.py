@@ -144,7 +144,8 @@ class ImageDataSave(Thread):
             try:
                 self.save2_d(buffer)
             except Exception as e:
-                print(e)
+                logger.exception("save 2D image failed: camera=%s coil_id=%s index=%s error=%s",
+                                 self.name, buffer.coilId, buffer.save_index, e)
             if buffer.save_index == 0:
                 if self.camera:
                     self.save_camera_config(buffer)

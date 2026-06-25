@@ -1,4 +1,4 @@
-from queue import Queue
+from queue import Full, Queue
 import statistics
 
 import cv2
@@ -14,12 +14,16 @@ from configs.CONFIG import DEBUG
 class ThreadImageShow(Thread):
     def __init__(self):
         super(ThreadImageShow, self).__init__()
-        self.queue = Queue(maxsize=10)
+        self.daemon = True
+        self.queue = Queue(maxsize=3)
         self.start()
 
 
     def add_show_image(self, image, name):
-        self.queue.put([image,name])
+        try:
+            self.queue.put_nowait([image, name])
+        except Full:
+            logger.debug("drop debug image frame: %s", name)
 
     def run(self):
         while True:
@@ -30,15 +34,25 @@ class ThreadImageShow(Thread):
                 cv2.imshow(name,image)
                 cv2.waitKey(0)
 
-            except BaseException as e:
-                print(e)
+            except Exception as e:
+                logger.exception("debug image display failed: %s", e)
                 cv2.destroyAllWindows()
-                pass
-threadImageShow = ThreadImageShow()
+threadImageShow = None
+
+
+def _get_image_show_thread():
+    global threadImageShow
+    if not DEBUG:
+        return None
+    if threadImageShow is None:
+        threadImageShow = ThreadImageShow()
+    return threadImageShow
 
 def im_show(image, title="Image"):
     # 显示结果
-    threadImageShow.add_show_image(image, title)
+    image_show_thread = _get_image_show_thread()
+    if image_show_thread is not None:
+        image_show_thread.add_show_image(image, title)
 
 def draw_points(gray_img, contour, intersections):
     # 创建彩色图像用于可视化
@@ -74,16 +88,22 @@ def get_max_contour_and_intersections(gray_image):
     intersections = []
     # 检查轮廓是否与每条水平线相交
 
-    nonzero_indices = np.nonzero(gray_image)
-    start_index_y = -1
-    pre_p = None
-    for index_y,index_x in zip(nonzero_indices[0], nonzero_indices[1]):
-        if index_y>start_index_y:
-            if pre_p is not None:
-                intersections.append(pre_p)
-            intersections.append([int(index_y), int(index_x)])
-        pre_p = [int(index_y), int(index_x)]
-        start_index_y = index_y
+    mask = gray_image != 0
+    row_indices = np.flatnonzero(mask.any(axis=1))
+    if row_indices.size == 0:
+        return None, []
+
+    row_mask = mask[row_indices]
+    left_indices = np.argmax(row_mask, axis=1)
+    right_indices = gray_image.shape[1] - 1 - np.argmax(row_mask[:, ::-1], axis=1)
+
+    for row, left, right in zip(row_indices, left_indices, right_indices):
+        row = int(row)
+        left = int(left)
+        right = int(right)
+        intersections.append([row, left])
+        if right != left:
+            intersections.append([row, right])
     return None, intersections
 
 def get_max_contour_and_intersections_(gray_image):
@@ -176,7 +196,7 @@ def get_the_difference_int(ins):
         return median_r
     if median_r == 0:
         return median_l
-    return max(median_l , median_l)
+    return max(median_l, median_r)
     # ins_all = ins[0] + ins[1]
     # return sum(ins_all)/len(ins_all) if len(ins_all) > 0 else 0
 
@@ -277,7 +297,10 @@ def hconcat_list(image_list, ins_int_list,debug=False):
     return count_image
 
 def get_intersections(mask_list,key_):
-    print(fr"key_ {key_}")
+    if len(mask_list) < 2:
+        logger.debug("not enough masks to compute intersections: %s count=%s", key_, len(mask_list))
+        return []
+
     intersections = []
     for gray_index in range(len(mask_list)-1):
         _, intersections_l = get_max_contour_and_intersections(mask_list[gray_index])
@@ -289,15 +312,13 @@ def get_intersections(mask_list,key_):
 
 
         ins = get_the_difference(format_intersections_l,format_intersections_r,mask_list[gray_index].shape)
-        intersections.append(get_the_difference_int(ins))
+        ins_value = get_the_difference_int(ins)
+        intersections.append(ins_value)
 
-        # im_show(mask_list[gray_index])
-        # print(fr"format_intersections_l {format_intersections_l}")
-        # print(fr"format_intersections_r {format_intersections_r}")
-        print(fr"get_the_difference {gray_index} {key_} {ins}")
-        print(fr"get_the_difference_int(ins) {gray_index} {key_} {get_the_difference_int(ins)}")
+        if DEBUG:
+            logger.debug("get_the_difference %s %s %s", gray_index, key_, ins)
+            logger.debug("get_the_difference_int %s %s %s", gray_index, key_, ins_value)
     format_intersections_ = format_intersections_list(intersections)
-    logger.debug(fr"intersections {gray_index} {key_}  {intersections}")
-    print(fr"_intersections_ {gray_index} {key_}  {intersections}")
-    print(fr"format_intersections_ {gray_index} {key_}  {format_intersections_}")
+    logger.debug("intersections %s %s", key_, intersections)
+    logger.debug("format_intersections %s %s", key_, format_intersections_)
     return format_intersections_

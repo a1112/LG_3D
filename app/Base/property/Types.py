@@ -1,7 +1,10 @@
 from abc import ABC
 from enum import Flag, auto, Enum
+import logging
 from pathlib import Path
 from typing import Union, List
+
+logger = logging.getLogger(__name__)
 
 
 class BdItem:
@@ -20,8 +23,8 @@ class BdData:
             self.bdDataX = BdItem(bd_config["CoordinateA"])
             self.bdDataY = BdItem(bd_config["CoordinateB"])
             self.bdDataZ = BdItem(bd_config["CoordinateC"])
-        except (BaseException,) as e:
-            print(e)
+        except (KeyError, TypeError) as e:
+            logger.warning("invalid bd_config, using default calibration: %s", e)
             self.bdDataX = BdItem({
                 "Scan3dAxisMax": 2559.0,
                 "Scan3dAxisMin": 0.0,

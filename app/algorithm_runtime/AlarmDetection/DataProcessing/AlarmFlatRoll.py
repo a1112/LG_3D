@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from Base.property.Base import DataIntegration, DataIntegrationList
 from Base.property.detection3D.FlatRollData import CircleDataItem
+from Base.utils.Log import logger
 from AlarmDetection.Result.FlatRollData import FlatRollData
 
 
@@ -74,7 +75,7 @@ def _detectionAlarmFlatRollAll_(data_integration_list: Union[DataIntegrationList
     """
     全局检测 扁卷
     """
-    print("AlarmFlatRollAll")
+    logger.debug("AlarmFlatRollAll")
     for dataIntegration in data_integration_list:
         _detectionAlarmFlatRoll_(dataIntegration)
 

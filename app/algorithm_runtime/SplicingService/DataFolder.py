@@ -295,7 +295,7 @@ class DataFolder(Globs.control.BaseDataFolder):
                     f"json_s={json_s:.3f} load2d_s={load2d_s:.3f} load3d_s={load3d_s:.3f} "
                     f"post_s={post_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
                 )
-            except BaseException as e:
+            except Exception as e:
                 logger.error(f"Error in DataFolder {coil_id}: {e}")
                 if isLoc and Globs.control.debug_raise:
                     raise e

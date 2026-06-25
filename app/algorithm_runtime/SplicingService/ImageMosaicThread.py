@@ -49,7 +49,7 @@ class ImageMosaicThread(Thread):
     """
 
     def __init__(self, manager_queue, logger_process: LoggerProcess):
-        print("实例化 ImageMosaicThread")
+        logger.debug("ImageMosaicThread init")
         super().__init__()
         self.managerQueue = manager_queue
         self.loggerProcess = logger_process
@@ -249,7 +249,7 @@ class ImageMosaicThread(Thread):
                         if not self.re_detection_queue:
                             self.re_detection_running = False
 
-            except BaseException as e:
+            except Exception as e:
                 error_message = traceback.format_exc()
                 logger.error(error_message)
                 if isLoc:

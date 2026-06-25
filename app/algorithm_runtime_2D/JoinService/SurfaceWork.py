@@ -42,20 +42,12 @@ class SurfaceWork(WorkBaseThread):
         for i in range(camera_image_grop_dict[0].left_index,camera_image_grop_dict[0].right_index):
             try:
                 intersections[i] = camera_image_grop_dict[0].intersections[i]
-            except:
+            except IndexError:
                 try:
                     intersections.append(camera_image_grop_dict[0].intersections[i])
                 except IndexError:
                     pass
         return intersections,left_index,right_index
-
-        # for item in camera_image_grop_dict:
-        #     print(fr" item = {item}")
-        #     print(item.intersections)
-        #     print(item.left_index)
-        #     print(item.right_index)
-        #     print(len(item.mask_list))
-
 
     def join_images(self, camera_image_grop_dict:Dict[str,CameraImageGrop],coil_id):
         camera_image_grop_list = [camera_image_grop_dict["U"], camera_image_grop_dict["M"], camera_image_grop_dict["D"]]
@@ -127,7 +119,7 @@ class SurfaceWork(WorkBaseThread):
         return max_image
 
     def run(self):
-        print(fr" SurfaceWork run {self.key}")
+        logger.info("2D surface %s worker started", self.key)
         self.cameras_wolk = [CameraWork(config) for config in self.config.camera_configs]
 
         while self._run_:
@@ -166,8 +158,8 @@ class SurfaceWork(WorkBaseThread):
                 # raise e
                 if DEBUG:
                     raise e
-            except BaseException as e:
-                logger.error(e)
+            except Exception as e:
+                logger.exception("2D surface %s failed coil_id=%s: %s", self.key, coil_id, e)
                 if DEBUG:
                     raise e
             self.set(None)

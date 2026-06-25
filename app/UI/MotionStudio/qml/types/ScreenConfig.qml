@@ -32,9 +32,13 @@ QtObject {
 
     // 获取屏幕的原始方向（例如 Portrait、Landscape 等）
     property int screenOrientation: Screen.primaryOrientation
+    property bool enableStartupLog: false
 
     // 打印屏幕信息（调试用）
     Component.onCompleted: {
+        if (!enableStartupLog) {
+            return
+        }
         console.log("Available Width:", desktopAvailableWidth);
         console.log("Available Height:", desktopAvailableHeight);
         console.log("Screen Width:", screenWidth);

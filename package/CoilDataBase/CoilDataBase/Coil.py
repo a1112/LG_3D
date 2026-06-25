@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import List, Optional
 
 from sqlalchemy import select
@@ -7,6 +8,8 @@ from sqlalchemy.orm import subqueryload
 from . import tool
 from .core import Session
 from .models import *
+
+log = logging.getLogger(__name__)
 
 
 def add_obj(obj):
@@ -188,7 +191,7 @@ def _sync_summary_counts(coil_ids: List[int]) -> None:
         from .CoilSummary import sync_summaries_range
         sync_summaries_range(coil_ids)
     except Exception as e:
-        print(f"sync_summaries_range failed: {e}")
+        log.warning("sync_summaries_range failed: %s", e)
 
 
 def _summary_coil_ids_from_defects(defects: List[dict]) -> List[int]:
@@ -235,8 +238,8 @@ def add_defects(defects: List[dict]):
     if not defects:
         return
 
-    print(fr"add_defects = {defects}")
     coil_ids = _summary_coil_ids_from_defects(defects)
+    log.debug("add_defects count=%s coil_ids=%s", len(defects), coil_ids)
     with Session() as session:
         session.add_all([_create_coil_defect(defect) for defect in defects])
         session.commit()
@@ -250,7 +253,13 @@ def replace_defects(defects: List[dict],
                     defect_name_prefix: Optional[str] = None) -> None:
     """Replace defects for one coil/surface, optionally scoped by name prefix."""
     if len(defects):
-        print(fr"replace_defects = {defects}")
+        log.debug(
+            "replace_defects count=%s secondary_coil_id=%s surface=%s prefix=%s",
+            len(defects),
+            secondary_coil_id,
+            surface,
+            defect_name_prefix,
+        )
     with Session() as session:
         query = session.query(CoilDefect).filter(
             CoilDefect.secondaryCoilId == secondary_coil_id,
@@ -277,7 +286,7 @@ def get_coil(num):
 
 
 def delete_coil(id_):
-    print(f"数据删除 {id_}")
+    log.info("delete coil data after secondary_coil_id=%s", id_)
     with Session() as session:
         session.query(Coil).filter(Coil.SecondaryCoilId > id_).delete()
         session.commit()
@@ -294,7 +303,6 @@ def get_coil_list(num, coil_id=None, by_coil=True):
 def get_grad_list(num):
     with Session() as session:
         query = get_grad_query(session)
-        print(query.count())
         return query[:num]
 
 

@@ -8,6 +8,7 @@ from PIL import Image
 
 import Globs
 from Base.tools.compressed_storage import save_compressed_image, save_compressed_numpy
+from Base.utils.Log import logger
 
 
 class ImageSaver:
@@ -63,7 +64,7 @@ class ImageSaver:
                 elif tp == "np":
                     save_compressed_numpy(data, path)
             except Exception as e:
-                print(f"Failed to save {path}: {e}")
+                logger.exception("Failed to save %s: %s", path, e)
             finally:
                 queue.task_done()
 

@@ -1,13 +1,14 @@
 import os
 import time
 
-
 from JoinService.JoinWork import JoinWork
 from configs import CONFIG
 from configs.JoinConfig import JoinConfig
+from utils.MultiprocessColorLogger import logger
 
 
 DEFAULT_MAX_HISTORY_COIL_COUNT = 200
+LOG_INTERVAL = 300
 
 
 def _get_max_history_coil_count() -> int:
@@ -15,9 +16,10 @@ def _get_max_history_coil_count() -> int:
     try:
         return max(int(raw_value), 1)
     except ValueError:
-        print(
-            f"invalid ALGORITHM_2D_MAX_HISTORY_COIL_COUNT={raw_value}, "
-            f"use {DEFAULT_MAX_HISTORY_COIL_COUNT}"
+        logger.warning(
+            "invalid ALGORITHM_2D_MAX_HISTORY_COIL_COUNT=%s, use %s",
+            raw_value,
+            DEFAULT_MAX_HISTORY_COIL_COUNT,
         )
         return DEFAULT_MAX_HISTORY_COIL_COUNT
 
@@ -28,10 +30,12 @@ MAX_HISTORY_COIL_COUNT = _get_max_history_coil_count()
 def _limit_history_start_coil(start_coil: int, max_coil: int) -> int:
     min_start_coil = max(max_coil - MAX_HISTORY_COIL_COUNT, 0)
     if start_coil < min_start_coil:
-        print(
-            f"history data exceeds limit, skip coil_id <= {min_start_coil}; "
-            f"last_processed={start_coil}, latest={max_coil}, "
-            f"max_history={MAX_HISTORY_COIL_COUNT}"
+        logger.info(
+            "history data exceeds limit, skip coil_id <= %s; last_processed=%s latest=%s max_history=%s",
+            min_start_coil,
+            start_coil,
+            max_coil,
+            MAX_HISTORY_COIL_COUNT,
         )
         return min_start_coil
 
@@ -42,35 +46,30 @@ def main():
     join_config = JoinConfig(CONFIG.JOIN_CONFIG_FILE)
     jw = JoinWork(join_config)
 
-    start_coil = join_config.get_last_coil()
-    start_coil = int(start_coil)
-    print(start_coil)
+    start_coil = int(join_config.get_last_coil())
+    logger.info("2D algorithm start from coil_id=%s", start_coil)
     max_coil = join_config.get_save_max_coil()
     start_coil = _limit_history_start_coil(start_coil, max_coil)
 
-    # 控制日志输出频率（5分钟一次）
     last_log_time = 0
-    LOG_INTERVAL = 300  # 5分钟 = 300秒
-
     while True:
         max_coil = join_config.get_save_max_coil()
         start_coil = _limit_history_start_coil(start_coil, max_coil)
-        can = join_config.can_(start_coil)
-        if ( not can ) and start_coil >= (max_coil-2) :
+        can_run = join_config.can_(start_coil)
+        if not can_run and start_coil >= (max_coil - 2):
             time.sleep(5)
             max_coil = join_config.get_save_max_coil()
-            # 只在每5分钟输出一次日志
             current_time = time.time()
             if current_time - last_log_time >= LOG_INTERVAL:
-                print(fr"not can {start_coil}  max_coil {max_coil}")
+                logger.info("2D algorithm waiting: start_coil=%s max_coil=%s", start_coil, max_coil)
                 last_log_time = current_time
             continue
+
         start_coil += 1
-        print(f"coil_id: {start_coil}")
+        logger.info("2D algorithm processing coil_id=%s", start_coil)
         jw.add_work(start_coil)
         jw.get()
-        print(f"coil_id: {start_coil} 处理完成")
-
+        logger.info("2D algorithm finished coil_id=%s", start_coil)
 
 
 if __name__ == "__main__":

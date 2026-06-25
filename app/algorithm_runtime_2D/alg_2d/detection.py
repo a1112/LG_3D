@@ -14,6 +14,7 @@ from alg_2d.classifier import (AREA_DEFECT_NAME_PREFIX,
                                classify_boxes)
 from configs import CONFIG
 from property.DataIntegration import ClipImageItem, DataIntegration
+from utils.MultiprocessColorLogger import logger
 
 
 class DetectionSave(Thread):
@@ -38,7 +39,7 @@ class DetectionSave(Thread):
                     image = Image.fromarray(image)
                 image.save(url)
             except Exception as e:
-                print(f"DetectionSave save failed: {e}")
+                logger.exception("DetectionSave save failed: %s", e)
 
 
 detect_save = DetectionSave()
@@ -81,12 +82,11 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder) -> None:
 
     tree = etree.ElementTree(annotation)
     xml_path = Path(output_folder) / (Path(file_name).stem + ".xml")
-    print(xml_path)
     tree.write(str(xml_path),
                pretty_print=True,
                xml_declaration=True,
                encoding="utf-8")
-    print(f"Saved XML to {xml_path}")
+    logger.debug("Saved XML to %s", xml_path)
 
 
 class CoilDetectionResult:
@@ -144,7 +144,7 @@ class CoilDetectionModel:
     def __init__(self, model_url=None, base_name=None):
         model_url = str(CONFIG.base_config_folder / "model" /
                         "CoilDetection_Area_JC.pt")
-        print(fr" CoilDetection model is {model_url}")
+        logger.info("CoilDetection model is %s", model_url)
         self.model_url = model_url
         self.model = YOLO(model_url)
 

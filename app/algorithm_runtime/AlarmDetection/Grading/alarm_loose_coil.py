@@ -1,6 +1,7 @@
 from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.property import alarmConfigProperty
 from Base.property.Base import DataIntegration
+from Base.utils.Log import logger
 
 
 def grading_alarm_loose_coil(data_integration: DataIntegration):
@@ -13,6 +14,6 @@ def grading_alarm_loose_coil(data_integration: DataIntegration):
         max_zero_width_mm = lineData.max_zero_width_mm
         if max_zero_width_mm > width:
             grad_msg += f"松卷检测最宽 {max_zero_width_mm} 超过限制值 {width}"
-            print(grad_msg)
+            logger.warning("loose coil grading exceeded: %s", grad_msg)
             grad = 3
     return AlarmGradResult(grad, grad_msg, loose_coil_config)

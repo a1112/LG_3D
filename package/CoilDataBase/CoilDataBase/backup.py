@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -9,6 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from .config import Config, get_url
 from .core import Session
 from .models import *
+
+log = logging.getLogger(__name__)
 
 
 def _current_url():
@@ -58,10 +61,10 @@ def _run_dump(cmd, save_path, env):
                 subprocess.run(cmd, stdout=output, env=env, check=True)
         else:
             subprocess.run(cmd, env=env, check=True)
-        print(f"database backup success: {save_path}")
+        log.info("database backup success: %s", save_path)
         return True
     except (OSError, subprocess.CalledProcessError) as e:
-        print(f"database backup failed: {e}")
+        log.error("database backup failed: %s", e)
         return False
 
 

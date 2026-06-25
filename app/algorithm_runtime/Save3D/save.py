@@ -216,14 +216,14 @@ def save_colored_obj(mesh, colors, filename):
 def toMesh(obj, managerQueue):
     cmdBalsam = serverConfigProperty.balsam_exe
     cmd = f"{cmdBalsam} --optimizeMeshes {obj}"
-    print(cmd)
+    logger.debug("optimize mesh command: %s", cmd)
     try:
         workPath = os.path.dirname(obj)
         env = os.environ.copy()
         subprocess.check_call(cmd, shell=True, cwd=workPath,env=env)
-    except BaseException as e:
-        print(e)
-    print(cmd + "end")
+    except Exception as e:
+        logger.exception("optimize mesh failed: obj=%s error=%s", obj, e)
+    logger.debug("optimize mesh finished: %s", obj)
     # os.system(cmd)
     # managerQueue.put(["cmd",cmd,workPath])
 
@@ -373,7 +373,7 @@ class D3Saver:
 
     def add_(self, *args):
         self.queue.put(*args)
-        print(f"3DSaver add_   队列 size {self.queue.qsize()}")
+        logger.debug("3DSaver queue size=%s", self.queue.qsize())
 
     @staticmethod
     def _save_3d(queue, managerQueue):
@@ -388,7 +388,7 @@ class D3Saver:
                 _save_3d(data, managerQueue)
             except Exception as e:
                 error_message = traceback.format_exc()
-                print(f"Failed to save  {error_message}")
+                logger.error("Failed to save 3D mesh: %s", error_message)
             finally:
                 queue.task_done()
 

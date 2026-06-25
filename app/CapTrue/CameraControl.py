@@ -111,6 +111,9 @@ class CameraControl(Thread):
             return status
 
         status["source"] = "camera"
+        live_params = self._read_live_params(capter)
+        if live_params:
+            status["params"] = live_params
         return status
 
     def set_2d_params(self, exposure_time=None, gain=None, save=True):

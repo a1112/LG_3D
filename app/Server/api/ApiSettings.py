@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -6,6 +7,8 @@ from pydantic import BaseModel
 
 from Base import CONFIG
 from .api_core import app
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["参数设置"])
 
@@ -15,7 +18,7 @@ async def set_defect_dict(data: dict):
     """
     设置缺陷字典
     """
-    print(data)
+    logger.info("set defect dict: keys=%s", len(data))
     CONFIG.defectClassesProperty.set_data(data)
 
 

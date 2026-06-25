@@ -146,10 +146,14 @@ async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
     npy_data = data_get.get_3d_data()
     try:
-        print(int(npy_data[int(y)][int(x)]))
-        return int(npy_data[int(y)][int(x)])
-    except (BaseException,) as e:
-        print(e)
+        if npy_data is None:
+            raise ValueError("3D data not found")
+        value = int(npy_data[int(y)][int(x)])
+        log.debug("height point surface=%s coil=%s x=%s y=%s value=%s", surface_key, coil_id, x, y, value)
+        return value
+    except Exception as e:
+        log.warning("height point failed: surface=%s coil=%s x=%s y=%s error=%s",
+                    surface_key, coil_id, x, y, e)
         return "error"
 
 
@@ -322,7 +326,7 @@ async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueF
     _, img_encoded = cv2.imencode('.png', output_image)
     img_bytes = io.BytesIO(img_encoded.tobytes())
     eT = time.time()
-    print(f"Processing Time: {eT - s_t:.2f} seconds")
+    log.debug("Area image generated: surface=%s coil=%s elapsed_s=%.2f", surface_key, coil_id, eT - s_t)
     # return StreamingResponse(img_bytes, media_type="image/png")
 
 
@@ -406,7 +410,8 @@ async def get_error(
             with open(error_cache_path, "rb") as f:
                 img_bytes = f.read()
             e_t = time.time()
-            print(f"Error cache hit: {e_t - sT:.3f}s")
+            log.debug("Error image cache hit: surface=%s coil=%s elapsed_s=%.3f",
+                      surface_key, coil_id, e_t - sT)
             return Response(content=img_bytes, media_type="image/png")
 
     except Exception as e:
@@ -450,7 +455,14 @@ async def get_error(
     max_value = median_z_int + threshold_up_units
 
     median_mm = median_z_int * scale_factor
-    print(f"Error dynamic: median={median_mm:.1f}mm, range=[{median_mm - threshold_down_mm:.1f}, {median_mm + threshold_up_mm:.1f}]mm")
+    log.debug(
+        "Error image dynamic baseline: surface=%s coil=%s median_mm=%.1f range=[%.1f, %.1f]",
+        surface_key,
+        coil_id,
+        median_mm,
+        median_mm - threshold_down_mm,
+        median_mm + threshold_up_mm,
+    )
 
     # 数据处理
     rSize = (int(npy_data.shape[1] * scale), int(npy_data.shape[0] * scale))
@@ -469,7 +481,8 @@ async def get_error(
     _, img_encoded = cv2.imencode('.png', output_image)
     img_bytes = io.BytesIO(img_encoded.tobytes())
     e_t = time.time()
-    print(f"Error generated dynamically: {e_t - sT:.3f}s (cache not found)")
+    log.debug("Error image generated dynamically: surface=%s coil=%s elapsed_s=%.3f cache=miss",
+              surface_key, coil_id, e_t - sT)
     return StreamingResponse(img_bytes, media_type="image/png")
 
 app.include_router(router)

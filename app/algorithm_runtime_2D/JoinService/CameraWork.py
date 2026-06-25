@@ -103,12 +103,16 @@ class CameraWork(WorkBaseThread):
             try:
                 camera_image_grop = self.horizontal_concat(images)
 
-                # print(max_image)
                 # max_image.save(fr"test_{self.config.key}.jpg")
                 self.set(camera_image_grop)
-            except BaseException as e:
-                print(e)
-                print(images)
+            except Exception as e:
+                logger.exception(
+                    "2D camera horizontal concat failed: coil_id=%s camera=%s image_count=%s error=%s",
+                    coil_id,
+                    self.config.key,
+                    len(images),
+                    e,
+                )
                 self.set(None)
                 if DEBUG:
                     raise e
@@ -142,12 +146,9 @@ class CameraWork(WorkBaseThread):
         #         draw_image = seg_results.get_draw()
         #         debug_config.save_simple_image(draw_image, f"seg_{self.config.key}_{i}.jpg")
         #
-        #         mask_image = seg_results.get_mask()
-        #         if mask_image is not None:
-        #             try:
-        #                 debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{i}.jpg")
-        #             except Exception as e:
-        #                 print(f"Error saving mask image: {e}")
+            #         mask_image = seg_results.get_mask()
+            #         if mask_image is not None:
+            #             debug_config.save_mask_image(mask_image, f"mask_{self.config.key}_{i}.jpg")
         #
         #     seg_result_list.append(seg_results)
         #
@@ -166,5 +167,5 @@ class CameraWork(WorkBaseThread):
                 image_list.append(seg_result.image)
         intersections = get_intersections(mask_list,fr"{self.coil_id}_{self.surface_key}_{self.config.key}")
         intersections =[ i * 10 for i in intersections]
-        print(fr"intersections {intersections}")
+        logger.debug("intersections %s", intersections)
         return hconcat_list(image_list,intersections)

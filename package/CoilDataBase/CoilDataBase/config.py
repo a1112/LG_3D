@@ -1,10 +1,12 @@
+import logging
 import os
 from enum import Enum
 from multiprocessing import current_process
 
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import URL, make_url
 
 DATABASE_URL_ENV = "COIL_DATABASE_URL"
+log = logging.getLogger(__name__)
 
 
 class DeriverList(Enum):
@@ -59,5 +61,9 @@ def get_url(config=Config) -> str:
     if not url:
         url = build_url(config)
     if current_process().name == "MainProcess":
-        print(url)
+        try:
+            safe_url = make_url(url).render_as_string(hide_password=True)
+        except Exception:
+            safe_url = "<invalid database url>"
+        log.debug("database url: %s", safe_url)
     return url

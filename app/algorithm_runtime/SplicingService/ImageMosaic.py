@@ -51,7 +51,7 @@ def leveling_2d(datas):
                 return
             media_gray = float(np.median(valid_gray))
             media_gray_list.append(media_gray)
-        print(f"media_gray_list {media_gray_list}")
+        logger.debug("leveling_2d medians=%s", media_gray_list)
         if len(media_gray_list) < 3 or media_gray_list[1] <= 0:
             logger.warning(f"leveling_2d skip invalid medians: {media_gray_list}")
             return
@@ -288,7 +288,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             try:
                 config_datas.append(data["json"])
             except KeyError:
-                print(fr"config_datas 数据加载失败")
+                logger.warning(
+                    f"config data missing: coil={data_integration.coilId}, surface={self.key}, "
+                    f"camera={dataFolder.folderName}"
+                )
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas
 
@@ -548,7 +551,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 error_message = traceback.format_exc()
                 logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
                 data_integration.add_server_detection_error(e)
-                print("continue Server")
+                logger.warning("ImageMosaic recovered after detection error, continue server")
             except Exception as e:
                 error_message = traceback.format_exc()
                 # raise e

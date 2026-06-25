@@ -53,6 +53,12 @@
 /app/Server/cache/base.py.backup
 /.gitignore_test_mode
 CONFIG_3D/test_mode_config.json
+
+# Local runtime artifacts
+/app/Communication/log/
+/debug_log/
+/pids/
+/work/generated_app_icons_preview.png
 /app/**/__pycache__/
 /package/CoilDataBase/**/__pycache__/
 **/__pycache__/
