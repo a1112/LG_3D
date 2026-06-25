@@ -76,7 +76,7 @@ def _create_classifier_model():
                 e,
             )
             return CoilClsModel(config=fallback_config)
-        raise e
+        raise
 
 
 def _get_classifier_model():

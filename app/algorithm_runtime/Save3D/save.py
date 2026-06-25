@@ -1,22 +1,42 @@
 ﻿import os
+import multiprocessing
 import subprocess
+import threading
 import time
-import traceback
+from multiprocessing import JoinableQueue as MulQueue
+from queue import Full, Queue as ThreadQueue
 
 from matplotlib.colors import Normalize
 from matplotlib.pyplot import get_cmap
 
+import numpy as np
 import open3d as o3d
 from scipy.spatial import Delaunay
 
 from Base.CONFIG import serverConfigProperty
-from threading import Thread
-import threading
-import multiprocessing
-from multiprocessing import JoinableQueue as MulQueue
-from queue import Queue as ThreadQueue
 from Base.utils.Log import logger
 import Globs
+
+
+DEFAULT_D3_QUEUE_PUT_TIMEOUT = 5.0
+DEFAULT_BALSAM_TIMEOUT = 300.0
+
+
+def _get_float_env(name: str, default: float) -> float:
+    raw_value = os.getenv(name, str(default))
+    try:
+        return max(float(raw_value), 0.1)
+    except ValueError:
+        logger.warning("invalid %s=%s, use %s", name, raw_value, default)
+        return default
+
+
+def _get_d3_queue_put_timeout() -> float:
+    return _get_float_env("LG3D_D3_SAVE_QUEUE_PUT_TIMEOUT", DEFAULT_D3_QUEUE_PUT_TIMEOUT)
+
+
+def _get_balsam_timeout() -> float:
+    return _get_float_env("LG3D_BALSAM_TIMEOUT", DEFAULT_BALSAM_TIMEOUT)
 
 
 def gaussian_kernel(size, sigma=1):
@@ -56,9 +76,6 @@ def apply_jet_colormap(z_coords, minV=None, maxV=None):
     norm = Normalize(vmin=minV, vmax=maxV, clip=True)
     cmap = get_cmap('jet')
     return cmap(norm(z_coords))
-
-
-import numpy as np
 
 
 def generate_mesh_from_point_cloud_pcl(point_cloud):
@@ -203,29 +220,20 @@ def save_colored_obj(mesh, colors, filename):
     return o3d.io.write_triangle_mesh(filename, mesh)
 
 
-    with open(filename, 'w') as f:
-        for vertex, color in zip(np.asarray(mesh.vertices), colors):
-            colorStr = f"{color[0]} {color[1]} {color[2]}"
-            f.write(f"v {vertex[0]} {vertex[1]} {colorStr} {color[2]}\n")
-        for triangle in np.asarray(mesh.triangles):
-            f.write(f"f {triangle[0] + 1} {triangle[1] + 1} {triangle[2] + 1}\n")
-        # for triangle in np.asarray(mesh.triangles) + 1:
-        #     f.write(f"f {triangle[0]} {triangle[1]} {triangle[2]}\n")
-
-
 def toMesh(obj, managerQueue):
     cmdBalsam = serverConfigProperty.balsam_exe
-    cmd = f"{cmdBalsam} --optimizeMeshes {obj}"
+    cmd = [str(cmdBalsam), "--optimizeMeshes", str(obj)]
     logger.debug("optimize mesh command: %s", cmd)
     try:
-        workPath = os.path.dirname(obj)
+        work_path = os.path.dirname(obj)
         env = os.environ.copy()
-        subprocess.check_call(cmd, shell=True, cwd=workPath,env=env)
+        balsam_timeout = _get_balsam_timeout()
+        subprocess.check_call(cmd, cwd=work_path, env=env, timeout=balsam_timeout)
+    except subprocess.TimeoutExpired:
+        logger.error("optimize mesh timed out after %ss: obj=%s", _get_balsam_timeout(), obj)
     except Exception as e:
         logger.exception("optimize mesh failed: obj=%s error=%s", obj, e)
     logger.debug("optimize mesh finished: %s", obj)
-    # os.system(cmd)
-    # managerQueue.put(["cmd",cmd,workPath])
 
 
 def _get_point_cloud_(data, managerQueue):
@@ -266,9 +274,6 @@ def _get_point_cloud_(data, managerQueue):
 
     mean_values2[2] = median_non_mm
     point_cloud[:, :] -= mean_values2
-    # print("point_cloud.mean")
-    # print(point_cloud.mean(axis=0))
-
     # 调试：记录过滤前的点云统计
     valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
     z_min, z_max = _format_z_range(valid_point_cloud)
@@ -346,8 +351,7 @@ def _save_3d(data, managerQueue):
     save_colored_obj(mesh, None, str(saveFile))
     t4 = time.time()
     logger.debug("save_colored_obj %s", t4 - t3)
-    Thread(target=toMesh,args=(str(saveFile), managerQueue)).start()
-    # toMesh(str(saveFile), managerQueue)
+    toMesh(str(saveFile), managerQueue)
     logger.debug("toMesh end")
 
 
@@ -360,6 +364,7 @@ class D3Saver:
         self.managerQueue = managerQueue
         self.num_processes = Globs.control.D3SaverWorkNum
         self.type_ = Globs.control.D3SaverThreadType
+        self.queue_put_timeout = _get_d3_queue_put_timeout()
         if self.type_ == "multiprocessing":
             self.queue = MulQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
         else:
@@ -377,9 +382,21 @@ class D3Saver:
             self.processes.append(process)
             process.start()
 
-    def add_(self, *args):
-        self.queue.put(*args)
-        logger.debug("3DSaver queue size=%s", self.queue.qsize())
+    def add_(self, *args) -> bool:
+        task = args[0] if len(args) == 1 else args
+        try:
+            self.queue.put(task, timeout=self.queue_put_timeout)
+            try:
+                queue_size = self.queue.qsize()
+            except (AttributeError, NotImplementedError):
+                queue_size = "unknown"
+            logger.debug("3DSaver queue size=%s", queue_size)
+            return True
+        except Full:
+            logger.error("3DSaver queue full, drop 3D mesh save task")
+        except Exception as e:
+            logger.exception("3DSaver queue put failed: %s", e)
+        return False
 
     @staticmethod
     def _save_3d(queue, managerQueue):
@@ -393,9 +410,8 @@ class D3Saver:
                     logger.debug("skip 3D mesh save because save_3d_obj is disabled")
                     continue
                 _save_3d(data, managerQueue)
-            except Exception as e:
-                error_message = traceback.format_exc()
-                logger.error("Failed to save 3D mesh: %s", error_message)
+            except Exception:
+                logger.exception("Failed to save 3D mesh")
             finally:
                 queue.task_done()
 

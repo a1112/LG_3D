@@ -26,7 +26,7 @@ def _safe_grading(data_integration: DataIntegration, label: str, grading_func):
         coil_id = getattr(data_integration, "coilId", "")
         surface = getattr(data_integration, "key", getattr(data_integration, "surface", ""))
         error_msg = f"{label}检测失败: {e}"
-        logger.warning(f"{coil_id} {surface} {error_msg}")
+        logger.warning("%s %s %s", coil_id, surface, error_msg)
         return AlarmGradResult(3, error_msg, "")
 
 
@@ -72,7 +72,7 @@ def grading(data_integration: DataIntegration):
         add_obj(alarm_info)
     except Exception as e:
         coil_id, surface = _data_integration_log_fields(data_integration)
-        logger.warning(f"{coil_id} {surface} 保存综合报警失败: {e}")
+        logger.warning("%s %s 保存综合报警失败: %s", coil_id, surface, e)
 
 
 def grading_all(data_integration_list: DataIntegrationList):
@@ -85,8 +85,8 @@ def grading_all(data_integration_list: DataIntegrationList):
         try:
             grading(dataIntegration)
         except Exception as e:
-            logger.warning(f"{coil_id} {surface} 综合报警分级失败: {e}")
+            logger.warning("%s %s 综合报警分级失败: %s", coil_id, surface, e)
         try:
             dataIntegration.alarmData.commit()
         except Exception as e:
-            logger.warning(f"{coil_id} {surface} 报警明细提交失败: {e}")
+            logger.warning("%s %s 报警明细提交失败: %s", coil_id, surface, e)

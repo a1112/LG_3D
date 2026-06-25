@@ -164,8 +164,6 @@ def add_defects(defects: List[dict]):
     Returns:
 
     """
-    if len(defects):
-        print(fr"add_defects = {defects}")
     with Session() as session:
         session.add_all([CoilDefect(
             secondaryCoilId=defect["secondaryCoilId"],
@@ -195,7 +193,6 @@ def get_coil(num):
 
 
 def delete_coil(id_):
-    print(f"数据删除 {id_}")
     with Session() as session:
         session.query(Coil).filter(Coil.SecondaryCoilId > id_).delete()
         session.commit()
@@ -212,7 +209,6 @@ def get_coil_list(num, coil_id=None, by_coil=True):
 def get_grad_list(num):
     with Session() as session:
         query = get_grad_query(session)
-        print(query.count())
         return query[:num]
 
 def search_by_coil_no(coil_no):

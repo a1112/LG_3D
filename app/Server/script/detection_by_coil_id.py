@@ -16,4 +16,3 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
     for i in range(44013, 55551):
         result = executor.submit(detection.detection_by_coil_id, i, save_base_folder=save_base_folder,save_only=True)
         # result = result.result()
-        # print(result)

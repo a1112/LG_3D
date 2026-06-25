@@ -110,8 +110,10 @@ class DataFolder(Globs.control.BaseDataFolder):
                 json_datas = [json_data for json_data, _ in filtered_pairs]
                 stem_list = [stem for _, stem in filtered_pairs]
             logger.warning(
-                f"use common valid 3D frames: coil={coil_id}, camera={self.folderName}, "
-                f"stems={stem_list}"
+                "use common valid 3D frames: coil=%s, camera=%s, stems=%s",
+                coil_id,
+                self.folderName,
+                stem_list,
             )
             return json_datas, stem_list
         return self.filter_empty_3d_frames(coil_id, json_datas, stem_list)
@@ -149,8 +151,11 @@ class DataFolder(Globs.control.BaseDataFolder):
                 valid_ratio = valid_points / frame_data.size if frame_data.size else 0
             except Exception as e:
                 logger.warning(
-                    f"skip unreadable 3D frame: coil={coil_id}, camera={self.folderName}, "
-                    f"stem={stem}, error={e}"
+                    "skip unreadable 3D frame: coil=%s, camera=%s, stem=%s, error=%s",
+                    coil_id,
+                    self.folderName,
+                    stem,
+                    e,
                 )
                 rejected.append(f"{stem}:error")
                 continue
@@ -162,13 +167,20 @@ class DataFolder(Globs.control.BaseDataFolder):
 
         if rejected:
             logger.warning(
-                f"filtered empty 3D frames: coil={coil_id}, camera={self.folderName}, "
-                f"rejected={rejected}, kept={kept_stems}"
+                "filtered empty 3D frames: coil=%s, camera=%s, rejected=%s, kept=%s",
+                coil_id,
+                self.folderName,
+                rejected,
+                kept_stems,
             )
         if len(kept_stems) < MIN_VALID_3D_FRAMES:
             logger.warning(
-                f"too few valid 3D frames after filtering, keep original frames: "
-                f"coil={coil_id}, camera={self.folderName}, kept={kept_stems}, original={stem_list}"
+                "too few valid 3D frames after filtering, keep original frames: "
+                "coil=%s, camera=%s, kept=%s, original=%s",
+                coil_id,
+                self.folderName,
+                kept_stems,
+                stem_list,
             )
             return json_datas, stem_list
         return kept_json_datas, kept_stems
@@ -304,7 +316,7 @@ class DataFolder(Globs.control.BaseDataFolder):
             except Exception as e:
                 logger.error("Error in DataFolder %s: %s", coil_id, e)
                 if isLoc and Globs.control.debug_raise:
-                    raise e
+                    raise
             finally:
                 logger.info("DataFolder %s end", coil_id)
                 self.consumer.put(data)

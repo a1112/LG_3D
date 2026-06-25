@@ -108,7 +108,6 @@ def crop_max_image_black_edges(key, image, star_pos):
             break
         right_index -= 1
     logger.debug("r_index %s %s %s %s", key, right_index, w - right_index, column_no_black_count[right_index])
-    # print(f"{key} {max_l} {maxR} left_index {left_index}  right_index {w-right_index}")
     # showImage(image)
     # 保存裁剪后的图像
     if "S_D" in key:
@@ -120,7 +119,6 @@ def crop_max_image_black_edges(key, image, star_pos):
         width = right_index - x
     else:
         width = right_index - x-20
-    # print(f"裁剪 {key} {[x, 0, width, h]}")
     # tools.tool.showImage(image[:, x:x + width],f"{key}_{[x, 0, w-(width+x), h]}")
     return [x, 0, width, h]
 
@@ -174,9 +172,6 @@ def getDiff(abs_diff, num=0):
 
 def find_cross_points(projections):
     cross_points = []
-    # print("projections")
-    # print(projections)
-    # input()
     for i in range(1, len(projections)):
         l_ = projections[i - 1]
         r_ = projections[i]

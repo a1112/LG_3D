@@ -21,7 +21,7 @@ def _load_checkpoint(checkpoint_path: Optional[Path]) -> Optional[dict[str, Any]
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
         return checkpoint if isinstance(checkpoint, dict) else None
     except Exception as e:
-        logger.warning(f"读取分类模型权重失败: {e}")
+        logger.warning("读取分类模型权重失败: %s", e)
         return None
 
 
@@ -60,8 +60,8 @@ def _extract_names_from_checkpoint(checkpoint: Optional[dict[str, Any]]) -> list
         if isinstance(value, dict):
             try:
                 return [str(value[idx]) for idx in sorted(value)]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("checkpoint class names mapping parse failed for %s: %s", key, e)
         if isinstance(value, (list, tuple)):
             return [str(item) for item in value]
 
@@ -74,8 +74,8 @@ def _extract_names_from_checkpoint(checkpoint: Optional[dict[str, Any]]) -> list
                     return [normalized[idx] for idx in sorted(normalized)]
                 normalized = {int(v): str(k) for k, v in value.items()}
                 return [normalized[idx] for idx in sorted(normalized)]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("checkpoint %s parse failed: %s", key, e)
 
     return []
 
@@ -132,24 +132,24 @@ class CoilClsModel:
                 try:
                     self.config["input_size"] = tuple(config_data["input_size"])
                 except Exception as e:
-                    logger.error(f"classifier.json input_size 解析失败: {e}")
+                    logger.error("classifier.json input_size 解析失败: %s", e)
             if "mean" in config_data:
                 try:
                     self.config["mean"] = tuple(config_data["mean"])
                 except Exception as e:
-                    logger.error(f"classifier.json mean 解析失败: {e}")
+                    logger.error("classifier.json mean 解析失败: %s", e)
             if "std" in config_data:
                 try:
                     self.config["std"] = tuple(config_data["std"])
                 except Exception as e:
-                    logger.error(f"classifier.json std 解析失败: {e}")
+                    logger.error("classifier.json std 解析失败: %s", e)
 
         if self.in_chans == 1 and (config_data is None or "input_size" not in config_data):
             self.config["input_size"] = (1, 224, 224)
             self.config["mean"] = (0.485,)
             self.config["std"] = (0.229,)
         logger.debug(self.config)
-        logger.info(f"分类模型类别顺序: {self.names}")
+        logger.info("分类模型类别顺序: %s", self.names)
         self.transform = create_transform(**self.config)
 
     def image_to_tensor(self, image):

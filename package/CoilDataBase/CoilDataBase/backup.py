@@ -12,6 +12,16 @@ from .core import Session
 from .models import *
 
 log = logging.getLogger(__name__)
+DEFAULT_BACKUP_TIMEOUT = 3600.0
+
+
+def _get_backup_timeout() -> float:
+    raw_value = os.getenv("COIL_DATABASE_BACKUP_TIMEOUT", str(DEFAULT_BACKUP_TIMEOUT))
+    try:
+        return max(float(raw_value), 1.0)
+    except ValueError:
+        log.warning("invalid COIL_DATABASE_BACKUP_TIMEOUT=%s, use %s", raw_value, DEFAULT_BACKUP_TIMEOUT)
+        return DEFAULT_BACKUP_TIMEOUT
 
 
 def _current_url():
@@ -54,15 +64,19 @@ def get_pg_dump_cmd(save_file, pg_dump_exe="pg_dump"):
 
 def _run_dump(cmd, save_path, env):
     save_path.parent.mkdir(parents=True, exist_ok=True)
+    timeout = _get_backup_timeout()
     try:
         executable = Path(cmd[0]).name.lower()
         if executable.startswith("mysqldump"):
             with save_path.open("w", encoding="utf-8") as output:
-                subprocess.run(cmd, stdout=output, env=env, check=True)
+                subprocess.run(cmd, stdout=output, env=env, check=True, timeout=timeout)
         else:
-            subprocess.run(cmd, env=env, check=True)
+            subprocess.run(cmd, env=env, check=True, timeout=timeout)
         log.info("database backup success: %s", save_path)
         return True
+    except subprocess.TimeoutExpired:
+        log.error("database backup timed out after %ss: %s", timeout, save_path)
+        return False
     except (OSError, subprocess.CalledProcessError) as e:
         log.error("database backup failed: %s", e)
         return False

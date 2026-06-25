@@ -47,7 +47,7 @@ def merge_rectangles(rectangles):
     """
     合并重叠的矩形。
     """
-    logger.debug(f"merge_rectangles count={len(rectangles)}")
+    logger.debug("merge_rectangles count=%s", len(rectangles))
     if not rectangles:
         return []
 
@@ -275,7 +275,6 @@ def detection_by_image(join_image, mask_image, clip_num=10, mask_threshold=0.1, 
 
     clip_image_list, clip_mask_list, clip_info_list = get_clip_images(join_image, mask_image, clip_num=clip_num,
                                                                       mask_threshold=mask_threshold)
-    # print(ccm.predictImage(clip_image_list))
     res_list = cdm_.predict(clip_image_list)
     if control.detection_model == DetectionType.DetectionAndClassifiers:
         sub_info_list,sub_image_list = classifiers_data(clip_image_list, res_list, pil_image, clip_info_list)

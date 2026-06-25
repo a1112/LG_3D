@@ -1,10 +1,9 @@
 import datetime
 import os
 import time
-import traceback
 
 import logging
-from queue import Queue
+from collections import deque
 from typing import List, Tuple
 
 import AlarmDetection
@@ -26,6 +25,7 @@ import Globs
 
 
 DEFAULT_MAX_HISTORY_COIL_COUNT = 500
+MAX_RE_DETECTION_MESSAGE_COUNT = 50
 
 
 def _get_max_history_coil_count() -> int:
@@ -65,7 +65,7 @@ class ImageMosaicThread(Thread):
         self.re_detection_done: int = 0
         self.re_detection_running: bool = False
         self.re_detection_error: str = ""
-        self.reDetectionMsg = Queue()
+        self.re_detection_messages = deque(maxlen=MAX_RE_DETECTION_MESSAGE_COUNT)
 
         for surface in serverConfigProperty.surface:
             self.imageMosaicList.append(ImageMosaic(surface, self.managerQueue, logger_process))
@@ -118,7 +118,7 @@ class ImageMosaicThread(Thread):
         defection_time1 = time.time()
         less_num = max_secondary_coil_id - secondary_coil.Id
         if max_secondary_coil_id - secondary_coil.Id > 2:
-            logger.debug("清理数据" + str(secondary_coil.Id))
+            logger.debug("clear old coil data SecondaryCoilId=%s", secondary_coil.Id)
             coil_data_base_tool.clear_by_coil_id(secondary_coil.Id)
         if check_detection and less_num < 1:
             if not self.check_detection_end(secondary_coil.Id):
@@ -223,7 +223,7 @@ class ImageMosaicThread(Thread):
                     except Exception as e:
                         logger.error("process secondary coil failed: %s", e)
                         if isLoc:
-                            raise e
+                            raise
 
                 # 在线数据处理完成后，再按队列处理重新识别任务（优先级低于新数据）
                 if not list_data and self.re_detection_queue:
@@ -252,16 +252,15 @@ class ImageMosaicThread(Thread):
                         logger.error("re-detection queue failed SecondaryCoilId=%s: %s", re_coil_id, e)
                         self.re_detection_error = str(e)
                         if isLoc:
-                            raise e
+                            raise
                     finally:
                         if not self.re_detection_queue:
                             self.re_detection_running = False
 
-            except Exception as e:
-                error_message = traceback.format_exc()
-                logger.error(error_message)
+            except Exception:
+                logger.exception("ImageMosaicThread loop failed")
                 if isLoc:
-                    raise e
+                    raise
             finally:
                 import torch
                 torch.cuda.empty_cache()
@@ -320,12 +319,12 @@ class ImageMosaicThread(Thread):
                 except Exception as e:
                     logger.error("history recompute SecondaryCoilId=%s failed: %s", secondary_coil.Id, e)
                     if isLoc:
-                        raise e
+                        raise
 
         logger.debug("历史数据重算完成")
 
     def add_msg(self, msg, level=logging.DEBUG):
-        self.reDetectionMsg.put({
+        self.re_detection_messages.append({
             "Base": "ImageMosaicThread",
             "time": datetime.datetime.now().strftime(Globs.control.exportTimeFormat),
             "msg": msg,
@@ -374,5 +373,6 @@ class ImageMosaicThread(Thread):
             "running": self.re_detection_running,
             "error": self.re_detection_error,
             "queue": list(self.re_detection_queue),
+            "messages": list(self.re_detection_messages),
             "progress": progress,
         }

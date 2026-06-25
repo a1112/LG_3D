@@ -48,7 +48,6 @@ class SickCamera:
 
 
     def get_camera_config(self):
-        # print(self.camera.remote_device.node_map.load_xml_from_file)
         re_dict = {}
         for itemName in dir(self.camera.remote_device.node_map):
             try:

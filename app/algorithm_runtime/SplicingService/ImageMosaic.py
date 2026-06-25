@@ -1,11 +1,8 @@
 import asyncio
 import json
-import traceback
 import time
 from pathlib import Path
-import logging
 from typing import List, Optional
-import six
 
 import cv2
 import numpy as np
@@ -233,7 +230,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         obj_file = self.saveFolder / coil_id / "3D.obj"
         if self.save3D_data:
-            self.d3Saver.add_([
+            queued = self.d3Saver.add_([
                 coil_id,
                 npy__,
                 mask_image,
@@ -243,6 +240,8 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 data_integration.median_3d_mm,
                 data_integration.get_bd_xyz(),
             ])
+            if not queued:
+                logger.error("3D mesh save queue failed for %s/%s", data_integration.key, coil_id)
         return non_zero_elements
 
     def join_saver(self):
@@ -571,16 +570,13 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                     time.perf_counter() - total_start,
                 )
             except ServerDetectionException as e:
-                error_message = traceback.format_exc()
-                logging.error("Error in ImageMosaic %s: %s", data_integration.coilId, error_message)
+                logger.exception("Error in ImageMosaic %s", data_integration.coilId)
                 data_integration.add_server_detection_error(e)
                 logger.warning("ImageMosaic recovered after detection error, continue server")
-            except Exception as e:
-                error_message = traceback.format_exc()
-                # raise e
-                logging.error("Error in ImageMosaic %s: %s", data_integration.coilId, error_message)
+            except Exception:
+                logger.exception("Error in ImageMosaic %s", data_integration.coilId)
                 if isLoc and Globs.control.debug_raise:
-                    six.reraise(Exception, e)
+                    raise
 
             finally:
                 self.consumer.put(data_integration)

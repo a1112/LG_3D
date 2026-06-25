@@ -99,7 +99,8 @@ class DiskAreaImageCache(MemoryImageCache):
         """清理旧版本的瓦片缓存（根目录下的 0_0.jpg 等文件）"""
         try:
             surfaces = serverConfigProperty.surfaceConfigPropertyDict.values()
-        except Exception:
+        except Exception as e:
+            logging.debug("area cache cleanup skipped, config unavailable: %s", e)
             return
 
         cleaned = 0

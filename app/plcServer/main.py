@@ -14,5 +14,4 @@ if __name__=="__main__":
         connect_plc(config.plcForwarderUrl, config.plcForwarderRack, config.plcForwarderSlot)
         # from server import forward_request
         # c=forward_request("DB26.2","word", 2)
-        # print(c)
     uvicorn.run(app=app, host=config.server_ip, port=config.server_port)

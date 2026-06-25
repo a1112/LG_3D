@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-import traceback
 
 from fastapi import APIRouter, WebSocket
 from fastapi.responses import PlainTextResponse, StreamingResponse
@@ -31,9 +30,8 @@ def _stream_xlsx(output, file_size: int, filename: str) -> StreamingResponse:
 
 
 def _export_error_response(exc: Exception) -> PlainTextResponse:
-    detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    logger.error("export xlsx failed: %s", detail)
-    return PlainTextResponse(detail, status_code=500)
+    logger.exception("export xlsx failed: %s", exc)
+    return PlainTextResponse("export xlsx failed", status_code=500)
 
 
 @router.get("/save_to_sql/{sql_file:path}")

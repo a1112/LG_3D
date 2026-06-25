@@ -1,8 +1,39 @@
+import os
 import logging
 import logging.handlers
 from pathlib import Path
 from multiprocessing import Process, Queue
-from queue import Empty
+from queue import Empty, Full
+
+
+DEFAULT_LOG_QUEUE_MAXSIZE = 5000
+ERROR_LOG_ENQUEUE_TIMEOUT = 0.2
+
+
+def _get_log_queue_maxsize() -> int:
+    raw_value = os.getenv("LG3D_LOGGER_PROCESS_QUEUE_MAXSIZE", str(DEFAULT_LOG_QUEUE_MAXSIZE))
+    try:
+        return max(int(raw_value), 1)
+    except ValueError:
+        logging.getLogger(__name__).warning(
+            "invalid LG3D_LOGGER_PROCESS_QUEUE_MAXSIZE=%s, use %s",
+            raw_value,
+            DEFAULT_LOG_QUEUE_MAXSIZE,
+        )
+        return DEFAULT_LOG_QUEUE_MAXSIZE
+
+
+class DroppingQueueHandler(logging.handlers.QueueHandler):
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except Full:
+            if record.levelno < logging.ERROR:
+                return
+            try:
+                self.queue.put(record, timeout=ERROR_LOG_ENQUEUE_TIMEOUT)
+            except Full:
+                return
 
 
 class LoggerProcess:
@@ -10,7 +41,7 @@ class LoggerProcess:
     用于管理多进程日志记录的类
     """
 
-    def __init__(self, log_file="app.log", log_level=logging.INFO, queue_timeout=1):
+    def __init__(self, log_file="app.log", log_level=logging.INFO, queue_timeout=1, queue_maxsize=None):
         """
         初始化 LoggerProcess
         :param log_file: 日志文件路径
@@ -20,7 +51,8 @@ class LoggerProcess:
         self.log_file = log_file
         self.log_level = log_level
         self.queue_timeout = queue_timeout
-        self.log_queue = Queue()
+        self.queue_maxsize = queue_maxsize or _get_log_queue_maxsize()
+        self.log_queue = Queue(maxsize=self.queue_maxsize)
         self.process = Process(target=self._log_listener)
 
     def _log_listener(self):
@@ -50,21 +82,34 @@ class LoggerProcess:
         """
         启动日志进程
         """
-        self.process.start()
+        if not self.process.is_alive():
+            self.process.start()
 
     def stop(self):
         """
         停止日志进程
         """
-        self.log_queue.put(None)  # 通知日志进程退出
-        self.process.join()
+        if not self.process.is_alive():
+            return
+        try:
+            self.log_queue.put(None, timeout=self.queue_timeout)
+        except Full:
+            self.process.terminate()
+            self.process.join(timeout=5)
+            return
+        self.process.join(timeout=5)
+        if self.process.is_alive():
+            self.process.terminate()
+            self.process.join(timeout=5)
 
     def get_logger(self):
         """
         获取一个可用于发送日志的 Logger 对象
         """
-        queue_handler = logging.handlers.QueueHandler(self.log_queue)
+        queue_handler = DroppingQueueHandler(self.log_queue)
         logger = logging.getLogger(f"ProcessLogger-{id(self)}")
         logger.setLevel(self.log_level)
-        logger.addHandler(queue_handler)
+        logger.propagate = False
+        if not any(isinstance(handler, DroppingQueueHandler) for handler in logger.handlers):
+            logger.addHandler(queue_handler)
         return logger

@@ -31,7 +31,7 @@ class AlarmData:
         try:
             self.flatRollData.commit()
         except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
-            logger.warning(f"skip invalid flat roll data before taper line commit: {e}")
+            logger.warning("skip invalid flat roll data before taper line commit: %s", e)
 
     def commit(self):
         self._commit_flat_roll_data()
@@ -43,7 +43,7 @@ class AlarmData:
         elif isinstance(line_data_dict, (list, tuple, set)):
             line_data_values = line_data_dict
         else:
-            logger.warning(f"skip invalid taper line data container: {type(line_data_dict).__name__}")
+            logger.warning("skip invalid taper line data container: %s", type(line_data_dict).__name__)
             line_data_values = []
         for lineData in line_data_values:
             try:
@@ -52,12 +52,12 @@ class AlarmData:
                 if should_store_model_name("PointData"):
                     model_list.extend(lineData.all_point_data_model(self.data_integration))
             except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
-                logger.warning(f"skip invalid taper line data: {e}")
+                logger.warning("skip invalid taper line data: %s", e)
         if model_list:
             try:
                 Alarm.addObj(model_list)
             except Exception as e:
-                logger.warning(f"skip saving taper line models: {e}")
+                logger.warning("skip saving taper line models: %s", e)
 
     def set_line_data_dict(self, line_data):
         self.lineDataDict = line_data or {}

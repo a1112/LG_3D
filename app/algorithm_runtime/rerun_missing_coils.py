@@ -56,7 +56,7 @@ def main() -> None:
     logger_process.start()
 
     try:
-        queue: multiprocessing.Queue = multiprocessing.Queue()
+        queue: multiprocessing.Queue = multiprocessing.Queue(maxsize=100)
         image_mosaic_thread = ImageMosaicThread(queue, logger_process)
         # 不启动线程, 直接在当前进程同步执行按差集重算逻辑
         image_mosaic_thread.run_missing_coils_by_diff(

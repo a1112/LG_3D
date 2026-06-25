@@ -32,7 +32,6 @@ Item {
 
 
     function list_model_to_json(list_model){
-        print("list_model_to_json",list_model )
         let res=[]
         for_list_model(list_model,(item)=>{
                            let item_value={}

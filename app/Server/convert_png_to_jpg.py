@@ -42,11 +42,11 @@ def convert_png_to_jpg(source_path: Path, quality: int = 85) -> bool:
         # 保存为 JPG
         img.save(jpg_path, quality=quality, optimize=True)
 
-        logger.info(f"Converted: {source_path} -> {jpg_path}")
+        logger.info("Converted: %s -> %s", source_path, jpg_path)
         return True
 
     except Exception as e:
-        logger.error(f"Failed to convert {source_path}: {e}")
+        logger.error("Failed to convert %s: %s", source_path, e)
         return False
 
 
@@ -69,12 +69,12 @@ def migrate_directory(root_dir: Path, remove_png: bool = False) -> dict:
     }
 
     if not root_dir.exists():
-        logger.error(f"Directory not found: {root_dir}")
+        logger.error("Directory not found: %s", root_dir)
         return stats
 
     # 查找所有 PNG 文件
     png_files = list(root_dir.rglob('*.png'))
-    logger.info(f"Found {len(png_files)} PNG files in {root_dir}")
+    logger.info("Found %s PNG files in %s", len(png_files), root_dir)
 
     for png_path in png_files:
         # 跳过 mask 文件（这些需要保留 PNG 格式的透明通道）
@@ -86,7 +86,7 @@ def migrate_directory(root_dir: Path, remove_png: bool = False) -> dict:
         jpg_path = png_path.with_suffix('.jpg')
         if jpg_path.exists():
             stats['skipped'] += 1
-            logger.debug(f"JPG already exists, skipping: {png_path}")
+            logger.debug("JPG already exists, skipping: %s", png_path)
             continue
 
         # 转换
@@ -96,9 +96,9 @@ def migrate_directory(root_dir: Path, remove_png: bool = False) -> dict:
             if remove_png:
                 try:
                     png_path.unlink()
-                    logger.info(f"Removed: {png_path}")
+                    logger.info("Removed: %s", png_path)
                 except Exception as e:
-                    logger.error(f"Failed to remove {png_path}: {e}")
+                    logger.error("Failed to remove %s: %s", png_path, e)
         else:
             stats['failed'] += 1
             stats['errors'].append(str(png_path))
@@ -116,11 +116,11 @@ def main():
     # 检查目录是否存在
     if not save_s_dir.exists():
         # 尝试从环境变量或配置文件获取
-        logger.error(f"Default directory not found: {save_s_dir}")
+        logger.error("Default directory not found: %s", save_s_dir)
         logger.info("Please specify the correct directory in the script")
         return
 
-    logger.info(f"Starting PNG to JPG migration for: {save_s_dir}")
+    logger.info("Starting PNG to JPG migration for: %s", save_s_dir)
     logger.info("=" * 50)
 
     # 执行迁移（不删除原 PNG 文件，确认无误后再手动删除）
@@ -128,16 +128,16 @@ def main():
 
     logger.info("=" * 50)
     logger.info("Migration Summary:")
-    logger.info(f"  Converted: {stats['converted']}")
-    logger.info(f"  Skipped:   {stats['skipped']}")
-    logger.info(f"  Failed:    {stats['failed']}")
+    logger.info("  Converted: %s", stats['converted'])
+    logger.info("  Skipped:   %s", stats['skipped'])
+    logger.info("  Failed:    %s", stats['failed'])
 
     if stats['errors']:
-        logger.warning(f"Failed files ({len(stats['errors'])}):")
+        logger.warning("Failed files (%s):", len(stats['errors']))
         for err in stats['errors'][:10]:  # 只显示前 10 个
-            logger.warning(f"  - {err}")
+            logger.warning("  - %s", err)
         if len(stats['errors']) > 10:
-            logger.warning(f"  ... and {len(stats['errors']) - 10} more")
+            logger.warning("  ... and %s more", len(stats['errors']) - 10)
 
     logger.info("=" * 50)
     logger.info("Migration completed!")

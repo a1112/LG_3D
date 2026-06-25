@@ -43,20 +43,12 @@ class AlarmLooseData:
             lineData2: LineData
             ray1 = lineData1.ray_line_mm
             ray2 = lineData2.ray_line_mm
-            # print(lineData1.zero_mm)
-            # print(ray1.shape)
-            # print(ray2.shape)
-            # print(ray1)
             lineData1.none_data_sub
             lineData2.none_data_sub
-            # print(lineData1.none_data_sub)
-            # print(lineData2.none_data_sub)
             # # grouped_subsegments = group_consecutive(subsegment)
             # # oldHasdata = False
             # # for index,point in enumerate(ray1):
             # #     hasData=lineData1.mmNoneData(point[2])
-            # input()
-
 
 def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
     for d in data_integration.detectionLineData:

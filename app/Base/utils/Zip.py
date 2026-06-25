@@ -120,7 +120,7 @@ def _zip_save_data_(folder):
         except Exception as e:
             if _is_file_access_error(e):
                 return False
-            raise e
+            raise
     npy_file = folder / "3D.npy"
     if npy_file.exists():
         try:
@@ -130,7 +130,7 @@ def _zip_save_data_(folder):
         except Exception as e:
             if _is_file_access_error(e):
                 return False
-            raise e
+            raise
     else:
         return False
     return True

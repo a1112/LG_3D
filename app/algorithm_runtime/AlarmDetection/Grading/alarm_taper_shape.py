@@ -662,7 +662,7 @@ def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
     try:
         add_obj(alarm_taper_shape)
     except Exception as e:
-        logger.warning(f"save taper alarm detail failed: {e}")
+        logger.warning("save taper alarm detail failed: %s", e)
         return f"塔形明细保存失败: {e}"
     return ""
 
@@ -676,7 +676,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         taper_config_item = taper_shape_config.get_config()
         warning = f"塔形配置读取失败，使用默认规则: {e}"
         coil_id, surface = _data_integration_log_fields(data_integration)
-        logger.warning(f"{coil_id} {surface} {warning}")
+        logger.warning("%s %s %s", coil_id, surface, warning)
         _append_taper_warning(data_integration, warning)
     name, height_limit_list, inner, outer, info = taper_config_item.get_config()
     height_limits = _height_limits(height_limit_list)

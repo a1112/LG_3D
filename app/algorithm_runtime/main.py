@@ -105,13 +105,13 @@ def _run_main() -> None:
     try:
         from ultralytics.utils import LOGGER as ULTRA_LOGGER
         ULTRA_LOGGER.setLevel(logging.WARNING)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.debug("failed to adjust ultralytics logger level: %s", e)
     Logger("算法")
     logger_process = LoggerProcess(log_file="log/app.log")
     logger_process.start()
 
-    queue = multiprocessing.Queue()
+    queue = multiprocessing.Queue(maxsize=100)
 
     image_mosaic_thread = ImageMosaicThread(queue, logger_process)
     image_mosaic_thread.start()
@@ -134,8 +134,8 @@ def _run_main() -> None:
             try:
                 image_mosaic_thread.stop()
                 image_mosaic_thread.join(timeout=5)
-            except Exception:
-                pass
+            except Exception as e:
+                logging.exception("failed to stop image mosaic thread: %s", e)
         if zip_server is not None and zip_server.is_alive():
             zip_server.terminate()
             zip_server.join(timeout=5)

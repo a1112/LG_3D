@@ -124,7 +124,7 @@ class CameraWork(WorkBaseThread):
                 )
                 self.set(None)
                 if DEBUG:
-                    raise e
+                    raise
 
     @DetectionSpeedRecord.timing_decorator("图像拼接 ")
     def horizontal_concat(self,images):

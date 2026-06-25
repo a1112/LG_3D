@@ -32,8 +32,8 @@ def _should_use_testdata() -> bool:
                 config = json.load(f)
                 if config.get("test_mode", False):
                     return True
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug("test mode config read failed: %s", e)
     
     # 方式3: 检查环境变量
     import os
@@ -44,8 +44,8 @@ def _should_use_testdata() -> bool:
     try:
         from Base import CONFIG
         return CONFIG.developer_mode and CONFIG.isLoc
-    except Exception:
-        pass
+    except Exception as e:
+        logging.debug("developer mode config check failed: %s", e)
     
     return False
 
@@ -54,7 +54,8 @@ def _config_dir() -> Path:
     try:
         from Base import CONFIG
         return Path(CONFIG.base_config_folder)
-    except Exception:
+    except Exception as e:
+        logging.debug("CONFIG base folder unavailable, use env fallback: %s", e)
         return Path(os.getenv("CONFIG_3D_DIR", r"D:\CONFIG_3D"))
 
 

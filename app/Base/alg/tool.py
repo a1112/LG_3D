@@ -58,5 +58,4 @@ def get_image_box(image, xmin, ymin, xmax, ymax, out_size_=5,min_size=60):
         out_size_w = abs(min_size-image_width)//2
     if image_height < min_size:
         out_size_h = abs(min_size-image_height)//2
-    # print(f"image_width {image_width} image_height:{image_height} out_size_w:{out_size_w} image_height: {out_size_h}")
     return max(xmin - out_size_w, 0), max(ymin - out_size_h, 0), min(xmax + out_size_w, w), min(ymax + out_size_h, h)

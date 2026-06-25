@@ -41,8 +41,8 @@ class SurfaceConfigProperty:
             try:
                 for candidate in sorted(preview_dir.glob("AREA.*")):
                     return str(candidate)
-            except Exception:
-                pass
+            except Exception as e:
+                logging.debug("AREA preview lookup failed for %s: %s", preview_dir, e)
         png_path = preview_dir / f"{type_}.png"
         if png_path.exists():
             return str(png_path)

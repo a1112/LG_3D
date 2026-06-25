@@ -1,7 +1,8 @@
+import os
 import threading
 import multiprocessing
 from multiprocessing import JoinableQueue as MulQueue
-from queue import Queue as ThreadQueue
+from queue import Full, Queue as ThreadQueue
 
 import numpy as np
 from PIL import Image
@@ -9,6 +10,22 @@ from PIL import Image
 import Globs
 from Base.tools.compressed_storage import save_compressed_image, save_compressed_numpy
 from Base.utils.Log import logger
+
+
+DEFAULT_SAVE_QUEUE_PUT_TIMEOUT = 5.0
+
+
+def _get_save_queue_put_timeout() -> float:
+    raw_value = os.getenv("LG3D_IMAGE_SAVE_QUEUE_PUT_TIMEOUT", str(DEFAULT_SAVE_QUEUE_PUT_TIMEOUT))
+    try:
+        return max(float(raw_value), 0.1)
+    except ValueError:
+        logger.warning(
+            "invalid LG3D_IMAGE_SAVE_QUEUE_PUT_TIMEOUT=%s, use %s",
+            raw_value,
+            DEFAULT_SAVE_QUEUE_PUT_TIMEOUT,
+        )
+        return DEFAULT_SAVE_QUEUE_PUT_TIMEOUT
 
 
 class ImageSaver:
@@ -21,6 +38,7 @@ class ImageSaver:
         self.managerQueue = managerQueue
         self.num_processes = Globs.control.ImageSaverWorkNum
         self.type_ = Globs.control.ImageSaverThreadType
+        self.queue_put_timeout = _get_save_queue_put_timeout()
         if self.type_ == "multiprocessing":
             self.queue = MulQueue(maxsize=Globs.control.ImageSaverQueueSize)
         else:
@@ -45,10 +63,20 @@ class ImageSaver:
             return self.add_image(obj, path)
 
     def add_image(self, image, path):
-        self.queue.put((image, path, "pil"))
+        return self._put_save_task((image, path, "pil"), path)
 
     def add_numpy(self, npy, path):
-        self.queue.put((npy, path, "np"))
+        return self._put_save_task((npy, path, "np"), path)
+
+    def _put_save_task(self, task, path) -> bool:
+        try:
+            self.queue.put(task, timeout=self.queue_put_timeout)
+            return True
+        except Full:
+            logger.error("image save queue full, drop save task path=%s", path)
+        except Exception as e:
+            logger.exception("image save queue put failed path=%s: %s", path, e)
+        return False
 
     @staticmethod
     def _save_images(queue):

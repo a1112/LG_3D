@@ -12,6 +12,16 @@ from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+DEFAULT_RCC_TIMEOUT = 60.0
+
+
+def _get_rcc_timeout() -> float:
+    raw_value = os.environ.get("MOTIONSTUDIO_RCC_TIMEOUT", str(DEFAULT_RCC_TIMEOUT))
+    try:
+        return max(float(raw_value), 1.0)
+    except ValueError:
+        logger.warning("invalid MOTIONSTUDIO_RCC_TIMEOUT=%s, use %s", raw_value, DEFAULT_RCC_TIMEOUT)
+        return DEFAULT_RCC_TIMEOUT
 
 
 def _set_qt_environment(base_dir: Path) -> None:
@@ -85,6 +95,7 @@ def _ensure_rcc(*, base_dir: Path, qrc_filename: str) -> Path:
         [pyside_rcc, str(qrc_path), "--binary", "-o", str(rcc_path)],
         cwd=str(base_dir),
         check=True,
+        timeout=_get_rcc_timeout(),
     )
     return rcc_path
 
@@ -260,8 +271,8 @@ def run(*, base_dir: Path) -> int:
 
     try:
         engine.warnings.connect(_log_warnings)  # type: ignore[attr-defined]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to connect QML warnings signal: %s", exc)
 
     engine.rootContext().setContextProperty("ScriptLauncher", ScriptLauncher())
     engine.rootContext().setContextProperty("fileDownloader", FileDownloader())

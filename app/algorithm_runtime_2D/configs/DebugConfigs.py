@@ -36,7 +36,6 @@ class DebugConfig:
             image = Image.fromarray(image)
         save_file = base_folder / file_name
 
-        # logger.debug(fr"save_image_base {save_file}")
         image.save(save_file)
 
     def save_simple_image(self,image, file_name):

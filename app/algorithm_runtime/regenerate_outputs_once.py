@@ -40,7 +40,7 @@ def wait_until_ready(mosaic: ImageMosaic, expected_folders: int, timeout_s: floa
 
 
 def regenerate_surface(surface_config: dict, coil: SecondaryCoil, logger_process: LoggerProcess) -> dict:
-    queue: multiprocessing.Queue = multiprocessing.Queue()
+    queue: multiprocessing.Queue = multiprocessing.Queue(maxsize=100)
     logger.info("[%s] create ImageMosaic", surface_config["key"])
     mosaic = ImageMosaic(surface_config, queue, logger_process)
     try:

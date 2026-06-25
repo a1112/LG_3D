@@ -161,13 +161,12 @@ class SurfaceWork(WorkBaseThread):
                     logger.warning("2D surface %s skipped empty image coil_id=%s", self.key, coil_id)
             except AttributeError as e:
                 logger.error("AttributeError: %s - %s - %s", e, self.key, coil_id)
-                # raise e
                 if DEBUG:
-                    raise e
+                    raise
             except Exception as e:
                 logger.exception("2D surface %s failed coil_id=%s: %s", self.key, coil_id, e)
                 if DEBUG:
-                    raise e
+                    raise
             self.set(None)
             image_dict.clear()
             max_image = None

@@ -31,7 +31,6 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     # 筛选出与 mask_image 边界相交的点
     # intersection_indices = np.where(boundaries[cc, rr])[0]
     # if len(intersection_indices) < 2:
-    #     print("No sufficient intersection points found on the boundary.")
     #     return []
 
     # 获取这些点的行列坐标
@@ -101,8 +100,6 @@ def getLengthDataByPoints(npy_data, mask_image, p1, p2, ray=False):
     p2 = Point2D(int(p2[0]), int(p2[1]))
     # segment_points = extract_segment_values(npy_data, mask_image, p1, p2)
     lineData = LineData(npy_data, mask_image, p1, p2)
-    # print(len(list(lineData.mask_image_line_points())))
-    # input("pause")
     # if ray: # 射线模式,只对线段进行判断
     #     def directionEqual(direction1, direction2): # 计算两个方向是否相等
     #         return direction1[0] == direction2[0] and direction1[1] == direction2[1]
