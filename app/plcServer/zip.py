@@ -1,10 +1,13 @@
+import logging
 import os
 import time
 from pathlib import Path
 from threading import Thread
+
 from PIL import Image
-import shutil
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class ZipAndDeletion(Thread):
@@ -14,20 +17,30 @@ class ZipAndDeletion(Thread):
 
     def run(self):
         while True:
+            if not self.path.exists():
+                logger.debug("zip source path does not exist: %s", self.path)
+                time.sleep(60)
+                continue
             folders = list(self.path.iterdir())
             for folder in folders[100:]:
-                print(folder)
+                logger.debug("zip legacy folder: %s", folder)
                 imageFolder = folder / "2D"
                 for imageUrl in imageFolder.glob("*.bmp"):
-                    image=Image.open(imageUrl)
-                    image.save(imageUrl.with_suffix(".jpg"),quality=95, optimize=True)
-                    image.close()
-                    os.remove(str(imageUrl))
+                    try:
+                        image=Image.open(imageUrl)
+                        image.save(imageUrl.with_suffix(".jpg"),quality=95, optimize=True)
+                        image.close()
+                        os.remove(str(imageUrl))
+                    except OSError as e:
+                        logger.warning("zip bmp failed: %s error=%s", imageUrl, e)
                 d3Folder = folder / "3D"
                 for d3Url in d3Folder.glob("*.npy"):
-                    d3 = np.load(d3Url)
-                    np.savez_compressed(d3Url.with_suffix(".npz"),array=d3)
-                    os.remove(str(d3Url))
+                    try:
+                        d3 = np.load(d3Url)
+                        np.savez_compressed(d3Url.with_suffix(".npz"),array=d3)
+                        os.remove(str(d3Url))
+                    except (OSError, ValueError) as e:
+                        logger.warning("zip npy failed: %s error=%s", d3Url, e)
             time.sleep(60)
 
     def zip_bmp(self,bmp_url):

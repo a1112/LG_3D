@@ -34,14 +34,14 @@ class ImageDataSave(Thread):
         self.camera = camera
 
     def trigger_init(self, coil:SecondaryCoil):
-        logger.debug(f"triggerInit {coil}")
+        logger.debug("triggerInit %s", coil)
         image2_d_folder = self.saveFolder / str(coil.Id)/ "2d"
         if image2_d_folder.exists():
             files = image2_d_folder.glob("*")
             self.save_index = len(list(files))
 
     def trigger_in(self, coil):
-        logger.debug(f"triggerIn {coil}")
+        logger.debug("triggerIn %s", coil)
         self.save_index = 0
         self.save_index_2d = 0
 
@@ -55,14 +55,14 @@ class ImageDataSave(Thread):
             if self.save_index<20:
                 self.queue.put(buffer)
             else:
-                logger.error(f"<save_index out >{self.save_index} <max 20>")
+                logger.error("<save_index out >%s <max 20>", self.save_index)
             self.save_index += 1
         if isinstance(buffer, DaHengBuffer):
             buffer.save_index = self.save_index_2d
             if self.save_index_2d<20:
                 self.queue.put(buffer)
             else:
-                logger.error(f"<save_index_2d out >{self.save_index_2d} <max 20>")
+                logger.error("<save_index_2d out >%s <max 20>", self.save_index_2d)
             self.save_index_2d += 1
 
     def save_camera_config(self, buffer):
@@ -132,11 +132,17 @@ class ImageDataSave(Thread):
                 imageIndex=buffer.save_index
             ))
         except Exception as e:
-            logger.error(e)
+            logger.exception(
+                "save capture database log failed: camera=%s coil_id=%s index=%s error=%s",
+                self.name,
+                buffer.coilId,
+                buffer.save_index,
+                e,
+            )
 
     def save(self, buffer):
         if isinstance(buffer, SickBuffer ):
-            logger.debug(f"save folder: {self.saveFolder / buffer.coilId}  index: {buffer.save_index}")
+            logger.debug("save folder: %s index: %s", self.saveFolder / buffer.coilId, buffer.save_index)
             self.save_database(buffer)
             buffer: SickBuffer
             self.save_json(buffer)
@@ -150,7 +156,7 @@ class ImageDataSave(Thread):
                 if self.camera:
                     self.save_camera_config(buffer)
         if isinstance(buffer, DaHengBuffer):
-            logger.debug(f"save folder: {self.saveFolder / buffer.coilId}  index: {buffer.save_index}")
+            logger.debug("save folder: %s index: %s", self.saveFolder / buffer.coilId, buffer.save_index)
             buffer: DaHengBuffer
             self.save_area_2d(buffer)
 

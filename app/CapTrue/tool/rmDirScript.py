@@ -1,5 +1,8 @@
+import logging
 from pathlib import Path
 import shutil
+
+logger = logging.getLogger(__name__)
 
 
 def rmDir(path: Path):
@@ -9,12 +12,15 @@ def rmDir(path: Path):
         for subDir in path.iterdir():
             try:
                 if int(subDir.stem) < 1750:
-                    print(fr"delete {subDir}")
+                    logger.info("delete %s", subDir)
                     shutil.rmtree(str(subDir))
-            except:
-                pass
+            except ValueError:
+                continue
+            except OSError as e:
+                logger.warning("delete %s failed: %s", subDir, e)
 
 
-for folder in [fr"F:\datasets\LG_3D_DataBase\DataSave"]:
-    for itemFolder in Path(folder).iterdir():
-        rmDir(itemFolder)
+if __name__ == "__main__":
+    for folder in [fr"F:\datasets\LG_3D_DataBase\DataSave"]:
+        for itemFolder in Path(folder).iterdir():
+            rmDir(itemFolder)

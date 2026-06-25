@@ -214,15 +214,17 @@ def flatten_surface_by_rotation(data, mask, media_z):
         raise ValueError("平面拟合失败：筛选后无有效点")
 
     logger.debug(
-        f"flatten_surface_by_rotation fit_points={len(z)} filtered_count={filtered_count} "
-        f"sample_limit={max_points}"
+        "flatten_surface_by_rotation fit_points=%s filtered_count=%s sample_limit=%s",
+        len(z),
+        filtered_count,
+        max_points,
     )
 
     # 拟合平面并计算平面方程的系数
     a, b, c, normal_vector = fit_plane(x, y, z)
     angleData = vector_to_angles(normal_vector)
     from Base.utils.Log import logger
-    logger.debug(f"拟合平面方程: z = {a}*x + {b}*y + {c} {normal_vector}")
+    logger.debug("fit plane equation: z = %s*x + %s*y + %s %s", a, b, c, normal_vector)
     # 旋转数据使其法向量对齐到Z轴
     # rotated_data = rotate_data(data, np.array([a, b, 1]))
     return a, b, c, data, angleData

@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
+
 
 ROOT = Path(__file__).resolve().parents[1]
 for path in (
@@ -25,6 +27,22 @@ def test_data_integration_bd_xyz_uses_distinct_y_scale(tmp_path):
     data_integration.scan3dCoordinateScaleZ = 0.016
 
     assert data_integration.get_bd_xyz() == [0.5, 2.0, 0.016]
+
+
+def test_data_integration_telescoped_alarm_handles_empty_mask(tmp_path):
+    from Base.property.Base import DataIntegration
+
+    data_integration = DataIntegration(123, str(tmp_path), "D", "S")
+    data_integration.npy_mask = np.zeros((2, 2), dtype=np.uint8)
+    data_integration.set_npy_data(np.ones((2, 2), dtype=np.float32))
+
+    data_integration.set_telescoped_alarms()
+
+    assert data_integration.dictData["mask_area"] == 0
+    assert data_integration.dictData["lowerArea"] == 0
+    assert data_integration.dictData["upperArea"] == 0
+    assert data_integration.dictData["lowerArea_percent"] == 0.0
+    assert data_integration.dictData["upperArea_percent"] == 0.0
 
 
 def test_coil_line_data_alarm_loose_coil_stores_width_in_mm():

@@ -1,6 +1,9 @@
+import logging
 import subprocess
 from threading import Thread
 from multiprocessing import current_process
+
+logger = logging.getLogger(__name__)
 
 
 class GlobalSignalHandling(Thread):
@@ -20,10 +23,10 @@ class GlobalSignalHandling(Thread):
         while True:
             msg_code,msgType,msgData=self.managerQueue.get()
             if msg_code in {"shutdown", "stop"}:
-                print("GlobalSignalHandling shutdown signal received")
+                logger.info("GlobalSignalHandling shutdown signal received")
                 break
             if msg_code=="cmd":
                 cmd,workPath=msgType,msgData
-                print("GlobalSignalHandling", msg_code, msgType, msgData)
-                subprocess.run(cmd, shell=True, cwd=workPath)
-                print("GlobalSignalHandling END",msg_code,msgType,msgData)
+                logger.info("GlobalSignalHandling command start: %s cwd=%s", cmd, workPath)
+                result = subprocess.run(cmd, shell=True, cwd=workPath)
+                logger.info("GlobalSignalHandling command end: returncode=%s", result.returncode)

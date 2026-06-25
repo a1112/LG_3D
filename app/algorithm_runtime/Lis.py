@@ -1,18 +1,27 @@
+import logging
 import os
 import time
 from pathlib import Path
 from threading import Thread
-from CoilDataBase.Coil import get_secondary_coil
 
 import psutil
 
+from CoilDataBase.Coil import get_secondary_coil
+
+logger = logging.getLogger(__name__)
+
+
 def kill_process_(p):
+    if p is None:
+        return False
     try:
-        for proc in p.children():
+        for proc in p.children(recursive=True):
             proc.kill()
         p.kill()
-    except:
-        pass
+        return True
+    except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+        logger.warning("kill process failed: %s", e)
+        return False
 
 def get_proc(name):
     for proc in psutil.process_iter(['name']):
@@ -21,22 +30,30 @@ def get_proc(name):
     return None
 
 def kill_process(name):
+    proc = get_proc(name)
+    if proc is None:
+        logger.debug("process %s is not running", name)
+        return
     try:
-        kill_process_(get_proc(name))
-        print(f"成功终止 {name}")
+        if kill_process_(proc):
+            logger.info("terminated process %s", name)
     except psutil.AccessDenied:
-        print(f"权限不足，无法终止 {name}")
+        logger.warning("access denied while terminating process %s", name)
     except Exception as e:
-        print(f"终止进程时出错: {e}")
+        logger.exception("terminate process %s failed: %s", name, e)
 
 def get_folder_last_by_folder(folder):
     last_id= 0
-    for f in Path(folder).iterdir():
+    folder = Path(folder)
+    if not folder.exists():
+        logger.debug("capture folder does not exist: %s", folder)
+        return last_id
+    for f in folder.iterdir():
         try:
             if int(f.stem) > last_id:
 
                 last_id = int(f.stem)
-        except:
+        except ValueError:
             continue
     return last_id
 
@@ -80,7 +97,7 @@ def has_2D_datas(coil_id):
 
 class ThreadLis(Thread):
     def __init__(self):
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.start()
 
     def get_last_id(self):
@@ -102,7 +119,8 @@ class ThreadLis(Thread):
                     kill_process("Cap2d.exe")
                     time.sleep(600)
             except Exception as e:
-                print(e)
+                logger.exception("ThreadLis check failed: %s", e)
+                time.sleep(5)
 
 class ThreadLis2D(Thread):
     pass

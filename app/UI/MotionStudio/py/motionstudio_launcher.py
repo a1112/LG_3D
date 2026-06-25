@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import shlex
@@ -10,6 +11,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def _set_qt_environment(base_dir: Path) -> None:
@@ -171,7 +174,7 @@ def run(*, base_dir: Path) -> int:
 
                 return ensure_testdata_mesh(surface_key, coil_id)
             except Exception as exc:
-                print(f"Failed to prepare testdata mesh {surface_key}/{coil_id}: {exc}", file=sys.stderr)
+                logger.warning("Failed to prepare testdata mesh %s/%s: %s", surface_key, coil_id, exc)
                 return None
 
         @Slot(str, str, result=str)
@@ -200,7 +203,8 @@ def run(*, base_dir: Path) -> int:
                     creationflags=subprocess.CREATE_NEW_CONSOLE,
                 )
                 return True
-            except Exception:
+            except Exception as exc:
+                logger.warning("Failed to launch script %s: %s", cmd_args, exc)
                 return False
 
     class _FileDownloader(QObject):
@@ -293,15 +297,16 @@ def run(*, base_dir: Path) -> int:
     app = QApplication([])
     engine = QQmlApplicationEngine()
 
-    def _print_warnings(warnings) -> None:
+    def _log_warnings(warnings) -> None:
         for w in warnings:
             try:
-                print(w.toString(), file=sys.stderr)
-            except Exception:
-                print(str(w), file=sys.stderr)
+                logger.warning("%s", w.toString())
+            except Exception as exc:
+                logger.warning("%s", w)
+                logger.debug("Failed to format QML warning: %s", exc)
 
     try:
-        engine.warnings.connect(_print_warnings)  # type: ignore[attr-defined]
+        engine.warnings.connect(_log_warnings)  # type: ignore[attr-defined]
     except Exception:
         pass
 
@@ -322,7 +327,7 @@ def run(*, base_dir: Path) -> int:
     engine.load(entry_qml)
 
     if not engine.rootObjects():
-        print(f"Failed to load QML: {entry_qml.toString()}", file=sys.stderr)
-        print(f"Import paths: {engine.importPathList()}", file=sys.stderr)
+        logger.error("Failed to load QML: %s", entry_qml.toString())
+        logger.error("Import paths: %s", engine.importPathList())
         return 1
     return app.exec()

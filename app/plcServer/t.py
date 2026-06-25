@@ -1,5 +1,10 @@
-from PIL import Image
+import logging
 import os
+
+from PIL import Image
+
+logger = logging.getLogger(__name__)
+
 
 def convert_png_to_jpg(root_dir):
     for root, dirs, files in os.walk(root_dir):
@@ -12,8 +17,9 @@ def convert_png_to_jpg(root_dir):
                     img = img.convert("L")
                     img.save(jpg_path)
                     os.remove(png_path)
-            except:
-                pass
+            except OSError as e:
+                logger.warning("convert png to jpg failed: %s error=%s", file, e)
 
-root_dir = rf"G:\SaveMask\Cap_L_D"
-convert_png_to_jpg(root_dir)
+if __name__ == "__main__":
+    root_dir = rf"G:\SaveMask\Cap_L_D"
+    convert_png_to_jpg(root_dir)

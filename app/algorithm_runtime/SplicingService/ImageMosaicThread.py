@@ -34,8 +34,9 @@ def _get_max_history_coil_count() -> int:
         return max(int(raw_value), 1)
     except ValueError:
         logger.warning(
-            f"invalid ALGORITHM_3D_MAX_HISTORY_COIL_COUNT={raw_value}, "
-            f"use {DEFAULT_MAX_HISTORY_COIL_COUNT}"
+            "invalid ALGORITHM_3D_MAX_HISTORY_COIL_COUNT=%s, use %s",
+            raw_value,
+            DEFAULT_MAX_HISTORY_COIL_COUNT,
         )
         return DEFAULT_MAX_HISTORY_COIL_COUNT
 
@@ -84,9 +85,12 @@ class ImageMosaicThread(Thread):
         min_start_coil_id = max(max_secondary_coil_id - self.maxHistoryCoilCount, 0)
         if start_coil_id < min_start_coil_id:
             logger.warning(
-                f"history data exceeds limit, skip SecondaryCoilId <= {min_start_coil_id}; "
-                f"last_processed={start_coil_id}, latest={max_secondary_coil_id}, "
-                f"max_history={self.maxHistoryCoilCount}"
+                "history data exceeds limit, skip SecondaryCoilId <= %s; "
+                "last_processed=%s, latest=%s, max_history=%s",
+                min_start_coil_id,
+                start_coil_id,
+                max_secondary_coil_id,
+                self.maxHistoryCoilCount,
             )
             return min_start_coil_id
 
@@ -97,7 +101,7 @@ class ImageMosaicThread(Thread):
             if not imageMosaic.check_detection_end(secondary_coil_id):
                 self.check_num+=1
                 if not (self.check_num % 10):
-                    logger.error(f"checkDetectionEnd {secondary_coil_id}")
+                    logger.error("checkDetectionEnd %s", secondary_coil_id)
                 return False
         return True
 
@@ -121,7 +125,12 @@ class ImageMosaicThread(Thread):
                 # 采集未完成
                 return False, run_num
 
-        logger.debug(f"开始处理 {secondary_coil.Id}剩余 {less_num} 个 已处理{run_num} 个" + "-" * 100)
+        logger.debug(
+            "start processing SecondaryCoilId=%s remaining=%s processed=%s",
+            secondary_coil.Id,
+            less_num,
+            run_num,
+        )
         run_num += 1
         self.startCoilId = secondary_coil.Id
 
@@ -131,7 +140,7 @@ class ImageMosaicThread(Thread):
             imageMosaic.currentSecondaryCoil = secondary_coil
             status[imageMosaic.key] = 0
             if not set_ok:
-                logger.error(f"setOK: {set_ok}")
+                logger.error("setOK: %s", set_ok)
                 status[imageMosaic.key] = ErrorMap["DataFolderError"]
                 continue
 
@@ -142,7 +151,7 @@ class ImageMosaicThread(Thread):
             data_integration = imageMosaic.get_data()
             data_integration_list.append(data_integration)  # 检测
             if data_integration.isNone():
-                logger.error(f"image is None {secondary_coil.Id}")
+                logger.error("image is None %s", secondary_coil.Id)
                 status[imageMosaic.key] = ErrorMap["ImageError"]
                 continue
 
@@ -152,9 +161,13 @@ class ImageMosaicThread(Thread):
         AlarmDetection.detection.detection_all(data_integration_list) # 判级
         defection_time5 = time.time()
 
-        logger.debug(f"完整{defection_time5 - defection_time1}= 图像处理 {defection_time3-defection_time1}"
-                     f" 缺陷 {defection_time4-defection_time3}= 3D检测 {defection_time5-defection_time4}-"
-                     f"==================================== ")
+        logger.debug(
+            "algorithm timing total_s=%s image_s=%s defect_s=%s alarm_s=%s",
+            defection_time5 - defection_time1,
+            defection_time3 - defection_time1,
+            defection_time4 - defection_time3,
+            defection_time5 - defection_time4,
+        )
         if self.saveDataBase:
             Coil.addCoil({
                 "SecondaryCoilId": secondary_coil.Id,
@@ -172,19 +185,19 @@ class ImageMosaicThread(Thread):
                 with CoilSession() as sync_session:
                     sync_coil_summary(sync_session, secondary_coil.Id)
             except Exception as e:
-                logger.error(f"同步摘要失败 {secondary_coil.Id}: {e}")
+                logger.error("sync coil summary failed SecondaryCoilId=%s: %s", secondary_coil.Id, e)
         if isLoc:
             sleep_time = Globs.control.loc_sleep_time
             if status.get("L", 0) < 0 and status.get("S", 0) < 0:
                 sleep_time = 0.1
-            logger.debug(f"loc model sleep {sleep_time}")
+            logger.debug("loc model sleep %s", sleep_time)
             time.sleep(sleep_time)
-            logger.debug(f"loc model sleep {sleep_time} end")
+            logger.debug("loc model sleep %s end", sleep_time)
 
         return True, run_num
 
     def run(self):
-        logger.debug(f"执行 算法主进程")
+        logger.debug("run algorithm main thread")
         while True:
             run_num = 0
             try:
@@ -197,11 +210,6 @@ class ImageMosaicThread(Thread):
                     .all()
                 )
                 # list_data = list_data[-3:]
-                # try:
-                #     lastCoilSecondaryCoilId=Coil.getCoil(1)[0].SecondaryCoilId
-                # except :
-
-                #     lastCoilSecondaryCoilId = 0
                 for secondary_coil in list_data:
                     try:
                         should_continue, run_num = self._process_secondary_coil(
@@ -213,7 +221,7 @@ class ImageMosaicThread(Thread):
                         if not should_continue:
                             break
                     except Exception as e:
-                        logger.error(f"<UNK> {e}")
+                        logger.error("process secondary coil failed: %s", e)
                         if isLoc:
                             raise e
 
@@ -223,7 +231,7 @@ class ImageMosaicThread(Thread):
                     try:
                         self.re_detection_running = True
                         re_coil_id = self.re_detection_queue.pop(0)
-                        logger.info(f"重新识别队列处理 SecondaryCoilId={re_coil_id}")
+                        logger.info("re-detection queue processing SecondaryCoilId=%s", re_coil_id)
                         with InnerSession() as session:
                             secondary_coil = (
                                 session.query(SecondaryCoilModel)
@@ -238,10 +246,10 @@ class ImageMosaicThread(Thread):
                                 check_detection=False,
                             )
                         else:
-                            logger.warning(f"重新识别队列 SecondaryCoilId={re_coil_id} 不存在，跳过")
+                            logger.warning("re-detection queue SecondaryCoilId=%s not found, skip", re_coil_id)
                         self.re_detection_done += 1
                     except Exception as e:
-                        logger.error(f"重新识别队列处理失败 SecondaryCoilId={re_coil_id}: {e}")
+                        logger.error("re-detection queue failed SecondaryCoilId=%s: %s", re_coil_id, e)
                         self.re_detection_error = str(e)
                         if isLoc:
                             raise e
@@ -297,7 +305,7 @@ class ImageMosaicThread(Thread):
                 if exists:
                     continue
 
-                logger.info(f"历史重算 SecondaryCoilId={secondary_coil.Id}")
+                logger.info("history recompute SecondaryCoilId=%s", secondary_coil.Id)
                 try:
                     should_continue, run_num = self._process_secondary_coil(
                         secondary_coil=secondary_coil,
@@ -310,7 +318,7 @@ class ImageMosaicThread(Thread):
                         # 历史模式下通常不依赖采集结束状态，这里仅预留扩展
                         break
                 except Exception as e:
-                    logger.error(f"历史重算 SecondaryCoilId={secondary_coil.Id} 失败: {e}")
+                    logger.error("history recompute SecondaryCoilId=%s failed: %s", secondary_coil.Id, e)
                     if isLoc:
                         raise e
 

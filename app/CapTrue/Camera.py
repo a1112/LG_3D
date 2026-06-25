@@ -180,7 +180,7 @@ class DaHengCamera(Thread): # Process
             with open(self.yaml_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         except Exception as e:
-            logger.warning(f"2D camera {self.camera_key} config load failed: {self.yaml_path}, error={e}")
+            logger.warning("2D camera %s config load failed: %s, error=%s", self.camera_key, self.yaml_path, e)
             return {}
 
     def _set_state(self, state, error=None, connected=None):
@@ -252,7 +252,7 @@ class DaHengCamera(Thread): # Process
             ret = cam.MV_CC_StartGrabbing()
             if ret != MV_OK:
                 raise RuntimeError(f"MV_CC_StartGrabbing failed ret=0x{ret:08X}, device={snapshot}")
-            logger.info(f"2D camera {self.camera_key} opened: {snapshot}")
+            logger.info("2D camera %s opened: %s", self.camera_key, snapshot)
             return cam
         except Exception:
             self._safe_release_camera(cam)
@@ -300,17 +300,17 @@ class DaHengCamera(Thread): # Process
             try:
                 self._set_int(cam, sdk_key, value)
             except Exception as e:
-                logger.warning(f"2D camera {self.camera_key} set {sdk_key}={value} failed: {e}")
+                logger.warning("2D camera %s set %s=%s failed: %s", self.camera_key, sdk_key, value, e)
 
     def _load_camera_params(self, cam):
         try:
             ret = cam.MV_CC_FeatureLoad(str(self.camera_param_file))
             if ret != 0:
-                logger.warning(f"2D camera params load failed: {self.camera_param_file}, ret={ret}")
+                logger.warning("2D camera params load failed: %s, ret=%s", self.camera_param_file, ret)
                 return
-            logger.info(f"2D camera params loaded: {self.camera_param_file}")
+            logger.info("2D camera params loaded: %s", self.camera_param_file)
         except Exception as e:
-            logger.warning(f"2D camera params load failed: {self.camera_param_file}, error={e}")
+            logger.warning("2D camera params load failed: %s, error=%s", self.camera_param_file, e)
 
     def _save_camera_params(self, cam=None):
         try:
@@ -321,11 +321,11 @@ class DaHengCamera(Thread): # Process
             self.camera_param_file.parent.mkdir(parents=True, exist_ok=True)
             ret = cam.MV_CC_FeatureSave(str(self.camera_param_file))
             if ret != 0:
-                logger.warning(f"2D camera params save failed: {self.camera_param_file}, ret={ret}")
+                logger.warning("2D camera params save failed: %s, ret=%s", self.camera_param_file, ret)
                 return
-            logger.info(f"2D camera params saved: {self.camera_param_file}")
+            logger.info("2D camera params saved: %s", self.camera_param_file)
         except Exception as e:
-            logger.warning(f"2D camera params save failed: {self.camera_param_file}, error={e}")
+            logger.warning("2D camera params save failed: %s, error=%s", self.camera_param_file, e)
 
     def _clear_queue(self):
         try:
@@ -364,9 +364,9 @@ class DaHengCamera(Thread): # Process
             try:
                 ret = action()
                 if ret not in (MV_OK,):
-                    logger.debug(f"2D camera {self.camera_key} {action_name} ret=0x{ret:08X}")
+                    logger.debug("2D camera %s %s ret=0x%08X", self.camera_key, action_name, ret)
             except Exception as e:
-                logger.debug(f"2D camera {self.camera_key} {action_name} ignored: {e}")
+                logger.debug("2D camera %s %s ignored: %s", self.camera_key, action_name, e)
 
     def _trim_queue(self, max_size):
         try:
@@ -491,7 +491,8 @@ class DaHengCamera(Thread): # Process
                     self.capter = None
                     self.last_disconnect_time = time.time()
                     self._set_state("reconnecting", e, connected=False)
-                logger.warning(f"2D camera {self.camera_key} disconnected, retrying in {reconnect_delay}s: {e}")
+                logger.warning("2D camera %s disconnected, retrying in %ss: %s",
+                               self.camera_key, reconnect_delay, e)
                 self._clear_queue()
                 self._safe_release_camera(cam)
                 time.sleep(reconnect_delay)

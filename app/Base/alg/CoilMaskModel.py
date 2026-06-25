@@ -4,6 +4,7 @@ from ultralytics import YOLO
 
 from Base import CONFIG
 from Base.property.Types import DetectionType
+from Base.utils.Log import logger
 
 
 class CoilAreaModel:
@@ -59,7 +60,7 @@ class CoilDetectionModel:
                 model_url = str(CONFIG.base_config_folder /"model" /"CoilDetection.pt")
             elif control.detection_model == DetectionType.DetectionAndClassifiers:
                 model_url = str(CONFIG.base_config_folder / "model" / "yolo26best.pt")
-        print(model_url)
+        logger.info("CoilDetection model is %s", model_url)
         self.model_url = model_url
         self.model = YOLO(model_url, verbose=False)  # load a custom model
 

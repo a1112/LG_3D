@@ -53,7 +53,7 @@ class SurfaceConfigProperty:
         try:
             return str(Path(base_path).glob(f"{coil_id}_{x}_{y}_*" + ".png").__next__())
         except StopIteration :
-            logging.error(f"{base_path} 没有找到 {coil_id}_{x}_{y}_*" + ".png")
+            logging.error("%s missing %s_%s_%s_*.png", base_path, coil_id, x, y)
             raise StopIteration
 
     def get_mask_file(self, coil_id, type_):
@@ -84,7 +84,7 @@ class ServerConfigProperty(BaseConfigProperty):
                 return self.config[property_]
             except KeyError:
                 if current_process().name == "MainProcess":
-                    logging.warning(f"{property_} 参数获取失败，使用默认参数 {default}")
+                    logging.warning("%s config missing, use default %s", property_, default)
                 return default
 
         self.surfaceConfigPropertyDict: Dict[str, SurfaceConfigProperty] = {}

@@ -55,7 +55,7 @@ developer_mode = (
 # 兼容性：保留isLoc变量以支持现有代码
 isLoc = developer_mode
 
-print(fr" app 运行模式 developer_mode：{developer_mode} is_local_host：{is_local_host}")
+logging.info("app runtime mode developer_mode=%s is_local_host=%s", developer_mode, is_local_host)
 def get_file_url(base: str) -> Path:
     url = base_config_folder / base
     if not url.exists():

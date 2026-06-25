@@ -1,59 +1,43 @@
+import logging
+from pathlib import Path
+
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
 
-# 读取二值化的环形 mask 图像
-mask = cv2.imread(r'F:\datasets\LG_3D_DataBase\DataSave\surface_L\1700\MASK.png', cv2.IMREAD_GRAYSCALE)
-mask = cv2.bitwise_not(mask)
-# 找到轮廓
-contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-# 假设内圆是第一个轮廓（需要根据实际情况调整）
-inner_circle_contour = contours[2]
-# print(contours)
-# 计算最小外接圆
-(x, y), radius = cv2.minEnclosingCircle(inner_circle_contour)
-
-# 绘制结果
-output_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-cv2.circle(output_image, (int(x), int(y)), int(radius), (255, 0, 0), 5)
-
-ellipse = cv2.fitEllipse(inner_circle_contour)
-
-(x_inner, y_inner), radius_inner = cv2.minEnclosingCircle(inner_circle_contour)
-
-# 计算外切圆
-(x_outer, y_outer), radius_outer = cv2.minEnclosingCircle(inner_circle_contour)
-
-rect = cv2.minAreaRect(inner_circle_contour)
-(box_x, box_y), (box_w, box_h), box_angle = rect
-
-# 计算内接圆（在最小包围矩形中）
-inner_circle_radius = min(box_w, box_h) / 2
-inner_circle_center = (box_x, box_y)
-
-# 绘制结果
-
-cv2.ellipse(output_image, ellipse, (255, 0, 0), 5)
-
-print((x, y), radius)
-
-print(ellipse)
-
-(center, axes, angle) = ellipse
-(major_axis, minor_axis) = axes
-
-# 计算压缩比率
-compression_ratio = minor_axis / major_axis
-
-# 打印椭圆参数
-print(f"椭圆中心: {center}")
-print(f"长轴长度: {major_axis}")
-print(f"短轴长度: {minor_axis}")
-print(f"压缩比率: {compression_ratio:.4f}")
-
-# 显示图像
-plt.imshow(output_image)
-plt.show()
+logger = logging.getLogger(__name__)
 
 
+def inspect_inner_circle(mask_path: Path) -> None:
+    mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+    if mask is None:
+        raise FileNotFoundError(str(mask_path))
+    mask = cv2.bitwise_not(mask)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if len(contours) <= 2:
+        raise ValueError(f"not enough contours in {mask_path}: {len(contours)}")
+
+    inner_circle_contour = contours[2]
+    (x, y), radius = cv2.minEnclosingCircle(inner_circle_contour)
+
+    output_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    cv2.circle(output_image, (int(x), int(y)), int(radius), (255, 0, 0), 5)
+
+    ellipse = cv2.fitEllipse(inner_circle_contour)
+    cv2.ellipse(output_image, ellipse, (255, 0, 0), 5)
+
+    _, axes, _ = ellipse
+    major_axis, minor_axis = axes
+    compression_ratio = minor_axis / major_axis if major_axis else 0
+
+    logger.info("circle center=(%s, %s) radius=%s", x, y, radius)
+    logger.info("ellipse=%s", ellipse)
+    logger.info("ellipse major_axis=%s minor_axis=%s compression_ratio=%.4f",
+                major_axis, minor_axis, compression_ratio)
+
+    plt.imshow(output_image)
+    plt.show()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    inspect_inner_circle(Path("F:/datasets/LG_3D_DataBase/DataSave/surface_L/1700/MASK.png"))

@@ -1,5 +1,5 @@
 from pathlib import Path
-from queue import Queue
+from queue import Full, Queue
 from threading import Thread
 from typing import List
 
@@ -20,7 +20,7 @@ from utils.MultiprocessColorLogger import logger
 class DetectionSave(Thread):
 
     def __init__(self):
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
         if CONFIG.DEBUG:
             self.debug_save_folder.mkdir(parents=True, exist_ok=True)
@@ -28,7 +28,10 @@ class DetectionSave(Thread):
         self.start()
 
     def add(self, image, url) -> None:
-        self.queue.put([image, url])
+        try:
+            self.queue.put_nowait([image, url])
+        except Full:
+            logger.debug("drop detection debug image save: %s", url)
 
     def run(self) -> None:
         while True:

@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -173,7 +174,7 @@ class DataIntegration:
             except (TypeError, ValueError, OverflowError) as e:
                 last_error = e
 
-        logger.warning(f"{self.id_str} next_code failed, use default code 1: {last_error or 'missing weight'}")
+        logger.warning("%s next_code failed, use default code 1: %s", self.id_str, last_error or "missing weight")
         return "1"
 
     @property
@@ -185,7 +186,7 @@ class DataIntegration:
         return Path(self.saveFolder)/str(self.coilId)
 
     def set_npy_data(self, npy_data):
-        logger.debug(f"set_npy_data {npy_data.shape}")
+        logger.debug("set_npy_data %s", npy_data.shape)
         self.__npyData__ = npy_data
         self._npyData_ = None
         self.__median_non_zero__ = None
@@ -265,10 +266,11 @@ class DataIntegration:
                 nz = self.__npyData__[self.__npyData__ != 0]
                 if nz.size:
                     self.__median_non_zero__ = np.median(nz)
-                    logger.warning(f"{self.key} annular median is NaN, fallback to global median {self.__median_non_zero__}")
+                    logger.warning("%s annular median is NaN, fallback to global median %s",
+                                   self.key, self.__median_non_zero__)
                 else:
                     self.__median_non_zero__ = 0
-                    logger.error(f"{self.key} annular median is NaN and no non-zero data, fallback to 0")
+                    logger.error("%s annular median is NaN and no non-zero data, fallback to 0", self.key)
         return self.__median_non_zero__
 
     @property
@@ -334,7 +336,7 @@ class DataIntegration:
         }
 
     def set(self, key, value):
-        logger.debug(f"{self.surface} set -> {key} : {value}")
+        logger.debug("%s set -> %s : %s", self.surface, key, value)
         self.dictData[key] = value
         self.__dict__[key] = value
 
@@ -351,6 +353,14 @@ class DataIntegration:
     def set_telescoped_alarms(self):
         mask = self.npy_mask
         mask_area = np.count_nonzero(mask)
+        if mask_area <= 0:
+            logger.warning("%s telescoped alarm skipped: empty mask area", self.key)
+            self.set("lowerArea", 0)
+            self.set("upperArea", 0)
+            self.set("lowerArea_percent", 0.0)
+            self.set("upperArea_percent", 0.0)
+            self.set("mask_area", 0)
+            return
         npy_area = self.npy_data[mask > 0]
         lower = npy_area[npy_area < (self.__median_non_zero__ + self.lower_limit)]
         upper = npy_area[npy_area > (self.__median_non_zero__ + self.upper_limit)]
@@ -373,7 +383,7 @@ class DataIntegration:
         for k in ["median_3d", "median_3d_mm", "start"]:
             v = dict_data.get(k)
             if isinstance(v, float) and np.isnan(v):
-                logger.error(f"{self.key} {k} is NaN, fallback to 0")
+                logger.error("%s %s is NaN, fallback to 0", self.key, k)
                 dict_data[k] = 0.0
         addCoilState(CoilStateDB(
             secondaryCoilId=self.coilId,
@@ -431,22 +441,27 @@ class DataIntegration:
 
     def flatten_surface_by_rotation(self):
         median_non_zero,annulus_mask=self.annular_region_mean(self.__npyData__,0.6,0.65)  # 获取平均值
-        logger.debug(
-            f"{self.key} flatten_surface_by_rotation input: npy_shape={self.__npyData__.shape}, "
-            f"npy_nz={int(np.count_nonzero(self.__npyData__))}, mask_nz={int(np.count_nonzero(self.npy_mask))}, "
-            f"median={median_non_zero}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "%s flatten_surface_by_rotation input: npy_shape=%s, npy_nz=%s, mask_nz=%s, median=%s",
+                self.key,
+                self.__npyData__.shape,
+                int(np.count_nonzero(self.__npyData__)),
+                int(np.count_nonzero(self.npy_mask)),
+                median_non_zero,
+            )
         if np.isnan(median_non_zero) or np.count_nonzero(self.__npyData__) == 0:
-            logger.error(f"{self.key} skip flatten: median is NaN or data all zero")
+            logger.error("%s skip flatten: median is NaN or data all zero", self.key)
             return 0
         try:
             a, b, c, rotated_data, angle_data = FlattenSurface.flatten_surface_by_rotation(self.__npyData__,
                                                                                           annulus_mask,
                                                                                           median_non_zero)
         except ValueError as e:
-            logger.error(f"{self.key} flatten_surface_by_rotation skipe: {e}")
+            logger.error("%s flatten_surface_by_rotation skip: %s", self.key, e)
             return 0
         r_z = int(180 - angle_data['angle_with_z'])
-        logger.debug(f"{self.key} 旋转 {r_z} {angle_data}")
+        logger.debug("%s rotation %s %s", self.key, r_z, angle_data)
         self.angleData = angle_data
         # return tool.rotate_around_x_axis(self.__npyData__,r_z)
         return r_z

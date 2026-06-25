@@ -29,3 +29,15 @@ def test_get_the_difference_int_uses_right_median_when_larger():
     )
 
     assert value == 52
+
+
+def test_hconcat_list_handles_zero_intersections_without_recursion():
+    images = [
+        np.full((2, 4, 3), 10, dtype=np.uint8),
+        np.full((2, 4, 3), 20, dtype=np.uint8),
+        np.full((2, 4, 3), 30, dtype=np.uint8),
+    ]
+
+    result = cv_count_tool.hconcat_list(images, [0, 0])
+
+    assert result.shape == (2, 12, 3)

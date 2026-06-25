@@ -128,9 +128,13 @@ class SurfaceWork(WorkBaseThread):
             di = DataIntegration(self.config, coil_id)
 
             image_dict = {}
+            submitted_cameras = []
             for camera_wolk in self.cameras_wolk:
-                camera_wolk.add_work(coil_id)
-            for camera_wolk in self.cameras_wolk:
+                if camera_wolk.add_work(coil_id):
+                    submitted_cameras.append(camera_wolk)
+                else:
+                    image_dict[camera_wolk.config.key[6]] = None
+            for camera_wolk in submitted_cameras:
                 image_dict[camera_wolk.config.key[6]] = camera_wolk.get()
             missing_keys = [key for key, image_grop in image_dict.items() if image_grop is None]
             if missing_keys:
@@ -149,12 +153,14 @@ class SurfaceWork(WorkBaseThread):
                 if max_image is not None:
                     di.set_max_image(max_image)
                     detection(di)
-                    self.save_wolk.add_work([coil_id, max_image])
-                    logger.info("2D surface %s queued AREA save coil_id=%s", self.key, coil_id)
+                    if self.save_wolk.add_work([coil_id, max_image], timeout=30):
+                        logger.info("2D surface %s queued AREA save coil_id=%s", self.key, coil_id)
+                    else:
+                        logger.error("2D surface %s AREA save queue full coil_id=%s", self.key, coil_id)
                 else:
                     logger.warning("2D surface %s skipped empty image coil_id=%s", self.key, coil_id)
             except AttributeError as e:
-                logger.error(f"AttributeError: {e} - {self.key} - {coil_id}")
+                logger.error("AttributeError: %s - %s - %s", e, self.key, coil_id)
                 # raise e
                 if DEBUG:
                     raise e

@@ -16,6 +16,7 @@ from Base.tools.compressed_storage import (  # noqa: E402
     save_compressed_image,
     save_compressed_numpy,
 )
+from Base.utils.cache_generator import generate_jet_thumbnail  # noqa: E402
 
 
 def test_compressed_image_path_replaces_bmp_with_jpg():
@@ -78,3 +79,34 @@ def test_capture_save_code_does_not_write_bmp_or_npy_outputs():
     assert ".npy'" not in source
     assert ".json.gz" not in source
     assert "save_compressed_json" not in source
+
+
+def test_jet_thumbnail_source_image_ignores_falsecolor_range(tmp_path):
+    source_path = tmp_path / "source.jpg"
+    cache_dir = tmp_path / "cache"
+    Image.fromarray(np.full((16, 16, 3), 128, dtype=np.uint8)).save(source_path)
+
+    ok = generate_jet_thumbnail(
+        source_image=source_path,
+        cache_dir=cache_dir,
+        min_value=10,
+        max_value=10,
+    )
+
+    assert ok is True
+    assert (cache_dir / "thumbnail_1024.jpg").exists()
+
+
+def test_jet_thumbnail_rejects_invalid_numpy_falsecolor_range(tmp_path):
+    cache_dir = tmp_path / "cache"
+    npy_data = np.full((8, 8), 100, dtype=np.uint16)
+
+    ok = generate_jet_thumbnail(
+        npy_data=npy_data,
+        cache_dir=cache_dir,
+        min_value=10,
+        max_value=10,
+    )
+
+    assert ok is False
+    assert not (cache_dir / "thumbnail_1024.jpg").exists()

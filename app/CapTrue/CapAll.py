@@ -38,7 +38,7 @@ def main():
     while not Signal.signal.coil:
         time.sleep(0.1)
 
-    logger.debug(f"Starting capture workers: {cap_list}")
+    logger.debug("Starting capture workers: %s", cap_list)
     for cap in cap_list:
         cap.start()
     for cap in cap_list:

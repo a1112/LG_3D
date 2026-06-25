@@ -166,8 +166,8 @@ class CoilClsModel:
             if isinstance(img_, (str, WindowsPath)):
                 try:
                     img_ = Image.open(img_)
-                except BaseException as e:
-                    print(e)
+                except (OSError, ValueError) as e:
+                    logger.warning("load classifier image failed: %s", e)
                     continue
             tensor = self.image_to_tensor(img_)
             tensor = tensor.to(self.device)
@@ -193,4 +193,4 @@ if __name__ == "__main__":
 
     r = ccm.predict_image([Image.open(r"E:\clfData\test\边部背景\92537_0.655604_14.jpg")] * 100)
     et = time.time()
-    print(et - st)
+    logger.info("classifier demo elapsed: %.3fs", et - st)

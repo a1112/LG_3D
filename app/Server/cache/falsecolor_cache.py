@@ -36,7 +36,7 @@ class FalseColorCache(MemoryImageCache):
         # 统一使用小写的目录名
         colormap_name = colormap.lower()
         cache_dir = coil_dir / "cache" / "falsecolor" / colormap_name
-        logging.debug(f"Cache dir for {path}: {cache_dir}")
+        logging.debug("Cache dir for %s: %s", path, cache_dir)
         return cache_dir
 
     def _cache_path(self, cache_dir: Path) -> Path:
@@ -81,6 +81,9 @@ class FalseColorCache(MemoryImageCache):
         """
         try:
             # 归一化到 0-255
+            if max_value <= min_value:
+                raise ValueError(f"invalid falsecolor range: min={min_value}, max={max_value}")
+
             clip_npy = np.clip(npy_data, min_value, max_value)
             clip_npy = (clip_npy - min_value) / (max_value - min_value) * 255
             clip_npy = clip_npy.astype(np.uint8)
@@ -119,7 +122,7 @@ class FalseColorCache(MemoryImageCache):
             return None
 
         except Exception as e:
-            logging.error(f"Failed to generate thumbnail: {e}")
+            logging.warning("Failed to generate thumbnail: %s", e)
             return None
 
     def get_or_generate(self, path: str, npy_data: np.ndarray,
@@ -147,17 +150,17 @@ class FalseColorCache(MemoryImageCache):
         # 尝试从缓存读取
         cached = self.get_thumbnail(path, colormap_name)
         if cached:
-            logging.debug(f"Cache HIT for {colormap_name}: {path}")
+            logging.debug("Cache HIT for %s: %s", colormap_name, path)
             return cached, True
 
-        logging.debug(f"Cache MISS for {colormap_name}, generating...")
+        logging.debug("Cache MISS for %s, generating...", colormap_name)
 
         # 生成新的缩略图
         with self._lock:
             # 双检查，避免重复生成
             cached = self.get_thumbnail(path, colormap_name)
             if cached:
-                logging.debug(f"Cache HIT after double-check for {colormap_name}")
+                logging.debug("Cache HIT after double-check for %s", colormap_name)
                 return cached, True
 
             # 生成并缓存
@@ -168,11 +171,11 @@ class FalseColorCache(MemoryImageCache):
                 cache_path = self._cache_path(cache_dir)
                 try:
                     cache_path.write_bytes(thumbnail)
-                    logging.info(f"Cached {colormap_name} thumbnail ({len(thumbnail)} bytes): {cache_path}")
+                    logging.info("Cached %s thumbnail (%s bytes): %s", colormap_name, len(thumbnail), cache_path)
                 except Exception as e:
-                    logging.error(f"Failed to write cache to {cache_path}: {e}")
+                    logging.warning("Failed to write cache to %s: %s", cache_path, e)
                 return thumbnail, False
             else:
-                logging.warning(f"Failed to generate {colormap_name} thumbnail for {path}")
+                logging.warning("Failed to generate %s thumbnail for %s", colormap_name, path)
 
         return None, False

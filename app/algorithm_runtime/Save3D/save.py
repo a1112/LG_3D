@@ -272,7 +272,13 @@ def _get_point_cloud_(data, managerQueue):
     # 调试：记录过滤前的点云统计
     valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
     z_min, z_max = _format_z_range(valid_point_cloud)
-    logger.debug(f"point_cloud before filter: shape={valid_point_cloud.shape}, z_range=({z_min}, {z_max}), median_non_mm={median_non_mm:.2f}")
+    logger.debug(
+        "point_cloud before filter: shape=%s, z_range=(%s, %s), median_non_mm=%.2f",
+        valid_point_cloud.shape,
+        z_min,
+        z_max,
+        median_non_mm,
+    )
 
     # 扩大过滤范围：从 [-150, 500] 改为 [-500, 1000]
     z_filter_mask = np.logical_and(z_coords >= -500, z_coords <= 1000)
@@ -282,12 +288,12 @@ def _get_point_cloud_(data, managerQueue):
     # 调试：记录过滤后的点云统计
     if point_cloud.shape[0] < 100:
         z_min, z_max = _format_z_range(point_cloud)
-        logger.warning(f"point_cloud after filter: shape={point_cloud.shape}, z_range=({z_min}, {z_max})")
+        logger.warning("point_cloud after filter: shape=%s, z_range=(%s, %s)", point_cloud.shape, z_min, z_max)
 
     # 兜底：如果过滤后点云为空或太少，使用未过滤的点云
     original_count = point_cloud.shape[0]
     if original_count < 1000:
-        logger.warning(f"point_cloud has only {original_count} points after filtering, using unfiltered data")
+        logger.warning("point_cloud has only %s points after filtering, using unfiltered data", original_count)
         # 重新生成未过滤的点云
         point_cloud = np.stack((x_coords, y_coords, z_coords), axis=-1).reshape(-1, 3)
         valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
@@ -299,7 +305,7 @@ def _get_point_cloud_(data, managerQueue):
         point_cloud[:, :] -= mean_values2
         valid_matrix = downsample_data_with_convolution(valid_mask.astype(np.float32), Globs.control.downsampleSize) > 0.2
         point_cloud = point_cloud[valid_matrix.reshape(-1)]
-        logger.debug(f"using unfiltered point_cloud: shape={point_cloud.shape}")
+        logger.debug("using unfiltered point_cloud: shape=%s", point_cloud.shape)
 
     return {
         "point_cloud": point_cloud,
@@ -315,9 +321,9 @@ def _save_3d(data, managerQueue):
     point_cloud_data, saveFile = _get_point_cloud_(data, managerQueue)
     point_cloud = point_cloud_data["point_cloud"]
     t1 = time.time()
-    logger.debug(f"_get_point_cloud_  {t1 - t0}")
+    logger.debug("_get_point_cloud_ %s", t1 - t0)
     if point_cloud.size == 0 or point_cloud.shape[0] < 3:
-        logger.error(f"empty point cloud for {saveFile}, skip mesh generation")
+        logger.error("empty point cloud for %s, skip mesh generation", saveFile)
         return
     t2 = time.time()
     # 使用Delaunay三角剖分生成三角网格
@@ -330,16 +336,16 @@ def _save_3d(data, managerQueue):
             point_cloud_data["valid_mask"],
         )
     except ValueError as e:
-        logger.error(f"generate_mesh_from_grid failed for {saveFile}: {e}")
+        logger.error("generate_mesh_from_grid failed for %s: %s", saveFile, e)
         return
 
     t3 = time.time()
-    logger.debug(f"generate_mesh_from_grid {t3 - t2}")
+    logger.debug("generate_mesh_from_grid %s", t3 - t2)
     # o3d.visualization.draw_geometries([mesh])
     # 保存无顶点颜色的表面网格，颜色由前端材质统一控制
     save_colored_obj(mesh, None, str(saveFile))
     t4 = time.time()
-    logger.debug(f"save_colored_obj {t4 - t3}")
+    logger.debug("save_colored_obj %s", t4 - t3)
     Thread(target=toMesh,args=(str(saveFile), managerQueue)).start()
     # toMesh(str(saveFile), managerQueue)
     logger.debug("toMesh end")
@@ -384,7 +390,8 @@ class D3Saver:
                 break
             try:
                 if not Globs.control.save_3d_obj:
-                    return
+                    logger.debug("skip 3D mesh save because save_3d_obj is disabled")
+                    continue
                 _save_3d(data, managerQueue)
             except Exception as e:
                 error_message = traceback.format_exc()

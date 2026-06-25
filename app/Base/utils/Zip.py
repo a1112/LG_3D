@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from pathlib import Path
@@ -5,6 +6,8 @@ from PIL import Image
 import numpy as np
 
 from Base import Globs
+
+logger = logging.getLogger(__name__)
 
 MIN_COMPRESS_AGE_SECONDS = 10 * 60
 
@@ -20,6 +23,9 @@ def _folder_sort_key(folder: Path) -> tuple[int, str]:
 
 
 def _old_folders(path: Path, reserve_num: int) -> list[Path]:
+    if not path.exists():
+        logger.debug("compression path does not exist: %s", path)
+        return []
     folders = [folder for folder in path.iterdir() if folder.is_dir()]
     folders.sort(key=_folder_sort_key, reverse=True)
     return folders[reserve_num:]
@@ -85,9 +91,9 @@ def _zip_camera_data_(folder):
             compressed = True
         except Exception as e:
             if _is_file_access_error(e):
-                print(f"跳过正在占用的相机数据目录 {folder}: {imageUrl} {e}")
+                logger.debug("skip busy camera data folder %s: %s %s", folder, imageUrl, e)
                 return False
-            print(f"跳过无法压缩的2D图像 {imageUrl}: {e}")
+            logger.warning("skip uncompressible 2D image %s: %s", imageUrl, e)
             continue
     d3_folder = _resolve_child_dir(folder, "3D")
     for d3Url in d3_folder.glob("*.npy"):
@@ -98,9 +104,9 @@ def _zip_camera_data_(folder):
             compressed = True
         except Exception as e:
             if _is_file_access_error(e):
-                print(f"跳过正在占用的3D数据目录 {folder}: {d3Url} {e}")
+                logger.debug("skip busy 3D data folder %s: %s %s", folder, d3Url, e)
                 return False
-            print(f"跳过无法压缩的3D数据 {d3Url}: {e}")
+            logger.warning("skip uncompressible 3D data %s: %s", d3Url, e)
     return compressed
 
 def _zip_save_data_(folder):
@@ -140,8 +146,8 @@ def _archive_(folder):
     d3_array_list = [np.load(d3Url) for d3Url in list(d3_folder.glob("*.npy"))] + \
     [np.load(d3Url)["array"] for d3Url in list(d3_folder.glob("*.npz"))]
     np.savez_compressed(str(folder/"archive.npz"), image_array_list=image_array_list)
-    print(image_array_list)
-    print(d3_array_list)
+    logger.debug("archived image arrays: %s", len(image_array_list))
+    logger.debug("archived 3D arrays: %s", len(d3_array_list))
 
 
 class ZipAndDeletionCameraData(Globs.control.SaveAndDeleteCameraDataBase):
@@ -159,10 +165,10 @@ class ZipAndDeletionCameraData(Globs.control.SaveAndDeleteCameraDataBase):
                     zip_state = _zip_camera_data_(folder)
                     e_time = time.time()
                     if zip_state:
-                        print(f"{zip_state} {folder} 数据压缩成功! 耗时: {e_time - s_time}")
+                        logger.info("camera data compressed: %s elapsed=%.3fs", folder, e_time - s_time)
                 except Exception as e:
-                    print(f"数据压缩失败! {e}")
-            print(f"{self.path} 压缩完成")
+                    logger.exception("camera data compression failed: %s", e)
+            logger.debug("camera compression pass finished: %s", self.path)
             time.sleep(6000)
 
     def delete(self):
@@ -187,9 +193,11 @@ class ZipAndDeletionSaveData(Globs.control.SaveAndDeleteSaveDataBase):
                     zip_state = _zip_save_data_(folder)
                     e_time = time.time()
                     if zip_state:
-                        print(f"{zip_state} {folder} 数据压缩成功! 耗时: {e_time - s_time}")
+                        logger.info("saved data compressed: %s elapsed=%.3fs", folder, e_time - s_time)
                 except Exception as e:
-                    pass
+                    logger.exception("saved data compression failed: %s", e)
+            logger.debug("saved data compression pass finished: %s", self.path)
+            time.sleep(6000)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 用于在 AlgServer 和 Alg2DServer 存储原图时生成缓存
 """
 import json
+import logging
 
 import cv2
 import numpy as np
@@ -79,7 +80,7 @@ def generate_gray_thumbnail(
         return False
 
     except Exception as e:
-        print(f"Failed to generate GRAY thumbnail: {e}")
+        logging.warning("Failed to generate GRAY thumbnail: %s", e)
         return False
 
 
@@ -134,6 +135,9 @@ def generate_jet_thumbnail(
 
         # 兼容旧代码：从 numpy 数据生成
         if npy_data is not None and cache_dir is not None:
+            if max_value <= min_value:
+                raise ValueError(f"invalid falsecolor range: min={min_value}, max={max_value}")
+
             clip_npy = np.clip(npy_data, min_value, max_value)
             clip_npy = (clip_npy - min_value) / (max_value - min_value) * 255
             clip_npy = clip_npy.astype(np.uint8)
@@ -163,7 +167,7 @@ def generate_jet_thumbnail(
         return False
 
     except Exception as e:
-        print(f"Failed to generate JET thumbnail: {e}")
+        logging.warning("Failed to generate JET thumbnail: %s", e)
         return False
 
 
@@ -278,11 +282,17 @@ def generate_error_image(
             median_mm = median_z_int * scale_factor
             min_mm = median_mm - threshold_down
             max_mm = median_mm + threshold_up
-            print(f"Generated Error.png: {e_t - s_t:.3f}s, median={median_mm:.1f}mm, range=[{min_mm:.1f}, {max_mm:.1f}]mm")
+            logging.debug(
+                "Generated Error.png: %.3fs, median=%.1fmm, range=[%.1f, %.1f]mm",
+                e_t - s_t,
+                median_mm,
+                min_mm,
+                max_mm,
+            )
             return True
 
         return False
 
     except Exception as e:
-        print(f"Failed to generate Error image: {e}")
+        logging.warning("Failed to generate Error image: %s", e)
         return False

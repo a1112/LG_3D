@@ -1,8 +1,6 @@
 import asyncio
 import json
 import logging
-from queue import Queue
-from threading import Thread
 
 from fastapi import APIRouter
 from fastapi import HTTPException
@@ -36,23 +34,6 @@ async def _close_unavailable_websocket(websocket: WebSocket, detail: str) -> Non
     await websocket.close(code=1011)
 
 
-class ReceiveTextThread(Thread):
-    def __init__(self, websocket):
-        super().__init__()
-        self.websocket = websocket
-        self.queue = Queue()
-
-    def run(self):
-        while True:
-            self.queue.put(self.websocket.receive())
-
-    def hasMsg(self):
-        return self.queue.qsize() > 0
-
-    def get(self):
-        return self.queue.get()
-
-
 @router.websocket("/ws/reDetection")
 async def ws_re_detection_task(websocket: WebSocket):
     if not _runtime_available() or getattr(Globs, "imageMosaicThread", None) is None:
@@ -80,7 +61,10 @@ async def ws_re_detection_task(websocket: WebSocket):
 
     # 使用 asyncio.gather 来并发运行接收和发送任务
 
-    await asyncio.gather(receive_messages(), send_messages())
+    try:
+        await asyncio.gather(receive_messages(), send_messages())
+    except WebSocketDisconnect:
+        return
 
 
 @router.get("/reDetection/start/{from_id:int}/{to_id:int}")
@@ -134,7 +118,8 @@ async def ws_detection_state(websocket: WebSocket):
 
     async def send_messages():
         while True:
-            await websocket.send_text(f"Message " + str(""))  # 非阻塞的发送消息
+            await asyncio.sleep(1)
+            await websocket.send_text(json.dumps(Globs.serverMsg.msgList, ensure_ascii=False))
 
     try:
         await asyncio.gather(receive_messages(), send_messages())

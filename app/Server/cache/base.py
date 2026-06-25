@@ -114,7 +114,7 @@ def _resolve_image_path(original_path: str) -> Path:
             if candidate.exists():
                 return candidate
     except Exception as e:  # pragma: no cover - 映射失败时保留原路径
-        print(e)
+        logging.debug("developer_mode image path mapping failed: %s", e)
         return path_obj
 
     return path_obj

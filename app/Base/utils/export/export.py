@@ -1,4 +1,6 @@
+import logging
 from io import BytesIO
+
 import xlsxwriter
 
 from Base.utils.export.export_image import (
@@ -9,6 +11,8 @@ from .export_database import export_info_data
 from CoilDataBase import Coil
 from .export_config import ExportConfig, XlsxWriterFormatConfig
 from api.Models import ExportXlsxConfigModel
+
+logger = logging.getLogger(__name__)
 
 
 def export_data_by_coil_id_list(coil_id_list,
@@ -22,19 +26,19 @@ def export_data_by_coil_id_list(coil_id_list,
 
     if export_config.export_defect_image:
         # 数据导出
-        print(
+        logger.info(
             f"[Export] export_defect_image={export_config.export_defect_image}, "
             f"defect_show_info={export_config.defect_show_info}, "
             f"defect_un_show_info={export_config.defect_un_show_info}"
         )
         if export_config.defect_show_info or export_config.defect_un_show_info:
-            print(
+            logger.info(
                 f"[Export] Calling export_3d_defect_image with {len(coil_id_list)} coils"
             )
             export_3d_defect_image(coil_id_list, workbook, export_config,
                                    format_)
         if export_config.export_area_defect_image:
-            print(f"[Export] Calling export_area_2d_defect_image")
+            logger.info("[Export] Calling export_area_2d_defect_image")
             export_area_2d_defect_image(coil_id_list, workbook, export_config,
                                         format_)
 
@@ -46,7 +50,7 @@ def export_data_by_coil_id(start_id,
     output = BytesIO()
     # 将 BytesIO 对象传递给 xlsxwriter.Workbook
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    print("get_all_join_data_by_id")
+    logger.debug("get_all_join_data_by_id")
     secondary_coil_list = Coil.get_all_join_data_by_id(start_id, end_id)
     export_data_by_coil_id_list(secondary_coil_list,
                                 workbook,
@@ -91,4 +95,4 @@ def export_data_by_config(config: ExportXlsxConfigModel):
 
 
 if __name__ == '__main__':
-    print(export_data_simple(40000, 40400, export_type="defect"))
+    logger.info(export_data_simple(40000, 40400, export_type="defect"))

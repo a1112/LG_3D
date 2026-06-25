@@ -351,10 +351,9 @@ def singleton_decorator(
             lock = SingletonLock(service_name, pid_dir, port, host)
 
             if not lock.acquire():
-                print(f"[ERROR] Service '{service_name}' is already running!")
-                print(f"  Port {host}:{port} is in use or locked by another process.")
-                print(f"  If you believe this is an error, delete the lock file:")
-                print(f"    {lock.pid_file}")
+                logger.error("Service '%s' is already running", service_name)
+                logger.error("Port %s:%s is in use or locked by another process", host, port)
+                logger.error("Delete the lock file if this is stale: %s", lock.pid_file)
                 sys.exit(1)
 
             try:

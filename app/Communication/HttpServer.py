@@ -1,6 +1,8 @@
 from threading import Thread
-from fastapi import FastAPI
+
 import uvicorn
+from fastapi import FastAPI
+
 import DecodeData
 
 app = FastAPI()
@@ -11,8 +13,11 @@ async def read_root():
     return DecodeData.currentCoil
 
 
-def thread():
+def run_http_server() -> None:
     uvicorn.run(app, host="0.0.0.0", port=6005)
 
 
-Thread(target=thread).start()
+def start_http_server() -> Thread:
+    thread = Thread(target=run_http_server, daemon=True)
+    thread.start()
+    return thread

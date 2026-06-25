@@ -3,10 +3,26 @@ import os
 import sys
 from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from multiprocessing import Queue
-import colorlog
-from typing import Optional, Dict, Any
 from pathlib import Path
+from queue import Full
+from typing import Dict, Optional
+
+import colorlog
+
 from configs import CONFIG
+
+
+class DroppingQueueHandler(QueueHandler):
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except Full:
+            if record.levelno >= logging.ERROR:
+                try:
+                    self.queue.put(record, block=True, timeout=0.2)
+                except Full:
+                    pass
+
 
 class EnhancedMultiProcessLogger:
     """
@@ -45,7 +61,8 @@ class EnhancedMultiProcessLogger:
             file_log_format: Optional[str] = None,
             when: str = "midnight",  # 按时间轮转的时间单位
             interval: int = 1,  # 轮转间隔
-            encoding: str = "utf-8"
+            encoding: str = "utf-8",
+            queue_maxsize: Optional[int] = None,
     ):
         if getattr(self, '_initialized', False):
             return
@@ -63,6 +80,7 @@ class EnhancedMultiProcessLogger:
         self.when = when
         self.interval = interval
         self.encoding = encoding
+        self.queue_maxsize = self._resolve_queue_maxsize(queue_maxsize)
 
         # 日志格式设置
         self.log_format = log_format or (
@@ -89,6 +107,16 @@ class EnhancedMultiProcessLogger:
         self._setup_logging_system()
         self._initialized = True
 
+    @staticmethod
+    def _resolve_queue_maxsize(queue_maxsize: Optional[int]) -> int:
+        if queue_maxsize is not None:
+            return max(int(queue_maxsize), 1)
+        raw_value = os.getenv("ALG_2D_LOG_QUEUE_MAXSIZE", "5000")
+        try:
+            return max(int(raw_value), 1)
+        except ValueError:
+            return 5000
+
     def _setup_logging_system(self):
         """初始化日志系统"""
         # 创建主记录器
@@ -114,7 +142,7 @@ class EnhancedMultiProcessLogger:
             handlers.append(file_handler)
 
         # 创建多进程队列和监听器
-        self.log_queue = Queue(-1)  # 无界队列
+        self.log_queue = Queue(maxsize=self.queue_maxsize)
         self.queue_listener = QueueListener(self.log_queue, *handlers)
         self.queue_listener.start()
 
@@ -179,7 +207,7 @@ class EnhancedMultiProcessLogger:
         获取适用于子进程的记录器
         子进程应该使用此方法获取记录器
         """
-        handler = QueueHandler(self.log_queue)
+        handler = DroppingQueueHandler(self.log_queue)
         logger = logging.getLogger(self.name)
         logger.setLevel(self.log_level)
 
@@ -238,9 +266,9 @@ if __name__ == "__main__":
     def worker(worker_id):
         # 获取子进程记录器
         worker_logger = EnhancedMultiProcessLogger().get_process_logger()
-        worker_logger.info(f"Worker {worker_id} started")
-        worker_logger.warning(f"Worker {worker_id} encountered a minor issue")
-        worker_logger.error(f"Worker {worker_id} failed to complete task")
+        worker_logger.info("Worker %s started", worker_id)
+        worker_logger.warning("Worker %s encountered a minor issue", worker_id)
+        worker_logger.error("Worker %s failed to complete task", worker_id)
 
 
     processes = [Process(target=worker, args=(i,)) for i in range(3)]
@@ -251,4 +279,4 @@ if __name__ == "__main__":
 
     # 关闭日志系统
     EnhancedMultiProcessLogger().shutdown()
-    print("Logging system shutdown completed.")
+    main_logger.info("Logging system shutdown completed.")

@@ -44,7 +44,7 @@ def get_foreground(gray_image, direction="L", key=None):
     contours, _ = cv2.findContours(cleaned_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = list(contours)
     contours.sort(key=cv2.contourArea, reverse=True)
-    print([cv2.contourArea(c) for c in contours])
+    logger.debug("foreground contour areas: %s", [cv2.contourArea(c) for c in contours])
     # 创建掩膜并填充最大的轮廓
     mask = np.zeros_like(gray_image)
     new_contours = []
@@ -107,7 +107,7 @@ def crop_max_image_black_edges(key, image, star_pos):
         if column_no_black_count[right_index] > r_limit:
             break
         right_index -= 1
-    logger.debug(f"r_index  {key}   {right_index}  {w-right_index} { column_no_black_count[right_index]}")
+    logger.debug("r_index %s %s %s %s", key, right_index, w - right_index, column_no_black_count[right_index])
     # print(f"{key} {max_l} {maxR} left_index {left_index}  right_index {w-right_index}")
     # showImage(image)
     # 保存裁剪后的图像
@@ -341,7 +341,7 @@ def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
 
         # 对齐：如果均值有效且差值合理，平移右块
         if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l - mean_r) > 1e6:
-            logger.error(f"hstack_3d align skip: mean_l={mean_l}, mean_r={mean_r}, row={sample_row}")
+            logger.error("hstack_3d align skip: mean_l=%s, mean_r=%s, row=%s", mean_l, mean_r, sample_row)
         else:
             right = apply_valid_delta(right, mean_l - mean_r)
 

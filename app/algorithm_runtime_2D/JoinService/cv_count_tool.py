@@ -271,15 +271,11 @@ def hconcat_list(image_list, ins_int_list,debug=False):
     for index in range(len(ins_int_list)):
         try:
             h,w,*_= image_list[index+1].shape
-            try:
-                def get_ins(index_):
-                    if  ins_int_list[index_]==0:
-                        return get_ins(index_-1)
-                    else:
-                        return ins_int_list[index_]
-                ins_int = get_ins(index)
-            except IndexError:
-                ins_int = w
+            ins_int = w
+            for index_ in range(index, -1, -1):
+                if ins_int_list[index_] != 0:
+                    ins_int = ins_int_list[index_]
+                    break
 
             d_count = min(int(w - ins_int),w)
             if debug:
@@ -292,7 +288,7 @@ def hconcat_list(image_list, ins_int_list,debug=False):
             add_image_list.append(item_image)
         except IndexError:
             # raise
-            logger.error(f"<hconcat_list IndexError>{index+1}")
+            logger.error("<hconcat_list IndexError>%s", index + 1)
     count_image = cv2.hconcat(add_image_list)
     return count_image
 

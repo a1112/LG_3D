@@ -1,6 +1,7 @@
 #  数据导出
 import io
 import json
+import logging
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -16,6 +17,7 @@ from Base.tools.tool import expansion_box
 
 # Per side; exported crop width/height can grow by up to 80 px.
 AREA_2D_DEFECT_CROP_MARGIN_PX = 40
+logger = logging.getLogger(__name__)
 
 
 def _defect_int(value, default=0) -> int:
@@ -79,7 +81,7 @@ def _load_image_copy(image_path: Path):
             with Image.open(image_path) as image:
                 return image.copy()
     except Exception as e:
-        print(f"[Export] failed to load saved defect image {image_path}: {e}")
+        logger.warning("[Export] failed to load saved defect image %s: %s", image_path, e)
     return None
 
 
@@ -215,7 +217,7 @@ def get_pil_image_from_classifier_save(defect: CoilDefect,
         return None
 
     except Exception as e:
-        print(f"Error loading from classifier: {e}")
+        logger.warning("Error loading from classifier: %s", e)
         return None
 
 
@@ -303,9 +305,12 @@ def _save_classifier_crop(defect: CoilDefect,
         image_path.parent.mkdir(parents=True, exist_ok=True)
         image.save(image_path, format="PNG")
     except Exception as e:
-        print(
-            f"[Export] failed to save defect crop coil={defect.secondaryCoilId}, "
-            f"surface={defect.surface}, defect={defect_name or defect.defectName}: {e}"
+        logger.warning(
+            "[Export] failed to save defect crop coil=%s, surface=%s, defect=%s: %s",
+            defect.secondaryCoilId,
+            defect.surface,
+            defect_name or defect.defectName,
+            e,
         )
 
 
@@ -314,7 +319,7 @@ def _close_source_image_cache(source_image_cache: dict) -> None:
         try:
             image.close()
         except Exception as e:
-            pass
+            logger.debug("failed to close cached export source image: %s", e)
     source_image_cache.clear()
 
 
@@ -337,9 +342,12 @@ def get_pil_image_for_export(defect: CoilDefect,
             return get_pil_image_from_classifier_save(defect, defect_name)
         return None
     except Exception as e:
-        print(
-            f"[Export] failed to crop defect image from source coil={defect.secondaryCoilId}, "
-            f"surface={defect.surface}, defect={defect.defectName}: {e}"
+        logger.warning(
+            "[Export] failed to crop defect image from source coil=%s, surface=%s, defect=%s: %s",
+            defect.secondaryCoilId,
+            defect.surface,
+            defect.defectName,
+            e,
         )
         if crop_margin is not None:
             return get_pil_image_from_classifier_save(defect, defect_name)
@@ -351,8 +359,10 @@ def get_item_data(secondary_coil: SecondaryCoil,
     res_data = {}
     alarm_info_dict = {"S": None, "L": None}
     defects = get_defects(secondary_coil)
-    print(
-        f"[Export] get_item_data: coil_id={secondary_coil.Id}, defects count={len(defects) if defects else 0}"
+    logger.debug(
+        "[Export] get_item_data: coil_id=%s, defects count=%s",
+        secondary_coil.Id,
+        len(defects) if defects else 0,
     )
 
     if export_config.export_header_data:
@@ -373,8 +383,10 @@ def export_defect_image_by_names(coil_id_list,
                                  in_list=True,
                                  format_=None,
                                  defect_filter=None):
-    print(
-        f"[Export] export_defect_image_by_names called, names={names}, in_list={in_list}"
+    logger.info(
+        "[Export] export_defect_image_by_names called, names=%s, in_list=%s",
+        names,
+        in_list,
     )
     if names is None:
         names = []
@@ -384,7 +396,7 @@ def export_defect_image_by_names(coil_id_list,
     skipped_images = []  # 记录跳过的图像
     defect_count_total = 0  # 统计总缺陷数
     image_found_count = 0  # 统计找到的图像数
-    print(f"[Export] coil_id_list: {len(coil_id_list)}")
+    logger.info("[Export] coil_id_list: %s", len(coil_id_list))
     for secondaryCoil in coil_id_list:
         item_dict = get_item_data(secondaryCoil, export_config)
         if item_dict is None:
@@ -448,28 +460,32 @@ def export_defect_image_by_names(coil_id_list,
             try:
                 image.close()
             except Exception as e:
-                pass
+                logger.debug("failed to close exported defect image: %s", e)
             offset += 2
 
     # 输出统计信息
-    print(
-        f"[Export] Total defects: {defect_count_total}, "
-        f"Images found: {image_found_count}, Skipped: {len(skipped_images)}"
+    logger.info(
+        "[Export] Total defects: %s, Images found: %s, Skipped: %s",
+        defect_count_total,
+        image_found_count,
+        len(skipped_images),
     )
-    print(f"[Export] Source images loaded for crop: {len(source_image_cache)}")
+    logger.debug("[Export] Source images loaded for crop: %s", len(source_image_cache))
     _close_source_image_cache(source_image_cache)
 
     # 输出跳过的图像统计
     if skipped_images:
-        print(
-            f"Warning: Skipped {len(skipped_images)} defect images due to loading errors"
-        )
+        logger.warning("Skipped %s defect images due to loading errors", len(skipped_images))
         for item in skipped_images[:5]:  # 只打印前5个
-            print(
-                f"  - Coil {item['coil_id']}: {item['defect_name']} at ({item['x']}, {item['y']})"
+            logger.warning(
+                "Skipped defect image: coil=%s defect=%s at (%s, %s)",
+                item["coil_id"],
+                item["defect_name"],
+                item["x"],
+                item["y"],
             )
         if len(skipped_images) > 5:
-            print(f"  ... and {len(skipped_images) - 5} more")
+            logger.warning("... and %s more skipped defect images", len(skipped_images) - 5)
 
 
 def _is_2d_defect(defect: CoilDefect) -> bool:
@@ -529,8 +545,11 @@ def _load_area_image(coil_id, surface: str):
             return None
         return image.convert("RGB")
     except Exception as e:
-        print(
-            f"[Export] failed to load AREA image coil={coil_id}, surface={surface}: {e}"
+        logger.warning(
+            "[Export] failed to load AREA image coil=%s, surface=%s: %s",
+            coil_id,
+            surface,
+            e,
         )
         return None
 
@@ -651,12 +670,8 @@ def export_3d_defect_image(coil_id_list,
                            workbook,
                            export_config: ExportConfig = None,
                            format_=None):
-    print(
-        f"[Export] export_3d_defect_image called with {len(coil_id_list)} coils"
-    )
-    print(
-        f"[Export] show_name_list: {CONFIG.defectClassesProperty.show_name_list}"
-    )
+    logger.info("[Export] export_3d_defect_image called with %s coils", len(coil_id_list))
+    logger.debug("[Export] show_name_list: %s", CONFIG.defectClassesProperty.show_name_list)
 
     if not export_config.defect_show_info and not export_config.defect_un_show_info:
         return
@@ -706,12 +721,8 @@ def export_defect_show_image(coil_id_list,
                              workbook,
                              export_config: ExportConfig = None,
                              format_=None):
-    print(
-        f"[Export] export_defect_show_image called with {len(coil_id_list)} coils"
-    )
-    print(
-        f"[Export] show_name_list: {CONFIG.defectClassesProperty.show_name_list}"
-    )
+    logger.info("[Export] export_defect_show_image called with %s coils", len(coil_id_list))
+    logger.debug("[Export] show_name_list: %s", CONFIG.defectClassesProperty.show_name_list)
 
     worksheet = workbook.add_worksheet(
         _sheet_name(export_config.worksheet_defect_image_name, "_显示"))

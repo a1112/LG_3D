@@ -56,7 +56,7 @@ class CameraWork(WorkBaseThread):
 
             return image
         except Exception as e:
-            logger.error(f"Error opening image {url}: {e}")
+            logger.error("Error opening image %s: %s", url, e)
             return None
 
     @DetectionSpeedRecord.timing_decorator("图像: 获取")
@@ -78,12 +78,19 @@ class CameraWork(WorkBaseThread):
                 len(image_list),
                 MIN_IMAGES_PER_CAMERA,
             )
+            for image in image_list:
+                try:
+                    image.close()
+                except Exception:
+                    pass
             return []
 
         if self.debug_work is not None:
             for url_,image_ in image_pairs:
                 index = Path(url_).stem
-                self.debug_work.add_work([coil_id, self.config.key, index, image_.copy()])
+                debug_image = image_.copy()
+                if not self.debug_work.add_work([coil_id, self.config.key, index, debug_image]):
+                    debug_image.close()
 
 
         return image_list
@@ -94,7 +101,9 @@ class CameraWork(WorkBaseThread):
             coil_id = self.queue_in.get()
             self.coil_id = coil_id
             if not self.config.is_run():
-                return
+                logger.info("2D camera disabled: coil_id=%s camera=%s", coil_id, self.config.key)
+                self.set(None)
+                continue
             folder = self.config.get_folder(coil_id)
             images = self.get_images(folder, coil_id)
             if not images:

@@ -73,7 +73,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         if (link_folder / self.folderName).exists():
             return
         # os.link(link_folder / self.folderName, self.source / coilId)
-        cmd = fr"mklink /D {link_folder / self.folderName} {target}"
+        cmd = fr'mklink /D "{link_folder / self.folderName}" "{target}"'
         cmdThread.put(cmd)
 
     def _load_json_frames(self, coil_id):
@@ -239,7 +239,7 @@ class DataFolder(Globs.control.BaseDataFolder):
         source = Path(source)
         exists = (source / coil_id).exists()
         if not exists:
-            logger.error(f"DataFolder {coil_id} does not exist.  {source / coil_id}")
+            logger.error("DataFolder %s does not exist. %s", coil_id, source / coil_id)
         return exists
 
     def run(self):
@@ -259,7 +259,6 @@ class DataFolder(Globs.control.BaseDataFolder):
                 forced_stems = work_item.get("stems")
             else:
                 coil_id = work_item
-            # logger.info(f"DataFolder {coil_id} start")
             total_start = time.perf_counter()
             data = {"camera": self.folderName}
             # dataFolderLog = DataFolderLog(self)
@@ -291,14 +290,21 @@ class DataFolder(Globs.control.BaseDataFolder):
 
                 # 显示图像
                 logger.info(
-                    f"perf DataFolder coil={coil_id} camera={self.folderName} frames={len(stem_list)} "
-                    f"json_s={json_s:.3f} load2d_s={load2d_s:.3f} load3d_s={load3d_s:.3f} "
-                    f"post_s={post_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
+                    "perf DataFolder coil=%s camera=%s frames=%s json_s=%.3f load2d_s=%.3f "
+                    "load3d_s=%.3f post_s=%.3f total_s=%.3f",
+                    coil_id,
+                    self.folderName,
+                    len(stem_list),
+                    json_s,
+                    load2d_s,
+                    load3d_s,
+                    post_s,
+                    time.perf_counter() - total_start,
                 )
             except Exception as e:
-                logger.error(f"Error in DataFolder {coil_id}: {e}")
+                logger.error("Error in DataFolder %s: %s", coil_id, e)
                 if isLoc and Globs.control.debug_raise:
                     raise e
             finally:
-                logger.info(f"DataFolder {coil_id} end")
+                logger.info("DataFolder %s end", coil_id)
                 self.consumer.put(data)

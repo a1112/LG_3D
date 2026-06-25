@@ -1,4 +1,8 @@
+import logging
+
 import redis
+
+logger = logging.getLogger(__name__)
 
 
 def get_client():
@@ -14,10 +18,10 @@ def ping():
     client = get_client()
     try:
         response = client.ping()
-        print("Redis 连接成功:", response)
+        logger.info("Redis connection ok: %s", response)
         return True
-    except redis.ConnectionError:
-        print("无法连接到 Redis 服务器")
+    except redis.ConnectionError as e:
+        logger.warning("Redis connection failed: %s", e)
         return False
 
 class RedisCache:

@@ -39,21 +39,17 @@ def leveling_2d(datas):
         for data in datas:
             image_2d = data.get("2D")
             if image_2d is None or image_2d.size == 0:
-                logger.warning(
-                    f"leveling_2d skip empty image: camera={data.get('camera')}"
-                )
+                logger.warning("leveling_2d skip empty image: camera=%s", data.get("camera"))
                 return
             valid_gray = image_2d[image_2d != 0]
             if valid_gray.size == 0:
-                logger.warning(
-                    f"leveling_2d skip all-zero image: camera={data.get('camera')}"
-                )
+                logger.warning("leveling_2d skip all-zero image: camera=%s", data.get("camera"))
                 return
             media_gray = float(np.median(valid_gray))
             media_gray_list.append(media_gray)
         logger.debug("leveling_2d medians=%s", media_gray_list)
         if len(media_gray_list) < 3 or media_gray_list[1] <= 0:
-            logger.warning(f"leveling_2d skip invalid medians: {media_gray_list}")
+            logger.warning("leveling_2d skip invalid medians: %s", media_gray_list)
             return
         ratio_list = [gray / media_gray_list[1] for gray in media_gray_list]
         if min(ratio_list) < 0.4 or max(ratio_list) > 2.5:
@@ -152,7 +148,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                     cache_dir=gray_cache_dir,
                     size=1024
                 )
-                logger.info(f"Generated GRAY cache for {surface_key}/{coil_id}")
+                logger.info("Generated GRAY cache for %s/%s", surface_key, coil_id)
 
             # JET 缓存：从 JET.jpg 生成（如果 JET 图像存在）
             elif name == "JET":
@@ -162,10 +158,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                     cache_dir=jet_cache_dir,
                     size=1024
                 )
-                logger.info(f"Generated JET cache for {surface_key}/{coil_id}")
+                logger.info("Generated JET cache for %s/%s", surface_key, coil_id)
 
         except Exception as e:
-            logger.error(f"Failed to generate cache for {name}: {e}")
+            logger.error("Failed to generate cache for %s: %s", name, e)
 
     # 保存图像
     async def save_image(self, data_integration: DataIntegration):
@@ -231,9 +227,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 threshold_up=threshold_up,
                 scale_factor=data_integration.scan3dCoordinateScaleZ
             )
-            logger.info(f"Generated Error image for {data_integration.key}/{coil_id}")
+            logger.info("Generated Error image for %s/%s", data_integration.key, coil_id)
         except Exception as e:
-            logger.error(f"Failed to generate Error image: {e}")
+            logger.error("Failed to generate Error image: %s", e)
 
         obj_file = self.saveFolder / coil_id / "3D.obj"
         if self.save3D_data:
@@ -262,7 +258,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             ).get_config().get_config()
             return taper_error_threshold_from_limits(height_limits)
         except Exception as e:
-            logger.warning(f"get taper error thresholds failed, use default {default_threshold}: {e}")
+            logger.warning("get taper error thresholds failed, use default %s: %s", default_threshold, e)
         return default_threshold, default_threshold
 
     @DetectionSpeedRecord.timing_decorator("数据获取 __getAllData__")
@@ -289,8 +285,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 config_datas.append(data["json"])
             except KeyError:
                 logger.warning(
-                    f"config data missing: coil={data_integration.coilId}, surface={self.key}, "
-                    f"camera={dataFolder.folderName}"
+                    "config data missing: coil=%s, surface=%s, camera=%s",
+                    data_integration.coilId,
+                    self.key,
+                    dataFolder.folderName,
                 )
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas
@@ -302,28 +300,26 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 stems = dataFolder.get_valid_3d_stems(str(coil_id))
             except Exception as e:
                 logger.warning(
-                    f"get valid 3D stems failed: coil={coil_id}, surface={self.key}, "
-                    f"camera={dataFolder.folderName}, error={e}"
+                    "get valid 3D stems failed: coil=%s, surface=%s, camera=%s, error=%s",
+                    coil_id,
+                    self.key,
+                    dataFolder.folderName,
+                    e,
                 )
                 return None
             if not stems:
-                logger.warning(
-                    f"no valid 3D stems: coil={coil_id}, surface={self.key}, "
-                    f"camera={dataFolder.folderName}"
-                )
+                logger.warning("no valid 3D stems: coil=%s, surface=%s, camera=%s",
+                               coil_id, self.key, dataFolder.folderName)
                 return None
             valid_stem_sets.append({str(stem) for stem in stems})
 
         common = set.intersection(*valid_stem_sets) if valid_stem_sets else set()
         common_stems = sorted(common, key=lambda stem: int(stem) if stem.isdigit() else stem)
         if len(common_stems) < 2:
-            logger.warning(
-                f"too few common valid 3D stems: coil={coil_id}, surface={self.key}, stems={common_stems}"
-            )
+            logger.warning("too few common valid 3D stems: coil=%s, surface=%s, stems=%s",
+                           coil_id, self.key, common_stems)
             return None
-        logger.warning(
-            f"use common valid 3D stems: coil={coil_id}, surface={self.key}, stems={common_stems}"
-        )
+        logger.warning("use common valid 3D stems: coil=%s, surface=%s, stems=%s", coil_id, self.key, common_stems)
         return common_stems
 
     def raise_error(self, message):
@@ -343,15 +339,20 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             ]
             if missing_keys:
                 logger.warning(
-                    f"skip camera data with missing keys: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, missing={missing_keys}"
+                    "skip camera data with missing keys: coil=%s, surface=%s, camera=%s, missing=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    missing_keys,
                 )
                 continue
             if any(data[key].size == 0 for key in ["2D", "MASK", "3D"]):
                 logger.warning(
-                    f"skip camera data with empty image: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, "
-                    f"shapes={{'2D': {data['2D'].shape}, 'MASK': {data['MASK'].shape}, '3D': {data['3D'].shape}}}"
+                    "skip camera data with empty image: coil=%s, surface=%s, camera=%s, shapes=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    {"2D": data["2D"].shape, "MASK": data["MASK"].shape, "3D": data["3D"].shape},
                 )
                 continue
 
@@ -362,15 +363,22 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 bottom = min(image_h, top + int(rec[3]))
             else:
                 logger.warning(
-                    f"steel rect missing, use full image height: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, crop_rec={data.get('crop_rec')}"
+                    "steel rect missing, use full image height: coil=%s, surface=%s, camera=%s, crop_rec=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    data.get("crop_rec"),
                 )
                 top = 0
                 bottom = image_h
             if bottom <= top:
                 logger.warning(
-                    f"invalid crop range, use full image height: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, top={top}, bottom={bottom}"
+                    "invalid crop range, use full image height: coil=%s, surface=%s, camera=%s, top=%s, bottom=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    top,
+                    bottom,
                 )
                 top = 0
                 bottom = image_h
@@ -389,20 +397,27 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         crop_datas = []
         for data in datas:  # 裁剪，减低计算
             camera = data.get("camera", "unknown")
+            camera = data.get("camera", "unknown")
             crop_bottom = min(max_h + out_side_px, data["2D"].shape[0])
             if crop_bottom <= crop_top:
                 logger.warning(
-                    f"skip camera data after crop: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, "
-                    f"crop_top={crop_top}, crop_bottom={crop_bottom}"
+                    "skip camera data after crop: coil=%s, surface=%s, camera=%s, crop_top=%s, crop_bottom=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    crop_top,
+                    crop_bottom,
                 )
                 continue
             for key in ["2D", "MASK", "3D"]:
                 data[key] = data[key][crop_top:crop_bottom, :]
             if data["MASK"].size == 0 or not np.any(data["MASK"] > 150):
                 logger.warning(
-                    f"skip camera data with empty mask foreground: coil={data_integration.coilId}, "
-                    f"surface={data_integration.surface}, camera={camera}, mask_shape={data['MASK'].shape}"
+                    "skip camera data with empty mask foreground: coil=%s, surface=%s, camera=%s, mask_shape=%s",
+                    data_integration.coilId,
+                    data_integration.surface,
+                    camera,
+                    data["MASK"].shape,
                 )
                 continue
             crop_datas.append(data)
@@ -423,9 +438,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             data_integration.set("cameraPlaneAlignments",
                                  camera_plane_alignments)
             logger.info(
-                f"aligned camera 3D planes: coil={data_integration.coilId}, "
-                f"surface={data_integration.surface}, "
-                f"adjustments={camera_plane_alignments}"
+                "aligned camera 3D planes: coil=%s, surface=%s, adjustments=%s",
+                data_integration.coilId,
+                data_integration.surface,
+                camera_plane_alignments,
             )
         horizontal_projection_list = tool.get_horizontal_projection_list([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontal_projection_list)
@@ -517,7 +533,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 break
             data_integration = DataIntegration(coil_id, self.saveFolder, self.direction, self.key)
             try:
-                logger.info(f"ImageMosaic {self.key} {data_integration.coilId}")
+                logger.info("ImageMosaic %s %s", self.key, data_integration.coilId)
                 total_start = time.perf_counter()
                 get_data_start = time.perf_counter()
                 self.__getAllData__(data_integration)  # 获取全部的拼接数据
@@ -543,19 +559,26 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 data_integration.commit()
                 commit_s = time.perf_counter() - commit_start
                 logger.info(
-                    f"perf ImageMosaic coil={coil_id} surface={self.key} get_data_s={get_data_s:.3f} "
-                    f"set_original_s={original_s:.3f} stitch_s={stitch_s:.3f} save_s={save_s:.3f} "
-                    f"commit_s={commit_s:.3f} total_s={time.perf_counter() - total_start:.3f}"
+                    "perf ImageMosaic coil=%s surface=%s get_data_s=%.3f set_original_s=%.3f "
+                    "stitch_s=%.3f save_s=%.3f commit_s=%.3f total_s=%.3f",
+                    coil_id,
+                    self.key,
+                    get_data_s,
+                    original_s,
+                    stitch_s,
+                    save_s,
+                    commit_s,
+                    time.perf_counter() - total_start,
                 )
             except ServerDetectionException as e:
                 error_message = traceback.format_exc()
-                logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
+                logging.error("Error in ImageMosaic %s: %s", data_integration.coilId, error_message)
                 data_integration.add_server_detection_error(e)
                 logger.warning("ImageMosaic recovered after detection error, continue server")
             except Exception as e:
                 error_message = traceback.format_exc()
                 # raise e
-                logging.error(f"Error in ImageMosaic {data_integration.coilId}: {error_message}")
+                logging.error("Error in ImageMosaic %s: %s", data_integration.coilId, error_message)
                 if isLoc and Globs.control.debug_raise:
                     six.reraise(Exception, e)
 

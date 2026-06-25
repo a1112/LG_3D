@@ -88,6 +88,6 @@ if __name__ == "__main__":
     # 将图像转换为 numpy 数组
     img_array = np.array(img)
     circle_config = get_circle_contour(img_array)
-    print(circle_config)
+    logger.info(circle_config)
     inner_circle_config = get_inner_circle_contour(img_array)
-    print(inner_circle_config)
+    logger.info(inner_circle_config)

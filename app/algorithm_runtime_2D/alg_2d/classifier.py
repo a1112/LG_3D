@@ -71,7 +71,9 @@ def _create_classifier_model():
         fallback_config = CONFIG.base_config_folder / "model" / "CoilClassifiersConfig.json"
         if fallback_config.exists():
             logger.warning(
-                f"2D classifier default config failed, try fallback {fallback_config}: {e}"
+                "2D classifier default config failed, try fallback %s: %s",
+                fallback_config,
+                e,
             )
             return CoilClsModel(config=fallback_config)
         raise e
@@ -91,7 +93,7 @@ def _get_classifier_model():
         logger.info("2D classifier loaded")
     except Exception as e:
         _classifier_load_failed = True
-        logger.error(f"2D classifier load failed: {e}")
+        logger.error("2D classifier load failed: %s", e)
     return _classifier_model
 
 
@@ -155,7 +157,7 @@ def classify_boxes(source_image, boxes: Sequence[tuple[int, int, int, int]]) -> 
     try:
         res_index, res_source, names = classifier_model.predict_image(crop_images)
     except Exception as e:
-        logger.error(f"2D classifier predict failed: {e}")
+        logger.error("2D classifier predict failed: %s", e)
         return results
 
     for index, label, source, name in zip(crop_indexes, res_index, res_source, names):

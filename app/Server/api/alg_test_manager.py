@@ -290,25 +290,25 @@ class AlgTestManager:
         MODEL_FOLDER.mkdir(parents=True, exist_ok=True)
         CLASSIFIER_FOLDER.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"扫描模型文件夹: {MODEL_FOLDER}")
+        logger.info("扫描模型文件夹: %s", MODEL_FOLDER)
         if MODEL_FOLDER.is_dir():
             all_files = list(MODEL_FOLDER.iterdir())
-            logger.info(f"找到 {len(all_files)} 个文件/文件夹")
+            logger.info("找到 %s 个文件/文件夹", len(all_files))
             for path in all_files:
                 if not path.is_file():
-                    logger.debug(f"跳过 (非文件): {path.name}")
+                    logger.debug("跳过 (非文件): %s", path.name)
                     continue
                 suffix = path.suffix.lower()
                 if suffix not in {".pt", ".onnx"}:
-                    logger.debug(f"跳过 (不支持的后缀 {suffix}): {path.name}")
+                    logger.debug("跳过 (不支持的后缀 %s): %s", suffix, path.name)
                     continue
                 model_type = self._guess_model_type(path)
                 models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
-                logger.info(f"添加模型: {path.name} (类型: {model_type})")
+                logger.info("添加模型: %s (类型: %s)", path.name, model_type)
         else:
-            logger.warning(f"模型文件夹不存在: {MODEL_FOLDER}")
+            logger.warning("模型文件夹不存在: %s", MODEL_FOLDER)
 
-        logger.info(f"扫描分类器文件夹: {CLASSIFIER_FOLDER}")
+        logger.info("扫描分类器文件夹: %s", CLASSIFIER_FOLDER)
         if CLASSIFIER_FOLDER.is_dir():
             for path in CLASSIFIER_FOLDER.iterdir():
                 if not path.is_file():
@@ -320,9 +320,9 @@ class AlgTestManager:
                 if model_type != "classifier":
                     continue
                 models[path.name] = AlgModelEntry(name=path.name, path=path, type=model_type)
-                logger.info(f"添加分类器: {path.name}")
+                logger.info("添加分类器: %s", path.name)
 
-        logger.info(f"共找到 {len(models)} 个模型")
+        logger.info("共找到 %s 个模型", len(models))
         self._models = models
 
     def list_models(self) -> List[dict]:
@@ -342,7 +342,7 @@ class AlgTestManager:
     # ------------- websocket -------------
     async def handle_websocket(self, websocket: WebSocket) -> None:
         await websocket.accept()
-        queue: asyncio.Queue = asyncio.Queue()
+        queue: asyncio.Queue = asyncio.Queue(maxsize=20)
         loop = asyncio.get_running_loop()
         listener_id = id(websocket)
         with self._listeners_lock:
@@ -370,7 +370,23 @@ class AlgTestManager:
         for listener in listeners:
             loop: asyncio.AbstractEventLoop = listener["loop"]
             queue: asyncio.Queue = listener["queue"]
-            loop.call_soon_threadsafe(queue.put_nowait, payload)
+            loop.call_soon_threadsafe(self._put_latest, queue, payload)
+
+    @staticmethod
+    def _put_latest(queue: asyncio.Queue, payload: dict) -> None:
+        try:
+            queue.put_nowait(payload)
+            return
+        except asyncio.QueueFull:
+            pass
+        try:
+            queue.get_nowait()
+        except asyncio.QueueEmpty:
+            pass
+        try:
+            queue.put_nowait(payload)
+        except asyncio.QueueFull:
+            pass
 
     # ------------- helpers -------------
     def _resolve_dir(self, raw: str, label: str, must_exist: bool = False) -> Path:

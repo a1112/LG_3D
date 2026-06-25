@@ -25,9 +25,13 @@ class JoinWork(WorkBaseThread):
         while self._run_:
             coil_id = self.queue_in.get()
             logger.info("2D join received coil_id=%s", coil_id)
+            submitted_surfaces = []
             for key, surface in self.surface_dict.items():
-                surface.add_work(coil_id)
-            for key, surface in self.surface_dict.items():
+                if surface.add_work(coil_id):
+                    submitted_surfaces.append((key, surface))
+                else:
+                    logger.warning("2D join skipped full surface queue: surface=%s coil_id=%s", key, coil_id)
+            for key, surface in submitted_surfaces:
                 surface.get()
             logger.info("2D join finished coil_id=%s", coil_id)
             self.set(None)

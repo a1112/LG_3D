@@ -16,12 +16,12 @@ def list_alg_models():
     logger.info("收到获取模型列表请求")
     try:
         models = alg_test_manager.list_models()
-        logger.info(f"返回模型列表，共 {len(models)} 个模型: {[m.get('name') for m in models]}")
+        logger.info("返回模型列表，共 %s 个模型: %s", len(models), [m.get("name") for m in models])
         if not models:
             logger.warning("模型列表为空，请将 .pt 或 .onnx 模型文件放置到 CONFIG_3D/model 目录")
         return {"models": models}
     except Exception as e:
-        logger.error(f"获取模型列表失败: {e}", exc_info=True)
+        logger.error("获取模型列表失败: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -1,6 +1,8 @@
 # from api.DataGet import DataGet
 # from PIL import Image
 # import io
+import logging
+
 from skimage.draw import line
 # from skimage.segmentation import find_boundaries
 import numpy as np
@@ -9,6 +11,8 @@ from Base import Globs
 from Base.property.Types import Point2D
 from Base.property.Data3D import LineData
 from Base.tools.tool import get_intersection_points
+
+logger = logging.getLogger(__name__)
 
 
 def extract_segment_values(npy_data, mask_image, p1, p2):
@@ -20,7 +24,7 @@ def extract_segment_values(npy_data, mask_image, p1, p2):
     p1 = [int(p1[0]), int(p1[1])]
     p2 = [int(p2[0]), int(p2[1])]
     rr, cc = line(p1[0], p1[1], p2[0], p2[1])
-    print(rr, cc)
+    logger.debug("line sample points: rows=%s cols=%s", rr.shape[0], cc.shape[0])
     return lineData
     # 找到 mask_image 的边界
     # boundaries = find_boundaries(mask_image, mode='inner')
@@ -192,7 +196,7 @@ def auto_data_leveling_3d(data, mask_src):
         R = 0
         for i in range(0, zz.shape[0]):
             R = R + (M[0, 0] * xx[i] + M[1, 0] * yy[i] + M[2, 0] - zz[i]) ** 2
-        print("平面拟合误差为：", R)
+        logger.debug("plane fitting residual: %s", R)
     # 各数据点坐标到直线的距离
     X = np.linspace(0, w, w)
     X = X[np.newaxis, :]

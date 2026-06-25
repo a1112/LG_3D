@@ -415,7 +415,7 @@ async def get_error(
             return Response(content=img_bytes, media_type="image/png")
 
     except Exception as e:
-        logging.debug(f"Failed to read Error cache: {e}")
+        logging.debug("Failed to read Error cache: %s", e)
 
     # ========== 缓存不存在时的处理 ==========
     if force_cache:
@@ -431,7 +431,7 @@ async def get_error(
 
     # 检查数据是否有效
     if npy_data is None:
-        logging.warning(f"3D data not found for coil_id={coil_id}, surface={surface_key}")
+        logging.warning("3D data not found for coil_id=%s, surface=%s", coil_id, surface_key)
         # 返回空白图像
         blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
         _, img_encoded = cv2.imencode('.png', blank_image)
@@ -440,7 +440,7 @@ async def get_error(
 
     median_z_int, scale_factor = _get_error_render_baseline(coil_id, surface_key, npy_data)
     if median_z_int is None:
-        logging.warning(f"No valid 3D data for coil_id={coil_id}, surface={surface_key}")
+        logging.warning("No valid 3D data for coil_id=%s, surface=%s", coil_id, surface_key)
         blank_image = np.zeros((100, 100, 4), dtype=np.uint8)
         _, img_encoded = cv2.imencode('.png', blank_image)
         img_bytes = io.BytesIO(img_encoded.tobytes())

@@ -47,11 +47,11 @@ def _terminate_process_tree(pid: int) -> bool:
             timeout=20,
         )
         if result.returncode != 0:
-            print(f"[ERROR] Failed to terminate old 3D runtime PID {pid}.")
+            logging.error("Failed to terminate old 3D runtime PID %s.", pid)
             if result.stdout:
-                print(result.stdout.strip())
+                logging.error(result.stdout.strip())
             if result.stderr:
-                print(result.stderr.strip())
+                logging.error(result.stderr.strip())
             return False
         return True
 
@@ -59,7 +59,7 @@ def _terminate_process_tree(pid: int) -> bool:
         os.kill(pid, signal.SIGTERM)
         return True
     except OSError as e:
-        print(f"[ERROR] Failed to terminate old 3D runtime PID {pid}: {e}")
+        logging.error("Failed to terminate old 3D runtime PID %s: %s", pid, e)
         return False
 
 
@@ -70,7 +70,7 @@ def _acquire_runtime_lock() -> SingletonLock:
 
     old_pid = _read_pid(lock.pid_file)
     if old_pid is not None:
-        print(f"[INFO] 3D Algorithm Runtime is already running, restarting old PID {old_pid}...")
+        logging.info("3D Algorithm Runtime is already running, restarting old PID %s...", old_pid)
         if _terminate_process_tree(old_pid):
             try:
                 lock.pid_file.unlink(missing_ok=True)
@@ -80,12 +80,12 @@ def _acquire_runtime_lock() -> SingletonLock:
 
             lock = SingletonLock("algorithm_runtime_3d")
             if lock.acquire():
-                print("[INFO] Old 3D Algorithm Runtime stopped; startup will continue.")
+                logging.info("Old 3D Algorithm Runtime stopped; startup will continue.")
                 return lock
 
-    print("[ERROR] 3D Algorithm Runtime is already running!")
-    print(f"  Lock file: {lock.pid_file}")
-    print("  Could not stop the old runtime automatically. Stop it manually and try again.")
+    logging.error("3D Algorithm Runtime is already running.")
+    logging.error("Lock file: %s", lock.pid_file)
+    logging.error("Could not stop the old runtime automatically. Stop it manually and try again.")
     sys.exit(1)
 
 
@@ -122,7 +122,7 @@ def _run_main() -> None:
         from SubServer.ZipServer import ZipServer
         zip_server = ZipServer(queue)
     else:
-        print("Legacy bmp/npy compression disabled; capture already writes jpg/npz.")
+        logging.info("Legacy bmp/npy compression disabled; capture already writes jpg/npz.")
     import Lis  # noqa: F401
     try:
         while True:

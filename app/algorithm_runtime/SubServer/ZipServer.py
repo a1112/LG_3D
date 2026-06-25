@@ -1,3 +1,4 @@
+import logging
 import os
 
 from Base import CONFIG
@@ -18,12 +19,12 @@ class ZipServer(control.ThreadClass):
 
     def run(self):
         if os.getenv("LG3D_ENABLE_LEGACY_COMPRESSION", "0") != "1":
-            print("Legacy bmp/npy compression disabled; skip ZipServer.")
+            logging.info("Legacy bmp/npy compression disabled; skip ZipServer.")
             return
         if isLoc:
-            print("本地环境不进行压缩")
+            logging.info("local environment skips legacy compression")
             return
-        print("原始数据压缩  进程启动")
+        logging.info("legacy raw data compression process started")
         zip_and_deletion_list = []
         for surface in CONFIG.serverConfigProperty.surfaceConfigPropertyDict.values():
             surface: SurfaceConfigProperty
@@ -34,7 +35,7 @@ class ZipServer(control.ThreadClass):
         for item in zip_and_deletion_list:
             item.start()
 
-        print("保存数据压缩  进程启动")
+        logging.info("legacy saved data compression process started")
 
         # 数据进程
         for item in zip_and_deletion_list:

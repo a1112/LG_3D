@@ -1,5 +1,7 @@
+import logging
 import math
 from pathlib import Path
+
 from lxml import etree
 
 
@@ -41,7 +43,7 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder=None):
     tree = etree.ElementTree(annotation)
     xml_path = Path(output_folder) / Path(file_name).with_suffix('.xml').name
     tree.write(str(xml_path), pretty_print=True, xml_declaration=True, encoding="utf-8")
-    print(f"Saved XML to {xml_path}")
+    logging.debug("Saved XML to %s", xml_path)
 
 
 def get_image_box(image, xmin, ymin, xmax, ymax, out_size_=5,min_size=60):

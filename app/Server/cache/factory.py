@@ -59,7 +59,7 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
     redis_port = int(os.getenv("CACHE_REDIS_PORT", "6379"))
     redis_db = int(os.getenv("CACHE_REDIS_DB", "0"))
     redis_password = os.getenv("CACHE_REDIS_PASSWORD")
-    print(fr"init_cache_provider {cache_mode}")
+    logging.info("init_cache_provider %s", cache_mode)
     if cache_mode == "redis":
         preview_cache = RedisImageCache(
             host=redis_host,

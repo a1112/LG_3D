@@ -73,7 +73,7 @@ class DiskAreaImageCache(MemoryImageCache):
             return tile_path.read_bytes()
 
         # 缓存不存在，记录日志并返回 None
-        logging.debug(f"Tile cache not found: L{level} tile ({col},{row}) for {path}")
+        logging.debug("Tile cache not found: L%s tile (%s,%s) for %s", level, col, row, path)
         return None
 
     def get_all_tiles(self, path: str, count: int) -> Optional[dict]:
@@ -124,11 +124,11 @@ class DiskAreaImageCache(MemoryImageCache):
                             try:
                                 old_file.unlink()
                                 cleaned += 1
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                logging.debug("Failed to remove old tile cache file %s: %s", old_file, e)
 
         if cleaned > 0:
-            logging.info(f"Cleaned up {cleaned} old tile cache files (legacy format)")
+            logging.info("Cleaned up %s old tile cache files (legacy format)", cleaned)
 
     def startup(self) -> None:
         cleanup_enabled = os.getenv("CACHE_AREA_CLEANUP_ON_STARTUP",
