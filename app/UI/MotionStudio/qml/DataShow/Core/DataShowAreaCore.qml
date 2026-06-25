@@ -93,7 +93,7 @@ Item {
 
     property Flickable flick
 
-    property string source: surfaceData.area_source //"http://127.0.0.1:5012/image/area/S/66252?"//
+    property string source: surfaceData.hasViewData("AREA") ? surfaceData.area_source : "" //"http://127.0.0.1:5012/image/area/S/66252?"//
     // 棰勮鍥撅細鐩存帴浣跨敤鏈嶅姟绔?preview 鎺ュ彛锛岄伩鍏?row=-2 杩斿洖浠呭楂?    property string pre_source: surfaceData.getSouceByKey("AREA", true)
 
 
@@ -125,8 +125,8 @@ Item {
     property int showBottom: flick && canvasScale > 0 ? ((flick.contentY || 0)+(flick.height || 0))/canvasScale : 0
 
     property real max_mm: sourceWidth*surfaceData.scan3dScaleX
-    property real showLeftmm: (showLeft-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
-    property real showRightmm: (showRight-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
+    property real showLeftmm: (showLeft - (surfaceData.inner_circle_centre && surfaceData.inner_circle_centre.length > 0 ? surfaceData.inner_circle_centre[0] : 0)) * surfaceData.scan3dScaleX
+    property real showRightmm: (showRight - (surfaceData.inner_circle_centre && surfaceData.inner_circle_centre.length > 0 ? surfaceData.inner_circle_centre[0] : 0)) * surfaceData.scan3dScaleX
 
     readonly property int canvasContentX: flick ? flick.contentX || 0 : 0
     readonly property int canvasContentY: flick ? flick.contentY || 0 : 0
@@ -171,6 +171,9 @@ Item {
     }
 
     function setFlickablebyPoint(point){
+        if (!flick) {
+            return
+        }
         let newX = scaleTempPoint.x*canvasContentWidth
         let newY = scaleTempPoint.y*canvasContentHeight
         flick.contentX = newX-point.x
@@ -218,6 +221,9 @@ Item {
 
     function resetView(){
         canvasScale = minScale
+        if (!flick) {
+            return
+        }
         flick.contentX = 0
         flick.contentY = 0
     }

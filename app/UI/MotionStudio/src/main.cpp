@@ -39,6 +39,51 @@
 #include "filedownloader.h"
 #include "consolecontroller.h"
 #include <QSurfaceFormat>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QTextStream>
+
+static void motionStudioMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    static QMutex mutex;
+    QMutexLocker locker(&mutex);
+
+    QDir logDir(QCoreApplication::applicationDirPath());
+    for (int i = 0; i < 5; ++i) {
+        logDir.cdUp();
+    }
+    logDir.mkpath("debug_log/MotionStudio");
+
+    QFile file(logDir.filePath("debug_log/MotionStudio/qml.log"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        return;
+    }
+
+    const char *level = "DEBUG";
+    switch (type) {
+    case QtInfoMsg: level = "INFO"; break;
+    case QtWarningMsg: level = "WARN"; break;
+    case QtCriticalMsg: level = "CRITICAL"; break;
+    case QtFatalMsg: level = "FATAL"; break;
+    default: break;
+    }
+
+    QTextStream out(&file);
+    out << QDateTime::currentDateTime().toString(Qt::ISODateWithMs)
+        << " [" << level << "] " << msg;
+    if (context.file) {
+        out << " (" << context.file << ":" << context.line << ")";
+    }
+    out << '\n';
+    out.flush();
+
+    if (type == QtFatalMsg) {
+        abort();
+    }
+}
 
 std::string getComputerName() {
     QSurfaceFormat format;
@@ -68,6 +113,7 @@ int main(int argc, char *argv[])
     set_qt_environment();
 
     QApplication app(argc, argv);
+    qInstallMessageHandler(motionStudioMessageHandler);
 
     QQmlApplicationEngine engine;
     #ifdef _WIN32

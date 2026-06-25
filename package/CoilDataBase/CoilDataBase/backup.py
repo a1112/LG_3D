@@ -1,57 +1,111 @@
+import os
 import subprocess
+from pathlib import Path
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
-from . import models
-from .config import Config
+from .config import Config, get_url
 from .core import Session
 from .models import *
 
 
+def _current_url():
+    return make_url(get_url())
+
+
 def get_mysqldump_cmd(save_file, mysqldump_exe="mysqldump"):
-    return f'"{mysqldump_exe}"' + f" -u {Config.user} -p{Config.password} {Config.database} > " + f'"{save_file}"'
+    url = _current_url()
+    cmd = [
+        mysqldump_exe,
+        "-h",
+        url.host or Config.host,
+        "-P",
+        str(url.port or Config.port),
+        "-u",
+        url.username or Config.user,
+        f"--default-character-set={url.query.get('charset', Config.charset)}",
+        url.database or Config.database,
+    ]
+    return cmd, Path(save_file)
 
 
-def backup_to_sql(save_file, mysqldump_exe="mysqldump"):
-    mysqldump_cmd = get_mysqldump_cmd(save_file, mysqldump_exe)
+def get_pg_dump_cmd(save_file, pg_dump_exe="pg_dump"):
+    url = _current_url()
+    cmd = [
+        pg_dump_exe,
+        "-h",
+        url.host or Config.host,
+        "-p",
+        str(url.port or 5432),
+        "-U",
+        url.username or Config.user,
+        "-d",
+        url.database or Config.database,
+        "-f",
+        str(save_file),
+    ]
+    return cmd, Path(save_file)
+
+
+def _run_dump(cmd, save_path, env):
+    save_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        subprocess.run(mysqldump_cmd, shell=True, check=True)
-        print(f"MySQL 数据库 备份成功！ {mysqldump_cmd}")
-    except subprocess.CalledProcessError as e:
-        print(f"备份失败: {e}")
+        executable = Path(cmd[0]).name.lower()
+        if executable.startswith("mysqldump"):
+            with save_path.open("w", encoding="utf-8") as output:
+                subprocess.run(cmd, stdout=output, env=env, check=True)
+        else:
+            subprocess.run(cmd, env=env, check=True)
+        print(f"database backup success: {save_path}")
+        return True
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"database backup failed: {e}")
+        return False
+
+
+def backup_to_sql(save_file, mysqldump_exe="mysqldump", pg_dump_exe="pg_dump"):
+    url = _current_url()
+    env = os.environ.copy()
+    backend = url.get_backend_name()
+    if url.password:
+        if backend == "postgresql":
+            env["PGPASSWORD"] = url.password
+        elif backend == "mysql":
+            env["MYSQL_PWD"] = url.password
+
+    if backend == "postgresql":
+        cmd, save_path = get_pg_dump_cmd(save_file, pg_dump_exe=pg_dump_exe)
+    else:
+        cmd, save_path = get_mysqldump_cmd(save_file,
+                                           mysqldump_exe=mysqldump_exe)
+    return _run_dump(cmd, save_path, env)
 
 
 def backup_mysql_db(host, user, password, db_name, backup_file):
-    # 构建 mysqldump 命令
-    cmd = "mysqldump -u root -pnercar Coil > d:/Coil.sql"
-    # cmd = f"mysqldump -h {host} -u {user} -p{password} {db_name} > {backup_file}"
-
-    try:
-        subprocess.run(cmd, shell=True, check=True)
-        print(f"MySQL 数据库 {db_name} 备份成功！")
-    except subprocess.CalledProcessError as e:
-        print(f"备份失败: {e}")
+    cmd = ["mysqldump", "-h", host, "-u", user, db_name]
+    env = os.environ.copy()
+    if password:
+        env["MYSQL_PWD"] = password
+    return _run_dump(cmd, Path(backup_file), env)
 
 
 def backup_to_sqlite(save_file):
-    sqlite_engine = create_engine('sqlite:///'+save_file, echo=False)
+    sqlite_engine = create_engine('sqlite:///' + save_file, echo=False)
     Base.metadata.create_all(sqlite_engine)
     session_sqlite = sessionmaker(bind=sqlite_engine)
     sqlite_session = session_sqlite()
+    class_by_table_name = {
+        mapper.local_table.name: mapper.class_
+        for mapper in Base.registry.mappers
+    }
     for tabel_name in Base.metadata.tables:
         with Session() as session:
-            cls=getattr(models,tabel_name)
+            cls = class_by_table_name[tabel_name]
             for item in session.query(cls):
-                # sqlite_item = cls(**{
-                #     k:v for k,v in item.__dict__.items()
-                #     if not k.startswith("_")
-                # })
-                # sqlite_session.add(sqlite_item)
                 sqlite_session.merge(item)
 
-    # 提交事务
     sqlite_session.commit()
-    # 关闭session
     sqlite_session.close()
-
+    return True

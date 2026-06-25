@@ -1,93 +1,97 @@
-"""
-数据库迁移脚本：为 coil_summary 表添加最严重缺陷字段
-
-运行方式：
-    python -m CoilDataBase.migration_add_max_defect_fields
-
-此脚本会：
-1. 添加新字段到 coil_summary 表（如果不存在）
-2. 重新计算所有现有记录的最严重缺陷数据
-"""
 import logging
 import sys
 from pathlib import Path
 
-# 添加项目根目录到路径
+from sqlalchemy import inspect, select, text
+from sqlalchemy.schema import CreateColumn
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from sqlalchemy import text
+from CoilDataBase.CoilSummary import sync_coil_summary
 from CoilDataBase.core import Session as SessionFactory
-from CoilDataBase.CoilSummary import sync_coil_summary, get_coil_list_with_summary
+from CoilDataBase.models.CoilSummary import CoilSummary
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+MIGRATION_COLUMNS = (
+    "MaxDefectName",
+    "MaxDefectLevel",
+    "MaxDefectSurface",
+    "MaxDefectIsShown",
+)
+
+
+def _add_column_sql(engine, column):
+    table_sql = engine.dialect.identifier_preparer.format_table(
+        CoilSummary.__table__)
+    column_sql = str(CreateColumn(column).compile(dialect=engine.dialect))
+    return f"ALTER TABLE {table_sql} ADD COLUMN {column_sql}"
+
 
 def add_columns_if_not_exist():
-    """添加新列到 coil_summary 表（如果不存在）"""
     with SessionFactory() as session:
-        # 检查列是否存在
-        result = session.execute(text(
-            "SHOW COLUMNS FROM coil_summary LIKE 'MaxDefectName'"
-        ))
-        max_defect_name_exists = result.fetchone() is not None
+        engine = session.get_bind()
+        inspector = inspect(engine)
+        existing_columns = {
+            column["name"]
+            for column in inspector.get_columns(CoilSummary.__tablename__)
+        }
+        missing_columns = [
+            CoilSummary.__table__.c[name] for name in MIGRATION_COLUMNS
+            if name not in existing_columns
+        ]
 
-        if not max_defect_name_exists:
-            log.info("Adding new columns to coil_summary table...")
-            session.execute(text(
-                "ALTER TABLE coil_summary "
-                "ADD COLUMN MaxDefectName VARCHAR(50) DEFAULT '' COMMENT '最严重缺陷名称', "
-                "ADD COLUMN MaxDefectLevel INT DEFAULT 0 COMMENT '最严重缺陷等级（0表示无缺陷）', "
-                "ADD COLUMN MaxDefectSurface VARCHAR(2) DEFAULT '' COMMENT '最严重缺陷所在表面（S/L）', "
-                "ADD COLUMN MaxDefectIsShown BOOLEAN DEFAULT TRUE COMMENT '最严重缺陷是否显示（未被屏蔽）'"
-            ))
-            session.commit()
-            log.info("New columns added successfully!")
-        else:
-            log.info("Columns already exist, skipping...")
+        if not missing_columns:
+            log.info(
+                "MaxDefect columns already exist, skipping schema update.")
+            return
+
+        log.info("Adding %s columns to %s...", len(missing_columns),
+                 CoilSummary.__tablename__)
+        for column in missing_columns:
+            session.execute(text(_add_column_sql(engine, column)))
+        session.commit()
+        log.info("MaxDefect columns added successfully.")
 
 
 def recalculate_all_summaries():
-    """重新计算所有现有 coil_summary 记录的最严重缺陷数据"""
     with SessionFactory() as session:
-        # 获取所有摘要记录的 ID
-        result = session.execute(text("SELECT Id FROM coil_summary ORDER BY Id DESC"))
+        result = session.execute(
+            select(CoilSummary.Id).order_by(CoilSummary.Id.desc()))
         coil_ids = [row[0] for row in result.fetchall()]
 
-        log.info(f"Found {len(coil_ids)} coil summaries to update...")
+        log.info("Found %s coil summaries to update.", len(coil_ids))
 
         for i, coil_id in enumerate(coil_ids):
             try:
-                # 调用同步函数重新计算摘要（包含新的缺陷字段）
                 sync_coil_summary(session, coil_id)
 
                 if (i + 1) % 100 == 0:
-                    log.info(f"Processed {i + 1}/{len(coil_ids)} summaries...")
-                    session.commit()  # 每100条提交一次
+                    log.info("Processed %s/%s summaries.", i + 1,
+                             len(coil_ids))
+                    session.commit()
             except Exception as e:
-                log.error(f"Error updating coil {coil_id}: {e}")
+                log.error("Error updating coil %s: %s", coil_id, e)
                 session.rollback()
 
         session.commit()
-        log.info("All summaries updated successfully!")
+        log.info("All summaries updated successfully.")
 
 
 def main():
-    """主函数"""
     log.info("=" * 60)
     log.info("Migration: Add MaxDefect fields to coil_summary")
     log.info("=" * 60)
 
-    # Step 1: 添加新列
     log.info("Step 1: Adding new columns...")
     add_columns_if_not_exist()
 
-    # Step 2: 重新计算所有摘要数据
-    log.info("\nStep 2: Recalculating defect data for all summaries...")
+    log.info("Step 2: Recalculating defect data for all summaries...")
     recalculate_all_summaries()
 
-    log.info("\n" + "=" * 60)
-    log.info("Migration completed successfully!")
+    log.info("=" * 60)
+    log.info("Migration completed successfully.")
     log.info("=" * 60)
 
 

@@ -14,28 +14,59 @@ Item {
     property real inner_circle_width: 0.0  // 内椭圆宽
     property real inner_circle_height: 0.0  // 内椭圆高
     property real inner_circle_radius: 0.0  // 内圈旋转角度
+    property real accuracy_x: 1.0
+    property real accuracy_y: 1.0
+    readonly property real innerDiameterMm: inner_circle_width > 0 ? inner_circle_width * accuracy_x : -1
     property var level: 0
     property var err_msg: ""
-    property bool hasData:true
+    property bool hasData:false
+
+    function numberValue(value, defaultValue) {
+        if (value === undefined || value === null) {
+            return defaultValue
+        }
+        let numberValue_ = Number(value)
+        return isFinite(numberValue_) ? numberValue_ : defaultValue
+    }
+
+    function init() {
+        hasData=false
+        out_circle_center_x=0
+        out_circle_center_y=0
+        out_circle_width=0
+        out_circle_height=0
+        out_circle_radius=0
+        inner_circle_center_x=0
+        inner_circle_center_y=0
+        inner_circle_width=0
+        inner_circle_height=0
+        inner_circle_radius=0
+        accuracy_x=1
+        accuracy_y=1
+        level=0
+        err_msg=""
+    }
 
     onDataChanged:{
         if (data){
             hasData=true
-            out_circle_center_x=data["out_circle_center_x"]
-            out_circle_center_y=data["out_circle_center_y"]
-            out_circle_width=data["out_circle_width"]
-            out_circle_height=data["out_circle_height"]
-            out_circle_radius=data["out_circle_radius"]
-            inner_circle_center_x=data["inner_circle_center_x"]
-            inner_circle_center_y=data["inner_circle_center_y"]
-            inner_circle_width=data["inner_circle_width"]
-            inner_circle_height=data["inner_circle_height"]
-            inner_circle_radius=data["inner_circle_radius"]
-            level=data["level"]
-            err_msg=data["err_msg"]
+            out_circle_center_x=numberValue(data["out_circle_center_x"], 0)
+            out_circle_center_y=numberValue(data["out_circle_center_y"], 0)
+            out_circle_width=numberValue(data["out_circle_width"], 0)
+            out_circle_height=numberValue(data["out_circle_height"], 0)
+            out_circle_radius=numberValue(data["out_circle_radius"], 0)
+            inner_circle_center_x=numberValue(data["inner_circle_center_x"], 0)
+            inner_circle_center_y=numberValue(data["inner_circle_center_y"], 0)
+            inner_circle_width=numberValue(data["inner_circle_width"], 0)
+            inner_circle_height=numberValue(data["inner_circle_height"], 0)
+            inner_circle_radius=numberValue(data["inner_circle_radius"], 0)
+            accuracy_x=numberValue(data["accuracy_x"], 1)
+            accuracy_y=numberValue(data["accuracy_y"], 1)
+            level=numberValue(data["level"], 0)
+            err_msg=data["err_msg"] || ""
         }
         else{
-            hasData=false
+            init()
         }
     }
 

@@ -68,6 +68,8 @@ class CapTureConfig:
         self.config_file = str(config_file)
         self.config = json.load(open(config_file, 'r'))
         self.signalUrl = self.config["signalUrl"]
+        self.apiServerIp = self.config.get("apiServerIp", "0.0.0.0")
+        self.apiServerPort = int(self.config.get("apiServerPort", 6100))
         self.SICKGigEVisionTL = str(CONFIG_DIR / r"common/lib/cti/windows_x64/SICKGigEVisionTL.cti")
         self.camera_config_list=[CameraConfig(c) for c in self.config["camera"]]
         self.name_list=[c.name for c in self.camera_config_list]

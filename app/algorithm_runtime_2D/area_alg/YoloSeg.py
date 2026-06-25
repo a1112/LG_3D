@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from typing import List
 
 import cv2
@@ -20,7 +21,9 @@ class SteelSegModel:
         return self.predict(image)[0]
 
     @DetectionSpeedRecord.timing_decorator("图像预测 ")
-    def predict(self, image_list,batch_size=16)->List[YoloModelSegResults]:
+    def predict(self, image_list,batch_size=None)->List[YoloModelSegResults]:
+        if batch_size is None:
+            batch_size = int(os.getenv("ALG_2D_YOLO_BATCH_SIZE", "2"))
 
         if len(image_list)==0:
             return []

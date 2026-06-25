@@ -22,6 +22,7 @@ from Base.CONFIG import isLoc, serverConfigProperty
 from Init import ColorMaps, PreviewSize
 from .DataFolder import DataFolder
 from .ImageSaver import ImageSaver
+from .depth_plane import align_camera_depth_planes
 from .taper_error_threshold import taper_error_threshold_from_limits
 from Globs import control
 from Base.property.Base import DataIntegration
@@ -89,7 +90,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         self.rotate = config["rotate"]
         self.direction = config["direction"]
         self.x_rotate = config["x_rotate"]
-        self.save3D_data = getattr(config, "save3D_data", True)
+        self.save3D_data = bool(config.get("save3D_data", True))
         self.save = True
         self.saveFolder.mkdir(parents=True, exist_ok=True)
         self.dataList = []
@@ -235,8 +236,17 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             logger.error(f"Failed to generate Error image: {e}")
 
         obj_file = self.saveFolder / coil_id / "3D.obj"
-        self.d3Saver.add_([coil_id, npy__, mask_image, config_datas, circle_config, obj_file, data_integration.median_3d_mm,
-                           data_integration.get_bd_xyz()])
+        if self.save3D_data:
+            self.d3Saver.add_([
+                coil_id,
+                npy__,
+                mask_image,
+                config_datas,
+                circle_config,
+                obj_file,
+                data_integration.median_3d_mm,
+                data_integration.get_bd_xyz(),
+            ])
         return non_zero_elements
 
     def join_saver(self):
@@ -266,8 +276,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         Returns:
 
         """
+        common_stems = self._get_common_valid_stems(data_integration.coilId)
         for dataFolder in self.dataFolderList:
-            dataFolder.set_coil_id(data_integration.coilId)
+            dataFolder.set_coil_id(data_integration.coilId, common_stems)
         #  获取数据
         datas = []
         config_datas = []
@@ -280,6 +291,37 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 print(fr"config_datas 数据加载失败")
         #   待修改，使用工具类型进行封装
         data_integration.datas, data_integration.configDatas = datas, config_datas
+
+    def _get_common_valid_stems(self, coil_id):
+        valid_stem_sets = []
+        for dataFolder in self.dataFolderList:
+            try:
+                stems = dataFolder.get_valid_3d_stems(str(coil_id))
+            except Exception as e:
+                logger.warning(
+                    f"get valid 3D stems failed: coil={coil_id}, surface={self.key}, "
+                    f"camera={dataFolder.folderName}, error={e}"
+                )
+                return None
+            if not stems:
+                logger.warning(
+                    f"no valid 3D stems: coil={coil_id}, surface={self.key}, "
+                    f"camera={dataFolder.folderName}"
+                )
+                return None
+            valid_stem_sets.append({str(stem) for stem in stems})
+
+        common = set.intersection(*valid_stem_sets) if valid_stem_sets else set()
+        common_stems = sorted(common, key=lambda stem: int(stem) if stem.isdigit() else stem)
+        if len(common_stems) < 2:
+            logger.warning(
+                f"too few common valid 3D stems: coil={coil_id}, surface={self.key}, stems={common_stems}"
+            )
+            return None
+        logger.warning(
+            f"use common valid 3D stems: coil={coil_id}, surface={self.key}, stems={common_stems}"
+        )
+        return common_stems
 
     def raise_error(self, message):
         raise ServerDetectionException(message)
@@ -369,6 +411,19 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
 
         datas = crop_datas
         data_integration.datas = datas
+        camera_plane_alignments = align_camera_depth_planes(
+            datas,
+            data_integration.scan3dCoordinateScaleZ,
+            data_integration.scan3dCoordinateOffsetZ,
+        )
+        if camera_plane_alignments:
+            data_integration.set("cameraPlaneAlignments",
+                                 camera_plane_alignments)
+            logger.info(
+                f"aligned camera 3D planes: coil={data_integration.coilId}, "
+                f"surface={data_integration.surface}, "
+                f"adjustments={camera_plane_alignments}"
+            )
         horizontal_projection_list = tool.get_horizontal_projection_list([data["MASK"] for data in datas])
         cross_points = tool.find_cross_points(horizontal_projection_list)
         data_integration.set_cross_points(cross_points)
@@ -398,8 +453,10 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         join_image = np.hstack([data["2D"] for data in datas])
         join_mask_image = np.hstack([data["MASK"] for data in datas])
 
-        # Keep camera depth as raw INT values; mm conversion is offset + scale * INT.
-        npy_data = np.hstack([data["3D"] for data in datas])
+        # Camera depths are first converted to the reference Z calibration, then
+        # edge-aligned so adjacent camera seams stay on the same plane.
+        npy_data = tool.hstack_3d([data["3D"] for data in datas],
+                                  join_mask_image=join_mask_image)
 
         if self.rotate == 90 or data_integration.surface == "S":
             join_image = np.rot90(join_image, 1)

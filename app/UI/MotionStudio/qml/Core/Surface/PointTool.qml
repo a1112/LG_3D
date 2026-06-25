@@ -3,9 +3,11 @@ import "../../Model/server"
 Item {
     property var pointDatas:[]
     property ListModel pointDbData: ListModel{
+        dynamicRoles: true
     }
 
     property ListModel pointUserData:ListModel{
+        dynamicRoles: true
     }
 
     function clear(){
@@ -31,6 +33,10 @@ Item {
 
     function addDbPoint(dataItem){
         if (!dataItem) return
+        if (dataItem["x"] === null || dataItem["x"] === undefined ||
+                dataItem["y"] === null || dataItem["y"] === undefined) {
+            return
+        }
         dataItem["p_x"]=dataItem["x"]
         dataItem["p_y"]=dataItem["y"]
         dataItem["p_z"]=dataItem["z"]

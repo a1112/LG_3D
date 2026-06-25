@@ -1,5 +1,7 @@
 {
   "signalUrl": "http://127.0.0.1:6005/currentCoil",
+  "apiServerIp": "0.0.0.0",
+  "apiServerPort": 6100,
   "camera": [
     {
       "sn": "24150211",

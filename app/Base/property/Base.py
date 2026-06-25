@@ -16,7 +16,7 @@ from CoilDataBase.models import ServerDetectionError
 from AlarmDetection.Result.AlarmData import AlarmData
 from Base.CONFIG import infoConfigProperty
 from Globs import control
-from Base.property.Types import BdData, LevelingType
+from Base.property.Types import BdData
 from Base.tools import tool, FlattenSurface
 from Base.utils.Log import logger
 
@@ -54,16 +54,29 @@ class CoilLineData:
         self.data = {
         }
 
+    def _max_width_scale(self):
+        for attr in ("scan3dCoordinateScaleX", "scan3dCoordinateScaleY"):
+            try:
+                scale = float(getattr(self.dataIntegration, attr, 0))
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if np.isfinite(scale) and scale > 0:
+                return scale, attr[-1].lower()
+        return 1.0, "px"
+
     def detection(self):
 
         px = self.linePoint[0]
         self.subList = sublist_with_indices(self.lineData[self.linePoint[0]:self.linePoint[1]], self.zeroValue, px)
         self.data["subList"] = self.subList
         self.max_width = 0
+        width_scale, width_axis = self._max_width_scale()
+        self.data["max_width_scale"] = width_scale
+        self.data["max_width_scale_axis"] = width_axis
         for subItem in self.subList:
             if subItem[1] > self.max_width:
                 self.max_width = subItem[1]
-                self.max_width_mm = self.max_width * self.dataIntegration.scan3dCoordinateScaleY  # x 未标定
+                self.max_width_mm = self.max_width * width_scale
 
         return self.subList
 
@@ -72,8 +85,13 @@ class CoilLineData:
             secondaryCoilId=self.dataIntegration.coilId,
             surface=self.dataIntegration.key,
             rotation_angle=self.rotation_angle,
-            max_width=self.max_width,
-            data=json.dumps(self.data)
+            max_width=self.max_width_mm,
+            data=json.dumps({
+                **self.data,
+                "max_width_px": self.max_width,
+                "max_width_mm": self.max_width_mm,
+                "max_width_unit": "mm",
+            }, ensure_ascii=False)
         )
 
 
@@ -133,8 +151,6 @@ class DataIntegration:
 
         self.currentSecondaryCoil: Optional[SecondaryCoil] = None
         self.__median_non_zero__ = None
-        if Globs.control.leveling_3d and Globs.control.leveling_type == LevelingType.WK_TYPE:
-            self.__median_non_zero__ = Globs.control.leveling_3d_wk_default_value
 
     @property
     def id_str(self):
@@ -171,6 +187,8 @@ class DataIntegration:
     def set_npy_data(self, npy_data):
         logger.debug(f"set_npy_data {npy_data.shape}")
         self.__npyData__ = npy_data
+        self._npyData_ = None
+        self.__median_non_zero__ = None
 
     @property
     def circle_config(self):
@@ -256,9 +274,7 @@ class DataIntegration:
     @property
     def npy_data(self):
         if self._npyData_ is None:
-            self._npyData_ = np.where(
-                self.__npyData__ < max(self.median_non_zero - 300 // self.scan3dCoordinateScaleZ, 10),
-                np.zeros(self.__npyData__.shape), 2 * self.median_non_zero - self.__npyData__)
+            self._npyData_ = self.__npyData__.copy()
             self.set("median_3d", self.median_non_zero)
             self.set("median_3d_mm", self.median_3d_mm)
         return self._npyData_

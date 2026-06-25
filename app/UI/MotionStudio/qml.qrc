@@ -139,6 +139,7 @@
         <file>qml/Core/CoreStyle.qml</file>
         <file>qml/Core/CoreTimer.qml</file>
         <file>qml/Core/CoreInfo.qml</file>
+        <file>qml/Core/CaptureAlarmWatcher.qml</file>
         <file>qml/Core/CppInterFace.qml</file>
         <file>qml/Core/Global.qml</file>
         <file>qml/Core/ImageCache.qml</file>
@@ -548,9 +549,11 @@
         <file>qml/ScreenView.qml</file>
         <file>qml/SettingPage/AlarmSetting/AlarmSetting.qml</file>
         <file>qml/SettingPage/BaseSetting/BaseSetting.qml</file>
+        <file>qml/SettingPage/CameraSetting/CameraSetting.qml</file>
         <file>qml/SettingPage/D3Setting/D3Setting.qml</file>
         <file>qml/SettingPage/GeneralSetting/GeneralSetting.qml</file>
         <file>qml/SettingPage/OtherSetting/OtherSetting.qml</file>
+        <file>qml/SettingPage/OtherSetting/SoftwareUpdate.qml</file>
         <file>qml/SettingPage/SettingPageView.qml</file>
         <file>qml/SettingPage/StyleSetting/StyleSetting.qml</file>
         <file>qml/SettingPage/TitleRow.qml</file>

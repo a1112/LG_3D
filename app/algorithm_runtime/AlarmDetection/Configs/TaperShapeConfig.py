@@ -74,14 +74,75 @@ def normalize_taper_height_limits(values,
     return sorted(default_values)
 
 
+def iter_taper_angle_values(values):
+    if values is None:
+        return
+    if isinstance(values, Mapping):
+        for value in values.values():
+            yield from iter_taper_angle_values(value)
+        return
+    if isinstance(values, (list, tuple, set)):
+        for value in values:
+            yield from iter_taper_angle_values(value)
+        return
+    if isinstance(values, str):
+        text = values.strip()
+        if not text:
+            return
+        if len(text) >= 2 and text[0] in "[(" and text[-1] in "])":
+            text = text[1:-1].strip()
+        normalized_text = (
+            text
+            .replace("，", ",")
+            .replace("；", ",")
+            .replace(";", ",")
+            .replace("|", ",")
+        )
+        if "," in normalized_text:
+            for item in normalized_text.split(","):
+                yield from iter_taper_angle_values(item)
+            return
+        numeric_tokens = _NUMBER_PATTERN.findall(normalized_text)
+        if numeric_tokens and (
+                len(numeric_tokens) > 1 or numeric_tokens[0] != normalized_text):
+            for item in numeric_tokens:
+                yield item
+            return
+        yield normalized_text
+        return
+    yield values
+
+
+def normalize_taper_angles(values):
+    angles = []
+    for value in iter_taper_angle_values(values):
+        try:
+            angle = float(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(angle):
+            normalized_angle = angle % 360.0
+            if normalized_angle not in angles:
+                angles.append(normalized_angle)
+    return angles
+
+
 class TaperShapeConfigItem(ConfigBase):
     def __init__(self, config):
+        if not isinstance(config, Mapping):
+            config = {}
         super().__init__(config)
         self.config = config
         self.name = config.get("name", "默认判断规则")
         self.height = config.get("height", DEFAULT_TAPER_HEIGHT_LIMITS)
         self.inner = config.get("inner", 0)
         self.outer = config.get("outer", 0)
+        self.angles = (
+            config.get("angles")
+            if "angles" in config
+            else config.get("angle", config.get("rotation_angles", config.get("rotation_angle")))
+        )
+        self.angle_tolerance = config.get("angle_tolerance", config.get("angleTolerance", 0))
         self.info = config.get("info", "")
 
     def get_config(self):
@@ -90,7 +151,9 @@ class TaperShapeConfigItem(ConfigBase):
 
 class TaperShapeConfig(ConfigBase):
     def __init__(self, config, data_integration: DataIntegration):
-        super().__init__(config or {})
+        if not isinstance(config, Mapping):
+            config = {}
+        super().__init__(config)
         self.data_integration = data_integration
 
     @staticmethod
@@ -208,12 +271,14 @@ class TaperShapeConfig(ConfigBase):
     def _get_item_config(self):
         for next_code in self._next_code_candidates():
             item_config = self.config.get(next_code)
-            if item_config:
+            if isinstance(item_config, Mapping) and item_config:
                 return item_config
         return {}
 
     def get_config(self):
         base_config = self.config.get("Base") or self.config.get("base") or {}
+        if not isinstance(base_config, Mapping):
+            base_config = {}
         item_config = self._get_item_config()
         config = dict(base_config)
         config.update(item_config)

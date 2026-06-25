@@ -4,6 +4,7 @@ from configs import CONFIG
 from .WorkBase import WorkBaseThread
 from configs.JoinConfig import JoinConfig
 from .SurfaceWork import SurfaceWork
+from utils.MultiprocessColorLogger import logger
 
 class JoinWork(WorkBaseThread):
     """
@@ -23,8 +24,10 @@ class JoinWork(WorkBaseThread):
 
         while self._run_:
             coil_id = self.queue_in.get()
+            logger.info("2D join received coil_id=%s", coil_id)
             for key, surface in self.surface_dict.items():
                 surface.add_work(coil_id)
             for key, surface in self.surface_dict.items():
                 surface.get()
+            logger.info("2D join finished coil_id=%s", coil_id)
             self.set(None)

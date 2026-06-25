@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "app" / "Server"))
 sys.path.insert(0, str(PROJECT_ROOT / "package" / "CoilDataBase"))
@@ -61,3 +60,90 @@ def test_db_pool_settings_are_environment_configurable(monkeypatch):
         "pool_pre_ping": True,
         "echo": False,
     }
+
+
+def test_database_url_env_overrides_config_url(monkeypatch):
+    from CoilDataBase.config import Config, get_url
+
+    database_url = "postgresql+psycopg://lg3d_app:secret@127.0.0.1:5432/Coil"
+    monkeypatch.setenv("COIL_DATABASE_URL", database_url)
+    monkeypatch.setattr(
+        Config, "url",
+        "mysql+pymysql://root:nercar@127.0.0.1:3306/Coil?charset=utf8")
+
+    assert get_url() == database_url
+
+
+def test_default_database_url_points_to_postgresql(monkeypatch):
+    from sqlalchemy.engine import make_url
+
+    from CoilDataBase.config import Config, get_url
+
+    monkeypatch.delenv("COIL_DATABASE_URL", raising=False)
+    monkeypatch.setattr(Config, "url", None)
+
+    parsed = make_url(get_url())
+
+    assert parsed.drivername == "postgresql+psycopg"
+    assert parsed.host == "127.0.0.1"
+    assert parsed.port == 5432
+    assert parsed.database == "coil"
+
+
+def test_postgresql_url_uses_sqlalchemy_builder_without_mysql_charset():
+    from sqlalchemy.engine import make_url
+
+    from CoilDataBase.config import DeriverList, build_url
+
+    class PostgresConfig:
+        deriver = DeriverList.postgresql
+        user = "lg3d_app"
+        password = "pa:ss@word"
+        host = "127.0.0.1"
+        port = 5432
+        database = "Coil"
+        charset = "utf8"
+        file_url = ""
+
+    parsed = make_url(build_url(PostgresConfig))
+
+    assert parsed.drivername == "postgresql+psycopg"
+    assert parsed.password == "pa:ss@word"
+    assert parsed.query == {}
+
+
+def test_mysql_url_keeps_charset_query():
+    from sqlalchemy.engine import make_url
+
+    from CoilDataBase.config import DeriverList, build_url
+
+    class MysqlConfig:
+        deriver = DeriverList.mysql
+        user = "root"
+        password = "nercar"
+        host = "127.0.0.1"
+        port = 3306
+        database = "Coil"
+        charset = "utf8"
+        file_url = ""
+
+    parsed = make_url(build_url(MysqlConfig))
+
+    assert parsed.drivername == "mysql+pymysql"
+    assert parsed.query["charset"] == "utf8"
+
+
+def test_storage_policy_skips_logs_and_raw_line_data_by_default(monkeypatch):
+    from CoilDataBase.storage_policy import should_store_model_name, should_store_point_raw_fields, should_store_raw_data
+
+    monkeypatch.delenv("COIL_STORE_LOG_DATA", raising=False)
+    monkeypatch.delenv("COIL_STORE_RAW_DATA", raising=False)
+    monkeypatch.delenv("COIL_STORE_POINT_RAW_DATA", raising=False)
+    monkeypatch.delenv("COIL_DATABASE_SKIP_MODELS", raising=False)
+
+    assert not should_store_model_name("CapTrueLogItem")
+    assert not should_store_model_name("ServerDetectionError")
+    assert not should_store_model_name("LineData")
+    assert should_store_model_name("PointData")
+    assert not should_store_raw_data()
+    assert not should_store_point_raw_fields()

@@ -102,6 +102,7 @@ class ServerConfigProperty(BaseConfigProperty):
             self.surfaceConfigPropertyDict[surface["key"]] = SurfaceConfigProperty(surface)
         self.balsam_exe = _get_config_("balsam", "balsam.exe")  # balsam.exe 位置
         self.mysqldump_exe = _get_config_("mysqldump", "mysqldump.exe")
+        self.pg_dump_exe = _get_config_("pg_dump", "pg_dump.exe")
         self.colorFromValue = _get_config_("colorFromValue",-700)
         self.colorToValue = _get_config_("colorToValue",700)
         self.colorFromValue_mm = _get_config_("colorFromValue_mm",-30)

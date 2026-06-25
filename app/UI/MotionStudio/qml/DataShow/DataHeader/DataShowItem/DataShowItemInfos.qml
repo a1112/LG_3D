@@ -36,7 +36,7 @@ DataShowItemBase {
     property int taperLevel: Math.max(taperOut > 75 ? 3 : 1, taperIn > 10 ? 3 : 1)
 
     property real flatDiameterRaw: coreAlarmInfo.coreFlatRoll.innerDiameter
-    property real flatDiameterMm: flatDiameterRaw > 0 ? flatDiameterRaw * coreModel.surfaceS.scan3dScaleX : -1
+    property real flatDiameterMm: coreAlarmInfo.coreFlatRoll.innerDiameterMm
     property int flatLevel: flatDiameterMm > 0 && flatDiameterMm < 680 ? 2 : flatDiameterMm > 0 ? 1 : 0
 
     RowLayout {
@@ -128,13 +128,13 @@ DataShowItemBase {
                 KeyLabel { text: "S端内径" }
                 ValueLabel {
                     text: coreAlarmInfo.coreFlatRoll.s.hasData
-                          ? fmt(coreAlarmInfo.coreFlatRoll.s.inner_circle_width * coreModel.surfaceS.scan3dScaleX, 0)
+                          ? fmt(coreAlarmInfo.coreFlatRoll.s.innerDiameterMm, 0)
                           : "--"
                 }
                 KeyLabel { text: "L端内径" }
                 ValueLabel {
                     text: coreAlarmInfo.coreFlatRoll.l.hasData
-                          ? fmt(coreAlarmInfo.coreFlatRoll.l.inner_circle_width * coreModel.surfaceL.scan3dScaleX, 0)
+                          ? fmt(coreAlarmInfo.coreFlatRoll.l.innerDiameterMm, 0)
                           : "--"
                 }
             }

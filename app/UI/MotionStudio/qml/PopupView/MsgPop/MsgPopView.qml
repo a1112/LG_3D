@@ -7,6 +7,20 @@ Menu {
     height: 500
     ListModel{
         id:coreCoilModel
+        dynamicRoles: true
+    }
+    function asText(value) {
+        if (value === undefined || value === null) {
+            return ""
+        }
+        return String(value)
+    }
+    function fixedText(value, digits) {
+        let numberValue = Number(value)
+        if (!isFinite(numberValue)) {
+            return ""
+        }
+        return numberValue.toFixed(digits)
     }
     function initcoreCoil(){
         // 检查 currentCoilModel 是否存在
@@ -144,14 +158,14 @@ Menu {
                                  if (cData["surface"]==="S")
                                      {
                                         msg_item= msg_s
-                                     coreModel.surfaceS.medianZ=cData["median_3d_mm"].toFixed(2)
-                                     coreModel.surfaceS.medianZInt=cData["median_3d"].toFixed(2)
+                                     coreModel.surfaceS.medianZ=Number(cData["median_3d_mm"]) || 0
+                                     coreModel.surfaceS.medianZInt=Number(cData["median_3d"]) || 0
 
                                     }
                                     else
                                  {
-                                    coreModel.surfaceL.medianZ=cData["median_3d_mm"].toFixed(2)
-                                    coreModel.surfaceL.medianZInt=cData["median_3d"].toFixed(2)
+                                    coreModel.surfaceL.medianZ=Number(cData["median_3d_mm"]) || 0
+                                    coreModel.surfaceL.medianZInt=Number(cData["median_3d"]) || 0
                                  }
 
                                 let model=msg_item.model
@@ -161,17 +175,17 @@ Menu {
 
                                  model.append({
                                                   key: "标定X",
-                                                  value: cData["scan3dCoordinateScaleX"].toFixed(4)+""
+                                                  value: fixedText(cData["scan3dCoordinateScaleX"], 4)
                                               }
                                               )
                                  model.append({
                                                   key: "标定Y",
-                                                  value: cData["scan3dCoordinateScaleY"].toFixed(4)+""
+                                                  value: fixedText(cData["scan3dCoordinateScaleY"], 4)
                                               }
                                               )
                                  model.append({
                                                   key: "标定Z",
-                                                  value: cData["scan3dCoordinateScaleZ"].toFixed(4)+""
+                                                  value: fixedText(cData["scan3dCoordinateScaleZ"], 4)
                                               }
                                               )
                                  model.append({
@@ -181,12 +195,12 @@ Menu {
                                               )
                                  model.append({
                                                   key: "下报警mm",
-                                                  value: cData["colorFromValue_mm"].toFixed(4)+""
+                                                  value: fixedText(cData["colorFromValue_mm"], 4)
                                               }
                                               )
                                  model.append({
                                                   key: "上报警mm",
-                                                  value: cData["colorToValue_mm"].toFixed(4)+""
+                                                  value: fixedText(cData["colorToValue_mm"], 4)
                                               }
                                               )
                                  model.append({
@@ -249,7 +263,7 @@ Menu {
                                               )
                                  model.append({
                                                   key: "卷面积",
-                                                  value: +"？"
+                                                  value: ""
                                               }
                                               )
                                  model.append({
@@ -264,12 +278,12 @@ Menu {
                                               )
                                  model.append({
                                                   key: "下报警%",
-                                                  value: (cData["lowerArea_percent"]*100).toFixed(2)+""
+                                                  value: fixedText(Number(cData["lowerArea_percent"]) * 100, 2)
                                               }
                                               )
                                  model.append({
                                                   key: "上报警%",
-                                                  value: (cData["upperArea_percent"]*100).toFixed(2)+""
+                                                  value: fixedText(Number(cData["upperArea_percent"]) * 100, 2)
                                               }
                                               )
 

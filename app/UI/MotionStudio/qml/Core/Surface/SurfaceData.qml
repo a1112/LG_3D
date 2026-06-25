@@ -20,9 +20,12 @@ Item {
         rootViewIndex = 2
     }
 
-    readonly property real scan3dScaleZ: 0.016229506582021713
-    readonly property real scan3dScaleX: 0.33693358302116394
-    readonly property real scan3dScaleY: 0.33693358302116394
+    readonly property real defaultScan3dScaleZ: 0.016229506582021713
+    readonly property real defaultScan3dScaleX: 0.33693358302116394
+    readonly property real defaultScan3dScaleY: 0.33693358302116394
+    property real scan3dScaleZ: defaultScan3dScaleZ
+    property real scan3dScaleX: defaultScan3dScaleX
+    property real scan3dScaleY: defaultScan3dScaleY
     property real scan3dCoordinateOffsetZ: 0
     property real medianZInt: 0
     property real medianZ: 0.0
@@ -59,14 +62,30 @@ Item {
         return (value*scan3dScaleY).toFixed(0)
     }
     function iz_to_mm(value){
-        return ((value-medianZInt)*scan3dScaleZ).toFixed(2)
+        return zRawToRelativeMm(value).toFixed(2)
     }
     function iz_to_mm_int(value){
-        return (value*scan3dScaleZ).toFixed(2)
+        return zRawToMm(value).toFixed(2)
+    }
+
+    function zRawToMm(value){
+        let rawValue = Number(value)
+        if (!isFinite(rawValue)) {
+            return 0
+        }
+        return rawValue * scan3dScaleZ + scan3dCoordinateOffsetZ
+    }
+
+    function zRawToRelativeMm(value){
+        let rawValue = Number(value)
+        if (!isFinite(rawValue) || rawValue <= 0) {
+            return 0
+        }
+        return zRawToMm(rawValue) - medianZ
     }
 
     function getZValue(z){
-        return ((z*scan3dScaleZ).toFixed(2)-medianZ)
+        return zRawToRelativeMm(z)
     }
 
     property bool showMax: false
@@ -92,8 +111,23 @@ Item {
     }
     property var coilInfo: {return {}}
     onCoilInfoChanged: {
-        if (coilInfo && coilInfo.scan3dCoordinateOffsetZ !== undefined) {
-            scan3dCoordinateOffsetZ = coilInfo.scan3dCoordinateOffsetZ
+        if (coilInfo && coilInfo.scan3dCoordinateScaleX !== undefined && isFinite(Number(coilInfo.scan3dCoordinateScaleX))) {
+            scan3dScaleX = Number(coilInfo.scan3dCoordinateScaleX)
+        } else {
+            scan3dScaleX = defaultScan3dScaleX
+        }
+        if (coilInfo && coilInfo.scan3dCoordinateScaleY !== undefined && isFinite(Number(coilInfo.scan3dCoordinateScaleY))) {
+            scan3dScaleY = Number(coilInfo.scan3dCoordinateScaleY)
+        } else {
+            scan3dScaleY = defaultScan3dScaleY
+        }
+        if (coilInfo && coilInfo.scan3dCoordinateScaleZ !== undefined && isFinite(Number(coilInfo.scan3dCoordinateScaleZ))) {
+            scan3dScaleZ = Number(coilInfo.scan3dCoordinateScaleZ)
+        } else {
+            scan3dScaleZ = defaultScan3dScaleZ
+        }
+        if (coilInfo && coilInfo.scan3dCoordinateOffsetZ !== undefined && isFinite(Number(coilInfo.scan3dCoordinateOffsetZ))) {
+            scan3dCoordinateOffsetZ = Number(coilInfo.scan3dCoordinateOffsetZ)
         } else {
             scan3dCoordinateOffsetZ = 0
         }
@@ -238,7 +272,7 @@ Item {
     function hasViewData(viewKey){
         if (!coreModel || coreModel.hasDataCoilId !== coilId || !coreModel.has_data
                 || !key || !coreModel.has_data[key]) {
-            return hasData
+            return false
         }
 
         let surfaceHasData = coreModel.has_data[key]
@@ -285,7 +319,9 @@ Item {
         onTriggered: {
             // 预缓存所有视图（延迟）
             coreModel.allViewKeys.forEach(function(viewKey){
-                imageCache.pushCache(getSource(coilId,viewKey,false))
+                if (hasViewData(viewKey)) {
+                    imageCache.pushCache(getSource(coilId,viewKey,false))
+                }
             })
 
             // 获取钢卷信息

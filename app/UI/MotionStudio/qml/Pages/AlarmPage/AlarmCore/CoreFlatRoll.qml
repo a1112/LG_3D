@@ -3,6 +3,7 @@ import QtQuick
 Item {
 
     property real innerDiameter: 0.0
+    property real innerDiameterMm: -1.0
     property int alarmLevel: 0
     property bool hasData: false
     property var data
@@ -15,8 +16,11 @@ Item {
     }
     onDataChanged:{
     hasData=false
-    l.hasData=false
-    s.hasData=false
+    innerDiameter=-1
+    innerDiameterMm=-1
+    alarmLevel=0
+    l.init()
+    s.init()
     for (let key in data){
         if (key=="L"){
             l.data=data[key]
@@ -31,18 +35,22 @@ Item {
 
     if(l.hasData && s.hasData){
         innerDiameter=(l.inner_circle_width+s.inner_circle_width)/2
+        innerDiameterMm=(l.innerDiameterMm+s.innerDiameterMm)/2
     }
     else if(l.hasData){
-        innerDiameter=l.inner_circle_width.toFixed(2)
+        innerDiameter=l.inner_circle_width
+        innerDiameterMm=l.innerDiameterMm
     }
     else if (s.hasData){
-        innerDiameter=s.inner_circle_width.toFixed(2)
+        innerDiameter=s.inner_circle_width
+        innerDiameterMm=s.innerDiameterMm
     }
     else{
         innerDiameter=-1
+        innerDiameterMm=-1
     }
-        if (innerDiameter>0){
-                if (innerDiameter<680) {
+        if (innerDiameterMm>0){
+                if (innerDiameterMm<680) {
                     alarmLevel=2
                 }
                 else{

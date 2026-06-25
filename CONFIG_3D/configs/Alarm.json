@@ -44,8 +44,10 @@
     "99": {
         "name": "新电磁",
         "height": [50,80],
+        "angles": [270],
+        "angle_tolerance": 0,
         "inner": 0,
-        "outer": 0,
+        "outer": 0.5,
         "info": "新电磁 塔形判定按12点钟方向判定，溢出边半圈不计"
       }
   },

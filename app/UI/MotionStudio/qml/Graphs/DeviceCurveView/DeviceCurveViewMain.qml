@@ -206,8 +206,13 @@ ApplicationWindow {
             return
         }
 
-        axisX.min = minX
-        axisX.max = maxX
+        if (minX === maxX) {
+            axisX.min = minX - 1
+            axisX.max = maxX + 1
+        } else {
+            axisX.min = minX
+            axisX.max = maxX
+        }
         if (minY === maxY) {
             axisY.min = minY - 1
             axisY.max = maxY + 1

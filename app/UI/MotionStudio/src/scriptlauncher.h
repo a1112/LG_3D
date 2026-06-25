@@ -14,6 +14,7 @@ public:
     Q_INVOKABLE void launchScript(QString text);
     Q_INVOKABLE void launchScriptExplorer(QString text);
     Q_INVOKABLE bool fileExists(QString filePath) ;
+    Q_INVOKABLE bool developerMode() const;
 
 private:
     QProcess *m_process;

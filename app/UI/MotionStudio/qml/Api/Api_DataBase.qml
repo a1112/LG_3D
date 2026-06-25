@@ -26,7 +26,7 @@ Api_Base {
         id: heightPointWs
         url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
         active: true
-        onStatusChanged: {
+        onStatusChanged: function(status) {
             if (status === WebSocket.Open) {
                 while (_heightPointQueue.length > 0) {
                     let payload = _heightPointQueue.shift()
@@ -221,6 +221,27 @@ Api_Base {
 
     function getCameraAlarm(success,failure){
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"cameraAlarm"),success,failure)
+    }
+
+    function getCaptureStatus(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase, "capture_status"), success, failure)
+    }
+
+    function getCameraAdjustments(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase, "camera_adjust"), success, failure)
+    }
+
+    function setCameraAdjustment(cameraKey, exposureTime, gain, save, success, failure){
+        let payload = {
+            exposureTime: exposureTime,
+            gain: gain,
+            save: save
+        }
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "camera_adjust", cameraKey), payload, success, failure)
+    }
+
+    function reconnectCameraAdjustment(cameraKey, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "camera_adjust", cameraKey, "reconnect"), {}, success, failure)
     }
 
     function getCameraDataUrl(coilId_,camera_key,success,failure){

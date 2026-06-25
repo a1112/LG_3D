@@ -1,4 +1,5 @@
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -249,6 +250,9 @@ def test_qml_resource_file_builds(tmp_path):
     rcc = PROJECT_ROOT / ".venv" / "Scripts" / "pyside6-rcc.exe"
     if not rcc.exists():
         rcc = PROJECT_ROOT / ".venv" / "Scripts" / "pyside6-rcc"
+    if not rcc.exists():
+        rcc = shutil.which("pyside6-rcc")
+    assert rcc, "pyside6-rcc is required to build qml.qrc"
     output_file = tmp_path / "qml-test.rcc"
 
     completed = subprocess.run(

@@ -222,69 +222,6 @@ def crop_black_border(gray):
     return x, y, w, h
 
 
-def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
-    """
-    水平拼接多个 3D 高度矩阵，并对相邻块的边缘做高度对齐。
-
-    Args:
-        npy_list (List[np.ndarray]): 按顺序排列的 3D 高度矩阵。
-        window_size (int): 连续多少行作为有效窗口判定。
-        max_blocks (int): 边缘最多检测多少个有效窗口，取最后一个窗口的行号用于对齐。
-        joinMaskImage (np.ndarray | None): 兼容旧接口，未使用。
-        join_mask_image (np.ndarray | None): 兼容旧接口，未使用。
-
-    Returns:
-        np.ndarray: 拼接后的 3D 高度矩阵。
-    """
-
-    def find_valid_rows(column_data, ws, max_n, min_value=0):
-        """在单列数据中查找连续 ws 行都大于 min_value 的起始行索引，最多返回 max_n 个。"""
-        idxs = []
-        total = len(column_data)
-        for i in range(total // ws):
-            start = i * ws
-            end = start + ws
-            if np.all(column_data[start:end] > min_value):
-                idxs.append(start)
-                if len(idxs) >= max_n:
-                    break
-        return idxs
-
-    def edge_mean(data, start_row, width=3, side="left"):
-        """计算指定行附近、左/右边缘若干列的均值。"""
-        rows = slice(start_row, start_row + window_size)
-        if side == "left":
-            cols = data[rows, :width]
-        else:
-            cols = data[rows, -width:]
-        valid = cols[cols > 1500]
-        return np.mean(valid) if valid.size else np.nan
-
-    stitched = [npy_list[0]]
-    for idx in range(1, len(npy_list)):
-        left = stitched[-1]
-        right = npy_list[idx]
-
-        r_left_col = right[:, 0]
-        valid_rows = find_valid_rows(r_left_col, window_size, max_blocks, min_value=0)
-        if not valid_rows:
-            stitched.append(right)
-            continue
-
-        sample_row = valid_rows[-1]
-        mean_l = edge_mean(left, sample_row, side="right")
-        mean_r = edge_mean(right, sample_row, side="left")
-
-        if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l - mean_r) > 1e6:
-            logger.error(f"hstack_3d align skip: mean_l={mean_l}, mean_r={mean_r}, row={sample_row}")
-        else:
-            right = right - mean_r + mean_l
-
-        stitched.append(right)
-
-    return np.hstack(stitched)
-
-
 def rotate_around_x_axis(height_data, angle):
     """
     旋转二维高度数据围绕X轴旋转，保持原来的宽高
@@ -362,7 +299,26 @@ def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
             cols = data[start_row:start_row + window_size, :width]
         else:
             cols = data[start_row:start_row + window_size, -width:]
-        return np.mean(cols[cols > 1500]) if cols.size else np.nan
+        valid = cols[cols > 1500]
+        return np.mean(valid) if valid.size else np.nan
+
+    def apply_valid_delta(data, delta):
+        if not np.isfinite(delta):
+            return data
+        valid = data > 0
+        if not np.any(valid):
+            return data
+
+        aligned = data.astype(np.float32, copy=True)
+        aligned[valid] = aligned[valid] + delta
+        aligned[~valid] = 0
+
+        if np.issubdtype(data.dtype, np.integer):
+            dtype_info = np.iinfo(data.dtype)
+            aligned = np.clip(np.rint(aligned), dtype_info.min,
+                              dtype_info.max)
+            return aligned.astype(data.dtype)
+        return aligned.astype(data.dtype, copy=False)
 
     stitched = [npy_list[0]]
     for idx in range(1, len(npy_list)):
@@ -387,7 +343,7 @@ def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
         if np.isnan(mean_l) or np.isnan(mean_r) or abs(mean_l - mean_r) > 1e6:
             logger.error(f"hstack_3d align skip: mean_l={mean_l}, mean_r={mean_r}, row={sample_row}")
         else:
-            right = right - mean_r + mean_l
+            right = apply_valid_delta(right, mean_l - mean_r)
 
         stitched.append(right)
 

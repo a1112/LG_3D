@@ -3,6 +3,7 @@
 #include <QMessageLogger>
 #include <qlogging.h>
 #include <QtCore/QDebug>
+#include <QtCore/QProcessEnvironment>
 ScriptLauncher::ScriptLauncher(QObject *parent) :
     QObject(parent),
 m_process(new QProcess(this))
@@ -38,4 +39,13 @@ void ScriptLauncher::launchScriptExplorer(QString text)
 bool ScriptLauncher::fileExists(QString filePath)
 {
     return QFileInfo::exists(filePath);
+}
+
+bool ScriptLauncher::developerMode() const
+{
+    const QString value = QProcessEnvironment::systemEnvironment()
+                              .value("API_DEVELOPER_MODE")
+                              .trimmed()
+                              .toLower();
+    return value == "1" || value == "true" || value == "yes" || value == "on";
 }

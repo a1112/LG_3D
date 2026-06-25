@@ -2,14 +2,17 @@ import math
 from typing import Union
 
 import cv2
+import numpy as np
 
 import Globs
 from Base.property.Base import DataIntegration, DataIntegrationList
 from Base.property.Types import Point2D, DetectionTaperShapeType
 from CoilDataBase.models import AlarmTaperShape
 from CoilDataBase import Alarm
+from AlarmDetection.Configs.TaperShapeConfig import normalize_taper_angles
 from Base.tools.data3dTool import getP2ByRotate
 from Base.utils.Log import logger
+from AlarmDetection.property import alarmConfigProperty
 from utils.DetectionSpeedRecord import DetectionSpeedRecord
 from AlarmDetection.DataProcessing.TaperShapeLine import *
 
@@ -50,6 +53,26 @@ def _set_taper_shape_errors(data_integration: DataIntegration, errors):
         alarm_data.taper_shape_errors = list(errors)
 
 
+def _append_taper_shape_warning(data_integration: DataIntegration, warning):
+    if not warning:
+        return
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is None:
+        return
+    warnings = getattr(alarm_data, "taper_shape_warnings", None)
+    if warnings is None:
+        warnings = []
+    elif isinstance(warnings, str):
+        warnings = [warnings]
+    else:
+        try:
+            warnings = list(warnings)
+        except TypeError:
+            warnings = [warnings]
+    warnings.append(str(warning))
+    alarm_data.taper_shape_warnings = warnings
+
+
 def _set_taper_shape_attempt_count(data_integration: DataIntegration, attempt_count: int):
     alarm_data = getattr(data_integration, "alarmData", None)
     if alarm_data is not None:
@@ -60,8 +83,48 @@ def _clear_taper_shape_errors(data_integration: DataIntegration):
     alarm_data = getattr(data_integration, "alarmData", None)
     if alarm_data is not None:
         alarm_data.taper_shape_errors = []
+        alarm_data.taper_shape_warnings = []
         alarm_data.taper_shape_grading_errors = []
         alarm_data.taper_shape_attempt_count = 0
+
+
+def _format_rotation_angle(angle) -> str:
+    try:
+        angle = float(angle)
+    except (TypeError, ValueError, OverflowError):
+        return str(angle)
+    if np.isfinite(angle):
+        return f"{angle:g}"
+    return str(angle)
+
+
+def _rotation_key(angle):
+    try:
+        angle = float(angle)
+    except (TypeError, ValueError, OverflowError):
+        return angle
+    if np.isfinite(angle) and angle.is_integer():
+        return int(angle)
+    return angle
+
+
+def _configured_taper_rotations(data_integration: DataIntegration):
+    try:
+        taper_config_item = alarmConfigProperty.get_taper_shape_config(data_integration).get_config()
+    except Exception as e:
+        coil_id, surface = _data_integration_log_fields(data_integration)
+        warning = f"塔形配置角度读取失败，使用默认全角度检测: {e}"
+        logger.warning(f"{coil_id} {surface} {warning}")
+        _append_taper_shape_warning(data_integration, warning)
+        return []
+    return normalize_taper_angles(getattr(taper_config_item, "angles", None))
+
+
+def _taper_detection_rotations(data_integration: DataIntegration):
+    configured_angles = _configured_taper_rotations(data_integration)
+    if configured_angles:
+        return configured_angles
+    return list(range(0, 360, TAPER_ROTATION_STEP))
 
 
 @DetectionSpeedRecord.timing_decorator("_detectionTaperShape_")
@@ -70,14 +133,14 @@ def _detection_taper_shape_(data_integration: DataIntegration):
     # 角度检测
     line_data_dict = {}
     taper_shape_errors = []
-    rotations = list(range(0, 360, TAPER_ROTATION_STEP))
+    rotations = _taper_detection_rotations(data_integration)
     _set_taper_shape_attempt_count(data_integration, len(rotations))
     for rotate in rotations:
         try:
-            line_data_dict[int(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
+            line_data_dict[_rotation_key(rotate)] = detection_taper_shape_by_rotation_angle(data_integration, rotate)
         except TAPER_ANGLE_RECOVERABLE_ERRORS as e:
             coil_id, surface = _data_integration_log_fields(data_integration)
-            taper_shape_errors.append(f"{int(rotate)}度: {e}")
+            taper_shape_errors.append(f"{_format_rotation_angle(rotate)}度: {e}")
             logger.warning(f"{coil_id} {surface} 塔形角度 {rotate} 跳过: {e}")
 
 
@@ -557,13 +620,17 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
             continue
         dataIntegration.alarmData.taper_shape_disabled = False
         unsupported_items = _unsupported_taper_shape_type_items(taper_shape_type)
+        unsupported_message = ""
         if DetectionTaperShapeType.LINE_TYPE not in taper_shape_type:
-            logger.warning(f"unsupported taper_shape_type={taper_shape_type}, fallback to LINE_TYPE")
+            unsupported_message = f"unsupported taper_shape_type={taper_shape_type}, fallback to LINE_TYPE"
+            logger.warning(unsupported_message)
         elif unsupported_items:
-            logger.warning(
+            unsupported_message = (
                 f"unsupported taper_shape_type={taper_shape_type}, "
                 f"use LINE_TYPE branch only"
             )
+            logger.warning(unsupported_message)
         dataIntegration.alarmData.set_line_data_dict(_detection_taper_shape_(dataIntegration))
+        _append_taper_shape_warning(dataIntegration, unsupported_message)
         # dataIntegration.lineDataDict 应由 _detectionTaperShape_ 返回
 

@@ -15,7 +15,7 @@ AppBase {
     id:app
     visible: true
     visibility:control.visibility
-    onVisibilityChanged: {
+    onVisibilityChanged: function(visibility) {
         if (control && control.visibility !== visibility) {
             control.visibility = visibility
         }
@@ -41,6 +41,7 @@ AppBase {
     property Core core: Core{}          // 核心
     property Tool tool: Tool{}          // 功能
     property CoreModel coreModel:CoreModel{}// 全局模型
+    property CaptureAlarmWatcher captureAlarmWatcher: CaptureAlarmWatcher {}
     property Init init:Init{}               // 初始化
     property CoreStyle coreStyle: CoreStyle{}   // 样式
     property CoreTimer coreTimer:CoreTimer{}     // 定时器

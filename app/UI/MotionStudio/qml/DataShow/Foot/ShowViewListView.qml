@@ -19,7 +19,7 @@ Item {
         opacity: enabled ? 1 : 0.35
         Image {
             asynchronous: true
-            source: image_source
+            source: enabled ? image_source : ""
             width: parent.width
             height: parent.height
             fillMode: Image.PreserveAspectFit

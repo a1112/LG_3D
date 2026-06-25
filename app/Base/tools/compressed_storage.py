@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import numpy as np
 from PIL import Image
@@ -36,3 +37,9 @@ def save_compressed_numpy(array: np.ndarray, path: Path | str) -> Path:
     if original_path != save_path and original_path.exists():
         original_path.unlink()
     return save_path
+
+
+def load_json_file(path: Path | str):
+    path = Path(path)
+    with path.open("r", encoding="utf-8") as file:
+        return json.load(file)

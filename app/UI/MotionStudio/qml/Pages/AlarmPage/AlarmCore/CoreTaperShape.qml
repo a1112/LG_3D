@@ -3,9 +3,9 @@ import QtQuick
 Item {
 
 
-    property real innerTaper:0.0
-    property real outTaper:0.0
-    property int alarmLevel: 0
+    readonly property real innerTaper: Math.max(l.innerTaperValue, s.innerTaperValue)
+    readonly property real outTaper: Math.max(l.outTaperValue, s.outTaperValue)
+    readonly property int alarmLevel: Math.max(l.level, s.level, outTaper > 75 || innerTaper > 10 ? 3 : (l.hasData || s.hasData ? 1 : 0))
     property string str:l.str+"\n\n"+s.str
     property ListModel taperErrorList: ListModel{
     }
@@ -20,10 +20,8 @@ Item {
     }
     onDataChanged:{
     taperErrorList.clear()
-    l.hasData=false
-    s.hasData=false
-    innerTaper=0.0
-    outTaper=0.0
+    l.init()
+    s.init()
 
     for (let key in data){
         if (key=="L"){

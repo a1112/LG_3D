@@ -30,6 +30,12 @@ def _safe_grading(data_integration: DataIntegration, label: str, grading_func):
         return AlarmGradResult(3, error_msg, "")
 
 
+def _data_integration_log_fields(data_integration: DataIntegration):
+    coil_id = getattr(data_integration, "coilId", "")
+    surface = getattr(data_integration, "key", getattr(data_integration, "surface", ""))
+    return coil_id, surface
+
+
 def grading(data_integration: DataIntegration):
     """
         数据库提交判断级别
@@ -62,7 +68,11 @@ def grading(data_integration: DataIntegration):
         grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad, flat_roll_grad_info.grad)
     )
     from CoilDataBase.Coil import add_obj
-    add_obj(alarm_info)
+    try:
+        add_obj(alarm_info)
+    except Exception as e:
+        coil_id, surface = _data_integration_log_fields(data_integration)
+        logger.warning(f"{coil_id} {surface} 保存综合报警失败: {e}")
 
 
 def grading_all(data_integration_list: DataIntegrationList):
@@ -71,5 +81,12 @@ def grading_all(data_integration_list: DataIntegrationList):
 
     """
     for dataIntegration in data_integration_list:
-        grading(dataIntegration)
-        dataIntegration.alarmData.commit()
+        coil_id, surface = _data_integration_log_fields(dataIntegration)
+        try:
+            grading(dataIntegration)
+        except Exception as e:
+            logger.warning(f"{coil_id} {surface} 综合报警分级失败: {e}")
+        try:
+            dataIntegration.alarmData.commit()
+        except Exception as e:
+            logger.warning(f"{coil_id} {surface} 报警明细提交失败: {e}")

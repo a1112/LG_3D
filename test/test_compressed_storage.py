@@ -76,3 +76,5 @@ def test_capture_save_code_does_not_write_bmp_or_npy_outputs():
     assert ".bmp'" not in source
     assert '.npy"' not in source
     assert ".npy'" not in source
+    assert ".json.gz" not in source
+    assert "save_compressed_json" not in source

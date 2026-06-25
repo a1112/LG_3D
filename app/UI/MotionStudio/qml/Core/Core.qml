@@ -14,7 +14,14 @@ Item {
 
 property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
 
-property bool developer_mode: app.coreSetting.testMode || (ScriptLauncher ? ScriptLauncher.developerMode() : false)
+function scriptDeveloperMode() {
+    if (!ScriptLauncher || typeof ScriptLauncher.developerMode !== "function") {
+        return false
+    }
+    return ScriptLauncher.developerMode()
+}
+
+property bool developer_mode: app.coreSetting.testMode || scriptDeveloperMode()
 
 property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
 
@@ -57,8 +64,11 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
     }
 
     function setCoilIndex(index) {
+        if (coilIndex === index) {
+            flushListItem()
+            return
+        }
         coilIndex = index
-        flushListItem()
     }
 
     property var allKey:["S","L"]

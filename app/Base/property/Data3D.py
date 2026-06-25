@@ -13,6 +13,7 @@ from Base.tools.tool import get_intersection_points
 
 from CoilDataBase.models import LineData as LineDataModel
 from CoilDataBase.models import PointData as PointDataModel
+from CoilDataBase.storage_policy import should_store_point_raw_fields
 
 
 MIN_TAPER_SIDE_VALID_POINTS = 2
@@ -163,19 +164,21 @@ class PointData(Point3D):
 
     def pointDataModel(self, dataIntegration):
         base_mm = dataIntegration.median_3d_mm
-        x = finite_model_number(self.x, "点X坐标")
-        y = finite_model_number(self.y, "点Y坐标")
         z = finite_model_number(self.z, "点高度")
         z_mm = finite_model_number(dataIntegration.z_to_mm(z) - base_mm, "点毫米高度")
-        return PointDataModel(
+        point_data = PointDataModel(
             secondaryCoilId=dataIntegration.secondary_coil_id,
             surface=dataIntegration.key,
             type=self.type_,
-            x=x,
-            y=y,
-            z=z,
             z_mm=z_mm
         )
+        if should_store_point_raw_fields():
+            x = finite_model_number(self.x, "点X坐标")
+            y = finite_model_number(self.y, "点Y坐标")
+            point_data.x = x
+            point_data.y = y
+            point_data.z = z
+        return point_data
 
 
 class LineData:
@@ -439,6 +442,11 @@ class LineData:
                 "线数据毫米高度",
             )
         center_x, center_y = point_xy(data_integration.alarmData.flatRollData.get_center())
+        rotation_angle = finite_model_number(self.rotation_angle, "rotation_angle")
+        x1 = finite_model_number(self.p1.x, "x1")
+        y1 = finite_model_number(self.p1.y, "y1")
+        x2 = finite_model_number(self.p2.x, "x2")
+        y2 = finite_model_number(self.p2.y, "y2")
         return LineDataModel(
             secondaryCoilId=data_integration.secondary_coil_id,
             surface=data_integration.key,
@@ -447,11 +455,11 @@ class LineData:
             center_y=center_y,
             width=data_integration.width,
             height=data_integration.height,
-            rotation_angle=self.rotation_angle,
-            x1=self.p1.x,
-            y1=self.p1.y,
-            x2=self.p2.x,
-            y2=self.p2.y,
+            rotation_angle=rotation_angle,
+            x1=x1,
+            y1=y1,
+            x2=x2,
+            y2=y2,
             data=json.dumps(json_safe_line_points(self.ray_line), allow_nan=False),
             inner_min_value=self.inner_min_point.z,
             inner_min_value_mm=rel_mm(self.inner_min_point.z),

@@ -8,6 +8,7 @@ import "GeneralSetting"
 import "AlarmSetting"
 import "InfoSetting"
 import "StyleSetting"
+import "CameraSetting"
 
 Popup {
     id: root
@@ -112,6 +113,7 @@ Popup {
                     qsTr("风格"),
                     qsTr("报警"),
                     qsTr("3D 渲染"),
+                    qsTr("相机调整"),
                     qsTr("信息"),
                     qsTr("其他")
                 ]
@@ -153,6 +155,7 @@ Popup {
             StyleSetting {}
             AlarmSetting {}
             D3Setting {}
+            CameraSetting {}
             InfoSetting {}
             OtherSetting {}
         }

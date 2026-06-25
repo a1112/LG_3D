@@ -1,6 +1,7 @@
 from pathlib import Path
-import shutil
-from collections import defaultdict
+import gc
+from queue import Queue
+
 from PIL import Image
 
 from configs.CameraConfig import CameraConfig
@@ -20,10 +21,11 @@ TILE_LEVELS = {
 class SaverWork(WorkBaseThread):
     def __init__(self,config:SurfaceConfig):
         super().__init__(config)
-        self.start()
+        self.queue_in = Queue(maxsize=1)
         self.config:SurfaceConfig
         self.size = (512, 512)
         self.tile_count = 3
+        self.start()
 
     def save_thumbnail(self,url_,image):
         image.thumbnail(self.size)
@@ -111,8 +113,44 @@ class SaverWork(WorkBaseThread):
                     tile_path.write_bytes(resized_bytes)
             logger.info(f"Saved L{level} tiles to {level_cache_dir}")
 
+    def _write_tile_cache(self, area_path: Path, image: Image.Image) -> None:
+        image_l = image.convert("L")
+        try:
+            width, height = image_l.size
+            tile_width = width // self.tile_count
+            tile_height = height // self.tile_count
+            if tile_width <= 0 or tile_height <= 0:
+                return
+
+            cache_dirs = {}
+            for level in TILE_LEVELS:
+                cache_dir = self._tile_cache_dir(area_path, level)
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                cache_dirs[level] = cache_dir
+
+            for row in range(self.tile_count):
+                for col in range(self.tile_count):
+                    left = row * tile_width
+                    top = col * tile_height
+                    right = left + tile_width
+                    bottom = top + tile_height
+                    tile = image_l.crop((left, top, right, bottom))
+                    try:
+                        for level, (target_size, quality) in TILE_LEVELS.items():
+                            tile_path = cache_dirs[level] / f"{col}_{row}.jpg"
+                            if level == 4:
+                                tile.save(tile_path, quality=quality)
+                            else:
+                                tile_path.write_bytes(self._resize_tile_bytes(tile, target_size, quality))
+                    finally:
+                        tile.close()
+            logger.info("Saved AREA tiles to %s", self._tile_cache_base_dir(area_path))
+        finally:
+            image_l.close()
+
     def run(self):
         while self.__run__:
+            image = None
             try:
                 coil_id, image = self.queue_in.get()
                 image = Image.fromarray(image)
@@ -125,8 +163,16 @@ class SaverWork(WorkBaseThread):
                 # 生成 AREA 多级瓦片缓存 (L0-L4)
                 self._write_tile_cache(save_f, image)
                 self.save_thumbnail(save_t,image)
+                logger.info("2D AREA saved: %s", save_f)
             except BaseException as e:
-                print(e)
+                logger.error("2D AREA save failed: %s", e)
+            finally:
+                if image is not None:
+                    try:
+                        image.close()
+                    except Exception:
+                        pass
+                gc.collect()
 
 
 class DebugSaveWork(WorkBaseThread):

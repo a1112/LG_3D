@@ -49,7 +49,7 @@ DataShowCore_ {
 
     property CoilModel currentCoilModel: surfaceData.currentCoilModel
 
-    property string source: surfaceData.source
+    property string source: surfaceData.hasViewData(surfaceData.currentViewKey) ? surfaceData.source : ""
 
     // 画布数据
     property real canvasScale: 1.0 // 画布缩放比例，初始值设为 1.0，后续会自动计算
@@ -78,8 +78,8 @@ DataShowCore_ {
     property int showBottom: flick ? (flick.contentY+flick.height)/canvasScale : 0
 
     property real max_mm: sourceWidth*surfaceData.scan3dScaleX
-    property real showLeftmm: (showLeft-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
-    property real showRightmm: (showRight-surfaceData.inner_circle_centre[0])*surfaceData.scan3dScaleX
+    property real showLeftmm: (showLeft - (surfaceData.inner_circle_centre && surfaceData.inner_circle_centre.length > 0 ? surfaceData.inner_circle_centre[0] : 0)) * surfaceData.scan3dScaleX
+    property real showRightmm: (showRight - (surfaceData.inner_circle_centre && surfaceData.inner_circle_centre.length > 0 ? surfaceData.inner_circle_centre[0] : 0)) * surfaceData.scan3dScaleX
 
     readonly property int canvasContentX: flick ? flick.contentX : 0
     readonly property int canvasContentY: flick ? flick.contentY : 0
@@ -125,6 +125,9 @@ DataShowCore_ {
     }
 
     function setFlickablebyPoint(point){
+        if (!flick) {
+            return
+        }
         let newX = scaleTempPoint.x*canvasContentWidth
         let newY = scaleTempPoint.y*canvasContentHeight
         flick.contentX = newX-point.x
@@ -180,7 +183,7 @@ DataShowCore_ {
         if (!isFinite(rawValue)) {
             return hoverdZmm
         }
-        return (rawValue*surfaceData.scan3dScaleZ-medianZ).toFixed(2)
+        return surfaceData.zRawToRelativeMm(rawValue).toFixed(2)
     }
     property int hoverZRequestId: 0
     function get_zValue(){
@@ -220,6 +223,9 @@ DataShowCore_ {
 
     function resetView(){
         canvasScale = minScale
+        if (!flick) {
+            return
+        }
         flick.contentX = 0
         flick.contentY = 0
     }

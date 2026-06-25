@@ -21,7 +21,6 @@ sys.path.append(str(Path(__file__).parent.parent/"Base"))
 from Base.utils.StdoutLog import Logger
 from Base.utils.LoggerProcess import LoggerProcess
 from SplicingService.ImageMosaicThread import ImageMosaicThread
-from SubServer.ZipServer import ZipServer
 from Base.utils.Singleton import SingletonLock
 import Globs
 from CoilDataBase.Coil import deleteCoilByCoilId
@@ -118,7 +117,12 @@ def _run_main() -> None:
     image_mosaic_thread.start()
     Globs.imageMosaicThread = image_mosaic_thread
 
-    zip_server = ZipServer(queue)
+    zip_server = None
+    if os.getenv("LG3D_ENABLE_LEGACY_COMPRESSION", "0") == "1":
+        from SubServer.ZipServer import ZipServer
+        zip_server = ZipServer(queue)
+    else:
+        print("Legacy bmp/npy compression disabled; capture already writes jpg/npz.")
     import Lis  # noqa: F401
     try:
         while True:
@@ -132,7 +136,7 @@ def _run_main() -> None:
                 image_mosaic_thread.join(timeout=5)
             except Exception:
                 pass
-        if zip_server.is_alive():
+        if zip_server is not None and zip_server.is_alive():
             zip_server.terminate()
             zip_server.join(timeout=5)
         logger_process.stop()

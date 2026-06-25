@@ -70,6 +70,17 @@ def test_export_includes_taper_worst_point_metadata():
                     "worst_y": 20.0,
                     "worst_z": 260.0,
                     "worst_angle": 40.0,
+                    "angle_filter": [270.0, 90.0],
+                    "angle_tolerance": 0.5,
+                    "valid_angle_coverage_ratio": 1.0,
+                    "valid_line_count": 2,
+                    "covered_angle_count": 2,
+                    "taper_attempt_count": 2,
+                    "raw_taper_attempt_count": 36,
+                    "detection_error_count": 0,
+                    "raw_detection_error_count": 1,
+                    "warning_count": 1,
+                    "grading_error_count": 0,
                 }, ensure_ascii=False),
             )
         ],
@@ -85,6 +96,17 @@ def test_export_includes_taper_worst_point_metadata():
     assert item_data["S端 塔形最严重点Y"] == 20.0
     assert item_data["S端 塔形最严重点Z"] == 260.0
     assert item_data["S端 塔形最严重角度"] == 40.0
+    assert item_data["S端 塔形判定角度"] == "270, 90"
+    assert item_data["S端 塔形角度容差"] == 0.5
+    assert item_data["S端 塔形有效角度覆盖率"] == 1.0
+    assert item_data["S端 塔形有效线数量"] == 2
+    assert item_data["S端 塔形覆盖角度数量"] == 2
+    assert item_data["S端 塔形检测角度数量"] == 2
+    assert item_data["S端 塔形原始检测角度数量"] == 36
+    assert item_data["S端 塔形检测失败数量"] == 0
+    assert item_data["S端 塔形原始检测失败数量"] == 1
+    assert item_data["S端 塔形配置警告数量"] == 1
+    assert item_data["S端 塔形分级无效线数量"] == 0
 
 
 class _FakeWorksheet:

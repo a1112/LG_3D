@@ -15,7 +15,7 @@ Item {
                                p_x,
                                p_y,
                                (result)=>{
-                                   xyz.z_mm = (result*surfaceData.scan3dScaleZ-dataShowCore.medianZ).toFixed(2)
+                                   xyz.z_mm = surfaceData.zRawToRelativeMm(result).toFixed(2)
                                },
                                (error)=>{
                                    console.log("get_zValueData error:",error)

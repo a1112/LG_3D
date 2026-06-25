@@ -5,7 +5,7 @@ XYZShow{
     function get_zValue(){
         api.get_zValueData(surfaceData.key,surfaceData.coilId, dataShowCore.perpendicularPointX, dataShowCore.perpendicularPointY,
                            (result)=>{
-                               mm_z = (result*surfaceData.scan3dScaleZ-dataShowCore.medianZ).toFixed(2)
+                               mm_z = surfaceData.zRawToRelativeMm(result).toFixed(2)
                            },
                            (error)=>{
                                console.log("get_zValueData error:",error)

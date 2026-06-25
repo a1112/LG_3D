@@ -19,12 +19,18 @@ signals:
 
 private slots:
     void onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
+    void onReadyRead();
     void onDownloadFinished();
     void onErrorOccurred(QNetworkReply::NetworkError code);
 
 private:
+    bool prepareFile(const QString &filePath);
+    void clearCurrentReply();
+    void closeAndRemovePartialFile();
+
     QNetworkAccessManager manager;
     QNetworkReply *reply;
     QFile file;
+    bool errorEmitted;
 };
 #endif

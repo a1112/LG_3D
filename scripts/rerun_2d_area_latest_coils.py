@@ -25,6 +25,8 @@ for import_path in (ALG_2D_DIR, COIL_DB_DIR):
 
 from configs import CONFIG
 from configs.JoinConfig import JoinConfig
+from alg_2d.classifier import (DEFAULT_2D_DEFECT_CLASS, area_defect_name,
+                               classify_boxes)
 from property.DataIntegration import ClipImageItem, DataIntegration
 
 
@@ -33,6 +35,7 @@ class DetectionBox:
     label: str
     confidence: float
     bbox: tuple[int, int, int, int]
+    defect_class: int = DEFAULT_2D_DEFECT_CLASS
 
 
 @dataclass
@@ -247,8 +250,8 @@ def build_defect(clip_item: ClipImageItem, detection: DetectionBox) -> dict | No
     return {
         "secondaryCoilId": int(clip_item.coil_id),
         "surface": clip_item.surface,
-        "defectClass": 101,
-        "defectName": "2D_" + detection.label,
+        "defectClass": detection.defect_class,
+        "defectName": area_defect_name(detection.label),
         "defectStatus": 5,
         "defectX": defect_x,
         "defectY": defect_y,
@@ -257,6 +260,26 @@ def build_defect(clip_item: ClipImageItem, detection: DetectionBox) -> dict | No
         "defectSource": detection.confidence,
         "defectData": "",
     }
+
+
+def classify_detections(source_image, clip_item: ClipImageItem,
+                        detections: Sequence[DetectionBox]) -> None:
+    defect_boxes = []
+    detection_items = []
+    for detection in detections:
+        defect_box = absolute_defect_box(clip_item, detection)
+        if defect_box is None:
+            continue
+        defect_boxes.append(defect_box)
+        detection_items.append(detection)
+
+    for detection, result in zip(detection_items,
+                                 classify_boxes(source_image, defect_boxes)):
+        if result is None:
+            continue
+        detection.defect_class = result.label
+        detection.confidence = result.source
+        detection.label = result.name
 
 
 def save_pascal_voc_xml(path: Path, image_name: str, width: int, height: int,
@@ -399,6 +422,8 @@ def process_area(model, surface_config, coil_id: int, area_path: Path, save_dir:
             detections = parse_result(result)
             if not detections:
                 continue
+            classify_detections(data_integration.max_image, clip_item,
+                                detections)
             hit_tiles += 1
             total_boxes += len(detections)
             for detection in detections:

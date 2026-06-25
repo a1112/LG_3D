@@ -8,6 +8,6 @@ WebSocket {
     onErrorStringChanged:(error)=>{
                          }
 
-    onStatusChanged: {
+    onStatusChanged: function(status) {
     }
 }

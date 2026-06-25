@@ -6,23 +6,30 @@ RowLayout {
     id:root
     property alias title: title_id.text
     property int level: 0
-    property real value
+    property var value: ""
+    property var displayValue: value
+    property real numericValue: numberOr(value, 0)
     height: 30
     width:parent.width
     Layout.fillWidth: true
     readonly property color levelColor:level<=1? Material.color(Material.Green) : level<=2? Material.color(Material.Yellow) : Material.color(Material.Red)
     property string toolTipText: ""
+
+    function numberOr(sourceValue, defaultValue) {
+        let numberValue = Number(sourceValue)
+        return isFinite(numberValue) ? numberValue : defaultValue
+    }
     KeyLabel {
         ItemDelegate{
             width:root.width
             height: root.height
-            ToolTip.visible:hovered && toolTipText != ""
-            ToolTip.text:toolTipText
+            ToolTip.visible:hovered && root.toolTipText != ""
+            ToolTip.text:root.toolTipText
         }
         font.pointSize: 14
         font.bold: true
         font.family: "Microsoft YaHei"
-        color:levelColor// Material.color(Material.Blue)
+        color:root.levelColor// Material.color(Material.Blue)
         id:title_id
         text: ""
         opacity: 0.9
@@ -30,8 +37,8 @@ RowLayout {
     ValueTextLabel{
         Layout.fillWidth: true
         id:value_id
-        text: value
-        color:levelColor
+        text: root.displayValue
+        color:root.levelColor
     }
     KeyLabel {
         text: "mm  "
@@ -43,8 +50,8 @@ RowLayout {
         height:width
         SimpleLigth{
             anchors.centerIn: parent
-            running: level > 2
-            color:levelColor
+            running: root.level > 2
+            color:root.levelColor
         }
     }
 

@@ -1,7 +1,7 @@
 import QtQuick
 
 Item {
-    property int init_num: 150
+    property int init_num: 80
     // CoreInfo 中路径是否已初始化（避免帮助里路径文本频繁刷新）
     property bool coreInfoPathLoaded: false
     // 列表加载状态标志，防止并发修改
@@ -148,7 +148,6 @@ Item {
                              console.log("init_num")
                         initCoilByData(JSON.parse(result))
                         core.setCoilIndex(0)
-                        core.flushListItem()
                         isListLoading = false  // 完成后重置状态
                         },(error)=>{
                             console.log("error")

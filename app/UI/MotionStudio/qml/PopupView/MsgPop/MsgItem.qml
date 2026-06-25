@@ -44,7 +44,9 @@ GridView {
     Layout.fillHeight: true
     cellWidth: gridView.width/2-5
     cellHeight: 25
-    model: ListModel {}
+    model: ListModel {
+        dynamicRoles: true
+    }
     delegate: RowItemView {
 
 }

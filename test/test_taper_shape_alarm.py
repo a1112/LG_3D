@@ -19,7 +19,7 @@ from AlarmDetection.Result.AlarmData import AlarmData
 import AlarmDetection.Result.AlarmData as alarm_data_module
 from SplicingService.taper_error_threshold import taper_error_threshold_from_limits
 from Base.utils.cache_generator import generate_error_image
-from Base.property.Data3D import LineData, find_line_max_min, valid_line_height_mask
+from Base.property.Data3D import LineData, PointData as KeyPointData, find_line_max_min, valid_line_height_mask
 from Base.property.Types import DetectionTaperShapeType, Point2D
 import AlarmDetection.Grading.CoilGrading as coil_grading
 import AlarmDetection.Grading.alarm_taper_shape as taper_grading
@@ -46,6 +46,42 @@ class FakeDataIntegration:
 
 def _point(x, y, z):
     return SimpleNamespace(x=x, y=y, z=float(z))
+
+
+def test_point_data_model_stores_only_key_height_by_default(monkeypatch):
+    monkeypatch.delenv("COIL_STORE_POINT_RAW_DATA", raising=False)
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        median_3d_mm=60.0,
+        z_to_mm=lambda z: 10.0 + 0.5 * float(z),
+    )
+
+    model = KeyPointData([12, 34, 180], "max_outer").pointDataModel(data_integration)
+
+    assert model.type == "max_outer"
+    assert model.z_mm == pytest.approx(40.0)
+    assert model.x is None
+    assert model.y is None
+    assert model.z is None
+    assert model.data is None
+
+
+def test_point_data_model_can_keep_raw_fields_for_debug(monkeypatch):
+    monkeypatch.setenv("COIL_STORE_POINT_RAW_DATA", "true")
+    data_integration = SimpleNamespace(
+        secondary_coil_id=1001,
+        key="S",
+        median_3d_mm=60.0,
+        z_to_mm=lambda z: 10.0 + 0.5 * float(z),
+    )
+
+    model = KeyPointData([12, 34, 180], "max_outer").pointDataModel(data_integration)
+
+    assert model.x == 12
+    assert model.y == 34
+    assert model.z == 180
+    assert model.z_mm == pytest.approx(40.0)
 
 
 class FakeAlarmData:
@@ -113,6 +149,75 @@ def test_taper_shape_config_uses_next_code_override():
     }, FakeDataIntegration())
 
     assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
+def test_taper_shape_config_ignores_non_mapping_code_rule():
+    config = TaperShapeConfig({
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "2": "bad-code-rule",
+    }, FakeDataIntegration())
+
+    assert config.get_config().get_config() == ("base", [60, 80], 0, 0, "base")
+
+
+def test_taper_shape_config_ignores_non_mapping_base_rule():
+    config = TaperShapeConfig({
+        "Base": "bad-base-rule",
+        "2": {"name": "code2", "height": [50, 70], "inner": 3, "outer": 1, "info": "code2"},
+    }, FakeDataIntegration())
+
+    assert config.get_config().get_config() == ("code2", [50, 70], 3, 1, "code2")
+
+
+def test_taper_shape_config_handles_non_mapping_root_config():
+    config = TaperShapeConfig(["bad-root-config"], FakeDataIntegration())
+
+    assert config.get_config().get_config() == (
+        "默认判断规则",
+        [60, 80],
+        0,
+        0,
+        "",
+    )
+
+
+def test_taper_shape_config_exposes_angle_filter():
+    config = TaperShapeConfig({
+        "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        "99": {
+            "name": "code99",
+            "height": [50, 80],
+            "angles": [270],
+            "angle_tolerance": 0.5,
+            "inner": 0,
+            "outer": 0,
+            "info": "code99",
+        },
+    }, SimpleNamespace(next_code="99"))
+
+    item = config.get_config()
+
+    assert item.get_config() == ("code99", [50, 80], 0, 0, "code99")
+    assert item.angles == [270]
+    assert item.angle_tolerance == 0.5
+
+
+def test_production_taper_shape_new_electromagnetic_uses_top_angle_and_half_outer_ring():
+    config_data = json.loads(
+        (ROOT / "CONFIG_3D" / "configs" / "Alarm.json").read_text(encoding="utf-8-sig")
+    )
+
+    item = TaperShapeConfig(config_data["TaperShape"], SimpleNamespace(next_code="99")).get_config()
+    name, height, inner, outer, info = item.get_config()
+
+    assert name == "新电磁"
+    assert height == [50, 80]
+    assert inner == 0
+    assert outer == 0.5
+    assert item.angles == [270]
+    assert item.angle_tolerance == 0
+    assert "12点钟方向" in info
+    assert "半圈" in info
 
 
 def test_taper_shape_config_normalizes_next_code_variants():
@@ -243,6 +348,69 @@ def test_coil_grading_continues_taper_when_flat_roll_grading_fails(monkeypatch):
     assert len(warnings) == 1
 
 
+def test_coil_grading_logs_alarm_info_save_failure(monkeypatch):
+    warnings = []
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        key="S",
+        next_code="2",
+        next_name="next",
+    )
+
+    monkeypatch.setattr(
+        coil_grading,
+        "grading_alarm_flat_roll",
+        lambda di: AlarmGradResult(1, "", ""),
+    )
+    monkeypatch.setattr(
+        coil_grading,
+        "grading_alarm_taper_shape",
+        lambda di: AlarmGradResult(3, "taper alarm", ""),
+    )
+    monkeypatch.setattr(
+        coil_grading,
+        "grading_alarm_loose_coil",
+        lambda di: AlarmGradResult(1, "", ""),
+    )
+    monkeypatch.setattr(coil_grading.logger, "warning", warnings.append)
+
+    def fail_add_obj(_alarm_info):
+        raise RuntimeError("db unavailable")
+
+    monkeypatch.setattr("CoilDataBase.Coil.add_obj", fail_add_obj)
+
+    coil_grading.grading(data_integration)
+
+    assert warnings == ["1001 S 保存综合报警失败: db unavailable"]
+
+
+def test_grading_all_continues_after_grading_and_commit_failures(monkeypatch):
+    calls = []
+    warnings = []
+    first_alarm_data = SimpleNamespace(
+        commit=lambda: (_ for _ in ()).throw(RuntimeError("first commit failed"))
+    )
+    first = SimpleNamespace(coilId=1, key="S", alarmData=first_alarm_data)
+    second_alarm_data = SimpleNamespace(commit=lambda: calls.append("second commit"))
+    second = SimpleNamespace(coilId=2, key="L", alarmData=second_alarm_data)
+
+    def fake_grading(data_integration):
+        calls.append(f"grading {data_integration.coilId}")
+        if data_integration is first:
+            raise RuntimeError("first grading failed")
+
+    monkeypatch.setattr(coil_grading, "grading", fake_grading)
+    monkeypatch.setattr(coil_grading.logger, "warning", warnings.append)
+
+    coil_grading.grading_all([first, second])
+
+    assert calls == ["grading 1", "grading 2", "second commit"]
+    assert warnings == [
+        "1 S 综合报警分级失败: first grading failed",
+        "1 S 报警明细提交失败: first commit failed",
+    ]
+
+
 def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):
     flat_roll_commits = []
     add_calls = []
@@ -259,7 +427,7 @@ def test_alarm_data_commit_accepts_missing_taper_line_data(monkeypatch):
 
 def test_alarm_data_commit_skips_invalid_taper_line_data(monkeypatch):
     class BadLineData:
-        def line_data_model(self, data_integration):
+        def all_point_data_model(self, data_integration):
             raise ValueError("bad taper line")
 
     class GoodLineData:
@@ -282,7 +450,7 @@ def test_alarm_data_commit_skips_invalid_taper_line_data(monkeypatch):
     alarm_data.commit()
 
     assert flat_roll_commits == [True]
-    assert add_calls == [["line_model", "point_model"]]
+    assert add_calls == [["point_model"]]
 
 
 def test_alarm_data_commit_accepts_missing_flat_roll_data(monkeypatch):
@@ -302,7 +470,7 @@ def test_alarm_data_commit_accepts_missing_flat_roll_data(monkeypatch):
 
     alarm_data.commit()
 
-    assert add_calls == [["line_model", "point_model"]]
+    assert add_calls == [["point_model"]]
     assert len(warnings) == 1
     assert "missing flat roll data" in warnings[0]
 
@@ -329,9 +497,33 @@ def test_alarm_data_commit_continues_after_invalid_flat_roll_data(monkeypatch):
 
     alarm_data.commit()
 
-    assert add_calls == [["line_model", "point_model"]]
+    assert add_calls == [["point_model"]]
     assert len(warnings) == 1
     assert "bad flat roll" in warnings[0]
+
+
+def test_alarm_data_commit_logs_taper_model_save_failure(monkeypatch):
+    class GoodLineData:
+        def line_data_model(self, data_integration):
+            return "line_model"
+
+        def all_point_data_model(self, data_integration):
+            return ["point_model"]
+
+    warnings = []
+    alarm_data = AlarmData(FakeDataIntegration())
+    alarm_data.flatRollData = SimpleNamespace(commit=lambda: None)
+    alarm_data.lineDataDict = {0: GoodLineData()}
+
+    def fail_add_obj(_models):
+        raise RuntimeError("db unavailable")
+
+    monkeypatch.setattr(alarm_data_module.Alarm, "addObj", fail_add_obj)
+    monkeypatch.setattr(alarm_data_module.logger, "warning", warnings.append)
+
+    alarm_data.commit()
+
+    assert warnings == ["skip saving taper line models: db unavailable"]
 
 
 def test_alarm_data_commit_skips_non_finite_taper_model_values(monkeypatch):
@@ -397,7 +589,7 @@ def test_alarm_data_commit_accepts_sequence_taper_line_data(monkeypatch):
     alarm_data.commit()
 
     assert flat_roll_commits == [True]
-    assert add_calls == [["line_model", "point_model"]]
+    assert add_calls == [["point_model"]]
 
 
 def test_taper_shape_detection_and_grading_synthetic_surface(monkeypatch):
@@ -859,6 +1051,264 @@ def test_grading_alarm_taper_shape_records_min_points_and_worst_angle(monkeypatc
     assert metadata["worst_used_point_count"] == 0
 
 
+def test_grading_alarm_taper_shape_filters_to_configured_angle(monkeypatch):
+    severe_other_angle = SimpleNamespace(
+        rotation_angle=0,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    normal_target_angle = SimpleNamespace(
+        rotation_angle=270,
+        outer_max_point=_point(30, 40, 100),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={0: severe_other_angle, 270: normal_target_angle}
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert captured[0].rotation_angle == 270
+    assert captured[0].out_taper_max_value == 0.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["angle_filter"] == [270.0]
+    assert metadata["angle_tolerance"] == 0.0
+
+
+def test_grading_alarm_taper_shape_matches_text_angle_key(monkeypatch):
+    normal_target_angle = SimpleNamespace(
+        outer_max_point=_point(30, 40, 100),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={"270度": normal_target_angle}
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert captured[0].rotation_angle == 270.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["covered_angle_count"] == 1
+    assert metadata["valid_angle_coverage_ratio"] == 1.0
+
+
+@pytest.mark.parametrize(
+    ("line_key", "rotation_angle"),
+    [
+        (270, np.inf),
+        ("bad-key", "270deg"),
+    ],
+)
+def test_grading_alarm_taper_shape_backfills_numeric_angle_from_key_or_text_attr(
+        monkeypatch, line_key, rotation_angle):
+    normal_target_angle = SimpleNamespace(
+        rotation_angle=rotation_angle,
+        outer_max_point=_point(30, 40, 100),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={line_key: normal_target_angle}
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert normal_target_angle.rotation_angle == 270.0
+    assert captured[0].rotation_angle == 270.0
+    metadata = json.loads(captured[0].data)
+    assert metadata["covered_angle_count"] == 1
+    assert metadata["valid_angle_coverage_ratio"] == 1.0
+
+
+def test_grading_alarm_taper_shape_angle_filter_uses_configured_angle_for_coverage(monkeypatch):
+    normal_target_angle = SimpleNamespace(
+        rotation_angle=270,
+        outer_max_point=_point(30, 40, 100),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={270: normal_target_angle},
+        taper_shape_attempt_count=36,
+        taper_shape_errors=["0度: non target failed"],
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert result.errorMsg == "正常"
+    metadata = json.loads(captured[0].data)
+    assert metadata["covered_angle_count"] == 1
+    assert metadata["taper_attempt_count"] == 1
+    assert metadata["raw_taper_attempt_count"] == 36
+    assert metadata["valid_angle_coverage_ratio"] == 1.0
+    assert metadata["detection_error_count"] == 0
+    assert metadata["raw_detection_error_count"] == 1
+
+
+def test_grading_alarm_taper_shape_configured_angles_enforce_low_coverage(monkeypatch):
+    normal_target_angle = SimpleNamespace(
+        rotation_angle=270,
+        outer_max_point=_point(30, 40, 100),
+        outer_min_point=_point(31, 41, 100),
+        inner_max_point=_point(32, 42, 100),
+        inner_min_point=_point(33, 43, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={270: normal_target_angle},
+        taper_shape_attempt_count=3,
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270, 90, 180],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "coverage=0.33" in result.errorMsg
+    assert captured[0].level == 3
+    metadata = json.loads(captured[0].data)
+    assert metadata["covered_angle_count"] == 1
+    assert metadata["taper_attempt_count"] == 3
+    assert metadata["valid_angle_coverage_ratio"] == pytest.approx(1 / 3)
+
+
+def test_grading_alarm_taper_shape_reports_missing_configured_angle(monkeypatch):
+    other_angle = SimpleNamespace(
+        rotation_angle=0,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: other_angle})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": [270],
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+    assert "270" in result.errorMsg
+    assert data_integration.alarmData.taper_shape_grading_errors == [
+        "未找到塔形指定角度: 270"
+    ]
+
+
 def test_grading_alarm_taper_shape_accepts_key_without_surface(monkeypatch):
     line_positive = SimpleNamespace(
         rotation_angle=40,
@@ -929,6 +1379,36 @@ def test_grading_alarm_taper_shape_preserves_result_when_detail_save_fails(monke
     assert "db unavailable" in result.errorMsg
     assert warnings
     assert "db unavailable" in warnings[0]
+
+
+def test_grading_alarm_taper_shape_detail_save_failure_does_not_raise_normal_alarm(monkeypatch):
+    line_normal = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 120),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={40: line_normal})
+
+    def fail_save(_alarm_taper_shape):
+        raise RuntimeError("db unavailable")
+
+    monkeypatch.setattr(taper_grading, "add_obj", fail_save)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert "正常" in result.errorMsg
+    assert "db unavailable" in result.errorMsg
 
 
 def test_grading_alarm_taper_shape_skips_non_finite_cached_metrics(monkeypatch):
@@ -1119,6 +1599,21 @@ def test_grading_alarm_taper_shape_parses_string_height_limits(monkeypatch):
     assert json.loads(captured[0].data)["height_limits"] == [50.0, 80.0]
 
 
+@pytest.mark.parametrize(
+    ("value", "height_limits", "expected_grade", "expected_limit"),
+    [
+        (59.999, [60, 80], 1, None),
+        (60.0, [60, 80], 2, 60),
+        (79.999, [60, 80], 2, 60),
+        (80.0, [60, 80], 3, 80),
+        (60.0, [60, 60], 3, 60),
+    ],
+)
+def test_taper_shape_grade_boundary_limits(value, height_limits, expected_grade, expected_limit):
+    assert taper_grading._grade_by_limits(value, height_limits) == expected_grade
+    assert taper_grading._matched_limit(value, height_limits) == expected_limit
+
+
 def test_grading_alarm_taper_shape_parses_mapping_height_limits(monkeypatch):
     line_positive = SimpleNamespace(
         rotation_angle=20,
@@ -1170,6 +1665,97 @@ def test_taper_shape_height_limits_parse_common_text_formats(height_limits, expe
     assert taper_error_threshold_from_limits(height_limits) == (threshold, threshold)
 
 
+@pytest.mark.parametrize(
+    ("angle_values", "expected"),
+    [
+        ("270，90", [270.0, 90.0]),
+        ("[270, 90]", [270.0, 90.0]),
+        ("270度；90度", [270.0, 90.0]),
+        ({"target": "270度"}, [270.0]),
+    ],
+)
+def test_taper_angle_filter_parses_common_text_formats(angle_values, expected):
+    assert taper_grading._angle_filter(angle_values) == expected
+
+
+def test_taper_shape_detection_uses_configured_angles(monkeypatch):
+    calls = []
+
+    def fake_detection(data_integration, rotation_angle):
+        calls.append(rotation_angle)
+        return SimpleNamespace(rotation_angle=rotation_angle)
+
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        key="S",
+        alarmData=SimpleNamespace(),
+    )
+    monkeypatch.setattr(
+        taper_processing,
+        "detection_taper_shape_by_rotation_angle",
+        fake_detection,
+    )
+    monkeypatch.setattr(
+        taper_processing.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {
+                "name": "base",
+                "height": [60, 80],
+                "angles": "270度；90度",
+                "inner": 0,
+                "outer": 0,
+                "info": "base",
+            },
+        }, di),
+    )
+
+    result = taper_processing._detection_taper_shape_(data_integration)
+
+    assert calls == [270.0, 90.0]
+    assert list(result.keys()) == [270, 90]
+    assert result[270].rotation_angle == 270.0
+    assert result[90].rotation_angle == 90.0
+    assert data_integration.alarmData.taper_shape_attempt_count == 2
+    assert data_integration.alarmData.taper_shape_errors == []
+
+
+def test_taper_shape_detection_records_config_angle_lookup_warning(monkeypatch):
+    calls = []
+
+    def fake_detection(data_integration, rotation_angle):
+        calls.append(rotation_angle)
+        return SimpleNamespace(rotation_angle=rotation_angle)
+
+    data_integration = SimpleNamespace(
+        coilId=1001,
+        key="S",
+        alarmData=SimpleNamespace(),
+    )
+    monkeypatch.setattr(taper_processing, "TAPER_ROTATION_STEP", 180)
+    monkeypatch.setattr(
+        taper_processing,
+        "detection_taper_shape_by_rotation_angle",
+        fake_detection,
+    )
+    monkeypatch.setattr(
+        taper_processing.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: (_ for _ in ()).throw(RuntimeError("bad alarm config")),
+    )
+
+    result = taper_processing._detection_taper_shape_(data_integration)
+
+    assert calls == [0, 180]
+    assert result[0].rotation_angle == 0
+    assert result[180].rotation_angle == 180
+    assert data_integration.alarmData.taper_shape_attempt_count == 2
+    assert data_integration.alarmData.taper_shape_errors == []
+    assert data_integration.alarmData.taper_shape_warnings == [
+        "塔形配置角度读取失败，使用默认全角度检测: bad alarm config"
+    ]
+
+
 def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
     ray_line[-1, 2] = 260
@@ -1203,6 +1789,75 @@ def test_grading_alarm_taper_shape_ignores_configured_outer_ring(monkeypatch):
     metadata = json.loads(captured[0].data)
     assert metadata["ignored_outer_mm"] == 1.0
     assert metadata["applied_ignored_outer_mm"] == 1.0
+    assert metadata["outer_skip_count"] == 1
+
+
+def test_grading_alarm_taper_shape_accepts_half_outer_ring_ignore(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[-1, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=270,
+        ray_line=ray_line,
+        outer_max_point=_point(9, 0, 260),
+        outer_min_point=_point(5, 0, 100),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(0, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.currentSecondaryCoil = SimpleNamespace(Thickness=2)
+    data_integration.alarmData = SimpleNamespace(lineDataDict={270: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0.5, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    metadata = json.loads(captured[0].data)
+    assert metadata["outer_ignore"] == 0.5
+    assert metadata["ignored_outer_mm"] == 1.0
+    assert metadata["applied_ignored_outer_mm"] == 1.0
+    assert metadata["outer_skip_count"] == 1
+
+
+def test_grading_alarm_taper_shape_uses_coil_data_thickness_for_ignore_distance(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(10)], dtype=float)
+    ray_line[-1, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        outer_max_point=_point(9, 0, 260),
+        outer_min_point=_point(5, 0, 100),
+        inner_max_point=_point(0, 0, 100),
+        inner_min_point=_point(0, 0, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.currentSecondaryCoil = None
+    data_integration.coilData = {"Thickness": "1"}
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 1, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    metadata = json.loads(captured[0].data)
+    assert metadata["ignored_outer_mm"] == 1.0
     assert metadata["outer_skip_count"] == 1
 
 
@@ -1331,6 +1986,34 @@ def test_grading_alarm_taper_shape_recomputes_metrics_from_ray_line(monkeypatch)
     assert captured[0].out_taper_max_x == 6
     assert captured[0].out_taper_max_value == 80.0
     assert json.loads(captured[0].data)["valid_line_count"] == 1
+
+
+def test_grading_alarm_taper_shape_honors_line_use_iqr_false(monkeypatch):
+    ray_line = np.array([[i, 0, 100] for i in range(12)], dtype=float)
+    ray_line[8, 2] = 260
+    line_data = SimpleNamespace(
+        rotation_angle=0,
+        ray_line=ray_line,
+        useIQR=False,
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={0: line_data})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured[0].out_taper_max_x == 8
+    assert captured[0].out_taper_max_value == 80.0
 
 
 def test_grading_alarm_taper_shape_skips_malformed_ray_line(monkeypatch):
@@ -1573,6 +2256,77 @@ def test_grading_alarm_taper_shape_records_partial_error_metadata(monkeypatch):
     assert metadata["grading_error_preview"] == ["10度: 无有效塔形线指标"]
 
 
+def test_grading_alarm_taper_shape_records_config_warning_metadata(monkeypatch):
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 100),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    warning = "unsupported taper_shape_type=DetectionTaperShapeType.WK_TYPE, fallback to LINE_TYPE"
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(
+        lineDataDict={40: valid_line},
+        taper_shape_warnings=[warning],
+    )
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 1
+    assert warning in result.errorMsg
+    metadata = json.loads(captured[0].data)
+    assert metadata["warning_count"] == 1
+    assert metadata["warning_preview"] == [warning]
+
+
+def test_grading_alarm_taper_shape_uses_default_config_when_config_lookup_fails(monkeypatch):
+    valid_line = SimpleNamespace(
+        rotation_angle=40,
+        outer_max_point=_point(10, 20, 260),
+        outer_min_point=_point(11, 21, 100),
+        inner_max_point=_point(12, 22, 100),
+        inner_min_point=_point(13, 23, 100),
+    )
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={40: valid_line})
+
+    captured = []
+    warnings = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(taper_grading.logger, "warning", warnings.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: (_ for _ in ()).throw(RuntimeError("bad alarm config")),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert "80.00 >= 80.00" in result.errorMsg
+    assert "塔形配置读取失败，使用默认规则: bad alarm config" in result.errorMsg
+    assert len(warnings) == 1
+    assert "bad alarm config" in warnings[0]
+    metadata = json.loads(captured[0].data)
+    assert metadata["config_name"] == "默认判断规则"
+    assert metadata["height_limits"] == [60, 80]
+    assert metadata["warning_count"] == 1
+    assert metadata["warning_preview"] == [
+        "塔形配置读取失败，使用默认规则: bad alarm config"
+    ]
+
+
 def test_grading_alarm_taper_shape_treats_single_error_string_as_one_message(monkeypatch):
     valid_line = SimpleNamespace(
         rotation_angle=40,
@@ -1643,6 +2397,38 @@ def test_grading_alarm_taper_shape_uses_cached_metrics_when_ray_line_fails(monke
     assert captured[0].rotation_angle == 30
     assert captured[0].out_taper_max_value == 80.0
     assert json.loads(captured[0].data)["valid_line_count"] == 1
+
+
+def test_grading_alarm_taper_shape_does_not_use_cache_when_ray_line_reports_invalid_data(monkeypatch):
+    class CachedLineData:
+        rotation_angle = 30
+        outer_max_point = _point(10, 20, 260)
+        outer_min_point = _point(11, 21, 100)
+        inner_max_point = _point(12, 22, 100)
+        inner_min_point = _point(13, 23, 100)
+
+        @property
+        def ray_line(self):
+            raise ValueError("line data empty")
+
+    data_integration = FakeDataIntegration()
+    data_integration.alarmData = SimpleNamespace(lineDataDict={30: CachedLineData()})
+
+    captured = []
+    monkeypatch.setattr(taper_grading, "add_obj", captured.append)
+    monkeypatch.setattr(
+        taper_grading.alarmConfigProperty,
+        "get_taper_shape_config",
+        lambda di: TaperShapeConfig({
+            "Base": {"name": "base", "height": [60, 80], "inner": 0, "outer": 0, "info": "base"},
+        }, di),
+    )
+
+    result = taper_grading.grading_alarm_taper_shape(data_integration)
+
+    assert result.grad == 3
+    assert captured == []
+    assert len(data_integration.alarmData.taper_shape_grading_errors) == 1
 
 
 def test_grading_alarm_taper_shape_rejects_cached_metrics_when_trim_needs_raw_line(monkeypatch):
@@ -1959,6 +2745,7 @@ def test_grading_alarm_taper_shape_reports_invalid_line_metrics(monkeypatch):
 
 
 def test_grading_alarm_taper_shape_reports_detection_errors(monkeypatch):
+    warning = "unsupported taper_shape_type=DetectionTaperShapeType.WK_TYPE, fallback to LINE_TYPE"
     data_integration = FakeDataIntegration()
     data_integration.alarmData = SimpleNamespace(
         lineDataDict={},
@@ -1968,6 +2755,7 @@ def test_grading_alarm_taper_shape_reports_detection_errors(monkeypatch):
             "20度: line data empty",
             "30度: line data empty",
         ],
+        taper_shape_warnings=[warning],
     )
 
     captured = []
@@ -1986,6 +2774,7 @@ def test_grading_alarm_taper_shape_reports_detection_errors(monkeypatch):
     assert "无有效线数据" in result.errorMsg
     assert "0度: center out of image bounds" in result.errorMsg
     assert "10度: 3D/mask shape mismatch" in result.errorMsg
+    assert warning in result.errorMsg
     assert "另有1个角度失败" in result.errorMsg
     assert captured == []
 
@@ -2145,7 +2934,7 @@ def test_line_data_length_mm_uses_y_scale_for_vertical_lines():
     assert line_data.max_zero_width_mm == 4.0
 
 
-def test_line_data_model_sanitizes_non_finite_ray_line_json():
+def _line_data_model_case():
     line_data = LineData(
         npy_data=np.zeros((1, 5), dtype=np.int32),
         mask_image=np.ones((1, 5), dtype=np.uint8) * 255,
@@ -2154,8 +2943,8 @@ def test_line_data_model_sanitizes_non_finite_ray_line_json():
     )
     line_data._ray_data_ = np.array([
         [0, 0, 100],
-        [1, 0, np.inf],
-        [2, 0, np.nan],
+        [1, 0, 100],
+        [2, 0, 100],
         [3, 0, 100],
         [4, 0, 100],
     ], dtype=float)
@@ -2174,6 +2963,13 @@ def test_line_data_model_sanitizes_non_finite_ray_line_json():
         alarmData=SimpleNamespace(flatRollData=SimpleNamespace(get_center=lambda: Point2D(2, 0))),
         z_to_mm=lambda z: float(z),
     )
+    return line_data, data_integration
+
+
+def test_line_data_model_sanitizes_non_finite_ray_line_json():
+    line_data, data_integration = _line_data_model_case()
+    line_data._ray_data_[1, 2] = np.inf
+    line_data._ray_data_[2, 2] = np.nan
 
     model = line_data.line_data_model(data_integration)
 
@@ -2182,6 +2978,22 @@ def test_line_data_model_sanitizes_non_finite_ray_line_json():
     line_json = json.loads(model.data)
     assert line_json[1][2] == 0.0
     assert line_json[2][2] == 0.0
+
+
+def test_line_data_model_rejects_non_finite_rotation_angle():
+    line_data, data_integration = _line_data_model_case()
+    line_data.rotation_angle = np.inf
+
+    with pytest.raises(ValueError, match="rotation_angle"):
+        line_data.line_data_model(data_integration)
+
+
+def test_line_data_model_rejects_non_finite_endpoints():
+    line_data, data_integration = _line_data_model_case()
+    line_data.p1.x = np.nan
+
+    with pytest.raises(ValueError, match="x1"):
+        line_data.line_data_model(data_integration)
 
 
 def test_line_data_model_accepts_tuple_center():
@@ -2372,8 +3184,9 @@ def test_detection_taper_shape_skips_zero_division_angle(monkeypatch):
 
 def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
     captured = []
+    alarm_data = SimpleNamespace(set_line_data_dict=captured.append)
     data_integration = SimpleNamespace(
-        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+        alarmData=alarm_data
     )
 
     monkeypatch.setattr(taper_processing.Globs.control, "taper_shape_type", DetectionTaperShapeType.WK_TYPE)
@@ -2387,6 +3200,9 @@ def test_unsupported_taper_shape_type_falls_back_to_line(monkeypatch):
     taper_processing._detection_taper_shape_all_([data_integration])
 
     assert captured == [{"line": data_integration}]
+    assert alarm_data.taper_shape_warnings == [
+        "unsupported taper_shape_type=DetectionTaperShapeType.WK_TYPE, fallback to LINE_TYPE"
+    ]
 
 
 def test_string_none_taper_shape_type_disables_line_detection(monkeypatch):
@@ -2558,6 +3374,7 @@ def test_boolean_taper_shape_type_controls_line_detection(monkeypatch):
     enabled_alarm_data = SimpleNamespace(
         taper_shape_disabled=True,
         taper_shape_errors=["old detection error"],
+        taper_shape_warnings=["old warning"],
         taper_shape_grading_errors=["old grading error"],
         set_line_data_dict=enabled_captured.append,
     )
@@ -2571,12 +3388,14 @@ def test_boolean_taper_shape_type_controls_line_detection(monkeypatch):
     assert enabled_captured == [{"line": enabled_data_integration}]
     assert enabled_alarm_data.taper_shape_disabled is False
     assert enabled_alarm_data.taper_shape_errors == []
+    assert enabled_alarm_data.taper_shape_warnings == []
     assert enabled_alarm_data.taper_shape_grading_errors == []
 
     disabled_captured = []
     disabled_alarm_data = SimpleNamespace(
         taper_shape_disabled=False,
         taper_shape_errors=["old detection error"],
+        taper_shape_warnings=["old warning"],
         taper_shape_grading_errors=["old grading error"],
         set_line_data_dict=disabled_captured.append,
     )
@@ -2594,6 +3413,7 @@ def test_boolean_taper_shape_type_controls_line_detection(monkeypatch):
     assert disabled_captured == [{}]
     assert disabled_alarm_data.taper_shape_disabled is True
     assert disabled_alarm_data.taper_shape_errors == []
+    assert disabled_alarm_data.taper_shape_warnings == []
     assert disabled_alarm_data.taper_shape_grading_errors == []
 
 
@@ -2649,8 +3469,9 @@ def test_negative_numeric_taper_shape_type_falls_back_to_line(monkeypatch):
 def test_line_with_unsupported_taper_shape_type_warns_and_uses_line(monkeypatch):
     captured = []
     warnings = []
+    alarm_data = SimpleNamespace(set_line_data_dict=captured.append)
     data_integration = SimpleNamespace(
-        alarmData=SimpleNamespace(set_line_data_dict=captured.append)
+        alarmData=alarm_data
     )
 
     monkeypatch.setattr(
@@ -2665,6 +3486,9 @@ def test_line_with_unsupported_taper_shape_type_warns_and_uses_line(monkeypatch)
 
     assert captured == [{"line": data_integration}]
     assert any("use LINE_TYPE branch only" in warning for warning in warnings)
+    assert alarm_data.taper_shape_warnings == [
+        "unsupported taper_shape_type=DetectionTaperShapeType.LINE_TYPE|AREA_TYPE, use LINE_TYPE branch only"
+    ]
 
 
 def test_taper_shape_all_accepts_single_data_integration(monkeypatch):

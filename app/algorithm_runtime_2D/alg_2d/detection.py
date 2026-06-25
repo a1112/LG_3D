@@ -9,6 +9,9 @@ from PIL import Image
 from ultralytics import YOLO
 
 from CoilDataBase.Coil import add_defects, replace_defects
+from alg_2d.classifier import (AREA_DEFECT_NAME_PREFIX,
+                               DEFAULT_2D_DEFECT_CLASS, area_defect_name,
+                               classify_boxes)
 from configs import CONFIG
 from property.DataIntegration import ClipImageItem, DataIntegration
 
@@ -97,10 +100,18 @@ class CoilDetectionResult:
         self.source = source
         self.name = name
         self.image = image
+        self.is_classified = False
         self.key = fr"{self.name}_{self.source}_{self.label}"
 
     def get_image(self):
         return self.image[self.ymin:self.ymax, self.xmin:self.xmax]
+
+    def set_classification(self, label: int, source: float, name: str) -> None:
+        self.label = label
+        self.source = source
+        self.name = name
+        self.is_classified = True
+        self.key = fr"{self.name}_{self.source}_{self.label}"
 
 
 class YoloResult:
@@ -180,6 +191,26 @@ def _get_absolute_defect_box(
     )
 
 
+def apply_classifier(det_info: List[YoloResult], source_image) -> None:
+    defect_items = []
+    defect_boxes = []
+    for item in det_info:
+        item: YoloResult
+        for defect_item in item.info_list:
+            defect_item: CoilDetectionResult
+            defect_box = _get_absolute_defect_box(item.image_info, defect_item)
+            if defect_box is None:
+                continue
+            defect_items.append(defect_item)
+            defect_boxes.append(defect_box)
+
+    for defect_item, result in zip(defect_items,
+                                   classify_boxes(source_image, defect_boxes)):
+        if result is not None:
+            defect_item.set_classification(result.label, result.source,
+                                           result.name)
+
+
 def build_defect_list(det_info: List[YoloResult]) -> List[dict]:
     defect_list = []
     for item in det_info:
@@ -195,8 +226,9 @@ def build_defect_list(det_info: List[YoloResult]) -> List[dict]:
             defect_list.append({
                 "secondaryCoilId": clip_image_item.coil_id,
                 "surface": clip_image_item.surface,
-                "defectClass": 101,
-                "defectName": "2D_" + defect_item.name,
+                "defectClass": defect_item.label
+                if defect_item.is_classified else DEFAULT_2D_DEFECT_CLASS,
+                "defectName": area_defect_name(defect_item.name),
                 "defectStatus": 5,
                 "defectX": defect_x,
                 "defectY": defect_y,
@@ -220,7 +252,9 @@ def detection(data_integration: DataIntegration) -> None:
         item: ClipImageItem
         det_info = coil_detection_model.predict(item)
         det_info_list.extend(det_info)
+    apply_classifier(det_info_list, data_integration.max_image)
     if CONFIG.add_to_database:
         defect_list = build_defect_list(det_info_list)
         replace_defects(defect_list, data_integration.coil_id,
-                        data_integration.config.surface_key, "2D_")
+                        data_integration.config.surface_key,
+                        AREA_DEFECT_NAME_PREFIX)

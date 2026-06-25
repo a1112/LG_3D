@@ -50,3 +50,7 @@ def _env_int(name: str, default: int) -> int:
 add_to_database = _env_bool("ALG_2D_ADD_TO_DATABASE", True)
 area_detection_tile_size = _env_int("ALG_2D_AREA_DETECTION_TILE_SIZE", 1024)
 area_detection_image_size = _env_int("ALG_2D_AREA_DETECTION_IMAGE_SIZE", area_detection_tile_size)
+enable_classifier = _env_bool("ALG_2D_ENABLE_CLASSIFIER", True)
+classifier_config = os.getenv("ALG_2D_CLASSIFIER_CONFIG")
+classifier_crop_margin = _env_int("ALG_2D_CLASSIFIER_CROP_MARGIN", 5)
+classifier_crop_min_size = _env_int("ALG_2D_CLASSIFIER_CROP_MIN_SIZE", 60)

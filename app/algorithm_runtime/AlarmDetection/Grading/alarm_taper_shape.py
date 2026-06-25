@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 
@@ -9,6 +10,8 @@ from CoilDataBase.models import AlarmTaperShape
 from AlarmDetection.Result.GradResult import AlarmGradResult
 from AlarmDetection.Configs.TaperShapeConfig import (
     DEFAULT_TAPER_HEIGHT_LIMITS,
+    TaperShapeConfig,
+    normalize_taper_angles,
     normalize_taper_height_limits,
 )
 from AlarmDetection.property import alarmConfigProperty
@@ -27,6 +30,9 @@ from Base.utils.Log import logger
 
 MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE = 8
 MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO = 0.5
+_LEADING_ANGLE_PATTERN = re.compile(
+    r"^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)"
+)
 
 
 @dataclass
@@ -65,6 +71,10 @@ def _height_limits(values, default_limits=DEFAULT_TAPER_HEIGHT_LIMITS) -> list[f
     return normalize_taper_height_limits(values, default_limits)
 
 
+def _angle_filter(values) -> list[float]:
+    return normalize_taper_angles(values)
+
+
 def _non_negative_float(value) -> float:
     try:
         value = float(value)
@@ -97,12 +107,52 @@ def _safe_float(value, default: float = 0.0) -> float:
 
 def _coil_thickness_mm(data_integration: DataIntegration) -> float:
     secondary_coil = getattr(data_integration, "currentSecondaryCoil", None)
-    return _non_negative_float(getattr(secondary_coil, "Thickness", 0))
+    candidates = [
+        getattr(secondary_coil, "Thickness", None),
+        getattr(secondary_coil, "thickness", None),
+    ]
+    coil_data = getattr(data_integration, "coilData", None)
+    if isinstance(coil_data, Mapping):
+        for key in ("Thickness", "thickness", "CoilThickness", "coilThickness"):
+            candidates.append(coil_data.get(key))
+
+    for value in candidates:
+        thickness = _non_negative_float(value)
+        if thickness > 0:
+            return thickness
+    return 0.0
 
 
 def _data_integration_surface(data_integration: DataIntegration) -> str:
     return str(getattr(data_integration, "key", None)
                or getattr(data_integration, "surface", ""))
+
+
+def _data_integration_log_fields(data_integration: DataIntegration):
+    coil_id = getattr(data_integration, "coilId", None)
+    if coil_id is None:
+        coil_id = getattr(data_integration, "secondaryCoilId", "")
+    return coil_id, _data_integration_surface(data_integration)
+
+
+def _append_taper_warning(data_integration: DataIntegration, warning):
+    if not warning:
+        return
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is None:
+        return
+    warnings = getattr(alarm_data, "taper_shape_warnings", None)
+    if warnings is None:
+        warnings = []
+    elif isinstance(warnings, str):
+        warnings = [warnings]
+    else:
+        try:
+            warnings = list(warnings)
+        except TypeError:
+            warnings = [warnings]
+    warnings.append(str(warning))
+    alarm_data.taper_shape_warnings = warnings
 
 
 def _positive_scale(value):
@@ -163,6 +213,21 @@ def _metrics_values_are_finite(data_integration: DataIntegration, metrics: Taper
     return True
 
 
+def _ray_line_error_allows_cached_metrics(error) -> bool:
+    if isinstance(error, AttributeError):
+        return True
+    text = str(error).lower()
+    return any(token in text for token in (
+        "unavailable",
+        "not available",
+        "missing raw",
+        "raw missing",
+        "不可用",
+        "缺失",
+        "不存在",
+    ))
+
+
 def _trim_line_segments(data_integration: DataIntegration,
                         line_data: LineData,
                         inner_ignore_count,
@@ -176,19 +241,19 @@ def _trim_line_segments(data_integration: DataIntegration,
 
     try:
         raw_line_points = line_data.ray_line
-    except AttributeError:
+    except AttributeError as e:
         return TaperTrimResult(
             None,
             ignored_inner_mm=ignored_inner_mm,
             ignored_outer_mm=ignored_outer_mm,
-            allow_cached_metrics=allow_cached_metrics,
+            allow_cached_metrics=allow_cached_metrics and _ray_line_error_allows_cached_metrics(e),
         )
-    except (TypeError, ValueError, OverflowError):
+    except (TypeError, ValueError, OverflowError) as e:
         return TaperTrimResult(
             None,
             ignored_inner_mm=ignored_inner_mm,
             ignored_outer_mm=ignored_outer_mm,
-            allow_cached_metrics=allow_cached_metrics,
+            allow_cached_metrics=allow_cached_metrics and _ray_line_error_allows_cached_metrics(e),
         )
 
     try:
@@ -303,8 +368,9 @@ def _metrics_from_line(data_integration: DataIntegration,
         return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
     inner_points, outer_points = trim_result.line_segments
-    inner_max_point, inner_min_point = find_line_max_min(inner_points, 10, True, type_="inner")
-    outer_max_point, outer_min_point = find_line_max_min(outer_points, 10, True, type_="outer")
+    use_iqr = bool(getattr(line_data, "useIQR", True))
+    inner_max_point, inner_min_point = find_line_max_min(inner_points, 10, use_iqr, type_="inner")
+    outer_max_point, outer_min_point = find_line_max_min(outer_points, 10, use_iqr, type_="outer")
     if None in (inner_max_point, inner_min_point, outer_max_point, outer_min_point):
         return None
     metrics = TaperLineMetrics(
@@ -324,11 +390,116 @@ def _metrics_from_line(data_integration: DataIntegration,
     return metrics if _metrics_values_are_finite(data_integration, metrics) else None
 
 
+def _line_rotation_angle_candidates(line_key, line_data):
+    angle = _line_rotation_angle_value(line_data)
+    if angle is not None:
+        yield angle
+    if line_key is not None:
+        yield line_key
+
+
+def _line_rotation_angle_value(line_data):
+    if isinstance(line_data, Mapping):
+        return line_data.get("rotation_angle")
+    return getattr(line_data, "rotation_angle", None)
+
+
+def _line_angle_needs_numeric_backfill(line_data) -> bool:
+    try:
+        angle = float(_line_rotation_angle_value(line_data))
+    except (TypeError, ValueError, OverflowError):
+        return True
+    return not np.isfinite(angle)
+
+
+def _parse_line_angle_degrees(angle):
+    try:
+        angle = float(angle)
+    except (TypeError, ValueError, OverflowError):
+        match = _LEADING_ANGLE_PATTERN.match(str(angle))
+        if not match:
+            return None
+        try:
+            angle = float(match.group(1))
+        except (TypeError, ValueError, OverflowError):
+            return None
+    if not np.isfinite(angle):
+        return None
+    return angle % 360.0
+
+
 def _line_error_label(line_key, line_data) -> str:
-    angle = getattr(line_data, "rotation_angle", line_key)
+    angle = _line_angle_degrees(line_key, line_data)
     if angle is None:
         return "未知角度"
-    return f"{angle}度"
+    return f"{angle:g}度"
+
+
+def _line_angle_degrees(line_key, line_data):
+    for angle in _line_rotation_angle_candidates(line_key, line_data):
+        parsed_angle = _parse_line_angle_degrees(angle)
+        if parsed_angle is not None:
+            return parsed_angle
+    return None
+
+
+def _angle_delta_degrees(angle: float, target_angle: float) -> float:
+    return abs((angle - target_angle + 180.0) % 360.0 - 180.0)
+
+
+def _angle_matches_filter(angle, angles: list[float], angle_tolerance: float) -> bool:
+    if not angles:
+        return True
+    if angle is None:
+        return False
+    return any(_angle_delta_degrees(angle, target_angle) <= angle_tolerance for target_angle in angles)
+
+
+def _angle_filter_message(angles: list[float], angle_tolerance: float) -> str:
+    angle_text = ", ".join(f"{angle:g}" for angle in angles)
+    if angle_tolerance > 0:
+        return f"{angle_text}±{angle_tolerance:g}度"
+    return angle_text
+
+
+def _message_angle_degrees(message):
+    match = _LEADING_ANGLE_PATTERN.match(str(message))
+    if not match:
+        return None
+    try:
+        angle = float(match.group(1))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not np.isfinite(angle):
+        return None
+    return angle % 360.0
+
+
+def _filter_angle_messages(messages: list[str],
+                           angles: list[float],
+                           angle_tolerance: float) -> list[str]:
+    if not angles:
+        return list(messages)
+    return [
+        message for message in messages
+        if (angle := _message_angle_degrees(message)) is None
+        or _angle_matches_filter(angle, angles, angle_tolerance)
+    ]
+
+
+def _covered_configured_angle_count(valid_metrics: list[TaperLineMetrics],
+                                    angles: list[float],
+                                    angle_tolerance: float) -> int:
+    if not angles:
+        return len(valid_metrics)
+    covered_count = 0
+    for target_angle in angles:
+        for metrics in valid_metrics:
+            line_angle = _line_angle_degrees(None, metrics.line_data)
+            if _angle_matches_filter(line_angle, [target_angle], angle_tolerance):
+                covered_count += 1
+                break
+    return covered_count
 
 
 def _set_taper_grading_errors(data_integration: DataIntegration, errors):
@@ -339,10 +510,15 @@ def _set_taper_grading_errors(data_integration: DataIntegration, errors):
 
 def _valid_line_metrics(data_integration: DataIntegration,
                         inner_ignore_count,
-                        outer_ignore_count) -> list[TaperLineMetrics]:
+                        outer_ignore_count,
+                        angle_filter=None,
+                        angle_tolerance=0.0) -> list[TaperLineMetrics]:
     line_data_dict = getattr(data_integration.alarmData, "lineDataDict", None) or {}
     valid_metrics = []
     grading_errors = []
+    angles = list(angle_filter or [])
+    angle_tolerance = _non_negative_float(angle_tolerance)
+    matched_angle_count = 0
     if isinstance(line_data_dict, Mapping):
         line_items = line_data_dict.items()
     elif isinstance(line_data_dict, (list, tuple, set)):
@@ -355,6 +531,18 @@ def _valid_line_metrics(data_integration: DataIntegration,
         return valid_metrics
     for line_key, line_data in line_items:
         line_label = _line_error_label(line_key, line_data)
+        line_angle = _line_angle_degrees(line_key, line_data)
+        if angles and not _angle_matches_filter(line_angle, angles, angle_tolerance):
+            continue
+        if line_angle is not None and _line_angle_needs_numeric_backfill(line_data):
+            try:
+                if isinstance(line_data, Mapping):
+                    line_data["rotation_angle"] = line_angle
+                else:
+                    setattr(line_data, "rotation_angle", line_angle)
+            except (AttributeError, TypeError):
+                pass
+        matched_angle_count += 1
         try:
             metrics = _metrics_from_line(data_integration, line_data, inner_ignore_count, outer_ignore_count)
         except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
@@ -364,6 +552,8 @@ def _valid_line_metrics(data_integration: DataIntegration,
             valid_metrics.append(metrics)
         else:
             grading_errors.append(f"{line_label}: 无有效塔形线指标")
+    if angles and matched_angle_count == 0:
+        grading_errors.append(f"未找到塔形指定角度: {_angle_filter_message(angles, angle_tolerance)}")
     _set_taper_grading_errors(data_integration, grading_errors)
     return valid_metrics
 
@@ -451,6 +641,13 @@ def _taper_grading_error_message(data_integration: DataIntegration, limit: int =
     return _limited_taper_error_message(messages, limit, "条线无效")
 
 
+def _taper_warning_message(data_integration: DataIntegration, limit: int = 3) -> str:
+    messages = _taper_error_messages(data_integration, "taper_shape_warnings")
+    if not messages:
+        return ""
+    return _limited_taper_error_message(messages, limit, "条警告")
+
+
 def _taper_attempt_count(data_integration: DataIntegration,
                          valid_line_count: int,
                          detection_error_count: int,
@@ -471,20 +668,46 @@ def _save_taper_alarm_detail(alarm_taper_shape: AlarmTaperShape) -> str:
 
 
 def grading_alarm_taper_shape(data_integration: DataIntegration):
-    taper_shape_config = alarmConfigProperty.get_taper_shape_config(data_integration)
-    name, height_limit_list, inner, outer, info = taper_shape_config.get_config().get_config()
+    try:
+        taper_shape_config = alarmConfigProperty.get_taper_shape_config(data_integration)
+        taper_config_item = taper_shape_config.get_config()
+    except Exception as e:
+        taper_shape_config = TaperShapeConfig({}, data_integration)
+        taper_config_item = taper_shape_config.get_config()
+        warning = f"塔形配置读取失败，使用默认规则: {e}"
+        coil_id, surface = _data_integration_log_fields(data_integration)
+        logger.warning(f"{coil_id} {surface} {warning}")
+        _append_taper_warning(data_integration, warning)
+    name, height_limit_list, inner, outer, info = taper_config_item.get_config()
     height_limits = _height_limits(height_limit_list)
+    configured_angles = _angle_filter(getattr(taper_config_item, "angles", None))
+    angle_tolerance = _non_negative_float(getattr(taper_config_item, "angle_tolerance", 0))
 
     if getattr(data_integration.alarmData, "taper_shape_disabled", False):
         return AlarmGradResult(1, "塔形检测关闭", taper_shape_config)
 
-    valid_metrics = _valid_line_metrics(data_integration, inner, outer)
+    valid_metrics = _valid_line_metrics(
+        data_integration,
+        inner,
+        outer,
+        configured_angles,
+        angle_tolerance,
+    )
+    raw_detection_error_messages = _taper_error_messages(data_integration, "taper_shape_errors")
+    detection_error_messages = _filter_angle_messages(
+        raw_detection_error_messages,
+        configured_angles,
+        angle_tolerance,
+    )
+    warning_messages = _taper_error_messages(data_integration, "taper_shape_warnings")
+    grading_error_messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
     if not valid_metrics:
         error_msg = "塔形检测失败: 无有效线数据"
         detail_messages = [
             message for message in (
-                _taper_detection_error_message(data_integration),
-                _taper_grading_error_message(data_integration),
+                _limited_taper_error_message(detection_error_messages, 3, "个角度失败"),
+                _taper_warning_message(data_integration),
+                _limited_taper_error_message(grading_error_messages, 3, "条线无效"),
             )
             if message
         ]
@@ -537,23 +760,36 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
                     f"检测角度{message_angle}"
                 )
     error_msg = "\n".join(messages) if messages else "正常"
-    detection_error_messages = _taper_error_messages(data_integration, "taper_shape_errors")
-    grading_error_messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
     valid_line_count = len(valid_metrics)
-    taper_attempt_count = _taper_attempt_count(
+    raw_taper_attempt_count = _taper_attempt_count(
         data_integration,
         valid_line_count,
-        len(detection_error_messages),
+        len(raw_detection_error_messages),
         len(grading_error_messages),
     )
-    valid_angle_coverage_ratio = (
-        valid_line_count / taper_attempt_count if taper_attempt_count > 0 else 1.0
+    if configured_angles:
+        taper_attempt_count = len(configured_angles)
+        covered_angle_count = _covered_configured_angle_count(
+            valid_metrics,
+            configured_angles,
+            angle_tolerance,
+        )
+    else:
+        taper_attempt_count = raw_taper_attempt_count
+        covered_angle_count = valid_line_count
+    valid_angle_coverage_ratio = min(
+        1.0,
+        covered_angle_count / taper_attempt_count if taper_attempt_count > 0 else 1.0,
     )
     quality_messages = []
     detection_error_summary = _limited_taper_error_message(detection_error_messages, 3, "个角度失败")
+    warning_summary = _limited_taper_error_message(warning_messages, 3, "条警告")
     grading_error_summary = _limited_taper_error_message(grading_error_messages, 3, "条线无效")
-    if (taper_attempt_count >= MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE
-            and valid_angle_coverage_ratio < MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO):
+    enforce_angle_coverage = (
+        bool(configured_angles)
+        or taper_attempt_count >= MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE
+    )
+    if enforce_angle_coverage and valid_angle_coverage_ratio < MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO:
         grad = max(grad, 3)
         if error_msg == "正常":
             error_msg = "塔形检测质量不足"
@@ -563,6 +799,8 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         )
     if detection_error_summary:
         quality_messages.append(f"塔形检测部分角度失败：{detection_error_summary}")
+    if warning_summary:
+        quality_messages.append(f"塔形检测配置警告：{warning_summary}")
     if grading_error_summary:
         quality_messages.append(f"塔形分级部分线无效：{grading_error_summary}")
     if quality_messages:
@@ -595,6 +833,8 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         data=json.dumps({
             "config_name": name,
             "height_limits": height_limits,
+            "angle_filter": configured_angles,
+            "angle_tolerance": angle_tolerance,
             "inner_ignore": _non_negative_float(inner),
             "outer_ignore": _non_negative_float(outer),
             "ignored_inner_mm": max(metrics.ignored_inner_mm for metrics in selected_metrics),
@@ -628,11 +868,17 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
             "worst_angle": worst_angle,
             "worst_used_point_count": worst_metrics.used_point_count,
             "valid_line_count": valid_line_count,
+            "covered_angle_count": covered_angle_count,
             "taper_attempt_count": taper_attempt_count,
+            "raw_taper_attempt_count": raw_taper_attempt_count,
             "valid_angle_coverage_ratio": valid_angle_coverage_ratio,
             "valid_angle_coverage_min": MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO,
             "detection_error_count": len(detection_error_messages),
             "detection_error_preview": detection_error_messages[:3],
+            "raw_detection_error_count": len(raw_detection_error_messages),
+            "raw_detection_error_preview": raw_detection_error_messages[:3],
+            "warning_count": len(warning_messages),
+            "warning_preview": warning_messages[:3],
             "grading_error_count": len(grading_error_messages),
             "grading_error_preview": grading_error_messages[:3],
         }, ensure_ascii=False, allow_nan=False)
@@ -640,7 +886,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     save_error_msg = _save_taper_alarm_detail(alarm_taper_shape)
     if save_error_msg:
         return AlarmGradResult(
-            max(grad, 3),
+            grad,
             f"{error_msg}\n{save_error_msg}",
             taper_shape_config,
         )

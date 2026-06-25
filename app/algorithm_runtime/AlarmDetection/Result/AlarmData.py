@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Optional, Dict
 
 from CoilDataBase import Alarm
+from CoilDataBase.storage_policy import should_store_model_name
 
 from Base.property.Data3D import LineData
 from Base.utils.Log import logger
@@ -16,6 +17,7 @@ class AlarmData:
         self.lineDataDict:Optional[Dict[LineData]] = None
         self.taper_shape_disabled = False
         self.taper_shape_errors = []
+        self.taper_shape_warnings = []
         self.taper_shape_grading_errors = []
         self.taper_shape_attempt_count = 0
 
@@ -45,12 +47,17 @@ class AlarmData:
             line_data_values = []
         for lineData in line_data_values:
             try:
-                model_list.append(lineData.line_data_model(self.data_integration))
-                model_list.extend(lineData.all_point_data_model(self.data_integration))
+                if should_store_model_name("LineData"):
+                    model_list.append(lineData.line_data_model(self.data_integration))
+                if should_store_model_name("PointData"):
+                    model_list.extend(lineData.all_point_data_model(self.data_integration))
             except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
                 logger.warning(f"skip invalid taper line data: {e}")
         if model_list:
-            Alarm.addObj(model_list)
+            try:
+                Alarm.addObj(model_list)
+            except Exception as e:
+                logger.warning(f"skip saving taper line models: {e}")
 
     def set_line_data_dict(self, line_data):
         self.lineDataDict = line_data or {}

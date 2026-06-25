@@ -4,9 +4,12 @@ import os
 import re
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter
+import requests
+from fastapi import APIRouter, HTTPException
 from PIL import Image
+from pydantic import BaseModel
 from sqlalchemy import func
 
 from Base import CONFIG
@@ -38,6 +41,13 @@ serverConfigProperty: ServerConfigProperty
 router = APIRouter(tags=["数据库服务"])
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_CAMERA_SERVICE_TIMEOUT = 1.5
+
+
+class CameraAdjustmentPayload(BaseModel):
+    exposureTime: Optional[int] = None
+    gain: Optional[int] = None
+    save: bool = True
 
 
 def _test_mode_enabled() -> bool:
@@ -461,6 +471,237 @@ async def get_hardware():
     return Hardware.getHardwareInfo()
 
 
+def _capture_config_file() -> Path:
+    capture_dir = Path(CONFIG.base_config_folder) / "capture_config"
+    if CONFIG.isLoc and (capture_dir / "CapTureLoc.json").exists():
+        return capture_dir / "CapTureLoc.json"
+    return capture_dir / "CapTure.json"
+
+
+def _load_capture_config() -> dict:
+    config_file = _capture_config_file()
+    try:
+        data = json.loads(config_file.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"读取相机配置失败: {e}")
+    return data
+
+
+def _load_capture_cameras() -> list[dict]:
+    data = _load_capture_config()
+    cameras = data.get("camera", [])
+    if not isinstance(cameras, list):
+        raise HTTPException(status_code=500, detail="相机配置 camera 字段格式错误")
+    return cameras
+
+
+def _normalize_service_host(host: str) -> str:
+    if host in {"0.0.0.0", "::", ""}:
+        return "127.0.0.1"
+    return host
+
+
+def _capture_service_base_url() -> str:
+    config = _load_capture_config()
+    host = _normalize_service_host(str(config.get("apiServerIp") or "127.0.0.1"))
+    port = int(config.get("apiServerPort") or 6100)
+    return f"http://{host}:{port}"
+
+
+def _legacy_camera_service_base_url(camera: dict) -> Optional[str]:
+    server_port = camera.get("serverPort")
+    if server_port is None:
+        return None
+    host = _normalize_service_host(str(camera.get("serverIp") or "127.0.0.1"))
+    return f"http://{host}:{int(server_port)}"
+
+
+def _camera_public_info(camera: dict) -> dict:
+    service_url = _capture_service_base_url()
+    legacy_service_url = _legacy_camera_service_base_url(camera)
+    return {
+        "key": camera.get("key", ""),
+        "name": camera.get("name", ""),
+        "sn": camera.get("sn", ""),
+        "serverIp": camera.get("serverIp", ""),
+        "serverPort": camera.get("serverPort", 0),
+        "yamlConfig": camera.get("yaml_config", ""),
+        "serviceUrl": service_url or "",
+        "legacyServiceUrl": legacy_service_url or "",
+    }
+
+
+def _capture_service_get(path: str) -> dict:
+    url = _capture_service_base_url() + path
+    try:
+        response = requests.get(url, timeout=_CAMERA_SERVICE_TIMEOUT * 6)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        return {"ok": False, "message": str(e), "serviceUrl": url}
+    except ValueError as e:
+        return {"ok": False, "message": f"响应解析失败: {e}", "serviceUrl": url}
+
+
+def _find_capture_camera(camera_key: str) -> dict:
+    for camera in _load_capture_cameras():
+        if camera.get("key") == camera_key:
+            return camera
+    raise HTTPException(status_code=404, detail=f"未找到相机: {camera_key}")
+
+
+def _camera_service_get(camera: dict, path: str) -> dict:
+    camera_key = camera.get("key", "")
+    if path == "/camera/status":
+        url = _capture_service_base_url() + f"/cameras/{camera_key}/status"
+    else:
+        url = _capture_service_base_url() + path
+    try:
+        response = requests.get(url, timeout=_CAMERA_SERVICE_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        legacy_base_url = _legacy_camera_service_base_url(camera)
+        if legacy_base_url and path == "/camera/status":
+            try:
+                response = requests.get(legacy_base_url + path, timeout=_CAMERA_SERVICE_TIMEOUT)
+                response.raise_for_status()
+                data = response.json()
+                data["legacyService"] = True
+                return data
+            except (requests.RequestException, ValueError):
+                pass
+        return {"ok": False, "connected": False, "message": str(e), "serviceUrl": url}
+    except ValueError as e:
+        return {"ok": False, "connected": False, "message": f"响应解析失败: {e}"}
+
+
+def _camera_service_post(camera: dict, path: str, payload: dict | None = None) -> dict:
+    camera_key = camera.get("key", "")
+    if path == "/camera/params":
+        url = _capture_service_base_url() + f"/cameras/{camera_key}/params"
+    elif path == "/camera/reconnect":
+        url = _capture_service_base_url() + f"/cameras/{camera_key}/reconnect"
+    else:
+        url = _capture_service_base_url() + path
+    try:
+        response = requests.post(url, json=payload or {}, timeout=_CAMERA_SERVICE_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"响应解析失败: {e}")
+
+
+def _payload_to_dict(payload: BaseModel) -> dict:
+    if hasattr(payload, "model_dump"):
+        return payload.model_dump()
+    return payload.dict()
+
+
+@router.get("/camera_adjust")
+def get_camera_adjustments():
+    capture_status = _capture_service_get("/capture/status")
+    status_by_key = {
+        item.get("key"): item
+        for item in capture_status.get("cameras", [])
+        if isinstance(item, dict)
+    }
+    camera_items = []
+    for camera in _load_capture_cameras():
+        info = _camera_public_info(camera)
+        status = status_by_key.get(camera.get("key")) or _camera_service_get(camera, "/camera/status")
+        status_2d = _camera_2d_status(status)
+        if isinstance(status_2d, dict):
+            status_2d = {
+                **status_2d,
+                "capture": status,
+                "lastFrameAge3D": status.get("lastFrameAge3D"),
+                "lastError3D": status.get("lastError3D", ""),
+            }
+        camera_items.append({
+            **info,
+            "status": status_2d,
+        })
+    return {
+        "configFile": str(_capture_config_file()),
+        "captureServiceUrl": _capture_service_base_url(),
+        "captureStatus": {
+            "ok": capture_status.get("ok", False),
+            "message": capture_status.get("message", ""),
+            "cameraCount": capture_status.get("cameraCount", len(camera_items)),
+        },
+        "cameras": camera_items,
+    }
+
+
+@router.post("/camera_adjust/{camera_key}")
+def set_camera_adjustment(camera_key: str, payload: CameraAdjustmentPayload):
+    camera = _find_capture_camera(camera_key)
+    return _camera_service_post(camera, "/camera/params", _payload_to_dict(payload))
+
+
+@router.post("/camera_adjust/{camera_key}/reconnect")
+def reconnect_camera_adjustment(camera_key: str):
+    camera = _find_capture_camera(camera_key)
+    return _camera_service_post(camera, "/camera/reconnect")
+
+
+@router.get("/capture_status")
+def get_capture_status():
+    result = _capture_service_get("/capture/status")
+    if result.get("ok") is not False or result.get("cameras"):
+        return result
+    return {
+        **result,
+        "service": "CapAll",
+        "cameras": [
+            {
+                **_camera_public_info(camera),
+                "status": _camera_service_get(camera, "/camera/status"),
+            }
+            for camera in _load_capture_cameras()
+        ],
+    }
+
+
+def _camera_2d_status(status: dict) -> dict:
+    return status.get("camera2D") or status
+
+
+def _capture_alarm_item(camera: dict, status: dict) -> dict:
+    status_2d = _camera_2d_status(status)
+    connected = bool(status_2d.get("connected", False))
+    ok = bool(status_2d.get("ok", False))
+    message = status_2d.get("message") or status.get("lastError3D") or status.get("message") or ""
+    last_frame_age = status_2d.get("lastFrameAge", status.get("lastFrameAge2D"))
+    level = 1
+    if not status.get("serviceReady", True):
+        level = 2
+        message = message or "采集服务正在初始化"
+    if status.get("cap2D", True) and not ok:
+        level = 3
+        message = message or "2D相机采集异常"
+    if status.get("cap3D", True) and status.get("lastError3D"):
+        level = 3
+        message = status.get("lastError3D")
+    return {
+        "DeviceTemperature": status_2d.get("DeviceTemperature", 0),
+        "level": level,
+        "msg": message or "采集正常",
+        "connected": connected,
+        "ok": ok and level == 1,
+        "captureOk": level == 1,
+        "lastFrameAge": last_frame_age,
+        "lastError2D": status.get("lastError2D", ""),
+        "lastError3D": status.get("lastError3D", ""),
+        "serviceUrl": _capture_service_base_url(),
+        "cameraKey": camera.get("key", ""),
+        "cameraName": camera.get("name", ""),
+    }
+
+
 @router.get("/cameraAlarm")
 async def get_camera_alarm():
     """
@@ -496,9 +737,17 @@ async def get_camera_alarm():
                 "msg": "远端上方相机（右键打开设置）"
             },
         }
-    else:
-        for camera in CONFIG.CameraList:
-            camera.getAlarmInfo()
+    capture_status = _capture_service_get("/capture/status")
+    status_by_key = {
+        item.get("key"): item
+        for item in capture_status.get("cameras", [])
+        if isinstance(item, dict)
+    }
+    result = {}
+    for camera in _load_capture_cameras():
+        status = status_by_key.get(camera.get("key")) or _camera_service_get(camera, "/camera/status")
+        result[camera.get("name") or camera.get("key", "")] = _capture_alarm_item(camera, status)
+    return result
 
 
 @router.get("/cameraData/{coil_id:int}/{camera_key:str}")

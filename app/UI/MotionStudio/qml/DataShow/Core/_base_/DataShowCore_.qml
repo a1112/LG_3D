@@ -3,13 +3,14 @@ import "../"
 import "../../../Core/Surface"
 import "../../../DataShow/2dShow/ViewTool"
 Item {
+    id: root
 
     property SurfaceData surfaceData
 
     property Image image_show
 
     property Binds binds :Binds{
-        surfaceData:surfaceData
+        surfaceData: root.surfaceData
     }
     //      alias objcet
     readonly property AdjustConfig adjustConfig:binds.adjustConfig
@@ -34,16 +35,22 @@ Item {
 
     property var defectDict: {return {}}    // 全部缺陷
 
-    property ListModel defectAllModel: ListModel{}
+    property ListModel defectAllModel: ListModel{
+        dynamicRoles: true
+    }
 
     // property ListModel has_defectModel: ListModel{}
     // property ListModel un_defectModel: ListModel{}
 
     property ListModel defectModel: defectAllModel    // defectManage.un_defect_show? defectAllModel : has_defectModel
-    property ListModel areaDefectModel: ListModel{} // 2D 缺陷
+    property ListModel areaDefectModel: ListModel{ // 2D 缺陷
+        dynamicRoles: true
+    }
 
 
-    property ListModel defecClassListModel:ListModel{}
+    property ListModel defecClassListModel:ListModel{
+        dynamicRoles: true
+    }
     // property ListModel currentDefectDictModel:ListModel{ // 缺陷类别
     // }
 

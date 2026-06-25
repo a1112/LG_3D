@@ -111,6 +111,25 @@ def _alarm_taper_shape_data(alarm_taper_shape):
     return parsed if isinstance(parsed, dict) else {}
 
 
+def _format_taper_angle_filter(value):
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        formatted_values = []
+        for item in value:
+            try:
+                number = float(item)
+            except (TypeError, ValueError, OverflowError):
+                formatted_values.append(str(item))
+                continue
+            if math.isfinite(number):
+                formatted_values.append(f"{number:g}")
+            else:
+                formatted_values.append(str(item))
+        return ", ".join(formatted_values)
+    return str(value)
+
+
 def _safe_abs_number(value):
     try:
         number = float(value)
@@ -167,6 +186,19 @@ def get_taper_shape_info(secondary_coil,alarm_info_dict):
                     key + "端 塔形最严重角度": alarm_data.get(
                         "worst_angle", alarmTaperShape.rotation_angle
                     ),
+                    key + "端 塔形判定角度": _format_taper_angle_filter(
+                        alarm_data.get("angle_filter")
+                    ),
+                    key + "端 塔形角度容差": alarm_data.get("angle_tolerance", ""),
+                    key + "端 塔形有效角度覆盖率": alarm_data.get("valid_angle_coverage_ratio", ""),
+                    key + "端 塔形有效线数量": alarm_data.get("valid_line_count", ""),
+                    key + "端 塔形覆盖角度数量": alarm_data.get("covered_angle_count", ""),
+                    key + "端 塔形检测角度数量": alarm_data.get("taper_attempt_count", ""),
+                    key + "端 塔形原始检测角度数量": alarm_data.get("raw_taper_attempt_count", ""),
+                    key + "端 塔形检测失败数量": alarm_data.get("detection_error_count", ""),
+                    key + "端 塔形原始检测失败数量": alarm_data.get("raw_detection_error_count", ""),
+                    key + "端 塔形配置警告数量": alarm_data.get("warning_count", ""),
+                    key + "端 塔形分级无效线数量": alarm_data.get("grading_error_count", ""),
                 })
         if alarm_info_dict[key]:
             alarm_info = alarm_info_dict[key]

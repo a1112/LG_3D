@@ -26,7 +26,7 @@ Item {
 
         // 缩略图源：带有 thumbnail=true 参数（仅用于 HTTP URL）
         property string thumbnailBaseUrl: {
-            if (!surfaceData.source) return ""
+            if (!surfaceData.source || !surfaceData.hasViewData(surfaceData.currentViewKey)) return ""
             // 只有 HTTP/HTTPS URL 才添加 thumbnail 参数
             if (surfaceData.source.startsWith("http://") || surfaceData.source.startsWith("https://")) {
                 return surfaceData.source + "&thumbnail=true"
@@ -49,7 +49,7 @@ Item {
         anchors.fill: parent
         fillMode: Image.PreserveAspectFit
         asynchronous: true
-        source: surfaceData.source
+        source: surfaceData.hasViewData(surfaceData.currentViewKey) ? surfaceData.source : ""
 
         onStatusChanged: {
             if (status === Image.Ready) {

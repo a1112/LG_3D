@@ -6,6 +6,8 @@ ColumnLayout{
     spacing: 16
     Layout.margins: 20
 
+    SoftwareUpdate{}
+
     // ========== 调试选项 ==========
     GroupBox{
         title: qsTr("调试选项")

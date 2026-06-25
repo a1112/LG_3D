@@ -9,8 +9,12 @@ TWO_D_PATTERNS = ("*.bmp", "*.jpg")
 
 
 def _numeric_stem_key(path: Path) -> tuple[int, str]:
+    stem = path.name
+    for suffix in reversed(path.suffixes):
+        if stem.endswith(suffix):
+            stem = stem[:-len(suffix)]
     try:
-        return int(path.stem), path.name
+        return int(stem), path.name
     except ValueError:
         return 10**12, path.name
 

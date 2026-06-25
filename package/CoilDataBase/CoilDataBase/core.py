@@ -1,4 +1,7 @@
+import os
+
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
@@ -6,6 +9,21 @@ from sqlalchemy_utils import database_exists, create_database
 from .config import get_url
 from .db_settings import sqlalchemy_pool_settings
 from .models import *
+
+
+def _env_flag(name: str) -> bool:
+    value = os.getenv(name, "")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def is_postgresql_url(url: str) -> bool:
+    return make_url(url).get_backend_name() == "postgresql"
+
+
+def should_auto_create_schema(url: str) -> bool:
+    if not is_postgresql_url(url):
+        return True
+    return _env_flag("COIL_DATABASE_AUTO_CREATE")
 
 
 def ensure_runtime_indexes(engine_):
@@ -63,10 +81,12 @@ def get_engine(url=None):
     if url is None:
         url = get_url()
     engine_ = create_engine(url, **sqlalchemy_pool_settings())
-    if not database_exists(engine_.url):
+    auto_create_schema = should_auto_create_schema(url)
+    if auto_create_schema and not database_exists(engine_.url):
         create_database(engine_.url)
-    Base.metadata.create_all(engine_)
-    ensure_runtime_indexes(engine_)
+    if auto_create_schema:
+        Base.metadata.create_all(engine_)
+        ensure_runtime_indexes(engine_)
     return engine_, sessionmaker(bind=engine_)
 
 

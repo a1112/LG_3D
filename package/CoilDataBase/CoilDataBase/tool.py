@@ -1,6 +1,7 @@
 import datetime
 from .models import *
 from .core import Session
+from .storage_policy import filter_storable_objects, should_store_model
 
 def get_date_info(date_time):
     """
@@ -112,9 +113,14 @@ def add_obj(obj):
     """
     with Session() as session:
         if isinstance(obj, list):
+            obj = filter_storable_objects(obj)
+            if not obj:
+                return None
             session.add_all(obj)
             # [session.add(o) for o in obj]
         else:
+            if not should_store_model(obj):
+                return None
             session.add(obj)
         # session.flush()
         session.commit()

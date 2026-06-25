@@ -1,4 +1,5 @@
 SQLAlchemy
+alembic
 uvicorn
 fastapi
 requests
@@ -23,6 +24,7 @@ psutil
 GPUtil
 pymssql
 PyMySQL
+psycopg[binary]
 harvesters
 timm
 scikit-image

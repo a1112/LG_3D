@@ -9,7 +9,9 @@ Item {
         initDefectDictModel()
     }
 
-    property ListModel defectDictModel: ListModel {}
+    property ListModel defectDictModel: ListModel {
+        dynamicRoles: true
+    }
     property ListModel currentListModel: coreModel.currentCoilListModel
 
     readonly property int top_: currentListModel.count ? currentListModel.get(0).Id : 0

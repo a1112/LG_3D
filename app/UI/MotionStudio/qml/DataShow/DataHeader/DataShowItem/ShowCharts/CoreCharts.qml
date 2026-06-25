@@ -4,7 +4,7 @@ Item {
 
 
     property real tickSizeZ: 12
-    property int tickCountZ: drawHeight/20
+    property int tickCountZ: Math.max(1, Math.floor(drawHeight / 20))
     readonly property real medianZ: dataShowCore.medianZ
     // onMedianZChanged:{
     //     surfaceData.medianZ = medianZ
@@ -13,9 +13,12 @@ Item {
 
     property real offsetZ: 0
     property real dragOffsetZ: 0
+    readonly property real safeTickSizeZ: isFinite(tickSizeZ) && tickSizeZ > 0 ? tickSizeZ : 12
+    readonly property real safeOffsetZ: isFinite(offsetZ) ? offsetZ : 0
+    readonly property real safeDragOffsetZ: isFinite(dragOffsetZ) ? dragOffsetZ : 0
 
-    readonly property real minZ: offsetZ -(tickSizeZ * tickCountZ / 2)  + dragOffsetZ
-    readonly property real maxZ:  offsetZ +(tickSizeZ * tickCountZ / 2)  + dragOffsetZ
+    readonly property real minZ: safeOffsetZ -(safeTickSizeZ * tickCountZ / 2)  + safeDragOffsetZ
+    readonly property real maxZ:  safeOffsetZ +(safeTickSizeZ * tickCountZ / 2)  + safeDragOffsetZ
 
 
     property real startDragX: 0
@@ -26,8 +29,12 @@ Item {
     }
 
     function dragTo(x,y){
-        var dx = (x - startDragX)*((tickSizeZ * tickCountZ)/drawWidth)
-        var dy = (y - startDragY)*((tickSizeZ * tickCountZ)/drawWidth)
+        if (!isFinite(drawWidth) || drawWidth <= 0) {
+            dragOffsetZ = 0
+            return
+        }
+        var dx = (x - startDragX)*((safeTickSizeZ * tickCountZ)/drawWidth)
+        var dy = (y - startDragY)*((safeTickSizeZ * tickCountZ)/drawWidth)
         dragOffsetZ = dy
     }
     function endDrag(){

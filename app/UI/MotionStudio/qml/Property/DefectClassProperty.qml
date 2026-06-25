@@ -7,6 +7,7 @@ Item {
 
     property var defectDictData: { return {} }
     property ListModel defectDictModel: ListModel {
+        dynamicRoles: true
     }
 
     property string unDefectClassItemName: qsTr("无缺陷")
@@ -43,6 +44,26 @@ Item {
                 && defectName.indexOf("2D_") === 0
     }
 
+    function normalize_color(value) {
+        if (value === undefined || value === null) {
+            return "#FFA500"
+        }
+        if (typeof value === "string") {
+            return value
+        }
+        if (value["r"] !== undefined && value["g"] !== undefined && value["b"] !== undefined) {
+            return Qt.rgba(Number(value["r"]), Number(value["g"]), Number(value["b"]),
+                           value["a"] === undefined ? 1 : Number(value["a"])).toString()
+        }
+        if (value["color"] !== undefined && value["color"] !== null) {
+            return normalize_color(value["color"])
+        }
+        if (value["defectColor"] !== undefined && value["defectColor"] !== null) {
+            return normalize_color(value["defectColor"])
+        }
+        return "#FFA500"
+    }
+
     function upDefectDictModelByDefectDictData() {
         defectDictModel.clear()
 
@@ -52,7 +73,7 @@ Item {
             item["name"] = key
             item["num"] = 0
             item["level"] = value["level"]
-            item["color"] = value["color"]
+            item["color"] = normalize_color(value["color"])
             item["show"] = is_defect_show(value["show"])
             if (item["show"]) {
                 defectDictModel.append(item)
@@ -65,7 +86,7 @@ Item {
             item["name"] = key
             item["num"] = 0
             item["level"] = value["level"]
-            item["color"] = value["color"]
+            item["color"] = normalize_color(value["color"])
             item["show"] = is_defect_show(value["show"])
             if (!item["show"]) {
                 defectDictModel.append(item)
@@ -86,7 +107,7 @@ Item {
 
         let isAreaDefect = is_area_defect_name(defectName)
         let defaultLevel = defaultDefectClass.defectLevel || 1
-        let defaultColor = defaultDefectClass.defectColor || "#FFA500"
+        let defaultColor = normalize_color(defaultDefectClass.defectColor)
         let item = {
             "name": defectName,
             "level": isAreaDefect ? defaultLevel : 1,
@@ -115,7 +136,7 @@ Item {
         if (defectDictData[name] === undefined) {
             return "#FFF"
         }
-        return defectDictData[name]["color"]
+        return normalize_color(defectDictData[name]["color"])
     }
 
     function getColorByLevel(level) {

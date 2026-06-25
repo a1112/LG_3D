@@ -30,6 +30,8 @@ class Signal(Thread):
 
     def register(self,func):
         self.regFunc.append(func)
+        if self.coil is not None:
+            func("init", self.coil)
 
     def run(self):
         while True:

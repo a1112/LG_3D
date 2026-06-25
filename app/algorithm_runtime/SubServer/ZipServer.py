@@ -1,3 +1,5 @@
+import os
+
 from Base import CONFIG
 from Base.CONFIG import isLoc
 from Globs import control
@@ -15,6 +17,9 @@ class ZipServer(control.ThreadClass):
         self.start()
 
     def run(self):
+        if os.getenv("LG3D_ENABLE_LEGACY_COMPRESSION", "0") != "1":
+            print("Legacy bmp/npy compression disabled; skip ZipServer.")
+            return
         if isLoc:
             print("本地环境不进行压缩")
             return

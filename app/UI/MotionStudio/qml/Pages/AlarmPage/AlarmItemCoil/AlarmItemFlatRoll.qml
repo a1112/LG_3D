@@ -38,7 +38,7 @@ Item {
             }
             ValueTextLabel{
                 Layout.fillWidth: true
-                text: coreAlarmInfo.coreFlatRoll.innerDiameter.toFixed(2)
+                text: coreAlarmInfo.coreFlatRoll.innerDiameterMm > 0 ? coreAlarmInfo.coreFlatRoll.innerDiameterMm.toFixed(2) : "--"
             }
             KeyLabel {
                 text: "mm"

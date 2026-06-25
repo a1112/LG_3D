@@ -50,6 +50,7 @@ Item{
                 height:50
                 model:ListModel{
                     id:msgModel
+                    dynamicRoles: true
                 }
                 delegate:RowItemView{
                 }
