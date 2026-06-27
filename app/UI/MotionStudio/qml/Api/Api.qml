@@ -36,6 +36,9 @@ Api_DataBase {
         if (_viewKey_ === "AREA"){
             return buildImageUrl("image/area/"+_key_,_coilId_)
         }
+        if (_viewKey_ === "AREA_MASK"){
+            return buildImageUrl("image/area/"+_key_,_coilId_,_viewKey_)
+        }
         return buildImageUrl("image", "source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
 

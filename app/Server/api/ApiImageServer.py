@@ -63,6 +63,7 @@ TILE_LEVELS = {
 
 # 默认原图瓦片尺寸（3x3切分时单个瓦片的大小）
 DEFAULT_TILE_SIZE = 5460
+AREA_IMAGE_TYPES = {"AREA", "AREA_MASK"}
 
 
 def get_pool():
@@ -96,6 +97,14 @@ def _get_image_size_from_path(path: str) -> Optional[Tuple[int, int]]:
     except Exception:
         log.debug("failed to read image size from %s", resolved, exc_info=True)
         return None
+
+
+def _area_image_type(type_: str) -> str:
+    type_ = str(type_ or "AREA").upper()
+    if type_ not in AREA_IMAGE_TYPES:
+        log.warning("unsupported AREA image type=%s, fallback to AREA", type_)
+        return "AREA"
+    return type_
 
 
 async def _get_image_async(data_get: DataGet,
@@ -192,9 +201,11 @@ async def get_image(surface_key, coil_id: str, type_: str, mask: bool = False):
     return Response(image_bytes, media_type="image/jpeg")
 
 
+@router.get("/image/area/{surface_key:str}/{coil_id:str}/{type_:str}")
 @router.get("/image/area/{surface_key:str}/{coil_id:str}")
 async def get_area_tiled(surface_key: str,
                          coil_id: str,
+                         type_: str = "AREA",
                          row: int = Query(0, ge=-2, le=2, description="瓦片行索引"),
                          col: int = Query(0, ge=0, le=2, description="瓦片列索引"),
                          count: int = Query(0, ge=0, le=3,
@@ -227,31 +238,32 @@ async def get_area_tiled(surface_key: str,
     col = int(col)
     count = int(count)
     level = int(level)
+    type_ = _area_image_type(type_)
     requested_count = count
     tile_count = 3
-    data_get = DataGet("source", surface_key, coil_id, "AREA", False)
+    data_get = DataGet("source", surface_key, coil_id, type_, False)
 
     if count > 0:
         count = tile_count
 
     # 处理预览图像请求
     if row == -2:
-        preview_get = DataGet("preview", surface_key, coil_id, "AREA", False)
+        preview_get = DataGet("preview", surface_key, coil_id, type_, False)
         image_bytes = await _get_image_async(preview_get)
-        _schedule_prefetch("preview", surface_key, coil_id, "AREA", mask=False)
+        _schedule_prefetch("preview", surface_key, coil_id, type_, mask=False)
         return Response(image_bytes or noFindImageByte,
                         media_type="image/jpeg")
 
     # 返回完整图像
     if row == -1:
         image_bytes = await _get_image_async(data_get)
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
+        _schedule_prefetch("source", surface_key, coil_id, type_, mask=False)
         return Response(image_bytes or noFindImageByte,
                         media_type="image/jpeg")
 
     if requested_count == 1:
         image_bytes = await _get_image_async(data_get)
-        _schedule_prefetch("source", surface_key, coil_id, "AREA", mask=False)
+        _schedule_prefetch("source", surface_key, coil_id, type_, mask=False)
         return Response(image_bytes or noFindImageByte,
                         media_type="image/jpeg")
 
@@ -282,7 +294,7 @@ async def get_area_tiled(surface_key: str,
         _schedule_prefetch("source",
                            surface_key,
                            coil_id,
-                           "AREA",
+                           type_,
                            mask=False,
                            clip_num=tile_count)
         return {"width": w, "height": h}
@@ -296,7 +308,7 @@ async def get_area_tiled(surface_key: str,
             _schedule_prefetch("source",
                                surface_key,
                                coil_id,
-                               "AREA",
+                               type_,
                                mask=False,
                                clip_num=tile_count)
         return Response(tile_bytes,
@@ -326,7 +338,7 @@ async def get_area_tiled(surface_key: str,
                 _schedule_prefetch("source",
                                    surface_key,
                                    coil_id,
-                                   "AREA",
+                                   type_,
                                    mask=False,
                                    clip_num=tile_count)
 
@@ -390,7 +402,7 @@ async def get_area_tiled(surface_key: str,
         _schedule_prefetch("source",
                            surface_key,
                            coil_id,
-                           "AREA",
+                           type_,
                            mask=False,
                            clip_num=tile_count)
 

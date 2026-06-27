@@ -15,7 +15,7 @@ use tracing_subscriber::EnvFilter;
 
 use crate::app_config::RuntimeConfig;
 use crate::image_service::{
-    area_image_compat, defect_image, health, preview_image, source_image, AppState,
+    area_image_compat, area_image_typed, defect_image, health, preview_image, source_image, AppState,
 };
 
 #[derive(Debug, Parser)]
@@ -49,6 +49,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/image/preview/{surface_key}/{coil_id}/{type_}", get(preview_image))
         .route("/image/source/{surface_key}/{coil_id}/{type_}", get(source_image))
         .route("/image/area/{surface_key}/{coil_id}", get(area_image_compat))
+        .route("/image/area/{surface_key}/{coil_id}/{type_}", get(area_image_typed))
         .route(
             "/defect_image/{surface_key}/{coil_id}/{type_}/{x}/{y}/{w}/{h}",
             get(defect_image),

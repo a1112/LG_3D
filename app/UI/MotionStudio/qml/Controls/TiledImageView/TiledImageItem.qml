@@ -15,7 +15,7 @@ Item {
     property real viewportY: 0
     property real viewportW: 0
     property real viewportH: 0
-    property bool enableParallelLoad: true
+    property bool enableParallelLoad: false
 
     // ========== 多级加载属性 ==========
     property real currentScale: 1.0
@@ -32,8 +32,8 @@ Item {
 
     // ========== 视口检测 ==========
     readonly property bool isInViewport: {
-        const vpX1 = -viewportX
-        const vpY1 = -viewportY
+        const vpX1 = viewportX
+        const vpY1 = viewportY
         const vpX2 = vpX1 + viewportW
         const vpY2 = vpY1 + viewportH
         const tileX1 = x
@@ -96,7 +96,7 @@ Item {
         asynchronous: true
         fillMode: Image.Stretch
         source: grayscaleSource
-        cache: true
+        cache: false
         z: 0
         visible: grayscaleSource !== "" && loadedLevel < 0
 
@@ -113,7 +113,7 @@ Item {
     Image {
         id: levelImage0
         anchors.fill: parent
-        cache: true
+        cache: false
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource0
@@ -131,7 +131,7 @@ Item {
     Image {
         id: levelImage1
         anchors.fill: parent
-        cache: true
+        cache: false
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource1
@@ -149,7 +149,7 @@ Item {
     Image {
         id: levelImage2
         anchors.fill: parent
-        cache: true
+        cache: false
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource2
@@ -167,7 +167,7 @@ Item {
     Image {
         id: levelImage3
         anchors.fill: parent
-        cache: true
+        cache: false
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource3
@@ -185,7 +185,7 @@ Item {
     Image {
         id: levelImage4
         anchors.fill: parent
-        cache: true
+        cache: false
         asynchronous: true
         fillMode: Image.Stretch
         source: levelSource4
@@ -262,6 +262,13 @@ Item {
 
         // 目标级别改变，直接加载目标级别
         if (oldTargetLevel !== targetLevel || urlChanged) {
+            if (!urlChanged) {
+                levelSource0 = ""
+                levelSource1 = ""
+                levelSource2 = ""
+                levelSource3 = ""
+                levelSource4 = ""
+            }
             // 直接设置目标级别的源
             if (targetLevel === 0) levelSource0 = buildImageUrl(0)
             else if (targetLevel === 1) levelSource1 = buildImageUrl(1)
@@ -278,7 +285,7 @@ Item {
 
     // ========== 监听视口变化 ==========
     onIsInViewportChanged: {
-        if (isInViewport && loadedLevel < 0) {
+        if (isInViewport && (loadedLevel < 0 || targetLevel !== currentLevel)) {
             updateLevel(currentLevel)
         }
     }

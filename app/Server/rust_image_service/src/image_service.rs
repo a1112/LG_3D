@@ -11,7 +11,7 @@ use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
-use image::{DynamicImage, GenericImageView, GrayImage, ImageReader};
+use image::{DynamicImage, GenericImageView, GrayImage, ImageReader, Rgb, RgbImage};
 use lru::LruCache;
 use quick_xml::de::from_str;
 use serde::Deserialize;
@@ -75,6 +75,8 @@ struct ImageMeta {
     height: u32,
 }
 
+const PLACEHOLDER_IMAGE_SIZE: u32 = 150;
+
 #[derive(Debug, Clone)]
 struct DetectionCandidate {
     xmin: i32,
@@ -116,7 +118,7 @@ pub async fn preview_image(
 ) -> Response {
     match resolve_preview_path(&state, &surface_key, &coil_id, &type_) {
         Some(path) => serve_file(&state, path),
-        None => not_found("preview image not found"),
+        None => missing_image_response(),
     }
 }
 
@@ -126,7 +128,7 @@ pub async fn source_image(
 ) -> Response {
     match resolve_source_path(&state, &surface_key, &coil_id, &type_, false) {
         Some(path) => serve_file(&state, path),
-        None => not_found("source image not found"),
+        None => missing_image_response(),
     }
 }
 
@@ -135,6 +137,32 @@ pub async fn area_image_compat(
     AxumPath((surface_key, coil_id)): AxumPath<(String, String)>,
     Query(query): Query<AreaQuery>,
 ) -> Response {
+    area_image_response(&state, &surface_key, &coil_id, "AREA", query)
+}
+
+pub async fn area_image_typed(
+    State(state): State<Arc<AppState>>,
+    AxumPath((surface_key, coil_id, type_)): AxumPath<(String, String, String)>,
+    Query(query): Query<AreaQuery>,
+) -> Response {
+    let type_ = normalize_area_image_type(&type_);
+    area_image_response(&state, &surface_key, &coil_id, &type_, query)
+}
+
+fn normalize_area_image_type(type_: &str) -> String {
+    match type_.to_ascii_uppercase().as_str() {
+        "AREA_MASK" => "AREA_MASK".to_string(),
+        _ => "AREA".to_string(),
+    }
+}
+
+fn area_image_response(
+    state: &AppState,
+    surface_key: &str,
+    coil_id: &str,
+    type_: &str,
+    query: AreaQuery,
+) -> Response {
     let row = query.row.unwrap_or(0);
     let col = query.col.unwrap_or(0);
     let count = query.count.unwrap_or(0);
@@ -142,47 +170,55 @@ pub async fn area_image_compat(
     let tile_count = 3;
 
     if count == 0 {
-        return match resolve_area_meta(&state, &surface_key, &coil_id) {
+        return match resolve_area_meta(state, surface_key, coil_id, type_) {
             Some(meta) => axum::Json(meta).into_response(),
-            None => not_found("area image metadata not found"),
+            None => axum::Json(placeholder_meta()).into_response(),
         };
     }
 
     if row == -2 {
-        return match resolve_preview_path(&state, &surface_key, &coil_id, "AREA") {
-            Some(path) => serve_file(&state, path),
-            None => not_found("area preview not found"),
+        return match resolve_preview_path(state, surface_key, coil_id, type_) {
+            Some(path) => serve_file(state, path),
+            None => missing_image_response(),
         };
     }
 
     if row == -1 {
-        return match resolve_source_path(&state, &surface_key, &coil_id, "AREA", false) {
-            Some(path) => serve_file(&state, path),
-            None => not_found("area source not found"),
+        return match resolve_source_path(state, surface_key, coil_id, type_, false) {
+            Some(path) => serve_file(state, path),
+            None => missing_image_response(),
         };
     }
 
     if count == 1 {
-        return StatusCode::NO_CONTENT.into_response();
+        return match resolve_source_path(state, surface_key, coil_id, type_, false) {
+            Some(path) => serve_file(state, path),
+            None => missing_image_response(),
+        };
     }
 
-    match resolve_area_tile_path(&state, &surface_key, &coil_id, row, col, level) {
+    match resolve_area_tile_path(state, surface_key, coil_id, type_, row, col, level) {
         Some(path) => {
-            let mut response = serve_file(&state, path);
+            let mut response = serve_file(state, path);
             set_tile_headers(&mut response, level, "hit");
             response
         }
         None => match generate_area_tile_response(
-            &state,
-            &surface_key,
-            &coil_id,
+            state,
+            surface_key,
+            coil_id,
+            type_,
             row,
             col,
             tile_count,
             level,
         ) {
             Some(response) => response,
-            None => not_found("tile cache not found"),
+            None => {
+                let mut response = missing_image_response();
+                set_tile_headers(&mut response, level, "missing");
+                response
+            }
         },
     }
 }
@@ -205,7 +241,7 @@ pub async fn defect_image(
 
     match resolve_source_path(&state, &surface_key, &coil_id.to_string(), &type_, false) {
         Some(path) => serve_file(&state, path),
-        None => not_found("defect image source not found"),
+        None => missing_image_response(),
     }
 }
 
@@ -259,8 +295,13 @@ fn resolve_source_path(
     jpg_path.exists().then_some(jpg_path)
 }
 
-fn resolve_area_meta(state: &AppState, surface_key: &str, coil_id: &str) -> Option<ImageMeta> {
-    if let Some(tile_path) = resolve_area_l4_tile_path(state, surface_key, coil_id, 0, 0) {
+fn resolve_area_meta(
+    state: &AppState,
+    surface_key: &str,
+    coil_id: &str,
+    type_: &str,
+) -> Option<ImageMeta> {
+    if let Some(tile_path) = resolve_area_l4_tile_path(state, surface_key, coil_id, type_, 0, 0) {
         let (tile_width, tile_height) = image_dimensions(state, &tile_path)?;
         if tile_width > 0 && tile_height > 0 {
             return Some(ImageMeta {
@@ -269,15 +310,24 @@ fn resolve_area_meta(state: &AppState, surface_key: &str, coil_id: &str) -> Opti
             });
         }
     }
-    let source_path = resolve_source_path(state, surface_key, coil_id, "AREA", false)?;
+    let source_path = resolve_source_path(state, surface_key, coil_id, type_, false)?;
     let (width, height) = image_dimensions(state, &source_path)?;
     Some(ImageMeta { width, height })
+}
+
+fn area_tile_cache_base_dir(coil_dir: &Path, type_: &str) -> PathBuf {
+    let base = coil_dir.join("cache").join("area");
+    if type_.eq_ignore_ascii_case("AREA") {
+        return base.join("tild");
+    }
+    base.join(type_.to_ascii_uppercase()).join("tild")
 }
 
 fn resolve_area_tile_path(
     state: &AppState,
     surface_key: &str,
     coil_id: &str,
+    type_: &str,
     row: i32,
     col: i32,
     level: i32,
@@ -285,12 +335,9 @@ fn resolve_area_tile_path(
     if !(0..=2).contains(&row) || !(0..=2).contains(&col) {
         return None;
     }
-    let source_path = resolve_source_path(state, surface_key, coil_id, "AREA", false)?;
+    let source_path = resolve_source_path(state, surface_key, coil_id, type_, false)?;
     let coil_dir = source_path.parent()?.parent()?;
-    let tile_path = coil_dir
-        .join("cache")
-        .join("area")
-        .join("tild")
+    let tile_path = area_tile_cache_base_dir(coil_dir, type_)
         .join(format!("L{level}"))
         .join(format!("{col}_{row}.jpg"));
     tile_path.exists().then_some(tile_path)
@@ -300,16 +347,18 @@ fn resolve_area_l4_tile_path(
     state: &AppState,
     surface_key: &str,
     coil_id: &str,
+    type_: &str,
     row: i32,
     col: i32,
 ) -> Option<PathBuf> {
-    resolve_area_tile_path(state, surface_key, coil_id, row, col, 4)
+    resolve_area_tile_path(state, surface_key, coil_id, type_, row, col, 4)
 }
 
 fn generate_area_tile_response(
     state: &AppState,
     surface_key: &str,
     coil_id: &str,
+    type_: &str,
     row: i32,
     col: i32,
     tile_count: i32,
@@ -319,7 +368,7 @@ fn generate_area_tile_response(
         return None;
     }
 
-    let source_path = resolve_source_path(state, surface_key, coil_id, "AREA", false)?;
+    let source_path = resolve_source_path(state, surface_key, coil_id, type_, false)?;
     let cache_key = format!("{}|{}|{}|{}", source_path.display(), level, row, col);
     if let Some(bytes) = get_cached_tile_bytes(state, &cache_key) {
         let mut response = jpeg_cached_bytes_response(bytes);
@@ -327,7 +376,7 @@ fn generate_area_tile_response(
         return Some(response);
     }
 
-    if let Some(l4_path) = resolve_area_l4_tile_path(state, surface_key, coil_id, row, col) {
+    if let Some(l4_path) = resolve_area_l4_tile_path(state, surface_key, coil_id, type_, row, col) {
         let tile = load_image(state, &l4_path)?;
         let bytes = encode_area_tile_for_level(tile, level)?;
         let mut response = jpeg_bytes_response(store_tile_bytes(state, cache_key, bytes));
@@ -355,8 +404,8 @@ fn crop_area_tile_gray(
     if tile_w == 0 || tile_h == 0 {
         return None;
     }
-    let x = row as u32 * tile_w;
-    let y = col as u32 * tile_h;
+    let x = col as u32 * tile_w;
+    let y = row as u32 * tile_h;
     Some(image::imageops::crop_imm(image, x, y, tile_w, tile_h).to_image())
 }
 
@@ -587,6 +636,25 @@ fn set_tile_headers(response: &mut Response, level: i32, cache: &'static str) {
         HeaderName::from_static("x-cache"),
         HeaderValue::from_static(cache),
     );
+}
+
+fn placeholder_meta() -> ImageMeta {
+    ImageMeta {
+        width: PLACEHOLDER_IMAGE_SIZE,
+        height: PLACEHOLDER_IMAGE_SIZE,
+    }
+}
+
+fn missing_image_response() -> Response {
+    let image = RgbImage::from_pixel(
+        PLACEHOLDER_IMAGE_SIZE,
+        PLACEHOLDER_IMAGE_SIZE,
+        Rgb([245, 245, 245]),
+    );
+    match encode_jpeg(DynamicImage::ImageRgb8(image), 85) {
+        Some(bytes) => jpeg_bytes_response(bytes),
+        None => StatusCode::NO_CONTENT.into_response(),
+    }
 }
 
 fn not_found(message: &'static str) -> Response {

@@ -148,7 +148,17 @@ class ImageMosaicThread(Thread):
         for imageMosaic in self.imageMosaicList:  # 获取图片
             if status[imageMosaic.key] < 0:
                 continue
-            data_integration = imageMosaic.get_data()
+            try:
+                data_integration = imageMosaic.get_data()
+            except TimeoutError as e:
+                logger.error(
+                    "image mosaic result timeout SecondaryCoilId=%s surface=%s: %s",
+                    secondary_coil.Id,
+                    imageMosaic.key,
+                    e,
+                )
+                status[imageMosaic.key] = ErrorMap["DataFolderError"]
+                continue
             data_integration_list.append(data_integration)  # 检测
             if data_integration.isNone():
                 logger.error("image is None %s", secondary_coil.Id)
@@ -156,9 +166,17 @@ class ImageMosaicThread(Thread):
                 continue
 
         defection_time3 = time.time()
-        cv_detection.detection_all(data_integration_list)
+        if data_integration_list:
+            cv_detection.detection_all(data_integration_list)
+        else:
+            logger.error("no image mosaic data available SecondaryCoilId=%s status=%s", secondary_coil.Id, status)
         defection_time4 = time.time()
-        AlarmDetection.detection.detection_all(data_integration_list) # 判级
+        alarm_error_msg = ""
+        try:
+            AlarmDetection.detection.detection_all(data_integration_list) # 判级
+        except Exception as e:
+            alarm_error_msg = f"alarm detection failed: {e}"
+            logger.exception("alarm detection failed SecondaryCoilId=%s", secondary_coil.Id)
         defection_time5 = time.time()
 
         logger.debug(
@@ -177,7 +195,7 @@ class ImageMosaicThread(Thread):
                 "Status_L": status.get("L", 0),
                 "Status_S": status.get("S", 0),
                 "Grade": 0,
-                "Msg": ""
+                "Msg": alarm_error_msg
             })
             # 检测完成后同步摘要表
             try:

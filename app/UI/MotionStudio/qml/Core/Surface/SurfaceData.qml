@@ -244,9 +244,10 @@ Item {
 
 
     readonly property bool imageMask: coreModel.imageMaskChecked
+    readonly property string areaViewKey: imageMask ? "AREA_MASK" : "AREA"
     onImageMaskChanged: {
         source = getSource(coilId,currentViewKey)
-        area_source = getSource(coilId,"AREA")
+        area_source = getSource(coilId,areaViewKey)
     }
 
     property string default_key: "GRAY"
@@ -266,7 +267,7 @@ Item {
         default_key=_viewKey_
         currentViewKey = _viewKey_
         source = getSouceByKey(_viewKey_)
-        area_source = getSouceByKey("AREA")
+        area_source = getSouceByKey(areaViewKey)
     }
 
     function hasViewData(viewKey){
@@ -283,7 +284,7 @@ Item {
         if (viewKey === "GRAY" || viewKey === "JET" || viewKey === "JPG") {
             return surfaceHasData["JPG"] === true || surfaceHasData["3D"] === true
         }
-        if (viewKey === "AREA") {
+        if (viewKey === "AREA" || viewKey === "AREA_MASK") {
             return surfaceHasData["2D"] === true
         }
 
@@ -301,7 +302,7 @@ Item {
         medianZ = 0
         error_visible = false
         source = getSource(coilId_,type_,false)
-        area_source = getSource(coilId_,"AREA",false)
+        area_source = getSource(coilId_,areaViewKey,false)
 
         viewDataModel.clear()
         coreModel.allViewKeys.forEach(function(viewKey){
@@ -417,20 +418,18 @@ Item {
 
     function getSource(_coilId_,_viewKey_, preView=false){
         let res_url=""
-        if(coreSetting.useLoc){
+        if ("AREA"==_viewKey_ || "AREA_MASK"==_viewKey_){// 2D AREA 瓦片视图必须使用 HTTP
+            res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+        }
+        else if(coreSetting.useLoc){
             res_url = getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
         }
         else{
-            if ("AREA"==_viewKey_){// 2D 图像必须使用 HTTP
+            if (coreSetting.useSharedFolder){
+                res_url = getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
+            }
+            else
                 res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
-            }
-            else{
-                if (coreSetting.useSharedFolder){
-                    res_url = getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
-                }
-                else
-                    res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
-            }
         }
         return res_url
     }

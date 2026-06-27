@@ -46,7 +46,7 @@ Item {
         if (!coilId) {
             return
         }
-        let areaUrl = api.getFileSource(key, coilId, "AREA", false)
+        let areaUrl = api.getFileSource(key, coilId, surfaceData.areaViewKey, false)
         api.ajax.get(areaUrl, function(){}, function(){})
         imageCache.pushCache(areaUrl)
     }
@@ -93,8 +93,16 @@ Item {
 
     property Flickable flick
 
-    property string source: surfaceData.hasViewData("AREA") ? surfaceData.area_source : "" //"http://127.0.0.1:5012/image/area/S/66252?"//
-    // 棰勮鍥撅細鐩存帴浣跨敤鏈嶅姟绔?preview 鎺ュ彛锛岄伩鍏?row=-2 杩斿洖浠呭楂?    property string pre_source: surfaceData.getSouceByKey("AREA", true)
+    function defect_show(defectName) {
+        if (!defectName) {
+            return false
+        }
+        return global.defectClassProperty.defectDictAll[defectName] ?? false
+    }
+
+    property string source: surfaceData.hasViewData(surfaceData.areaViewKey) ? surfaceData.area_source : "" //"http://127.0.0.1:5012/image/area/S/66252?"//
+    // AREA 缩略图跟随当前原图/MASK 图层。
+    property string pre_source: surfaceData.getSouceByKey(surfaceData.areaViewKey, true)
 
 
     // 琢诲竷鏁版嵁
