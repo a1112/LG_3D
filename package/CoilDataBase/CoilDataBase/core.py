@@ -29,45 +29,62 @@ def should_auto_create_schema(url: str) -> bool:
 def ensure_runtime_indexes(engine_):
     """Create hot-path indexes for existing databases without requiring a manual migration."""
     inspector = inspect(engine_)
-    try:
-        existing_indexes = {
-            item["name"]
-            for item in inspector.get_indexes("CoilDefect")
-        }
-    except Exception:
-        existing_indexes = set()
+    is_postgresql = engine_.dialect.name == "postgresql"
+    table_names = set(inspector.get_table_names())
 
     statements = []
-    if "idx_coil_defect_secondary_coil_id" not in existing_indexes:
-        statements.append(
-            "CREATE INDEX idx_coil_defect_secondary_coil_id ON CoilDefect (secondaryCoilId)"
-        )
-    if "idx_coil_defect_secondary_surface" not in existing_indexes:
-        statements.append(
-            "CREATE INDEX idx_coil_defect_secondary_surface ON CoilDefect (secondaryCoilId, surface)"
-        )
 
-    try:
-        existing_manual_indexes = {
-            item["name"]
-            for item in inspector.get_indexes("ManualDefect")
-        }
-    except Exception:
-        existing_manual_indexes = set()
+    def existing_index_names(table_name: str) -> set[str]:
+        try:
+            return {item["name"] for item in inspector.get_indexes(table_name)}
+        except Exception:
+            return set()
 
-    if "idx_manual_defect_secondary_coil_id" not in existing_manual_indexes:
-        statements.append(
-            "CREATE INDEX idx_manual_defect_secondary_coil_id ON ManualDefect (secondaryCoilId)"
-        )
-    if "idx_manual_defect_secondary_surface" not in existing_manual_indexes:
-        statements.append(
-            "CREATE INDEX idx_manual_defect_secondary_surface ON ManualDefect (secondaryCoilId, surface)"
-        )
+    def add_index(table_name: str, index_name: str, columns_sql: str) -> None:
+        if table_name not in table_names:
+            return
+        if index_name in existing_index_names(table_name):
+            return
+        if is_postgresql:
+            statements.append(f'CREATE INDEX CONCURRENTLY IF NOT EXISTS {index_name} ON "{table_name}" ({columns_sql})')
+        else:
+            statements.append(f"CREATE INDEX {index_name} ON {table_name} ({columns_sql})")
+
+    if is_postgresql:
+        add_index("CoilDefect", "idx_coil_defect_secondary_coil_id", '"secondaryCoilId"')
+        add_index("CoilDefect", "idx_coil_defect_secondary_surface", '"secondaryCoilId", surface')
+        add_index("ManualDefect", "idx_manual_defect_secondary_coil_id", '"secondaryCoilId"')
+        add_index("ManualDefect", "idx_manual_defect_secondary_surface", '"secondaryCoilId", surface')
+        add_index("Coil", "idx_coil_secondary_coil_id", '"SecondaryCoilId"')
+        add_index("CoilState", "idx_coil_state_secondary_coil_id", '"secondaryCoilId"')
+        add_index("CoilState", "idx_coil_state_secondary_surface_id", '"secondaryCoilId", surface, "Id" DESC')
+        add_index("AlarmInfo", "idx_alarm_info_secondary_surface", '"secondaryCoilId", surface')
+        add_index("AlarmFlatRoll", "idx_alarm_flat_roll_secondary", '"secondaryCoilId"')
+        add_index("AlarmTaperShape", "idx_alarm_taper_shape_secondary", '"secondaryCoilId"')
+        add_index("AlarmLooseCoil", "idx_alarm_loose_coil_secondary", '"secondaryCoilId"')
+        add_index("coil_summary", "idx_summary_hascoil_id_desc", '"HasCoil", "Id" DESC')
+    else:
+        add_index("CoilDefect", "idx_coil_defect_secondary_coil_id", "secondaryCoilId")
+        add_index("CoilDefect", "idx_coil_defect_secondary_surface", "secondaryCoilId, surface")
+        add_index("ManualDefect", "idx_manual_defect_secondary_coil_id", "secondaryCoilId")
+        add_index("ManualDefect", "idx_manual_defect_secondary_surface", "secondaryCoilId, surface")
+        add_index("Coil", "idx_coil_secondary_coil_id", "SecondaryCoilId")
+        add_index("CoilState", "idx_coil_state_secondary_coil_id", "secondaryCoilId")
+        add_index("CoilState", "idx_coil_state_secondary_surface_id", "secondaryCoilId, surface, Id DESC")
+        add_index("AlarmInfo", "idx_alarm_info_secondary_surface", "secondaryCoilId, surface")
+        add_index("AlarmFlatRoll", "idx_alarm_flat_roll_secondary", "secondaryCoilId")
+        add_index("AlarmTaperShape", "idx_alarm_taper_shape_secondary", "secondaryCoilId")
+        add_index("AlarmLooseCoil", "idx_alarm_loose_coil_secondary", "secondaryCoilId")
+        add_index("coil_summary", "idx_summary_hascoil_id_desc", "HasCoil, Id DESC")
 
     if not statements:
         return
 
-    with engine_.begin() as connection:
+    connection_context = (
+        engine_.connect().execution_options(isolation_level="AUTOCOMMIT")
+        if is_postgresql else engine_.begin()
+    )
+    with connection_context as connection:
         for statement in statements:
             try:
                 connection.execute(text(statement))

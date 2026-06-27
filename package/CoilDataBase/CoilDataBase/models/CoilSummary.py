@@ -77,6 +77,7 @@ class CoilSummary(Base):
         Index('idx_summary_id', 'Id'),
         Index('idx_summary_coilno', 'CoilNo'),
         Index('idx_summary_createtime', 'CreateTime'),
+        Index('idx_summary_hascoil_id_desc', 'HasCoil', 'Id'),
     )
 
 
