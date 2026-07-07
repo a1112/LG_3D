@@ -1,56 +1,60 @@
 {
-    "surfaces": {
-    "S":{
-        "cameras": [
-            {
-                "folder" : "G:\\Cap_S_U",
-                "loss_num": 0,
-                "max_len": 10
-            },{
-                "folder": "G:\\Cap_S_M",
-                "loss_num": 0,
-                "max_len": 10
-            },{
-                "folder": "G:\\Cap_S_D",
-                "loss_num": 0,
-                "max_len": 10
-            }
-        ],
-        "save_folder": "D:\\Save_S",
-        "clip_config": {
-            "mode": "fixed",
-            "fixed": 200,
-            "a": 3,
-            "b": 220,
-            "c": 2600,
-            "offset": 40
+  "surfaces": {
+    "L": {
+      "cameras": [
+        {
+          "folder": "F:\\Cap_L_U",
+          "loss_num": 0,
+          "max_len": 10
+        },
+        {
+          "folder": "F:\\Cap_L_M",
+          "loss_num": 0,
+          "max_len": 10
+        },
+        {
+          "folder": "F:\\Cap_L_D",
+          "loss_num": 0,
+          "max_len": 10
         }
+      ],
+      "clip_config": {
+        "a": 3,
+        "b": 220,
+        "c": 4000,
+        "fixed": 200,
+        "mode": "fixed",
+        "offset": 40
+      },
+      "save_folder": "E:\\Save_L"
     },
-    "L":{
-        "cameras": [
-            {
-                "folder" : "F:\\Cap_L_U",
-                "loss_num": 0,
-                "max_len": 10
-            },{
-                "folder": "F:\\Cap_L_M",
-                "loss_num": 0,
-                "max_len": 10
-            },{
-                "folder": "F:\\Cap_L_D",
-                "loss_num": 0,
-                "max_len": 10
-            }
-        ],
-        "save_folder": "E:\\Save_L",
-        "clip_config": {
-            "mode": "fixed",
-            "fixed": 200,
-            "a": 3,
-            "b": 220,
-            "c": 4000,
-            "offset": 40
+    "S": {
+      "cameras": [
+        {
+          "folder": "G:\\Cap_S_U",
+          "loss_num": 0,
+          "max_len": 10
+        },
+        {
+          "folder": "G:\\Cap_S_M",
+          "loss_num": 0,
+          "max_len": 10
+        },
+        {
+          "folder": "G:\\Cap_S_D",
+          "loss_num": 0,
+          "max_len": 10
         }
+      ],
+      "clip_config": {
+        "a": 2.5,
+        "b": 210.0,
+        "c": 2500.0,
+        "fixed": 180,
+        "mode": "dynamic",
+        "offset": 40
+      },
+      "save_folder": "D:\\Save_S"
     }
-        }
+  }
 }

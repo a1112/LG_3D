@@ -1,0 +1,114 @@
+.connect-settings-modal .ant-modal-content {
+  height: min(200px, calc(100vh - 32px));
+  max-height: min(200px, calc(100vh - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--qml-header-border, #3a5368);
+  background: var(--qml-panel-background, #111b24);
+  color: var(--qml-text-color, #f4faff);
+}
+
+.connect-settings-modal .ant-modal-body {
+  height: 100%;
+  padding: 10px 14px;
+}
+
+.connect-settings-dialog {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.connect-settings-dialog h3 {
+  min-height: 24px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--qml-text-color, #f4faff);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connect-settings-fields {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px;
+  gap: 12px;
+  align-items: center;
+}
+
+.connect-settings-field {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qml-label-color, #d8e7f2);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.connect-settings-field span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.connect-settings-field .ant-input,
+.connect-settings-field .ant-input-number {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.connect-settings-port-field .ant-input-number {
+  width: 100%;
+}
+
+.connect-settings-shortcuts {
+  min-width: 0;
+  min-height: 26px;
+  display: flex;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.connect-settings-shortcuts button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--qml-grid-line, #32475a);
+  border-radius: 3px;
+  background: var(--qml-panel-elevated, #1a2834);
+  color: var(--qml-label-color, #d8e7f2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.connect-settings-shortcuts button:hover {
+  border-color: var(--qml-title-color, #00bcd4);
+  color: var(--qml-text-color, #f4faff);
+  background: var(--qml-button-hover, #26394a);
+}
+
+.connect-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .connect-settings-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .connect-settings-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}

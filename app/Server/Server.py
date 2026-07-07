@@ -142,11 +142,13 @@ def _load_default_routers(enable_runtime: bool = True):
     from api import ApiServerControl  # noqa: F401
     from api import ApiDataServer  # noqa: F401
     from api import ApiImageServer  # noqa: F401
+    from api import ApiCompat  # noqa: F401
     from api import ApiBackupServer  # noqa: F401
     from api import ApiTest  # noqa: F401
     from api import ApiSettings  # noqa: F401
     from AlarmDetection.Server import ApiAlarmInfo  # noqa: F401
     from api import ApiAlgTest  # noqa: F401
+    from api import ApiTool  # noqa: F401
     if enable_runtime:
         from api import ApiServer  # noqa: F401
 

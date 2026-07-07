@@ -1,0 +1,86 @@
+.list-value-change-window .ant-modal-content {
+  min-height: min(500px, calc(100vh - 32px));
+  height: min(500px, calc(100vh - 32px));
+  max-height: min(500px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.list-value-change-window .ant-modal-body {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.list-value-change-modal {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  height: calc(min(500px, calc(100vh - 32px)) - 48px);
+  min-height: 0;
+}
+
+.list-value-change-title {
+  margin: 0;
+  color: #2196f3;
+  font-family: Inter, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+}
+
+.list-value-change-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(130px, 0.8fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.list-value-change-controls label {
+  display: grid;
+  gap: 4px;
+  color: #5a6b7a;
+  font-size: 12px;
+}
+
+.list-value-change-controls .ant-select,
+.list-value-change-controls .ant-input {
+  width: 100%;
+}
+
+.list-value-change-body {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  border: 1px solid #d8e1e8;
+  border-radius: 4px;
+  background: #f7fafc;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.list-value-change-body .ant-empty {
+  align-self: center;
+}
+
+.list-value-change-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  color: #5a6b7a;
+  font-size: 12px;
+}
+
+.list-value-change-chart-head strong {
+  margin-left: auto;
+  color: #1d3448;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .list-value-change-controls {
+    grid-template-columns: 1fr;
+  }
+}

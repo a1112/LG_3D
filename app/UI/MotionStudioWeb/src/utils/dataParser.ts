@@ -4,6 +4,18 @@
  */
 
 import * as THREE from 'three'
+import type { HeightLineSegment, HeightPointTuple } from '@/types'
+
+export interface PointCloudData {
+  positions: Float32Array
+  colors: Float32Array
+  count: number
+}
+
+export type Canvas3DDataSource =
+  | { kind: 'buffer'; data: ArrayBuffer }
+  | { kind: 'pointCloud'; pointCloud: PointCloudData }
+  | { kind: 'empty' }
 
 /**
  * 解析ArrayBuffer格式的3D数据
@@ -16,10 +28,10 @@ export function parseHeightData(buffer: ArrayBuffer): {
   count: number
 } | null {
   try {
-    // TODO: 根据实际后端数据格式实现解析逻辑
-    // 这里需要参考 app/Server/api/ApiDataServer.py 中的数据格式
+    if (buffer.byteLength === 0 || buffer.byteLength % 16 !== 0) return null
 
-    // 示例：假设数据格式为每4个float表示一个点(x, y, z, color)
+    // Legacy binary fallback: every point is four little-endian float32 values (x, y, z, color).
+    // Current Python/Rust height-line JSON is handled by parseHeightLineSegmentsToPointCloud.
     const dataView = new DataView(buffer)
     const floatSize = 4 // float32 size
     const pointStride = 4 // x, y, z, color
@@ -50,6 +62,88 @@ export function parseHeightData(buffer: ArrayBuffer): {
     console.error('Failed to parse height data:', error)
     return null
   }
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value)
+  return null
+}
+
+function asHeightPointTuple(value: unknown): HeightPointTuple | null {
+  if (!Array.isArray(value) || value.length < 3) return null
+  const x = asFiniteNumber(value[0])
+  const y = asFiniteNumber(value[1])
+  const z = asFiniteNumber(value[2])
+  if (x === null || y === null || z === null) return null
+  return [x, y, z]
+}
+
+function heightLinePoints(segments: unknown): HeightPointTuple[] {
+  if (!Array.isArray(segments)) return []
+
+  return segments.flatMap((segment) => {
+    if (!segment || typeof segment !== 'object') return []
+    const points = (segment as Partial<HeightLineSegment>).points
+    if (!Array.isArray(points)) return []
+    return points
+      .map(asHeightPointTuple)
+      .filter((point): point is HeightPointTuple => point !== null)
+  })
+}
+
+/**
+ * 解析后端 /coilData/heightData 返回的 QML 线段 JSON 为点云数据。
+ * Python/Rust 返回格式为 [{ pointL, pointR, points: [[x, y, z], ...] }, ...]。
+ */
+export function parseHeightLineSegmentsToPointCloud(segments: unknown): PointCloudData {
+  const points = heightLinePoints(segments)
+  const count = points.length
+  const positions = new Float32Array(count * 3)
+  const colors = new Float32Array(count * 3)
+
+  if (count === 0) {
+    return { positions, colors, count }
+  }
+
+  const xs = points.map((point) => point[0])
+  const ys = points.map((point) => point[1])
+  const zs = points.map((point) => point[2])
+  const centerX = (Math.min(...xs) + Math.max(...xs)) / 2
+  const centerY = (Math.min(...ys) + Math.max(...ys)) / 2
+  const centerZ = (Math.min(...zs) + Math.max(...zs)) / 2
+
+  for (let index = 0; index < count; index++) {
+    const [x, y, z] = points[index]
+    positions[index * 3] = x - centerX
+    positions[index * 3 + 1] = y - centerY
+    positions[index * 3 + 2] = z - centerZ
+
+    const color = heightToColor(z - centerZ)
+    colors[index * 3] = color.r
+    colors[index * 3 + 1] = color.g
+    colors[index * 3 + 2] = color.b
+  }
+
+  return { positions, colors, count }
+}
+
+export function resolveCanvas3DDataSource(
+  renderData: ArrayBuffer | null,
+  heightLineSegments: unknown,
+): Canvas3DDataSource {
+  if (renderData && renderData.byteLength > 0) return { kind: 'buffer', data: renderData }
+
+  const pointCloud = parseHeightLineSegmentsToPointCloud(heightLineSegments)
+  if (pointCloud.count > 0) return { kind: 'pointCloud', pointCloud }
+
+  return { kind: 'empty' }
+}
+
+export function canvas3DDataSourceLabel(dataSource: Canvas3DDataSource): string {
+  if (dataSource.kind === 'buffer') return '3D高度渲染图'
+  if (dataSource.kind === 'pointCloud') return `高度线点云 fallback (${dataSource.pointCloud.count} 点)`
+  return '等待3D数据加载'
 }
 
 /**

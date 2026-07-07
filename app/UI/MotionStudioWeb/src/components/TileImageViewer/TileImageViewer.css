@@ -3,7 +3,7 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   background: #071018;
 }
 
@@ -14,9 +14,300 @@
   touch-action: none;
 }
 
+.tile-aerial-view {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  z-index: 5;
+  width: 100px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+}
+
+.tile-aerial-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.tile-aerial-view:hover .tile-aerial-image {
+  opacity: 1;
+}
+
+.tile-aerial-viewport {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid blue;
+  background: transparent;
+  pointer-events: none;
+}
+
+.tile-qml-cross-view {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.tile-qml-cross-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.tile-qml-cross-line {
+  position: absolute;
+  display: block;
+  background: red;
+}
+
+.tile-qml-cross-line.horizontal {
+  left: -10px;
+  top: 0;
+  width: 20px;
+  height: 1px;
+}
+
+.tile-qml-cross-line.vertical {
+  left: 0;
+  top: -10px;
+  width: 1px;
+  height: 20px;
+}
+
+.tile-qml-cross-label {
+  position: absolute;
+  display: block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #000;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tile-qml-cross-label.coordinate {
+  color: red;
+}
+
+.tile-qml-cross-label.y-mm {
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.tile-qml-cross-label.x-mm {
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.tile-qml-cross-label.z-value {
+  left: -30px;
+  top: -30px;
+}
+
+.tile-qml-cross-label.z-safe {
+  color: green;
+}
+
+.tile-qml-cross-label.z-warning {
+  color: red;
+}
+
+.tile-qml-survey {
+  position: absolute;
+  z-index: 5;
+  min-width: 1px;
+  min-height: 1px;
+  pointer-events: none;
+}
+
+.tile-qml-survey-svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.tile-qml-survey-path {
+  fill: rgba(0, 255, 255, 0.02);
+  stroke: red;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tile-qml-survey-corner {
+  stroke-dasharray: 5 5;
+}
+
+.tile-qml-survey-diagonal {
+  fill: none;
+  stroke-dasharray: none;
+}
+
+.tile-qml-survey-label {
+  position: absolute;
+  z-index: 1;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #000;
+  color: #f4fbff;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tile-qml-survey-label.width {
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+}
+
+.tile-qml-survey-label.height {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: left center;
+}
+
+.tile-qml-survey-label.diagonal {
+  left: 50%;
+  top: calc(50% + 10px);
+  transform: translate(-50%, -50%) rotate(var(--survey-diagonal-rotation));
+  transform-origin: center;
+}
+
+.tile-qml-user-point {
+  position: absolute;
+  z-index: 6;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+}
+
+.tile-qml-user-point-marker {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 2px solid green;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.tile-qml-user-point-label {
+  position: absolute;
+  padding: 1px 4px;
+  background: rgba(46, 46, 46, 0.47);
+  color: yellow;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tile-qml-db-point {
+  position: absolute;
+  z-index: 6;
+  width: 4px;
+  height: 4px;
+  pointer-events: none;
+}
+
+.tile-qml-db-point-marker {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 4px;
+  height: 4px;
+  border: 2px solid red;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.tile-qml-db-point-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 1px 4px;
+  background: rgba(46, 46, 46, 0.47);
+  color: yellow;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.tile-qml-db-point-label.warning {
+  color: red;
+}
+
+.tile-qml-draw-view {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.tile-qml-draw-view-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.tile-qml-draw-line {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1;
+  stroke-dasharray: 10 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.tile-qml-draw-taper-line {
+  fill: none;
+  stroke: red;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.tile-qml-draw-ellipse {
+  fill: rgba(34, 34, 34, 0.07);
+  stroke: green;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.tile-qml-draw-axis {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.tile-qml-draw-label {
+  position: absolute;
+  color: green;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translate(0, -50%);
+}
+
+.tile-qml-draw-perpendicular-point {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border: 2px solid orange;
+  border-radius: 2px;
+}
+
 .tile-image-hud {
   position: absolute;
-  left: 12px;
+  right: 12px;
   bottom: 10px;
   display: flex;
   gap: 10px;
@@ -29,4 +320,59 @@
   color: #d8e7f2;
   font-size: 12px;
   pointer-events: none;
+}
+
+.tile-show-infos {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: min(220px, calc(100% - 20px));
+  color: #d8e7f2;
+  font-size: 12px;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.tile-show-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+}
+
+.tile-show-info-label {
+  color: #d8e7f2;
+  white-space: nowrap;
+}
+
+.tile-show-info-value {
+  min-width: 22px;
+  padding: 1px 5px;
+  background: rgba(46, 46, 46, 0.47);
+  color: #f4faff;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tile-point-value-hud {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  max-width: min(320px, calc(100% - 24px));
+  padding: 5px 8px;
+  border: 1px solid rgba(77, 171, 247, 0.58);
+  border-radius: 3px;
+  background: rgba(3, 11, 17, 0.82);
+  color: #f4fbff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(12px, -50%);
 }

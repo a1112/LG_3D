@@ -1,4 +1,5 @@
 import datetime
+import math
 import json
 import logging
 import os
@@ -27,7 +28,9 @@ from CoilDataBase.CoilSummary import (
     search_coils_by_datetime_summary,
     search_coils_by_id_summary,
 )
-from CoilDataBase.models import AlarmInfo, SecondaryCoil, CoilDefect, PlcData, CoilState
+from CoilDataBase.models import (AlarmInfo, AlarmFlatRoll, AlarmLooseCoil,
+                                AlarmTaperShape, CoilDefect, CoilState,
+                                PlcData, SecondaryCoil)
 from Base.property.ServerConfigProperty import ServerConfigProperty
 from Base.utils import Hardware, Backup, export
 from ._tool_ import get_surface_key
@@ -221,6 +224,134 @@ def format_coil_info(secondary_coil_list):
         format_secondary_item_data(secondary_coil)
         for secondary_coil in secondary_coil_list
     ]
+
+
+def _parse_json_string(value: object) -> dict:
+    if not isinstance(value, str):
+        return {}
+    try:
+        data = json.loads(value)
+    except Exception:
+        return {}
+    if isinstance(data, dict):
+        return data
+    return {}
+
+
+def _to_finite_float(value: object) -> Optional[float]:
+    if isinstance(value, (int, float)):
+        if math.isfinite(float(value)):
+            return float(value)
+    return None
+
+
+def _scale_from_state(state_rows):
+    scale_by_surface = {}
+    for row in state_rows:
+        surface = row.surface
+        if surface not in {"S", "L"}:
+            continue
+        if surface in scale_by_surface:
+            continue
+        scale = _to_finite_float(row.scan3dCoordinateScaleX)
+        if scale is not None and scale > 0:
+            scale_by_surface[surface] = scale
+    return scale_by_surface
+
+
+def _round_numeric_value(value: Optional[float]) -> Optional[float]:
+    if value is None:
+        return None
+    return round(value, 6)
+
+
+def _normalize_loose_coil_entry(item: dict, scale: Optional[float]) -> dict:
+    item = dict(item)
+    raw_width = _to_finite_float(item.get("max_width")) or 0.0
+    detail = _parse_json_string(item.get("data"))
+    detail_width_unit = str(detail.get("max_width_unit") or "").lower()
+
+    parsed_pixel = _to_finite_float(detail.get("max_width_px"))
+    parsed_mm = _to_finite_float(detail.get("max_width_mm"))
+    detail_scale = _to_finite_float(detail.get("max_width_scale"))
+    width_scale = scale if scale and scale > 0 else detail_scale
+    if width_scale is None or width_scale <= 0:
+        width_scale = 1.0
+
+    if detail_width_unit == "px":
+        pixel_width = parsed_pixel if parsed_pixel and parsed_pixel > 0 else raw_width
+        normalized_width = pixel_width * width_scale
+        if pixel_width > 0:
+            detail["max_width_px"] = _round_numeric_value(pixel_width)
+    elif parsed_mm is not None:
+        if parsed_pixel is not None and parsed_pixel > 100 and abs(parsed_mm - parsed_pixel) < 0.001:
+            normalized_width = parsed_pixel * width_scale
+        else:
+            normalized_width = parsed_mm
+    elif raw_width > 100 and width_scale > 0:
+        pixel_width = raw_width
+        normalized_width = raw_width * width_scale
+        detail["max_width_px"] = _round_numeric_value(pixel_width)
+    else:
+        normalized_width = raw_width
+
+    normalized_width = _round_numeric_value(normalized_width or 0)
+    item["max_width"] = normalized_width
+    item["data"] = json.dumps({
+        **detail,
+        "max_width_raw": _round_numeric_value(raw_width),
+        "max_width_mm": normalized_width,
+        "max_width_unit": "mm",
+        "max_width_scale": _round_numeric_value(width_scale),
+        "max_width_scale_axis": "x",
+    }, ensure_ascii=False)
+    return item
+
+
+def _load_coil_alarm_payload(coil_id: int) -> dict:
+    with Session() as session:
+        flat_roll_rows = session.query(AlarmFlatRoll).filter_by(
+            secondaryCoilId=coil_id).order_by(AlarmFlatRoll.Id.desc()).all()
+        taper_rows = session.query(AlarmTaperShape).filter_by(
+            secondaryCoilId=coil_id).all()
+        loose_rows = session.query(AlarmLooseCoil).filter_by(
+            secondaryCoilId=coil_id).all()
+        state_rows = session.query(CoilState).filter(
+            CoilState.secondaryCoilId == coil_id,
+            CoilState.surface.in_(["S", "L"]),
+        ).order_by(CoilState.Id.desc()).all()
+
+    scale_by_surface = _scale_from_state(state_rows)
+
+    payload = {
+        "FlatRoll": {"S": {}, "L": {}},
+        "TaperShape": {"S": [], "L": []},
+        "LooseCoil": {"S": [], "L": []},
+    }
+
+    for row in flat_roll_rows:
+        row_dict = tool.to_dict(row)
+        surface = row.surface
+        if surface in {"S", "L"} and not payload["FlatRoll"][surface]:
+            payload["FlatRoll"][surface] = row_dict
+
+    for row in taper_rows:
+        row_dict = tool.to_dict(row)
+        surface = row.surface
+        if surface in {"S", "L"}:
+            payload["TaperShape"][surface].append(row_dict)
+
+    for row in loose_rows:
+        row_dict = tool.to_dict(row)
+        surface = row.surface
+        if surface in {"S", "L"}:
+            row_dict = _normalize_loose_coil_entry(
+                row_dict,
+                scale_by_surface.get(surface),
+            )
+            payload["LooseCoil"][surface].append(row_dict)
+
+    return payload
 
 
 @router.get("/coilList/{number}")
@@ -620,6 +751,61 @@ def _camera_service_post(camera: dict, path: str, payload: dict | None = None) -
         raise HTTPException(status_code=502, detail=f"响应解析失败: {e}")
 
 
+def _build_capture_query_path(path: str, clear: bool = False) -> str:
+    if clear:
+        return f"{path}?clear=true"
+    return path
+
+
+def _camera_capture_item(camera: dict) -> dict:
+    camera_key = camera.get("key", "")
+    status = _camera_service_get(camera, "/camera/status")
+    return {
+        **_camera_public_info(camera),
+        "status": status,
+        "key": status.get("key", camera_key),
+    }
+
+
+def _capture_status_value() -> dict:
+    result = _capture_service_get("/capture/status")
+    if result.get("ok") is not False or result.get("cameras"):
+        return result
+    return {
+        **result,
+        "service": "CapAll",
+        "configFile": str(_capture_config_file()),
+        "serviceUrl": _capture_service_base_url() or "",
+        "cameraCount": len(_load_capture_cameras()),
+        "cameras": [_camera_capture_item(camera) for camera in _load_capture_cameras()],
+    }
+
+
+def _plc_service_base_url() -> str:
+    host = os.getenv("PLC_SERVER_IP", "127.0.0.1")
+    host = _normalize_service_host(host)
+    try:
+        port = int(os.getenv("PLC_SERVER_PORT", "1211"))
+    except ValueError:
+        port = 1211
+    return f"http://{host}:{port}"
+
+
+def _plc_service_request(method: str, path: str, payload: dict | None = None):
+    url = _plc_service_base_url() + path
+    try:
+        if method == "get":
+            response = requests.get(url, timeout=3)
+        else:
+            response = requests.post(url, json=payload or {}, timeout=3)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"响应解析失败: {e}")
+
+
 def _payload_to_dict(payload: BaseModel) -> dict:
     if hasattr(payload, "model_dump"):
         return payload.model_dump()
@@ -676,20 +862,110 @@ def reconnect_camera_adjustment(camera_key: str):
 
 @router.get("/capture_status")
 def get_capture_status():
-    result = _capture_service_get("/capture/status")
+    return _capture_status_value()
+
+
+@router.get("/capture/status")
+def get_capture_status_compat():
+    return _capture_status_value()
+
+
+@router.get("/capture/files")
+def get_capture_files(clear: bool = False):
+    return _capture_service_get(_build_capture_query_path("/capture/files", clear))
+
+
+@router.get("/getListenerAddFile")
+def get_capture_listener_files(clear: bool = False):
+    return _capture_service_get(_build_capture_query_path("/getListenerAddFile", clear))
+
+
+@router.get("/cameras")
+def get_cameras():
+    result = _capture_service_get("/cameras")
     if result.get("ok") is not False or result.get("cameras"):
         return result
     return {
         **result,
         "service": "CapAll",
-        "cameras": [
-            {
-                **_camera_public_info(camera),
-                "status": _camera_service_get(camera, "/camera/status"),
-            }
-            for camera in _load_capture_cameras()
-        ],
+        "cameraCount": len(_load_capture_cameras()),
+        "cameras": [_camera_capture_item(camera) for camera in _load_capture_cameras()],
     }
+
+
+@router.get("/cameras/{camera_key}/status")
+def get_camera_status_by_key(camera_key: str):
+    camera = _find_capture_camera(camera_key)
+    return _camera_service_get(camera, "/camera/status")
+
+
+@router.get("/cameras/{camera_key}/files")
+def get_camera_files_by_key(camera_key: str, clear: bool = False):
+    camera = _find_capture_camera(camera_key)
+    path = _build_capture_query_path(f"/cameras/{camera_key}/files", clear)
+    return _camera_service_get(camera, path)
+
+
+@router.post("/cameras/{camera_key}/params")
+def set_camera_params_by_key(camera_key: str, payload: CameraAdjustmentPayload):
+    camera = _find_capture_camera(camera_key)
+    return _camera_service_post(camera, "/camera/params",
+                                _payload_to_dict(payload))
+
+
+@router.post("/cameras/{camera_key}/reconnect")
+def reconnect_camera_by_key(camera_key: str):
+    camera = _find_capture_camera(camera_key)
+    return _camera_service_post(camera, "/camera/reconnect")
+
+
+@router.get("/camera/status")
+def get_camera_status():
+    cameras = _load_capture_cameras()
+    if not cameras:
+        raise HTTPException(status_code=404, detail="未找到相机: 无")
+    return _camera_service_get(cameras[0], "/camera/status")
+
+
+@router.post("/camera/params")
+def set_camera_params(payload: CameraAdjustmentPayload):
+    cameras = _load_capture_cameras()
+    if not cameras:
+        raise HTTPException(status_code=404, detail="未找到相机: 无")
+    return _camera_service_post(cameras[0], "/camera/params",
+                                _payload_to_dict(payload))
+
+
+@router.post("/camera/reconnect")
+def reconnect_camera():
+    cameras = _load_capture_cameras()
+    if not cameras:
+        raise HTTPException(status_code=404, detail="未找到相机: 无")
+    return _camera_service_post(cameras[0], "/camera/reconnect")
+
+
+@router.get("/plc/info")
+@router.get("/plc/info/")
+async def get_plc_info():
+    return _plc_service_request("get", "/plc/info/")
+
+
+@router.get("/plc/connect/{plc_ip}/{rack}/{slot}")
+async def connect_plc(plc_ip: str, rack: int, slot: int):
+    return _plc_service_request(
+        "get",
+        f"/plc/connect/{plc_ip}/{rack}/{slot}",
+    )
+
+
+@router.get("/plc/get/{addr}/{type_str}/{length}")
+async def read_plc_value(addr: str, type_str: str, length: int):
+    if length < 0:
+        raise HTTPException(status_code=400, detail="length must be non-negative")
+    return _plc_service_request(
+        "get",
+        f"/plc/get/{addr}/{type_str}/{length}",
+    )
 
 
 def _camera_2d_status(status: dict) -> dict:
@@ -837,6 +1113,16 @@ async def get_coil_detail_api(coil_id: int):
     if detail is None:
         return {"error": "Coil not found"}
     return detail
+
+
+@router.get("/coilAlarm/get_info")
+async def get_coil_alarm_info():
+    return None
+
+
+@router.get("/coilAlarm/{coil_id:int}")
+async def get_coil_alarm(coil_id: int):
+    return _load_coil_alarm_payload(coil_id)
 
 
 @router.post("/sync_summaries")
