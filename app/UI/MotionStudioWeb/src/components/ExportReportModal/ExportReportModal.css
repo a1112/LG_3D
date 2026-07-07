@@ -1,0 +1,137 @@
+.export-report-window .ant-modal-content {
+  min-height: min(500px, calc(100vh - 32px));
+  height: min(500px, calc(100vh - 32px));
+  max-height: min(500px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.export-report-window .ant-modal-body {
+  height: calc(min(500px, calc(100vh - 32px)) - 48px);
+  overflow: hidden;
+}
+
+.export-report-modal {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.export-report-title {
+  margin: 0;
+  color: #52c41a;
+  font-size: 24pt;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.export-report-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.export-report-file-row {
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+}
+
+.export-report-row span,
+.export-report-quick span {
+  color: #5a6b7a;
+  font-size: 13px;
+}
+
+.export-report-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 8px 0;
+}
+
+.export-report-quick,
+.export-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-report-actions {
+  margin-top: auto;
+  justify-content: flex-end;
+}
+
+.export-report-finished {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.export-report-finished > span {
+  color: #5a6b7a;
+  font-size: 13px;
+}
+
+.export-report-error {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  color: #d4380d;
+}
+
+.export-report-error strong {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.export-report-error pre {
+  min-height: 80px;
+  max-height: 180px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid #ff4d4f;
+  border-radius: 4px;
+  padding: 8px;
+  color: #d4380d;
+  background: transparent;
+}
+
+@media (max-width: 640px) {
+  .export-report-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .export-report-file-row {
+    grid-template-columns: 1fr;
+  }
+
+  .export-report-actions {
+    justify-content: stretch;
+  }
+
+  .export-report-actions .ant-btn {
+    flex: 1;
+  }
+
+  .export-report-finished {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .export-report-finished > span,
+  .export-report-finished .ant-progress {
+    grid-column: 1 / -1;
+  }
+
+  .export-report-error {
+    grid-template-columns: 1fr;
+  }
+}

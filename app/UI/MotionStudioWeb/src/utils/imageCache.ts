@@ -12,9 +12,15 @@ interface CacheEntry {
 }
 
 interface CacheOptions {
+  enabled?: boolean // 是否启用缓存，默认跟随 QML CoreSetting 为 false
   maxSize?: number // 最大缓存大小（字节），默认100MB
   maxItems?: number // 最大缓存项数，默认50
   maxAge?: number // 最大缓存年龄（毫秒），默认30分钟
+}
+
+function normalizeMaxItems(value: number | undefined, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.min(Math.max(Math.trunc(value), 1), 200)
 }
 
 export class ImageCache {
@@ -24,13 +30,34 @@ export class ImageCache {
 
   constructor(options: CacheOptions = {}) {
     this.options = {
+      enabled: options.enabled ?? false,
       maxSize: options.maxSize ?? 100 * 1024 * 1024, // 100MB
-      maxItems: options.maxItems ?? 50,
+      maxItems: normalizeMaxItems(options.maxItems, 50),
       maxAge: options.maxAge ?? 30 * 60 * 1000, // 30分钟
     }
 
     // 定期清理过期缓存
     setInterval(() => this.cleanup(), 60 * 1000) // 每分钟清理一次
+  }
+
+  configure(options: CacheOptions): void {
+    this.options = {
+      ...this.options,
+      enabled: options.enabled ?? this.options.enabled,
+      maxSize: options.maxSize ?? this.options.maxSize,
+      maxItems: normalizeMaxItems(options.maxItems, this.options.maxItems),
+      maxAge: options.maxAge ?? this.options.maxAge,
+    }
+
+    while (this.cache.size > this.options.maxItems) {
+      const firstKey = this.cache.keys().next().value
+      if (!firstKey) break
+      this.delete(firstKey)
+    }
+  }
+
+  isEnabled(): boolean {
+    return this.options.enabled
   }
 
   /**
@@ -44,6 +71,8 @@ export class ImageCache {
    * 获取缓存的图像
    */
   get(url: string, width?: number, height?: number): string | null {
+    if (!this.options.enabled) return null
+
     const key = this.generateKey(url, width, height)
     const entry = this.cache.get(key)
 
@@ -66,6 +95,8 @@ export class ImageCache {
    * 添加图像到缓存
    */
   async set(url: string, width: number | undefined, height: number | undefined, blob: Blob): Promise<string> {
+    if (!this.options.enabled) return url
+
     const key = this.generateKey(url, width, height)
     const size = blob.size
 
@@ -158,10 +189,12 @@ export class ImageCache {
    */
   getStats() {
     return {
+      enabled: this.options.enabled,
       size: this.cache.size,
       totalSize: this.totalSize,
       totalSizeMB: (this.totalSize / (1024 * 1024)).toFixed(2),
       maxSizeMB: (this.options.maxSize / (1024 * 1024)).toFixed(2),
+      maxItems: this.options.maxItems,
       usagePercent: ((this.totalSize / this.options.maxSize) * 100).toFixed(2),
     }
   }
@@ -170,6 +203,8 @@ export class ImageCache {
    * 预热缓存（批量加载）
    */
   async warmup(urls: string[], onProgress?: (current: number, total: number) => void): Promise<void> {
+    if (!this.options.enabled) return
+
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i]
       const key = this.generateKey(url)
@@ -201,6 +236,10 @@ export async function loadImageWithCache(
   height?: number,
   cache: ImageCache = globalImageCache
 ): Promise<string> {
+  if (!cache.isEnabled()) {
+    return url
+  }
+
   // 检查缓存
   const cachedUrl = cache.get(url, width, height)
   if (cachedUrl) {

@@ -11,7 +11,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "parity:api": "python ../../../scripts/verify_rust_api_parity.py --json --frontend"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",

@@ -1,0 +1,102 @@
+.api-history-modal .ant-modal-content,
+.api-history-modal .ant-modal-header {
+  background: #0e1821;
+  color: #f4faff;
+}
+
+.api-history-modal .ant-modal-title,
+.api-history-modal .ant-modal-close {
+  color: #f4faff;
+}
+
+.api-history-modal .ant-modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.api-history-window .ant-modal-content {
+  min-height: min(600px, calc(100vh - 32px));
+  height: min(600px, calc(100vh - 32px));
+  max-height: min(600px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.api-history-window .ant-modal-body {
+  height: 100%;
+}
+
+.api-history-pop {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  height: calc(min(600px, calc(100vh - 32px)) - 48px);
+  min-height: 0;
+}
+
+.api-history-title {
+  margin: 0;
+  color: #00bcd4;
+  font-family: Inter, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+}
+
+.api-history-list {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #111b24;
+}
+
+.api-history-row {
+  display: grid;
+  grid-template-columns: 76px 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 35px;
+  padding: 7px 10px;
+  width: 100%;
+  border-bottom: 1px solid #20313e;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  appearance: none;
+  background: transparent;
+  color: #d8e7f2;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.api-history-row:last-child {
+  border-bottom: 0;
+}
+
+.api-history-row:hover {
+  background: #172534;
+}
+
+.api-history-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.api-history-url-link {
+  color: #1890ff;
+  text-decoration: underline;
+}
+
+.api-history-time {
+  color: green;
+}
+
+.api-history-empty {
+  padding: 28px 12px;
+  color: #8ea7b9;
+  text-align: center;
+}

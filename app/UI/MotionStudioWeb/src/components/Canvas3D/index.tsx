@@ -1,20 +1,42 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Grid, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
-import { parseHeightData, createPointCloudGeometry } from '@/utils'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import {
+  canvas3DDataSourceLabel,
+  createPointCloudGeometry,
+  parseHeightData,
+  resolveCanvas3DDataSource,
+  type PointCloudData,
+} from '@/utils'
+import {
+  normalizeCanvas3DZScale,
+  orbitControlFlagsForMode,
+  shouldResetOrbitControls,
+  type Canvas3DControlMode,
+} from './utils'
 import './Canvas3D.css'
 
 interface Canvas3DProps {
   data: ArrayBuffer | null
+  heightLineSegments?: unknown
+  errorOverlayUrl?: string
+  showErrorOverlay?: boolean
+  errorOverlayOpacity?: number
+  resetSignal?: number
+  zScale?: number
+  controlMode?: Canvas3DControlMode
+  thumbnail?: boolean
 }
 
 // 3D点云组件
 interface PointCloudProps {
-  parsedData: ReturnType<typeof parseHeightData>
+  parsedData: PointCloudData
+  zScale: number
 }
 
-function PointCloud({ parsedData }: PointCloudProps) {
+function PointCloud({ parsedData, zScale }: PointCloudProps) {
   const meshRef = useRef<THREE.Points>(null)
 
   useEffect(() => {
@@ -36,7 +58,11 @@ function PointCloud({ parsedData }: PointCloudProps) {
     }
   }, [parsedData])
 
-  return <points ref={meshRef} />
+  return (
+    <group scale={[1, 1, zScale]}>
+      <points ref={meshRef} />
+    </group>
+  )
 }
 
 // 加载指示器
@@ -76,19 +102,36 @@ function EmptyScene() {
 
 // 主3D场景
 interface SceneProps {
-  parsedData: ReturnType<typeof parseHeightData>
+  parsedData: PointCloudData | null
   isLoading: boolean
+  resetSignal?: number
+  zScale: number
+  controlMode: Canvas3DControlMode
 }
 
-function Scene({ parsedData, isLoading }: SceneProps) {
+function Scene({ parsedData, isLoading, resetSignal, zScale, controlMode }: SceneProps) {
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
+  const previousResetSignalRef = useRef<number | undefined>(resetSignal)
+  const orbitFlags = orbitControlFlagsForMode(controlMode)
+
+  useEffect(() => {
+    if (shouldResetOrbitControls(previousResetSignalRef.current, resetSignal)) {
+      controlsRef.current?.reset()
+    }
+    previousResetSignalRef.current = resetSignal
+  }, [resetSignal])
+
   return (
     <>
       <PerspectiveCamera makeDefault position={[10, 10, 10]} fov={50} />
       <OrbitControls
+        ref={controlsRef}
         makeDefault
         minDistance={5}
         maxDistance={50}
         maxPolarAngle={Math.PI / 2}
+        enableRotate={orbitFlags.enableRotate}
+        enablePan={orbitFlags.enablePan}
         enableDamping
         dampingFactor={0.05}
       />
@@ -100,7 +143,7 @@ function Scene({ parsedData, isLoading }: SceneProps) {
       {isLoading ? (
         <LoadingSpinner />
       ) : parsedData ? (
-        <PointCloud parsedData={parsedData} />
+        <PointCloud parsedData={parsedData} zScale={zScale} />
       ) : (
         <EmptyScene />
       )}
@@ -108,8 +151,25 @@ function Scene({ parsedData, isLoading }: SceneProps) {
   )
 }
 
-function Canvas3D({ data }: Canvas3DProps) {
-  const [parsedData, setParsedData] = useState<ReturnType<typeof parseHeightData>>(null)
+function Canvas3D({
+  data,
+  heightLineSegments,
+  errorOverlayUrl = '',
+  showErrorOverlay = false,
+  errorOverlayOpacity = 0.5,
+  resetSignal,
+  zScale = 0.5,
+  controlMode = 'rotate',
+  thumbnail = false,
+}: Canvas3DProps) {
+  const normalizedZScale = normalizeCanvas3DZScale(zScale)
+  const Container = thumbnail ? 'span' : 'div'
+  const dataSource = useMemo(
+    () => resolveCanvas3DDataSource(data, heightLineSegments),
+    [data, heightLineSegments],
+  )
+  const dataSourceLabel = canvas3DDataSourceLabel(dataSource)
+  const [parsedData, setParsedData] = useState<PointCloudData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
@@ -119,7 +179,8 @@ function Canvas3D({ data }: Canvas3DProps) {
       return null
     })
 
-    if (data) {
+    if (dataSource.kind === 'buffer') {
+      const data = dataSource.data
       const bytes = new Uint8Array(data)
       const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8
       const isPng =
@@ -151,6 +212,9 @@ function Canvas3D({ data }: Canvas3DProps) {
           setIsLoading(false)
         }
       })
+    } else if (dataSource.kind === 'pointCloud') {
+      setParsedData(dataSource.pointCloud)
+      setIsLoading(false)
     } else {
       setParsedData(null)
       setIsLoading(false)
@@ -162,30 +226,63 @@ function Canvas3D({ data }: Canvas3DProps) {
         return null
       })
     }
-  }, [data])
+  }, [dataSource])
 
   if (imageUrl) {
+    const shouldShowErrorOverlay = showErrorOverlay && errorOverlayUrl.trim() !== ''
+
     return (
-      <div className="canvas-3d-container">
+      <Container
+        className="canvas-3d-container"
+        data-error-overlay={shouldShowErrorOverlay ? 'true' : 'false'}
+        data-error-overlay-url={errorOverlayUrl}
+        data-error-overlay-opacity={String(errorOverlayOpacity)}
+        data-canvas-3d-z-scale={normalizedZScale.toFixed(2)}
+        data-canvas-3d-control-mode={controlMode}
+        data-canvas-3d-thumbnail={thumbnail ? 'true' : 'false'}
+      >
         <img className="canvas-3d-image" src={imageUrl} alt="3D height render" />
-        <div className="canvas-controls">
-          <small>3D高度渲染图</small>
-        </div>
-      </div>
+        {shouldShowErrorOverlay ? (
+          <img
+            className="canvas-3d-error-overlay"
+            src={errorOverlayUrl}
+            alt="3D error overlay"
+            style={{ opacity: errorOverlayOpacity }}
+          />
+        ) : null}
+        {!thumbnail ? (
+          <div className="canvas-controls">
+            <small>{shouldShowErrorOverlay ? `${dataSourceLabel} / Error叠加` : dataSourceLabel}</small>
+          </div>
+        ) : null}
+      </Container>
     )
   }
 
   return (
-    <div className="canvas-3d-container">
+    <Container
+      className="canvas-3d-container"
+      data-canvas-3d-z-scale={normalizedZScale.toFixed(2)}
+      data-canvas-3d-control-mode={controlMode}
+      data-canvas-3d-thumbnail={thumbnail ? 'true' : 'false'}
+    >
       <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: false }}>
-        <Scene parsedData={parsedData} isLoading={isLoading} />
+        <Scene
+          parsedData={parsedData}
+          isLoading={isLoading}
+          resetSignal={resetSignal}
+          zScale={normalizedZScale}
+          controlMode={controlMode}
+        />
       </Canvas>
-      <div className="canvas-controls">
-        <small>
-          操作说明: 左键旋转 | 右键平移 | 滚轮缩放
-        </small>
-      </div>
-    </div>
+      {!thumbnail ? (
+        <div className="canvas-controls">
+          <small>
+            {dataSourceLabel}: 左键旋转 | 右键平移 | 滚轮缩放
+          </small>
+        </div>
+      ) : null}
+    </Container>
   )
 }
 

@@ -2,12 +2,14 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 8px;
   padding: 10px;
 }
 
 .defect-toolbar,
+.defect-qml-info-panel,
+.defect-class-summary-panel,
 .defect-list-panel,
 .surface-panel,
 .defect-detail-panel {
@@ -17,9 +19,11 @@
 }
 
 .defect-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) minmax(0, auto);
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  min-height: 45px;
   padding: 0 10px;
 }
 
@@ -56,9 +60,308 @@
   font-weight: 700;
 }
 
+.defect-detail-title {
+  justify-content: space-between;
+}
+
+.defect-list-title {
+  height: 25px;
+  min-height: 25px;
+  flex-basis: 25px;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.defect-list-heading,
+.defect-list-qml-toolbar {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.defect-list-heading {
+  gap: 8px;
+  flex: 0 1 auto;
+}
+
+.defect-list-qml-toolbar {
+  gap: 5px;
+  margin-left: auto;
+  color: #a9bdcb;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.defect-list-fullscreen.ant-btn {
+  width: 25px;
+  height: 25px;
+  min-width: 25px;
+  padding: 0;
+  color: #7ad7ec;
+}
+
+.defect-list-fullscreen.ant-btn:hover {
+  color: #f4faff;
+  background: rgba(122, 215, 236, 0.14);
+}
+
 .toolbar-title {
   color: #f4faff;
   font-weight: 700;
+}
+
+.defect-toolbar-tabbar {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.defect-toolbar-tabbar .ant-btn {
+  font-weight: 700;
+}
+
+.defect-toolbar-title-center {
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.defect-toolbar-actions {
+  min-width: 0;
+}
+
+.defect-toolbar .ant-space {
+  max-width: calc(100% - 150px);
+  justify-content: flex-end;
+}
+
+.defect-toolbar-actions.ant-space {
+  max-width: 100%;
+}
+
+.defect-class-filter {
+  width: min(38vw, 360px);
+  min-width: 210px;
+}
+
+.defect-data-mode {
+  width: 112px;
+  flex: 0 0 auto;
+}
+
+.defect-alarm-class-toggle {
+  color: #d8e7f2;
+  white-space: nowrap;
+}
+
+.defect-qml-info-panel {
+  height: 100px;
+  max-height: 100px;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 30px;
+  align-items: stretch;
+  align-content: start;
+  overflow: hidden;
+}
+
+.defect-qml-info-item {
+  height: 30px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-right: 1px solid rgba(36, 56, 72, 0.85);
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.defect-qml-info-item:last-child {
+  border-right: 0;
+}
+
+.defect-qml-info-item:nth-child(2n) {
+  border-right: 0;
+}
+
+.defect-qml-info-item:nth-child(n + 3) {
+  border-top: 1px solid rgba(36, 56, 72, 0.85);
+}
+
+.defect-qml-info-label {
+  opacity: 0.7;
+}
+
+.defect-qml-info-item strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f4faff;
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defect-class-summary-panel {
+  height: 200px;
+  max-height: 200px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.defect-class-summary-title {
+  height: 35px;
+  min-height: 35px;
+  justify-content: center;
+  border-bottom: 1px solid #243848;
+  color: #7ad7ec;
+  font-size: 22px;
+}
+
+.defect-class-summary-body {
+  min-width: 0;
+  min-height: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.defect-class-summary-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-content: start;
+  min-width: 0;
+  overflow: auto;
+  padding: 7px 10px 4px;
+}
+
+.defect-class-summary-actions {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+}
+
+.defect-class-summary-actions .ant-btn {
+  height: 35px;
+  min-height: 35px;
+}
+
+.defect-class-summary-include-background {
+  color: #d8e7f2;
+  white-space: nowrap;
+}
+
+.defect-class-summary-spacer {
+  flex: 1 1 auto;
+  min-width: 10px;
+}
+
+.defect-class-summary-item {
+  height: 25px;
+  margin-inline-start: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d8e7f2;
+  font-size: 12px;
+}
+
+.defect-class-summary-item.ant-checkbox-wrapper {
+  flex-direction: row-reverse;
+  gap: 4px;
+}
+
+.defect-class-summary-item .ant-checkbox {
+  width: 40px;
+  height: 25px;
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.defect-class-summary-item.selected {
+  box-shadow: none;
+}
+
+.defect-class-summary-item .ant-checkbox + span {
+  min-width: 0;
+  padding-inline-start: 0;
+}
+
+.defect-class-summary-item .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--defect-class-color, #00000000);
+  border-color: var(--defect-class-color, #00000000);
+}
+
+.defect-class-summary-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.defect-class-summary-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.defect-class-summary-item .defect-class-count {
+  font-size: 11px;
+}
+
+.defect-class-summary-item.selected .defect-class-summary-name,
+.defect-class-summary-item.selected .defect-class-count {
+  color: var(--defect-class-color, #00000000);
+}
+
+.defect-class-summary-item:not(.selected) .defect-class-summary-name {
+  color: #ffffff;
+}
+
+.defect-class-summary-item:not(.selected) .defect-class-count {
+  color: #aaaaaa;
+}
+
+.defect-class-summary-empty {
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.defect-class-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.defect-class-swatch {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  border: 1px solid rgba(244, 250, 255, 0.35);
+}
+
+.defect-class-count {
+  color: #8ea7b9;
+  font-variant-numeric: tabular-nums;
 }
 
 .defect-list-container {
@@ -66,9 +369,12 @@
   min-height: 0;
   overflow: auto;
   display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  grid-auto-rows: 200px;
   align-content: start;
-  gap: 6px;
-  padding: 8px;
+  justify-content: start;
+  gap: 0;
+  padding: 0;
 }
 
 .loading-container {
@@ -78,22 +384,109 @@
 }
 
 .defect-item {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 8px;
-  padding: 9px;
-  border: 1px solid #263b4c;
-  border-radius: 4px;
-  background: #17222c;
+  width: 200px;
+  height: 200px;
+  min-height: 200px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #f4faff;
   text-align: left;
   cursor: pointer;
+  overflow: visible;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 450ms ease;
+  z-index: 0;
+}
+
+.defect-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 5px;
+  background: transparent;
+  pointer-events: none;
 }
 
 .defect-item:hover,
-.defect-item.selected {
-  border-color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.14);
+.defect-item.tooltip-open {
+  transform: scale(1.2);
+  z-index: 10;
+}
+
+.defect-item.selected::before {
+  border-radius: 5px;
+  background: lightsteelblue;
+}
+
+.defect-item-tooltip-trigger {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  height: 90%;
+  min-height: 0;
+  display: block;
+}
+
+.defect-item-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+  border: 0;
+  border-radius: 2px;
+  background: #0f1820;
+}
+
+.defect-item-thumbnail img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.defect-item-thumbnail-labels {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  max-width: calc(100% - 6px);
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.defect-item-thumbnail-name,
+.defect-item-thumbnail-id {
+  max-width: 100%;
+  padding: 1px 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.53);
+  line-height: 1.15;
+}
+
+.defect-item-thumbnail-name {
+  color: var(--defect-item-color, #fff);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.defect-item-thumbnail-id {
+  color: #ffffff;
+  font-size: 10px;
+}
+
+.defect-item-main,
+.defect-confidence {
+  display: none;
 }
 
 .defect-type {
@@ -104,8 +497,51 @@
 }
 
 .defect-item small {
-  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #8ea7b9;
+}
+
+.defect-item-hover-card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 1000;
+  min-width: 138px;
+  max-width: min(220px, 80vw);
+  padding: 8px;
+  border: 1px solid #666666;
+  border-radius: 4px;
+  background: #e8e8e8;
+  color: #333333;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 160ms ease;
+}
+
+.defect-item:hover .defect-item-hover-card,
+.defect-item:focus .defect-item-hover-card,
+.defect-item.tooltip-open .defect-item-hover-card {
+  opacity: 1;
+  visibility: visible;
+}
+
+.defect-item-tooltip-content {
+  display: grid;
+  gap: 4px;
+  color: #333333;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.defect-item-tooltip-name {
+  color: var(--defect-item-color, #fff);
+  font-size: 13px;
 }
 
 .surface-body {
@@ -152,4 +588,257 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+.manual-defect-form {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.manual-defect-form label {
+  display: grid;
+  gap: 4px;
+  color: #5a6b7a;
+  font-size: 12px;
+}
+
+.manual-defect-form .ant-input-number,
+.manual-defect-form .ant-select {
+  width: 100%;
+}
+
+.manual-defect-remark,
+.manual-defect-annotator {
+  grid-column: 1 / -1;
+}
+
+.manual-defect-remark textarea {
+  resize: none;
+}
+
+.manual-defect-annotator {
+  padding: 8px;
+  border-radius: 4px;
+  background: #f5f8fb;
+  color: #5a6b7a;
+  font-size: 12px;
+}
+
+.manual-defect-modal-footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.manual-defect-edit-modal .ant-modal-content {
+  min-height: min(400px, calc(100vh - 32px));
+  height: min(400px, calc(100vh - 32px));
+  max-height: min(400px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.manual-defect-edit-modal .ant-modal-body {
+  min-height: 0;
+  max-height: calc(min(400px, calc(100vh - 32px)) - 112px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.manual-defect-add-form {
+  display: grid;
+  gap: 12px;
+}
+
+.manual-defect-add-form section,
+.manual-defect-add-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.manual-defect-add-form h3 {
+  margin: 0;
+  color: #5a6b7a;
+  font-size: 13px;
+}
+
+.manual-defect-add-form label {
+  color: #5a6b7a;
+  font-size: 12px;
+}
+
+.manual-defect-add-form .ant-select {
+  width: 100%;
+}
+
+.manual-defect-add-position {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  color: #5a6b7a;
+  font-variant-numeric: tabular-nums;
+}
+
+.manual-defect-export-modal .ant-modal-content {
+  min-height: min(400px, calc(100vh - 32px));
+  height: min(400px, calc(100vh - 32px));
+  max-height: min(400px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.manual-defect-export-modal .ant-modal-body {
+  min-height: 0;
+  max-height: calc(min(400px, calc(100vh - 32px)) - 112px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.manual-defect-export-form {
+  min-height: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.manual-defect-export-form section {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-defect-export-form h3 {
+  margin: 0;
+  color: #5a6b7a;
+  font-size: 13px;
+}
+
+.manual-defect-export-form .ant-radio-group,
+.manual-defect-export-options {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-defect-export-path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.manual-defect-export-result {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+
+.manual-defect-export-progress {
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  color: #5a6b7a;
+}
+
+@media (max-width: 700px) {
+  .defect-show-page {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    padding: 8px;
+  }
+
+  .defect-toolbar {
+    display: flex;
+    height: auto;
+    min-height: 45px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .defect-toolbar .ant-space {
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .defect-toolbar .ant-space-item {
+    min-width: 0;
+  }
+
+  .defect-toolbar .ant-space-item:has(.defect-class-filter) {
+    flex: 1 1 180px;
+  }
+
+  .toolbar-title {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .defect-toolbar-title-center {
+    flex: 1 1 180px;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .defect-class-filter {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .defect-qml-info-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .defect-qml-info-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .defect-qml-info-item:nth-child(n + 3) {
+    border-top: 1px solid rgba(36, 56, 72, 0.85);
+  }
+
+  .defect-class-summary-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .defect-class-summary-body {
+    min-height: 0;
+  }
+
+  .defect-class-summary-title {
+    width: auto;
+    min-height: 34px;
+    border-right: 0;
+    border-bottom: 1px solid #243848;
+  }
+
+  .defect-class-summary-actions {
+    flex-wrap: wrap;
+  }
+
+  .defect-content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(160px, 0.7fr) minmax(260px, 1fr) minmax(200px, 0.8fr);
+    overflow: auto;
+  }
+
+  .defect-content.tooltip-active {
+    overflow: visible;
+  }
+
+  .defect-content.tooltip-active .defect-list-panel {
+    overflow: visible;
+  }
+
+  .defect-content.tooltip-active .defect-list-container {
+    overflow: visible;
+  }
+
+  .defect-list-panel,
+  .surface-panel,
+  .defect-detail-panel {
+    min-width: 0;
+  }
 }

@@ -1,0 +1,68 @@
+.backup-image-modal {
+  display: grid;
+  gap: 16px;
+}
+
+.backup-image-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #faad14;
+}
+
+.backup-image-title {
+  color: #faad14;
+  font-family: "Microsoft YaHei", Inter, sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.backup-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.backup-image-grid label,
+.backup-image-path {
+  display: grid;
+  gap: 6px;
+}
+
+.backup-image-grid span,
+.backup-image-path span {
+  color: #8ea7b9;
+  font-size: 12px;
+}
+
+.backup-image-grid .ant-input-number {
+  width: 100%;
+}
+
+.backup-image-path > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 8px;
+}
+
+.backup-image-status {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.backup-image-status .ant-progress {
+  flex: 1;
+}
+
+.backup-image-error {
+  color: #ff9b9b;
+}
+
+.backup-image-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

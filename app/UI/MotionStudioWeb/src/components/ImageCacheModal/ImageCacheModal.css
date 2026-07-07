@@ -1,0 +1,47 @@
+.image-cache-modal .ant-modal-content,
+.image-cache-modal .ant-modal-header {
+  background: #0e1821;
+  color: #f4faff;
+}
+
+.image-cache-modal .ant-modal-title,
+.image-cache-modal .ant-modal-close {
+  color: #f4faff;
+}
+
+.image-cache-modal .ant-modal-body {
+  display: grid;
+  gap: 14px;
+}
+
+.image-cache-modal .ant-progress-text {
+  color: #d8e7f2 !important;
+}
+
+.image-cache-modal .ant-descriptions-view {
+  border-color: #263b4c !important;
+}
+
+.image-cache-modal .ant-descriptions-item-label,
+.image-cache-modal .ant-descriptions-item-content {
+  border-color: #263b4c !important;
+  background: #111b24 !important;
+  color: #d8e7f2 !important;
+}
+
+.image-cache-summary {
+  padding: 8px 10px;
+  border: 1px solid #263b4c;
+  border-radius: 4px;
+  background: #111b24;
+}
+
+.image-cache-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.image-cache-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

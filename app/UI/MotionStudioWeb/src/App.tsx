@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainLayout from './components/Layout/MainLayout'
 import DataShowPage from './pages/DataShow'
 import DefectShowPage from './pages/DefectShow'
+import SystemDiagnosticsPage from './pages/SystemDiagnostics'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           <Route index element={<DataShowPage />} />
           <Route path="data" element={<DataShowPage />} />
           <Route path="defect" element={<DefectShowPage />} />
+          <Route path="system" element={<SystemDiagnosticsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

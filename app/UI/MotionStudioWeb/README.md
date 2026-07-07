@@ -22,11 +22,31 @@ npm install
 # 启动开发服务器
 npm run dev
 
+# 启动 Rust API + Rust Image + Web 的一键联调脚本（项目根目录执行）
+pwsh ..\\..\\..\\scripts\\start_rust_motion_studio_dev.ps1
+
+# 可选：指定非默认 image_service 配置文件
+#   -ImageConfigPath "C:\\configs\\Server3D.json"
+# 或设置环境变量 RUST_IMAGE_CONFIG
+
 # 构建生产版本
 npm run build
 
 # 预览生产构建
 npm run preview
+```
+
+## 与 Rust API 一致性校验
+
+```bash
+# 仅校验前端服务调用是否覆盖到 Rust 路由
+python ../../../scripts/verify_rust_api_parity.py --frontend
+
+# 同时校验 Python 路由与 Rust 路由（建议每次回归前执行）
+python ../../../scripts/verify_rust_api_parity.py --json
+
+# 或直接使用 npm 脚本（项目根为 app/UI/MotionStudioWeb）
+npm run parity:api
 ```
 
 ## 项目结构

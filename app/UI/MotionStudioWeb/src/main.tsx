@@ -4,6 +4,7 @@ import { ConfigProvider } from 'antd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import zhCN from 'antd/locale/zh_CN'
 import App from './App'
+import { hydrateConnectionSettingsFromNative } from './utils/nativeSettings'
 import './index.css'
 
 // 创建 QueryClient 实例
@@ -24,17 +25,27 @@ const queryClient = new QueryClient({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ConfigProvider locale={zhCN}>
-        <App />
-      </ConfigProvider>
-      {/* React Query DevTools - 需要先安装依赖: npm install */}
-      {/* <ReactQueryDevtools
-        initialIsOpen={false}
-        position="bottom-right"
-      /> */}
-    </QueryClientProvider>
-  </React.StrictMode>,
-)
+async function mount() {
+  try {
+    await hydrateConnectionSettingsFromNative()
+  } catch (error) {
+    console.error('hydrate connection settings from native failed', error)
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ConfigProvider locale={zhCN}>
+          <App />
+        </ConfigProvider>
+        {/* React Query DevTools - 需要先安装依赖: npm install */}
+        {/* <ReactQueryDevtools
+          initialIsOpen={false}
+          position="bottom-right"
+        /> */}
+      </QueryClientProvider>
+    </React.StrictMode>,
+  )
+}
+
+void mount()

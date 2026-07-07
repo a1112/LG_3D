@@ -1,0 +1,117 @@
+.clip-setting-window .ant-modal-content {
+  min-height: min(560px, calc(100vh - 32px));
+  height: min(560px, calc(100vh - 32px));
+  max-height: min(560px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.clip-setting-window .ant-modal-body {
+  height: calc(min(560px, calc(100vh - 32px)) - 48px);
+  overflow: hidden;
+}
+
+.clip-setting-modal {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.clip-setting-modal .ant-tabs {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.clip-setting-modal .ant-tabs-content-holder {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.clip-setting-modal .ant-tabs-content,
+.clip-setting-modal .ant-tabs-tabpane {
+  height: 100%;
+  min-height: 0;
+}
+
+.clip-setting-group {
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  padding: 14px 14px 12px;
+  border: 1px solid #d9e2ec;
+  border-radius: 4px;
+}
+
+.clip-setting-group > legend {
+  width: auto;
+  margin: 0;
+  padding: 0 6px;
+  color: #31445a;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.clip-setting-title {
+  margin: 0;
+  color: #2196f3;
+  font-family: Inter, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+}
+
+.clip-setting-panel {
+  display: grid;
+  gap: 12px;
+  padding: 6px 2px 0;
+}
+
+.clip-setting-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.clip-setting-row > span,
+.clip-setting-formula {
+  color: #31445a;
+}
+
+.clip-setting-row .ant-input-number {
+  width: 160px;
+}
+
+.clip-setting-formula {
+  padding-left: 132px;
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.clip-setting-actions,
+.clip-setting-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 520px) {
+  .clip-setting-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .clip-setting-row .ant-input-number {
+    width: 100%;
+  }
+
+  .clip-setting-formula {
+    padding-left: 0;
+  }
+}

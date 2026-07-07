@@ -1,0 +1,1110 @@
+import { beforeAll, describe, expect, it } from 'vitest'
+
+import dataShowSource from './index.tsx?raw'
+import canvas3DSource from '@/components/Canvas3D/index.tsx?raw'
+
+let dataShowCss = ''
+let canvas3DCss = ''
+let control3DQmlSource = ''
+
+beforeAll(async () => {
+  // @ts-expect-error Vitest runs this source check in Node; app builds intentionally omit Node typings.
+  const { readFileSync } = (await import('node:fs')) as {
+    readFileSync: (path: URL, encoding: 'utf8') => string
+  }
+
+  dataShowCss = readFileSync(new URL('./DataShow.css', import.meta.url), 'utf8')
+  canvas3DCss = readFileSync(new URL('../../components/Canvas3D/Canvas3D.css', import.meta.url), 'utf8')
+  control3DQmlSource = readFileSync(
+    new URL('../../../../MotionStudio/qml/DataShow/Core/DataShowControl3D.qml', import.meta.url),
+    'utf8',
+  )
+})
+
+function renderSettingFieldSource(label: string, nextLabel: string): string {
+  const start = dataShowSource.indexOf(`<span>${label}</span>`)
+  const end = dataShowSource.indexOf(`<span>${nextLabel}</span>`, start + 1)
+  expect(start).toBeGreaterThanOrEqual(0)
+  expect(end).toBeGreaterThan(start)
+  return dataShowSource.slice(start, end)
+}
+
+function cssRule(selector: string): string {
+  const start = dataShowCss.indexOf(`${selector} {`)
+  expect(start).toBeGreaterThanOrEqual(0)
+  const end = dataShowCss.indexOf('\n}', start)
+  expect(end).toBeGreaterThan(start)
+  return dataShowCss.slice(start, end)
+}
+
+describe('DataShow QML manual defect annotation parity', () => {
+  it('uses QML dataHeaderHeight to size the DataShow header/chart data band', () => {
+    expect(dataShowSource).toContain('const dataHeaderHeight = useUiSettingsStore((state) => state.dataHeaderHeight)')
+    expect(dataShowSource).toContain("'--data-header-height': `${dataHeaderHeight}px`")
+    expect(dataShowSource).toContain('style={dataShowStyle}')
+  })
+
+  it('mirrors QML DataHeader headDateShowModel modes', () => {
+    expect(dataShowSource).toContain('const headDateShowModel = useUiSettingsStore((state) => state.headDateShowModel)')
+    expect(dataShowSource).toContain(
+      'const setHeadDateShowModel = useUiSettingsStore((state) => state.setHeadDateShowModel)',
+    )
+    expect(dataShowSource).toContain('data-datashow-header-mode={headDateShowModel}')
+    expect(dataShowSource).toContain('缺陷信息')
+    expect(dataShowSource).toContain('数据信息')
+    expect(dataShowSource).toContain('曲线信息')
+    expect(dataShowSource).toContain('headDateShowModel === 0')
+    expect(dataShowSource).toContain('headDateShowModel === 1')
+    expect(dataShowSource).toContain('headDateShowModel === 2')
+  })
+
+  it('mirrors QML DataShowItemSelectView as a 30px vertical selector with a context menu', () => {
+    const chartBandStart = dataShowSource.indexOf('<section className="chart-band"')
+    const chartBodyStart = dataShowSource.indexOf('<div className="chart-body">', chartBandStart)
+    const chartHeadSource = dataShowSource.slice(chartBandStart, chartBodyStart)
+
+    expect(chartBandStart).toBeGreaterThanOrEqual(0)
+    expect(chartBodyStart).toBeGreaterThan(chartBandStart)
+    expect(chartHeadSource).toContain('data-datashow-item-select-view')
+    expect(chartHeadSource).toContain("trigger={['contextMenu']}")
+    expect(chartHeadSource).toContain('menu={{ items: dataHeaderSelectMenuItems }}')
+    expect(chartHeadSource).toContain('data-datashow-item-select-option={option.value}')
+    expect(chartHeadSource).toContain('data-datashow-item-select-selected={headDateShowModel === option.value}')
+    expect(chartHeadSource).toContain("option.label.split('').map")
+    expect(chartHeadSource).toContain("key={`${option.value}-${index}`}")
+    expect(chartHeadSource).not.toContain('<Segmented')
+    expect(dataShowSource).toContain('const dataHeaderSelectMenuItems')
+    expect(dataShowCss).toMatch(/\.chart-band\s*\{[\s\S]*grid-template-columns:\s*30px minmax\(0,\s*1fr\)/)
+    expect(dataShowCss).toMatch(/\.data-show-item-select-view\s*\{[\s\S]*width:\s*30px/)
+    expect(dataShowCss).toMatch(/\.data-show-item-select-option\s*\{[\s\S]*height:\s*100px/)
+    expect(dataShowCss).toMatch(/\.data-show-item-select-option\s*\{[\s\S]*writing-mode:\s*vertical-rl/)
+  })
+
+  it('keeps the dense DataShow toolbar from widening the page content area', () => {
+    const toolbarRule = cssRule('.data-toolbar')
+    const toolbarControlsRule = cssRule('.toolbar-controls')
+
+    expect(toolbarRule).toContain('min-width: 0')
+    expect(toolbarRule).toContain('overflow: hidden')
+    expect(toolbarControlsRule).toContain('min-width: 0')
+    expect(toolbarControlsRule).toContain('flex: 1 1 auto')
+    expect(toolbarControlsRule).toContain('overflow-x: auto')
+    expect(toolbarControlsRule).toContain('overflow-y: hidden')
+  })
+
+  it('renders QML DataShowItemInfos alarm detail fields in the data-info mode', () => {
+    expect(dataShowSource).toContain('coilApi.getCoilAlarm')
+    expect(dataShowSource).toContain('buildDataHeaderInfoSections')
+    expect(dataShowSource).toContain('data-header-info-section')
+    expect(dataShowSource).toContain('{section.title}')
+    expect(dataShowSource).toContain('{field.label}')
+    expect(dataShowSource).toContain('{field.value}')
+  })
+
+  it('exposes QML 曲线数据返回 for the last applied height-line query URL', () => {
+    expect(dataShowSource).toContain('buildDataShowHeightDataReturnUrl')
+    expect(dataShowSource).toContain('heightLineDataReturnUrl')
+    expect(dataShowSource).toContain('openHeightLineDataReturnUrl')
+    expect(dataShowSource).toContain('曲线数据返回')
+    expect(dataShowSource).toContain('disabled: !currentCoil || headDateShowModel !== 2')
+    expect(dataShowSource).toContain('coords: lineCoords')
+    expect(dataShowSource).toContain('apiBaseUrl: serviceBaseUrls.apiBaseUrl')
+  })
+
+  it('exposes the QML ManualDefectTool add workflow on S/L area viewers', () => {
+    expect(dataShowSource).toContain('manualDefectAddMode')
+    expect(dataShowSource).toContain('handleDataShowManualAnnotation')
+    expect(dataShowSource).toContain('manualAnnotationMode={manualDefectAddMode}')
+    expect(dataShowSource).toContain('onManualAnnotation={(rect) => handleDataShowManualAnnotation(surface, rect)}')
+    expect(dataShowSource).toContain('buildManualDefectAddPayload')
+    expect(dataShowSource).toContain('defectApi.addManualDefect')
+    expect(dataShowSource).toContain('title="添加缺陷标注"')
+    expect(dataShowSource).toContain('新增标注')
+  })
+
+  it('exposes the QML horizontal defect crop strip for the active DataShow surface', () => {
+    expect(dataShowSource).toContain('data-datashow-defect-strip')
+    expect(dataShowSource).toContain('activeSurfaceDefects')
+    expect(dataShowSource).toContain('imageApi.getDefectImage(')
+    expect(dataShowSource).toContain("'AREA'")
+    expect(dataShowSource).toContain('className={`data-defect-crop-item ${selectedDefect?.id === defect.id ?')
+    expect(dataShowSource).toContain('onClick={() => {')
+    expect(dataShowSource).toContain('onContextMenu={(event) => {')
+    expect(dataShowSource).toContain('resetDataShowView()')
+  })
+
+  it('places defect-label visibility under the QML MainShowMenu display submenu', () => {
+    const toolsStart = dataShowSource.indexOf('<div className="defect-show-tools">')
+    const toolsEnd = dataShowSource.indexOf('<div className="data-defect-crop-strip"', toolsStart)
+    const toolsSource = dataShowSource.slice(toolsStart, toolsEnd)
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+
+    expect(toolsSource).not.toContain('缺陷标签')
+    expect(dataShowSource).toContain('Dropdown')
+    expect(dataShowSource).toContain("menu={{ items: dataShowMenuItems, triggerSubMenuAction: 'click' }}")
+    expect(dataShowSource).toContain('功能菜单')
+    expect(menuSource).not.toContain("key: 'root'")
+    expect(menuSource).toContain("label: '打开URL...'")
+    expect(menuSource).toContain("label: '重置'")
+    expect(menuSource).toContain("label: '显示'")
+    expect(menuSource).toContain("label: '缺陷显示'")
+    expect(menuSource).toContain("label: '缺陷标签'")
+    expect(menuSource).toContain('setShowDefectLabels(true)')
+    expect(menuSource).toContain('setShowDefectLabels(false)')
+  })
+
+  it('mirrors QML DataShow MaskTool right-click MainShowMenu over the view body', () => {
+    const maskStart = dataShowSource.indexOf('<Dropdown trigger={[\'contextMenu\']} menu={{ items: dataShowMenuItems, triggerSubMenuAction: \'click\' }}>')
+    const maskEnd = dataShowSource.indexOf('{showViewRendererListView && currentCoil ?', maskStart)
+    const maskSource = dataShowSource.slice(maskStart, maskEnd)
+
+    expect(maskStart).toBeGreaterThanOrEqual(0)
+    expect(maskSource).toContain('data-datashow-mask-tool-menu')
+    expect(maskSource).toContain('data-datashow-mask-tool-context="main-show-menu"')
+    expect(maskSource).toContain('className="main-view-body"')
+    expect(maskSource).toContain("menu={{ items: dataShowMenuItems, triggerSubMenuAction: 'click' }}")
+  })
+
+  it('mirrors QML MaskToolView right-anchored reset delegate inside the view body', () => {
+    const maskStart = dataShowSource.indexOf('data-datashow-mask-tool-menu')
+    const maskEnd = dataShowSource.indexOf('{showViewRendererListView && currentCoil ?', maskStart)
+    const maskSource = dataShowSource.slice(maskStart, maskEnd)
+
+    expect(maskSource).toContain('data-datashow-mask-tool-reset-panel')
+    expect(maskSource).toContain('data-datashow-mask-tool-reset')
+    expect(maskSource).toContain('className="data-show-mask-tool-reset-button"')
+    expect(maskSource).toContain('onClick={resetDataShowView}')
+    expect(maskSource).toContain('重置')
+    expect(dataShowCss).toMatch(/\.main-view-body\s*\{[\s\S]*position:\s*relative/)
+    expect(dataShowCss).toMatch(/\.data-show-mask-tool-reset-panel\s*\{[\s\S]*position:\s*absolute/)
+    expect(dataShowCss).toMatch(/\.data-show-mask-tool-reset-panel\s*\{[\s\S]*right:\s*0/)
+    expect(dataShowCss).toMatch(/\.data-show-mask-tool-reset-button\s*\{[\s\S]*height:\s*20px/)
+    expect(dataShowCss).toMatch(/\.data-show-mask-tool-reset-button\s*\{[\s\S]*font-weight:\s*700/)
+  })
+
+  it('mirrors QML DataShowBackground watermark when no S/L views are visible', () => {
+    const maskStart = dataShowSource.indexOf('className="main-view-body"')
+    const maskEnd = dataShowSource.indexOf('{showViewRendererListView && currentCoil ?', maskStart)
+    const maskSource = dataShowSource.slice(maskStart, maskEnd)
+
+    expect(dataShowSource).toContain("import ustbDarkWatermarkUrl from '../../../../MotionStudio/resource/icon/USTB_Dark.png'")
+    expect(dataShowSource).toContain("import ustbLightWatermarkUrl from '../../../../MotionStudio/resource/icon/USTB_Light.png'")
+    expect(dataShowSource).toContain('const shouldShowDataShowWatermark = !currentCoil || visibleAreaSurfaces.length === 0')
+    expect(maskSource).toContain('data-datashow-background-watermark={shouldShowDataShowWatermark ?')
+    expect(maskSource).toContain('data-datashow-watermark')
+    expect(maskSource).toContain('data-datashow-watermark-tile')
+    expect(maskSource).toContain('src={ustbDarkWatermarkUrl}')
+    expect(maskSource).toContain('src={ustbLightWatermarkUrl}')
+    expect(dataShowCss).toMatch(/\.data-show-watermark\s*\{[\s\S]*position:\s*absolute/)
+    expect(dataShowCss).toMatch(/\.data-show-watermark-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(auto-fill,\s*260px\)/)
+    expect(dataShowCss).toMatch(/\.data-show-watermark-tile\s*\{[\s\S]*width:\s*260px/)
+    expect(dataShowCss).toMatch(/\.data-show-watermark-tile\s*\{[\s\S]*height:\s*300px/)
+    expect(dataShowCss).toMatch(/\.data-show-watermark-tile\s+img\s*\{[\s\S]*transform:\s*rotate\(-45deg\)/)
+    expect(dataShowCss).toMatch(/\.data-show-watermark-tile\s+img\s*\{[\s\S]*opacity:\s*0\.2/)
+  })
+
+  it('enables QML AerialView on DataShow image viewers', () => {
+    const tileViewerUsages = dataShowSource.match(/<TileImageViewer\s[\s\S]*?\/>/g) ?? []
+
+    expect(tileViewerUsages.length).toBeGreaterThanOrEqual(2)
+    expect(tileViewerUsages.every((usage) => usage.includes('showAerialView'))).toBe(true)
+  })
+
+  it('enables QML CrossView only on the gray/depth 2D image viewer', () => {
+    const areaStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) =>')
+    const areaTileStart = dataShowSource.indexOf('<TileImageViewer', areaStart)
+    const areaTileSource = dataShowSource.slice(areaTileStart, dataShowSource.indexOf('/>', areaTileStart))
+    const twoDimensionalStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth'")
+    const twoDimensionalTileStart = dataShowSource.indexOf('<TileImageViewer', twoDimensionalStart)
+    const twoDimensionalTileSource = dataShowSource.slice(
+      twoDimensionalTileStart,
+      dataShowSource.indexOf('/>', twoDimensionalTileStart),
+    )
+
+    expect(areaTileSource).not.toContain('showQmlCrossView')
+    expect(twoDimensionalTileSource).toContain('tiled={false}')
+    expect(twoDimensionalTileSource).toContain('showQmlCrossView')
+    expect(twoDimensionalTileSource).toContain('crossWarningThresholdUp={towerWarningThresholdUp}')
+    expect(twoDimensionalTileSource).toContain('crossWarningThresholdDown={towerWarningThresholdDown}')
+  })
+
+  it('wires QML DrawSurvey mouse model only into the gray/depth 2D viewer', () => {
+    const areaStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) =>')
+    const areaTileStart = dataShowSource.indexOf('<TileImageViewer', areaStart)
+    const areaTileSource = dataShowSource.slice(areaTileStart, dataShowSource.indexOf('/>', areaTileStart))
+    const twoDimensionalStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth'")
+    const twoDimensionalTileStart = dataShowSource.indexOf('<TileImageViewer', twoDimensionalStart)
+    const twoDimensionalTileSource = dataShowSource.slice(
+      twoDimensionalTileStart,
+      dataShowSource.indexOf('/>', twoDimensionalTileStart),
+    )
+
+    expect(dataShowSource).toContain("type DataShowMouseTool = 'move' | 'survey'")
+    expect(dataShowSource).toContain("data-datashow-mouse-tool={currentMouseTool}")
+    expect(areaTileSource).not.toContain('mouseTool={currentMouseTool}')
+    expect(twoDimensionalTileSource).toContain('mouseTool={currentMouseTool}')
+  })
+
+  it('wires QML UserPointShow double-click sign points only into the gray/depth 2D viewer', () => {
+    const areaStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) =>')
+    const areaTileStart = dataShowSource.indexOf('<TileImageViewer', areaStart)
+    const areaTileSource = dataShowSource.slice(areaTileStart, dataShowSource.indexOf('/>', areaTileStart))
+    const twoDimensionalStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth'")
+    const twoDimensionalTileStart = dataShowSource.indexOf('<TileImageViewer', twoDimensionalStart)
+    const twoDimensionalTileSource = dataShowSource.slice(
+      twoDimensionalTileStart,
+      dataShowSource.indexOf('/>', twoDimensionalTileStart),
+    )
+
+    expect(areaTileSource).not.toContain('enableQmlUserPoints')
+    expect(twoDimensionalTileSource).toContain('enableQmlUserPoints')
+    expect(twoDimensionalTileSource).toContain('mouseTool={currentMouseTool}')
+    expect(twoDimensionalTileSource).toContain('surfaceKey={surfaceKey}')
+    expect(twoDimensionalTileSource).toContain('coilId={currentCoil.id}')
+  })
+
+  it('exposes QML SurfaceData depth display modes in the MainShowMenu display submenu', () => {
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+
+    expect(dataShowSource).toContain('const pointValueShowType = useUiSettingsStore((state) => state.pointValueShowType)')
+    expect(dataShowSource).toContain(
+      'const setPointValueShowType = useUiSettingsStore((state) => state.setPointValueShowType)',
+    )
+    expect(dataShowSource).toContain('data-point-value-show-type={pointValueShowType}')
+    expect(menuSource).toContain("label: '深度显示'")
+    expect(menuSource).toContain("label: 'mm 相对值'")
+    expect(menuSource).toContain("label: 'mm 绝对值'")
+    expect(menuSource).toContain("label: 'int 原始值'")
+    expect(menuSource).toContain("setPointValueShowType('mm-relative')")
+    expect(menuSource).toContain("setPointValueShowType('mm-absolute')")
+    expect(menuSource).toContain("setPointValueShowType('int-raw')")
+  })
+
+  it('keeps the QML tower annotation display submenus visible in MainShowMenu', () => {
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+
+    expect(menuSource).toContain("label: '塔形标注'")
+    expect(menuSource).toContain("label: '显示类型'")
+    expect(menuSource).toContain("label: '外塔 + 溢出'")
+    expect(menuSource).toContain("label: '外塔 - 溢出'")
+    expect(menuSource).toContain("label: '内塔 + 溢出'")
+    expect(menuSource).toContain("label: '内塔 - 溢出'")
+    expect(menuSource).toContain("label: '显示密度'")
+    expect(menuSource).toContain("label: '自动'")
+    expect(menuSource).toContain("label: '低密度 12 点'")
+    expect(menuSource).toContain("label: '高密度 72 点'")
+  })
+
+  it('keeps the QML DefectViewMenu top-level group display entry visible', () => {
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+    const switchMenuStart = menuSource.indexOf("key: 'switch'")
+    const annotationMenuStart = menuSource.indexOf("key: 'display'")
+    const topLevelDefectMenuSource = menuSource.slice(switchMenuStart, annotationMenuStart)
+
+    expect(topLevelDefectMenuSource).toContain("key: 'defect-view'")
+    expect(topLevelDefectMenuSource).toContain("label: '缺陷显示'")
+    expect(topLevelDefectMenuSource).toContain("label: '显示组别'")
+  })
+
+  it('enables QML MainShowMenu 2D gray/depth switches with current-surface image sources', () => {
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+
+    expect(dataShowSource).toContain("type ViewMode = 'area' | 'gray' | 'depth' | 'three'")
+    expect(menuSource).toContain("key: 'switch-2d-gray'")
+    expect(menuSource).toContain("label: '2D  -  灰度图'")
+    expect(menuSource).toContain("onClick: () => selectCurrentTwoDimensionalView('GRAY')")
+    expect(menuSource).not.toContain("{ key: 'switch-2d-gray', label: '2D  -  灰度图', disabled: true }")
+    expect(menuSource).toContain("key: 'switch-2d-depth'")
+    expect(menuSource).toContain("label: '2D  -  深度图'")
+    expect(menuSource).toContain("onClick: () => selectCurrentTwoDimensionalView('JET')")
+    expect(menuSource).not.toContain("{ key: 'switch-2d-depth', label: '2D  -  深度图', disabled: true }")
+    expect(dataShowSource).toContain('activeViewKey')
+    expect(dataShowSource).toContain("viewMode === 'gray' ? 'GRAY'")
+    expect(dataShowSource).toContain("viewMode === 'depth' ? 'JET'")
+    expect(dataShowSource).toContain('tiled={false}')
+  })
+
+  it('exposes the QML DataShowItemHead currentViewKey root-view switch', () => {
+    const menuStart = dataShowSource.indexOf('const dataShowMenuItems')
+    const menuEnd = dataShowSource.indexOf('const setDataShowClassSelection', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+
+    expect(dataShowSource).toContain(
+      "const [currentTwoDimensionalViewKey, setCurrentTwoDimensionalViewKey] = useState<'GRAY' | 'JET'>('GRAY')",
+    )
+    expect(dataShowSource).toContain(
+      "const currentTwoDimensionalViewMode = currentTwoDimensionalViewKey === 'JET' ? 'depth' : 'gray'",
+    )
+    expect(dataShowSource).toContain('const selectCurrentTwoDimensionalView = (viewKey: \'GRAY\' | \'JET\') => {')
+    expect(dataShowSource).toContain('setCurrentTwoDimensionalViewKey(viewKey)')
+    expect(dataShowSource).toContain('setViewMode(viewKey === \'JET\' ? \'depth\' : \'gray\')')
+    expect(dataShowSource).toContain('const openCurrentTwoDimensionalView = () => {')
+    expect(dataShowSource).toContain('setViewMode(currentTwoDimensionalViewMode)')
+    expect(dataShowSource).toContain('data-datashow-view-switch="area"')
+    expect(dataShowSource).toContain('data-datashow-view-switch="current-view-key"')
+    expect(dataShowSource).toContain('data-datashow-view-switch="three"')
+    expect(dataShowSource).toContain('{currentTwoDimensionalViewKey}')
+    expect(dataShowSource).toContain('setCurrentTwoDimensionalViewKey(stage.viewKey)')
+    expect(menuSource).toContain("onClick: () => selectCurrentTwoDimensionalView('GRAY')")
+    expect(menuSource).toContain("onClick: () => selectCurrentTwoDimensionalView('JET')")
+  })
+
+  it('mirrors QML DataShowItemHead Popup2D hover preview for current 2D view', () => {
+    expect(dataShowSource).toContain('const [header2DPopupOpen, setHeader2DPopupOpen] = useState(false)')
+    expect(dataShowSource).toContain('data-datashow-header-popup-2d-trigger')
+    expect(dataShowSource).toContain("trigger={['hover']}")
+    expect(dataShowSource).toContain('placement="bottomRight"')
+    expect(dataShowSource).toContain('align={{ offset: [-244, 0] }}')
+    expect(dataShowSource).toContain('open={header2DPopupOpen}')
+    expect(dataShowSource).toContain('onOpenChange={setHeader2DPopupOpen}')
+    expect(dataShowSource).toContain('data-datashow-header-popup-2d')
+    expect(dataShowSource).toContain('data-datashow-header-popup-2d-list')
+    expect(dataShowCss).toContain('.data-show-header-popup-2d')
+    expect(dataShowCss).toContain('width: 220px')
+    expect(dataShowCss).toContain('height: 100px')
+    expect(dataShowCss).toContain('.data-show-header-popup-2d-list')
+  })
+
+  it('mirrors QML DataShowItemHead HeaderTitle surface and root-view labels', () => {
+    expect(dataShowSource).toContain('function dataShowSurfaceTitle(surface: SurfaceKey)')
+    expect(dataShowSource).toContain("return surface === 'S' ? '操作' : '传动'")
+    expect(dataShowSource).toContain('function dataShowRootViewTitle(')
+    expect(dataShowSource).toContain("viewMode === 'area' ? '2D相机'")
+    expect(dataShowSource).toContain("viewMode === 'three' ? '3D'")
+    expect(dataShowSource).toContain("viewMode === 'gray' ? currentTwoDimensionalViewKey")
+    expect(dataShowSource).toContain('const dataShowHeaderSurfaceTitle = dataShowSurfaceTitle(surfaceKey)')
+    expect(dataShowSource).toContain(
+      'const dataShowHeaderViewTitle = dataShowRootViewTitle(viewMode, currentTwoDimensionalViewKey)',
+    )
+    expect(dataShowSource).toContain('data-datashow-header-title')
+    expect(dataShowSource).toContain('data-datashow-header-surface={surfaceKey}')
+    expect(dataShowSource).toContain('data-datashow-header-view={dataShowHeaderViewTitle}')
+    expect(dataShowSource).toContain('{dataShowHeaderSurfaceTitle}')
+    expect(dataShowSource).toContain('{dataShowHeaderViewTitle}')
+  })
+
+  it('mirrors QML HeaderBase TitleMenu lock control for shared S/L area bindings', () => {
+    const titleStart = dataShowSource.indexOf('<Dropdown trigger={[\'contextMenu\']} menu={{ items: dataShowTitleMenuItems }}>')
+    const titleEnd = dataShowSource.indexOf('<div className="toolbar-controls">', titleStart)
+    const titleSource = dataShowSource.slice(titleStart, titleEnd)
+    const menuStart = dataShowSource.indexOf('const dataShowTitleMenuItems')
+    const menuEnd = dataShowSource.indexOf('const dataShowMenuItems', menuStart)
+    const menuSource = dataShowSource.slice(menuStart, menuEnd)
+    const areaStart = dataShowSource.indexOf('className={`surface-split-view')
+    const areaEnd = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) =>', areaStart)
+    const areaSource = dataShowSource.slice(areaStart, areaEnd)
+    const tileStart = dataShowSource.indexOf('<TileImageViewer', areaEnd)
+    const tileEnd = dataShowSource.indexOf('/>', tileStart)
+    const tileSource = dataShowSource.slice(tileStart, tileEnd)
+
+    expect(dataShowSource).toContain('const [dataShowLockControl, setDataShowLockControl] = useState(false)')
+    expect(dataShowSource).toContain(
+      'const [lockedAreaTransform, setLockedAreaTransform] = useState<TileImageViewerTransform | null>(null)',
+    )
+    expect(menuSource).toContain("key: 'title-lock-control'")
+    expect(menuSource).toContain("label: dataShowLockControl ? '取消锁定' : '锁定'")
+    expect(menuSource).toContain('onClick: () => setDataShowLockControl((locked) => !locked)')
+    expect(menuSource).toContain("key: 'title-layout'")
+    expect(menuSource).toContain("label: '布局'")
+    expect(menuSource).toContain('disabled: true')
+    expect(menuSource).toContain("label: '上下布局'")
+    expect(menuSource).toContain("label: '左右布局'")
+    expect(titleSource).toContain('data-datashow-title-menu')
+    expect(titleSource).toContain('data-datashow-lock-control={dataShowLockControl ?')
+    expect(areaSource).toContain('data-datashow-area-lock-control={dataShowLockControl ?')
+    expect(tileSource).toContain('controlledTransform={dataShowLockControl ? lockedAreaTransform : null}')
+    expect(tileSource).toContain('onTransformChange={dataShowLockControl ? setLockedAreaTransform : undefined}')
+  })
+
+  it('mirrors QML DataShowItemHead WindowModelChangeButton surface exclusive toggle', () => {
+    expect(dataShowSource).toContain('FullscreenExitOutlined')
+    expect(dataShowSource).toContain('FullscreenOutlined')
+    expect(dataShowSource).toContain('const [exclusiveSurface, setExclusiveSurface] = useState<SurfaceKey | null>(null)')
+    expect(dataShowSource).toContain(
+      'const visibleAreaSurfaces = exclusiveSurface ? [exclusiveSurface] : SURFACES.filter((surface) => visibleSurfaces.includes(surface))',
+    )
+    expect(dataShowSource).toContain('const toggleDataShowSurfaceExclusive = () => {')
+    expect(dataShowSource).toContain('setExclusiveSurface((current) => (current === surfaceKey ? null : surfaceKey))')
+    expect(dataShowSource).toContain('data-datashow-show-max-toggle')
+    expect(dataShowSource).toContain('title="独占/取消独占"')
+    expect(dataShowSource).toContain('data-datashow-show-max-surface={surfaceKey}')
+    expect(dataShowSource).toContain('data-datashow-show-max-active={exclusiveSurface === surfaceKey}')
+    expect(dataShowSource).toContain('exclusiveSurface === surfaceKey ? <FullscreenExitOutlined /> : <FullscreenOutlined />')
+    expect(dataShowSource).toContain("className={`surface-split-view ${exclusiveSurface ? 'exclusive' : ''}`}")
+    expect(dataShowSource).toContain('data-datashow-area-surfaces={visibleAreaSurfaces.join')
+    expect(dataShowSource).toContain('visibleAreaSurfaces.map((surface) =>')
+  })
+
+  it('honors QML TopCoilTools surface visibility in the area split', () => {
+    expect(dataShowSource).toContain('visibleSurfaces')
+    expect(dataShowSource).toContain(
+      'const visibleAreaSurfaces = exclusiveSurface ? [exclusiveSurface] : SURFACES.filter((surface) => visibleSurfaces.includes(surface))',
+    )
+    expect(dataShowSource).toContain('data-datashow-area-surfaces={visibleAreaSurfaces.join')
+    expect(dataShowSource).toContain('visibleAreaSurfaces.length > 0 ? (')
+    expect(dataShowSource).toContain('data-datashow-area-empty')
+    expect(dataShowSource).toContain('暂无可见端面')
+  })
+
+  it('honors QML TopCoilTools global 2D/3D root-view commands', () => {
+    expect(dataShowSource).toContain('rootViewCommand')
+    expect(dataShowSource).toContain('if (!rootViewCommand) return')
+    expect(dataShowSource).toContain("setViewMode(rootViewCommand.mode === 'three' ? 'three' : currentTwoDimensionalViewMode)")
+    expect(dataShowSource).toContain('[rootViewCommand, currentTwoDimensionalViewMode]')
+  })
+
+  it('honors QML TopCoilTools MASK state for AREA and source image URLs', () => {
+    expect(dataShowSource).toContain('imageMaskChecked')
+    expect(dataShowSource).toContain('quickImageEnabled')
+    expect(dataShowSource).toContain("const activeAreaViewKey = imageMaskChecked ? 'AREA_MASK' : 'AREA'")
+    expect(dataShowSource).toContain('data-datashow-area-view-key={activeAreaViewKey}')
+    expect(dataShowSource).toContain('imageMaskChecked,')
+    expect(dataShowSource).toContain('quickImageEnabled,')
+    expect(dataShowSource).toContain('activeAreaViewKey,')
+    expect(dataShowSource).toContain('viewMode === \'area\' ? activeAreaViewKey')
+  })
+
+  it('exposes QML DataShowItemHead ToolBtns for free-view and survey tools', () => {
+    expect(dataShowSource).toContain("type DataShowMouseTool = 'move' | 'survey'")
+    expect(dataShowSource).toContain('const DATA_SHOW_HEADER_TOOLS')
+    expect(dataShowSource).toContain("key: 'move'")
+    expect(dataShowSource).toContain("title: '自由查看'")
+    expect(dataShowSource).toContain('用于查看图像、定位曲线采样点。双击图像可把当前点设为曲线贯穿方向。')
+    expect(dataShowSource).toContain("key: 'survey'")
+    expect(dataShowSource).toContain("title: '测量工具'")
+    expect(dataShowSource).toContain('用于在图像上选择起点和终点，显示两点距离和水平/垂直偏移。')
+    expect(dataShowSource).toContain("const [currentMouseTool, setCurrentMouseTool] = useState<DataShowMouseTool>('move')")
+    expect(dataShowSource).toContain(
+      'const [headerToolPopupOpen, setHeaderToolPopupOpen] = useState<DataShowMouseTool | null>(null)',
+    )
+    expect(dataShowSource).toContain('viewMode !== \'three\' ? (')
+    expect(dataShowSource).toContain('data-datashow-header-tool-row')
+    expect(dataShowSource).toContain('data-datashow-mouse-tool={currentMouseTool}')
+    expect(dataShowSource).toContain('data-datashow-header-tool={tool.key}')
+    expect(dataShowSource).toContain('data-datashow-header-tool-popover={tool.key}')
+    expect(dataShowSource).toContain("selected ? '当前已启用' : '当前未启用'")
+    expect(dataShowSource).toContain("selected ? '保持启用' : '启用工具'")
+    expect(dataShowSource).toContain('setCurrentMouseTool(tool.key)')
+    expect(dataShowSource).toContain('setHeaderToolPopupOpen(open ? tool.key : null)')
+  })
+
+  it('exposes QML DataShowItemHead 3D z-scale and control-mode header controls', () => {
+    expect(dataShowSource).toContain("type View3DControlMode = 'rotate' | 'move'")
+    expect(dataShowSource).toContain('const VIEW_3D_CONTROL_OPTIONS')
+    expect(dataShowSource).toContain("qmlKey: 0")
+    expect(dataShowSource).toContain("qmlKey: 1")
+    expect(dataShowSource).toContain('const [view3DZScale, setView3DZScale] = useState(0.5)')
+    expect(dataShowSource).toContain("const [view3DControlMode, setView3DControlMode] = useState<View3DControlMode>('rotate')")
+    expect(dataShowSource).toContain('viewMode === \'three\' ? (')
+    expect(dataShowSource).toContain('data-datashow-3d-header-controls')
+    expect(dataShowSource).toContain('data-datashow-3d-z-scale={view3DZScale.toFixed(2)}')
+    expect(dataShowSource).toContain('data-datashow-3d-control-mode={view3DControlMode}')
+    expect(dataShowSource).toContain('view3DControlModeLabel')
+    expect(dataShowSource).toContain('view3DControlMenuItems')
+    expect(dataShowSource).toContain('Z轴缩放')
+    expect(dataShowSource).toContain('min={0.1}')
+    expect(dataShowSource).toContain('max={2}')
+    expect(dataShowSource).toContain('step={0.01}')
+    expect(dataShowSource).toContain('normalizeCanvas3DZScale(value)')
+    expect(control3DQmlSource).toContain('name:"自由旋转"')
+    expect(control3DQmlSource).toContain('name:"自由移动"')
+    expect(dataShowSource).toContain("label: '自由旋转'")
+    expect(dataShowSource).toContain("label: '自由移动'")
+    expect(dataShowSource).toContain('zScale={view3DZScale}')
+    expect(dataShowSource).toContain('controlMode={view3DControlMode}')
+  })
+
+  it('mirrors QML View3DChangeItem as a 25px dropdown delegate', () => {
+    const controlsStart = dataShowSource.indexOf('data-datashow-3d-header-controls')
+    const controlsEnd = dataShowSource.indexOf('data-datashow-view-switch="area"', controlsStart)
+    const controlsSource = dataShowSource.slice(controlsStart, controlsEnd)
+
+    expect(controlsStart).toBeGreaterThanOrEqual(0)
+    expect(controlsEnd).toBeGreaterThan(controlsStart)
+    expect(controlsSource).toContain('data-datashow-view-3d-change-item')
+    expect(controlsSource).toContain('data-datashow-view-3d-control-key={view3DControlQmlKey}')
+    expect(controlsSource).toContain("trigger={['click']}")
+    expect(controlsSource).toContain('menu={{ items: view3DControlMenuItems }}')
+    expect(controlsSource).toContain('{view3DControlModeLabel} ▼')
+    expect(controlsSource).not.toContain('<Select')
+    expect(dataShowCss).toMatch(/\.data-show-view-3d-change-item\s*\{[\s\S]*height:\s*25px/)
+    expect(dataShowCss).toMatch(/\.data-show-view-3d-change-item\s*\{[\s\S]*border:\s*1px solid #203545/)
+    expect(dataShowCss).toMatch(/\.data-show-view-3d-change-item:hover\s*\{[\s\S]*background:\s*#173246/)
+  })
+
+  it('exposes QML DataShowItemHead ScaleBtn and GammaBtn for 2D image views', () => {
+    const scaleStart = dataShowSource.indexOf('data-datashow-scale-control')
+    const scaleEnd = dataShowSource.indexOf("viewMode === 'gray' ? (", scaleStart)
+    const scaleSource = dataShowSource.slice(scaleStart, scaleEnd)
+    const gammaStart = dataShowSource.indexOf('data-datashow-gamma-control')
+    const gammaEnd = dataShowSource.indexOf('data-datashow-header-tool-row', gammaStart)
+    const gammaSource = dataShowSource.slice(gammaStart, gammaEnd)
+
+    expect(scaleStart).toBeGreaterThanOrEqual(0)
+    expect(scaleEnd).toBeGreaterThan(scaleStart)
+    expect(gammaStart).toBeGreaterThanOrEqual(0)
+    expect(gammaEnd).toBeGreaterThan(gammaStart)
+    expect(dataShowSource).toContain('normalizeQmlCanvasScale')
+    expect(dataShowSource).toContain('normalizeQmlImageGamma')
+    expect(dataShowSource).toContain('buildQmlScaleMenuOptions')
+    expect(dataShowSource).toContain('const [dataShowCanvasScale, setDataShowCanvasScale] = useState<number | null>(null)')
+    expect(dataShowSource).toContain('const [dataShowQmlMinScale, setDataShowQmlMinScale] = useState(1)')
+    expect(dataShowSource).toContain('buildQmlScaleMenuOptions(dataShowQmlMinScale).map(({ key, label }) => ({ key, label }))')
+    expect(dataShowSource).toContain('const [imageGamma, setImageGamma] = useState(0.7)')
+    expect(scaleSource).toContain('data-datashow-scale-control')
+    expect(scaleSource).toContain('data-datashow-canvas-scale={dataShowCanvasScale?.toFixed(2) ??')
+    expect(scaleSource).toContain('缩放：')
+    expect(scaleSource).toContain('Math.round((dataShowCanvasScale ?? 1) * 100)')
+    expect(scaleSource).not.toContain('自适应')
+    expect(dataShowSource).toContain('items: dataShowScaleOptions')
+    expect(dataShowSource).toContain('onClick: ({ key }) => setDataShowCanvasScale(normalizeQmlCanvasScale(Number(key)))')
+    expect(dataShowSource).toContain('viewMode === \'gray\' ? (')
+    expect(gammaSource).toContain('data-datashow-gamma-control')
+    expect(gammaSource).toContain('data-datashow-image-gamma={imageGamma.toFixed(2)}')
+    expect(gammaSource).not.toContain('data-show-gamma-label')
+    expect(gammaSource).not.toContain('亮度')
+    expect(gammaSource).toContain('min={0.3}')
+    expect(gammaSource).toContain('max={1.3}')
+    expect(gammaSource).toContain('step={0.05}')
+    expect(gammaSource).toContain('setImageGamma(normalizeQmlImageGamma(value) ?? 0.7)')
+    expect(dataShowSource).toContain('canvasScale={dataShowCanvasScale}')
+    expect(dataShowSource).toContain('onQmlScaleMetricsChange')
+    expect(dataShowSource).toContain('setDataShowQmlMinScale(metrics.minScale)')
+    expect(dataShowSource).toContain("imageGamma={viewMode === 'gray' ? imageGamma : null}")
+  })
+
+  it('exposes the QML FootToolBar view renderer list for GRAY/JET previews', () => {
+    expect(dataShowSource).toContain("const TWO_DIMENSIONAL_VIEW_KEYS = ['GRAY', 'JET'] as const")
+    expect(dataShowSource).toContain('const [showViewRendererListView, setShowViewRendererListView] = useState(false)')
+    expect(dataShowSource).toContain('data-datashow-foot-toolbar')
+    expect(dataShowSource).toContain('data-datashow-view-renderer-toggle')
+    expect(dataShowSource).toContain('视图')
+    expect(dataShowSource).toContain('setShowViewRendererListView((visible) => !visible)')
+    expect(dataShowSource).toContain('data-datashow-view-renderer-list={showViewRendererListView}')
+    expect(dataShowSource).toContain('TWO_DIMENSIONAL_VIEW_KEYS.map((viewKey) =>')
+    expect(dataShowSource).toContain('data-datashow-view-renderer-key={viewKey}')
+    expect(dataShowSource).toContain('resolveQmlSurfaceImageUrl(')
+    expect(dataShowSource).toContain('viewKey,')
+    expect(dataShowSource).toContain('true,')
+    expect(dataShowSource).toContain('selectCurrentTwoDimensionalView(viewKey)')
+  })
+
+  it('mirrors QML ShowViewListView thumbnail sizing and selected rails', () => {
+    expect(dataShowCss).toContain('.data-show-view-renderer-list')
+    expect(dataShowCss).toContain('flex: 0 0 100px')
+    expect(dataShowCss).toContain('.data-show-view-renderer-item')
+    expect(dataShowCss).toContain('width: 100px')
+    expect(dataShowCss).toContain('flex: 0 0 100px')
+    expect(dataShowCss).toContain('.data-show-view-renderer-item.selected::before')
+    expect(dataShowCss).toContain('.data-show-view-renderer-item.selected::after')
+    expect(dataShowCss).toContain('height: 3px')
+    expect(dataShowCss).toContain('background: #0078d7')
+    expect(dataShowCss).toMatch(/\.data-show-view-renderer-list\s*\{[\s\S]*position:\s*relative/)
+    expect(dataShowCss).toMatch(/\.data-show-view-renderer-list\s*\{[\s\S]*z-index:\s*4/)
+  })
+
+  it('mirrors QML ShowViewListView disabled state from surfaceData.hasViewData', () => {
+    expect(dataShowSource).toContain('coilApi.getDataAvailability(currentCoil?.id || 0)')
+    expect(dataShowSource).toContain('const dataAvailabilityBySurface')
+    expect(dataShowSource).toContain('hasQmlViewData(dataAvailabilityBySurface[surfaceKey], viewKey)')
+    expect(dataShowSource).toContain('data-qml-view-data-enabled={viewDataEnabled}')
+    expect(dataShowSource).toContain('disabled={!viewDataEnabled}')
+    expect(dataShowCss).toMatch(
+      /\.data-show-view-renderer-item\[data-qml-view-data-enabled='false'\]\s*\{[\s\S]*opacity:\s*0\.35/,
+    )
+  })
+
+  it('exposes the QML FootToolBar max/min value renderer panel', () => {
+    expect(dataShowSource).toContain(
+      'const [showViewRendererMaxMinValue, setShowViewRendererMaxMinValue] = useState(false)',
+    )
+    expect(dataShowSource).toContain('data-datashow-max-min-toggle')
+    expect(dataShowSource).toContain('高低值')
+    expect(dataShowSource).toContain('setShowViewRendererMaxMinValue((visible) => !visible)')
+    expect(dataShowSource).toContain('data-datashow-max-min-panel={showViewRendererMaxMinValue}')
+    expect(dataShowSource).toContain('className="data-show-max-min-panel"')
+  })
+
+  it('mirrors QML MaxMinValueShow as a 40px filled rectangle panel', () => {
+    expect(dataShowSource).toContain('data-datashow-max-min-rectangle')
+    expect(dataShowSource).toContain('className="data-show-max-min-rectangle"')
+    expect(dataShowCss).toContain('.data-show-max-min-panel')
+    expect(dataShowCss).toContain('min-height: 40px')
+    expect(dataShowCss).toContain('flex: 0 0 40px')
+    expect(dataShowCss).toContain('.data-show-max-min-rectangle')
+    expect(dataShowCss).toContain('width: 100%')
+    expect(dataShowCss).toContain('height: 100%')
+    expect(dataShowCss).toContain('background: #fff')
+  })
+
+  it('mirrors QML FootToolBar separator between max/min and FootMsg', () => {
+    const maxMinToggleStart = dataShowSource.indexOf('data-datashow-max-min-toggle')
+    const separatorStart = dataShowSource.indexOf('data-datashow-foot-separator')
+    const footMsgStart = dataShowSource.indexOf('data-datashow-foot-msg')
+
+    expect(maxMinToggleStart).toBeGreaterThan(-1)
+    expect(separatorStart).toBeGreaterThan(maxMinToggleStart)
+    expect(footMsgStart).toBeGreaterThan(separatorStart)
+    expect(dataShowSource).toContain('className="data-show-foot-separator"')
+    expect(dataShowCss).toContain('.data-show-foot-separator')
+    expect(dataShowCss).toContain('width: 1px')
+    expect(dataShowCss).toContain('height: calc(100% - 6px)')
+    expect(dataShowCss).toContain('background: #0090e0')
+  })
+
+  it('keeps the QML FootToolBar constrained inside the DataShow viewport', () => {
+    const pageRule = cssRule('.data-show-page')
+    const dataContentRule = cssRule('.data-content')
+    const footToolbarRule = cssRule('.data-show-foot-toolbar')
+
+    expect(pageRule).toContain('grid-template-columns: minmax(0, 1fr)')
+    expect(dataContentRule).toContain('min-width: 0')
+    expect(dataContentRule).toContain('overflow: hidden')
+    expect(footToolbarRule).toContain('min-width: 0')
+    expect(footToolbarRule).toContain('max-width: 100%')
+    expect(footToolbarRule).toContain('overflow: hidden')
+  })
+
+  it('mirrors QML FootMsg median raw and mm values inside the 25px FootToolBar', () => {
+    expect(dataShowSource).toContain('function qmlFootMsgText(value: unknown): string')
+    expect(dataShowSource).toContain("const footMedianZIntText = qmlFootMsgText(getCoilInfoNumber(activeCoilInfo, 'median_3d'))")
+    expect(dataShowSource).toContain("const footMedianZText = qmlFootMsgText(getCoilInfoNumber(activeCoilInfo, 'median_3d_mm'))")
+    expect(dataShowSource).toContain('data-datashow-foot-msg')
+    expect(dataShowSource).toContain('data-datashow-foot-median-z-int={footMedianZIntText}')
+    expect(dataShowSource).toContain('data-datashow-foot-median-z={footMedianZText}')
+    expect(dataShowSource).toContain('className="data-show-foot-median-int"')
+    expect(dataShowSource).toContain('className="data-show-foot-median-mm"')
+    expect(dataShowSource).toContain('{footMedianZIntText}')
+    expect(dataShowSource).toContain('{footMedianZText}')
+    expect(dataShowCss).toContain('.data-show-foot-toolbar')
+    expect(dataShowCss).toContain('height: 25px')
+    expect(dataShowCss).toContain('.data-show-foot-msg')
+    expect(dataShowCss).toContain('.data-show-foot-median-int')
+    expect(dataShowCss).toContain('color: pink')
+    expect(dataShowCss).toContain('.data-show-foot-median-mm')
+    expect(dataShowCss).toContain('color: green')
+  })
+
+  it('exposes QML ToolBoxViewRow foot toggles for annotation and previews', () => {
+    expect(dataShowSource).toContain('const [taperShapeAnnotationEnabled, setTaperShapeAnnotationEnabled] = useState(true)')
+    expect(dataShowSource).toContain('const [thumbnailView3DEnabled, setThumbnailView3DEnabled] = useState(true)')
+    expect(dataShowSource).toContain('const [thumbnailView2DEnabled, setThumbnailView2DEnabled] = useState(true)')
+    expect(dataShowSource).toContain('data-datashow-toolbox-row')
+    expect(dataShowSource).toContain('data-datashow-toolbox-taper')
+    expect(dataShowSource).toContain('data-datashow-toolbox-3d')
+    expect(dataShowSource).toContain('data-datashow-toolbox-2d')
+    expect(dataShowSource).toContain('塔形标注')
+    expect(dataShowSource).toContain('3D预览')
+    expect(dataShowSource).toContain('2D预览')
+    expect(dataShowSource).toContain('setTaperShapeAnnotationEnabled(event.target.checked)')
+    expect(dataShowSource).toContain('setThumbnailView3DEnabled(event.target.checked)')
+    expect(dataShowSource).toContain('setThumbnailView2DEnabled(event.target.checked)')
+  })
+
+  it('disables QML ToolBoxViewRow 3D preview when the current surface has no mesh data', () => {
+    expect(dataShowSource).toContain("const qmlMeshExists = dataAvailabilityBySurface[surfaceKey]?.MESH === true")
+    expect(dataShowSource).toContain('data-datashow-toolbox-3d-mesh-exists={qmlMeshExists}')
+    expect(dataShowSource).toContain('disabled={!qmlMeshExists}')
+  })
+
+  it('renders QML ViewChangView thumbnail switches with 3D mesh and 2D next-view behavior', () => {
+    expect(dataShowSource).toContain('const nextTwoDimensionalViewKey =')
+    expect(dataShowSource).toContain('const showQmlViewChang3DThumbnail =')
+    expect(dataShowSource).toContain('thumbnailView3DEnabled && qmlMeshExists && viewMode !== \'three\'')
+    expect(dataShowSource).toContain('const showQmlViewChang2DThumbnail =')
+    expect(dataShowSource).toContain('thumbnailView2DEnabled && Boolean(currentCoil)')
+    expect(dataShowSource).toContain('data-datashow-view-chang')
+    expect(dataShowSource).toContain('data-datashow-view-chang-3d')
+    expect(dataShowSource).toContain('data-datashow-view-chang-2d')
+    expect(dataShowSource).toContain('data-datashow-view-chang-2d-next-key={nextTwoDimensionalViewKey}')
+    expect(dataShowSource).toContain('onClick={rerenderDataShow3D}')
+    expect(dataShowSource).toContain('onClick={openNextTwoDimensionalThumbnailView}')
+    expect(dataShowSource).toContain('resolveQmlSurfaceImageUrl(')
+    expect(dataShowSource).toContain('nextTwoDimensionalViewKey,')
+    expect(dataShowCss).toContain('.data-show-view-chang')
+    expect(dataShowCss).toContain('.data-show-view-chang-button')
+    expect(dataShowCss).toContain('.data-show-view-chang-3d-preview')
+    expect(dataShowCss).toContain('.data-show-view-chang-2d-preview')
+  })
+
+  it('uses the QML Thumbnail3D path instead of a static icon for the 3D ViewChang preview', () => {
+    const viewChang3DStart = dataShowSource.indexOf('data-datashow-view-chang-3d')
+    const viewChang2DStart = dataShowSource.indexOf('data-datashow-view-chang-2d', viewChang3DStart)
+    expect(viewChang3DStart).toBeGreaterThanOrEqual(0)
+    expect(viewChang2DStart).toBeGreaterThan(viewChang3DStart)
+
+    const viewChang3DSource = dataShowSource.slice(viewChang3DStart, viewChang2DStart)
+    expect(viewChang3DSource).toContain('data-datashow-view-chang-3d-canvas')
+    expect(viewChang3DSource).toContain('<Canvas3D')
+    expect(viewChang3DSource).toContain('data={renderData}')
+    expect(viewChang3DSource).toContain('heightLineSegments={heightLineData}')
+    expect(viewChang3DSource).toContain('zScale={view3DZScale}')
+    expect(viewChang3DSource).toContain('controlMode={view3DControlMode}')
+    expect(viewChang3DSource).toContain('thumbnail')
+
+    expect(canvas3DSource).toContain('thumbnail?: boolean')
+    expect(canvas3DSource).toContain("const Container = thumbnail ? 'span' : 'div'")
+    expect(canvas3DSource).toContain("data-canvas-3d-thumbnail={thumbnail ? 'true' : 'false'}")
+    expect(canvas3DSource).toContain('{!thumbnail ? (')
+    expect(dataShowCss).toContain('.data-show-view-chang-3d-preview .canvas-3d-container')
+    expect(dataShowCss).toContain('pointer-events: none')
+    expect(canvas3DCss).toContain('.canvas-3d-container')
+    expect(canvas3DCss).toContain('display: block')
+  })
+
+  it('loads and opens 3D Render through QML-compatible render parameters', () => {
+    expect(dataShowSource).toContain('buildDataShowRenderParams')
+    expect(dataShowSource).toContain('buildDataShowRenderStages')
+    expect(dataShowSource).toContain('activeRenderParams')
+    expect(dataShowSource).toContain('renderStages')
+    expect(dataShowSource).toContain('coilInfoBySurface[surfaceKey]')
+    expect(dataShowSource).toContain('grayscale: false')
+    expect(dataShowSource).toContain('buildDataShowRenderStages(activeRenderParams, enable1024CacheMode)')
+    expect(dataShowSource).toContain("autoRender ? JSON.stringify(renderStages) : String(renderRefreshSignal)")
+    expect(dataShowSource).toContain('stage.delayMs === 0')
+    expect(dataShowSource).toContain('window.setTimeout')
+    expect(dataShowSource).toContain('stage.delayMs')
+    expect(dataShowSource).toContain('heightDataApi.getRenderData(surfaceKey, currentCoil.id, stage.params)')
+    expect(dataShowSource).toContain('renderParams: activeRenderParams ?? undefined')
+    expect(dataShowSource).toContain("const [renderViewKey, setRenderViewKey] = useState<'GRAY' | 'JET'>('JET')")
+    expect(dataShowSource).toContain("const [renderImageTypeText, setRenderImageTypeText] = useState('彩色显示')")
+    expect(dataShowSource).toContain("viewMode === 'three' ? renderViewKey")
+    expect(dataShowSource).toContain("viewMode === 'area' ? activeAreaViewKey : activeViewKey")
+    expect(dataShowSource).toContain('setRenderViewKey(stage.viewKey)')
+    expect(dataShowSource).toContain('setRenderImageTypeText(stage.label)')
+    expect(dataShowSource).toContain('data-datashow-view-key={activeDataShowViewKey}')
+    expect(dataShowSource).toContain('data-datashow-render-view-key={renderViewKey}')
+    expect(dataShowSource).toContain('data-datashow-render-image-type={renderImageTypeText}')
+    expect(dataShowSource).toContain('{renderImageTypeText}')
+  })
+
+  it('exposes QML RenderSetting controls for 3D render range and scale', () => {
+    expect(dataShowSource).toContain('const [autoRender, setAutoRender] = useState(false)')
+    expect(dataShowSource).toContain('const [renderPlaneZMm, setRenderPlaneZMm] = useState<number | null>(null)')
+    expect(dataShowSource).toContain('const [renderScale, setRenderScale] = useState(1)')
+    expect(dataShowSource).toContain('const [renderRangeZ, setRenderRangeZ] = useState(20)')
+    expect(dataShowSource).toContain('const activeRenderPlaneZMm = useMemo(')
+    expect(dataShowSource).toContain('const renderRequestKey = useMemo(')
+    expect(dataShowSource).toContain("autoRender ? JSON.stringify(renderStages) : String(renderRefreshSignal)")
+    expect(dataShowSource).toContain("queryKey: ['render3D', currentCoil.id, surfaceKey, renderRequestKey, stage.key]")
+    expect(dataShowSource).toContain('planeZMm: activeRenderPlaneZMm ?? undefined')
+    expect(dataShowSource).toContain('rangeZ: renderRangeZ')
+    expect(dataShowSource).toContain('renderScale')
+    expect(dataShowSource).toContain('setRenderPlaneZMm(null)')
+    expect(dataShowSource).toContain('data-datashow-render-settings')
+    expect(dataShowSource).toContain('渲染设置')
+    expect(dataShowSource).toContain('AOTO')
+    expect(dataShowSource).toContain('checked={autoRender}')
+    expect(dataShowSource).toContain('onChange={(event) => setAutoRender(event.target.checked)}')
+    expect(dataShowSource).toContain('平面')
+    expect(dataShowSource).toContain('范围')
+    expect(dataShowSource).toContain("label: '100%'")
+    expect(dataShowSource).toContain("label: '50%'")
+    expect(dataShowSource).toContain("label: '33%'")
+    expect(dataShowSource).toContain('rerenderDataShow3D')
+    expect(dataShowSource).toContain('disabled={!currentCoil || !activeRenderParams || autoRender}')
+    expect(dataShowSource).toContain('渲染')
+
+    const planeFieldSource = renderSettingFieldSource('平面', '范围')
+    expect(planeFieldSource).toContain('value={activeRenderPlaneZMm}')
+    expect(planeFieldSource).toContain('onChange={(value) => setRenderPlaneZMm(normalizeRenderPlaneZMm(value))}')
+    expect(planeFieldSource).not.toContain('disabled={autoRender}')
+
+    const rangeFieldSource = renderSettingFieldSource('范围', '比例')
+    expect(rangeFieldSource).toContain('value={renderRangeZ}')
+    expect(rangeFieldSource).not.toContain('disabled={autoRender}')
+  })
+
+  it('passes QML SurfaceData point-value settings and coilInfo into each S/L tile viewer', () => {
+    expect(dataShowSource).toContain('coilApi.getCoilInfo(currentCoil?.id || 0,')
+    expect(dataShowSource).toContain('coilInfoToQmlPointValueOptions')
+    expect(dataShowSource).toContain('pointValueOptionsBySurface')
+    expect(dataShowSource).toContain('surfaceKey={surface}')
+    expect(dataShowSource).toContain('coilId={currentCoil.id}')
+    expect(dataShowSource).toContain('pointValueShowType={pointValueShowType}')
+    expect(dataShowSource).toContain('pointValueOptions={pointValueOptionsBySurface[surface]}')
+  })
+
+  it('keeps QML SurfaceData database point records on 2dShow single viewers and out of ViewArea split viewers', () => {
+    expect(dataShowSource).toContain('measurementDataApi')
+    expect(dataShowSource).toContain("queryKey: ['point-data', currentCoil?.id, 'S']")
+    expect(dataShowSource).toContain("queryKey: ['point-data', currentCoil?.id, 'L']")
+    expect(dataShowSource).toContain("measurementDataApi.getPointData(currentCoil?.id || 0, 'S')")
+    expect(dataShowSource).toContain("measurementDataApi.getPointData(currentCoil?.id || 0, 'L')")
+    expect(dataShowSource).toContain('pointDataBySurface')
+
+    const areaBranchStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) => (')
+    const singleBranchStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth' ? (")
+    const singleBranchEnd = dataShowSource.indexOf('<Canvas3D', singleBranchStart)
+    const areaBranchSource = dataShowSource.slice(areaBranchStart, singleBranchStart)
+    const singleBranchSource = dataShowSource.slice(singleBranchStart, singleBranchEnd)
+
+    expect(areaBranchStart).toBeGreaterThan(-1)
+    expect(singleBranchStart).toBeGreaterThan(areaBranchStart)
+    expect(singleBranchEnd).toBeGreaterThan(singleBranchStart)
+
+    expect(areaBranchSource).not.toContain('qmlDbPoints=')
+    expect(areaBranchSource).not.toContain('qmlDbPointInnerEllipse=')
+    expect(singleBranchSource).toContain('qmlDbPoints={pointDataBySurface[surfaceKey]}')
+    expect(singleBranchSource).toContain('qmlDbPointInnerEllipse={dbPointInnerEllipseBySurface[surfaceKey]}')
+  })
+
+  it('mirrors QML DataShowLabels XYZ_List beside gray/depth single viewers', () => {
+    const areaBranchStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) => (')
+    const singleBranchStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth' ? (")
+    const singleBranchEnd = dataShowSource.indexOf('<Canvas3D', singleBranchStart)
+    const areaBranchSource = dataShowSource.slice(areaBranchStart, singleBranchStart)
+    const singleBranchSource = dataShowSource.slice(singleBranchStart, singleBranchEnd)
+    const listRule = cssRule('.data-show-xyz-list')
+    const rowRule = cssRule('.data-show-xyz-row')
+
+    expect(dataShowSource).toContain('buildQmlXyzListItems')
+    expect(dataShowSource).toContain('activeXyzListItems')
+    expect(dataShowSource).toContain('center: dbPointInnerEllipseBySurface[surfaceKey]?.center')
+    expect(areaBranchSource).not.toContain('data-datashow-xyz-list')
+    expect(singleBranchSource).toContain('surface-single-view-content')
+    expect(singleBranchSource).toContain('data-datashow-xyz-list')
+    expect(singleBranchSource).toContain('activeXyzListItems.map((item) =>')
+    expect(singleBranchSource).toContain('data-datashow-xyz-row={item.type}')
+    expect(singleBranchSource).toContain('data-datashow-xyz-z={item.zColor}')
+    expect(singleBranchSource).toContain('data-datashow-xyz-close')
+    expect(listRule).toContain('width: 188px')
+    expect(listRule).toContain('overflow-y: auto')
+    expect(rowRule).toContain('height: 60px')
+    expect(rowRule).toContain('grid-template-columns: 50px minmax(0, 1fr) 20px')
+  })
+
+  it('lifts QML UserPointShow sign points into DataShowLabels XYZ_List and removes them like surfaceData.removeSignPoint', () => {
+    const singleBranchStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth' ? (")
+    const singleBranchEnd = dataShowSource.indexOf('<Canvas3D', singleBranchStart)
+    const singleBranchSource = dataShowSource.slice(singleBranchStart, singleBranchEnd)
+
+    expect(dataShowSource).toContain('type QmlUserPointState')
+    expect(dataShowSource).toContain('type QmlUserPointUpdate')
+    expect(dataShowSource).toContain('const [qmlUserPointsBySurface, setQmlUserPointsBySurface]')
+    expect(dataShowSource).toContain('updateDataShowQmlUserPoints')
+    expect(dataShowSource).toContain('const handleActiveQmlUserPointsChange = useCallback')
+    expect(dataShowSource).toContain('removeDataShowQmlUserPoint')
+    expect(dataShowSource).toContain('activeXyzPointSources')
+    expect(dataShowSource).toContain('...pointDataBySurface[surfaceKey]')
+    expect(dataShowSource).toContain('...qmlUserPointsBySurface[surfaceKey].map((userPoint) => ({')
+    expect(dataShowSource).toContain("type: 'user'")
+    expect(singleBranchSource).toContain('qmlUserPoints={qmlUserPointsBySurface[surfaceKey]}')
+    expect(singleBranchSource).toContain('onQmlUserPointsChange={handleActiveQmlUserPointsChange}')
+    expect(singleBranchSource).toContain('onClick={() => removeDataShowQmlUserPoint(surfaceKey, item.id)}')
+    expect(singleBranchSource).toContain('disabled={item.type !==')
+  })
+
+  it('passes QML DataShowItemCharts scale, center, median, and warning lines into HeightChart', () => {
+    expect(dataShowSource).toContain('normalizeQmlHeightChartInnerCircleCenter')
+    expect(dataShowSource).toContain('heightChartInnerCircleCenterBySurface')
+    expect(dataShowSource).toContain('innerCircleCenter={heightChartInnerCircleCenterBySurface[surfaceKey]}')
+    expect(dataShowSource).toContain('scan3dScaleX={pointValueOptionsBySurface[surfaceKey].scan3dScaleX}')
+    expect(dataShowSource).toContain('scan3dScaleZ={pointValueOptionsBySurface[surfaceKey].scan3dScaleZ}')
+    expect(dataShowSource).toContain(
+      'scan3dCoordinateOffsetZ={pointValueOptionsBySurface[surfaceKey].scan3dCoordinateOffsetZ}',
+    )
+    expect(dataShowSource).toContain('medianZ={getCoilInfoNumber(activeCoilInfo,')
+    expect(dataShowSource).toContain('warningThresholdUp={towerWarningThresholdUp}')
+    expect(dataShowSource).toContain('warningThresholdDown={towerWarningThresholdDown}')
+  })
+
+  it('mirrors QML DefectShowHead inside the DataHeader defect mode', () => {
+    const defectModeStart = dataShowSource.indexOf('<div className="data-header-defect-mode">')
+    const defectModeEnd = dataShowSource.indexOf(') : headDateShowModel === 1 ?', defectModeStart)
+    const defectModeSource = dataShowSource.slice(defectModeStart, defectModeEnd)
+
+    expect(defectModeStart).toBeGreaterThanOrEqual(0)
+    expect(defectModeSource).toContain('data-qml-defect-show-head')
+    expect(defectModeSource).toContain('data-qml-defect-class-row')
+    expect(defectModeSource).toContain('visibleDataShowDefectClassOptions.map((option) =>')
+    expect(defectModeSource).toContain('data-qml-defect-class-item={option.name}')
+    expect(defectModeSource).toContain("style={{ '--defect-class-color': option.color ?? '#FFA500' } as CSSProperties}")
+    expect(defectModeSource).toContain('defectClassCounts[option.name] ?? 0')
+    expect(defectModeSource).toContain('data-qml-defect-show-tool="area"')
+    expect(defectModeSource).toContain('data-qml-defect-show-tool="hidden"')
+    expect(defectModeSource).toContain('data-qml-defect-hidden-count')
+    expect(defectModeSource).toContain('changeAreaDefectVisibility(!showAreaDefects)')
+    expect(defectModeSource).toContain('changeHiddenDefectVisibility(!showHiddenDefects)')
+    expect(defectModeSource).toContain('onClick={clearDataShowDefectClasses}')
+    expect(defectModeSource).toContain('onClick={selectAllDataShowDefectClasses}')
+    expect(dataShowCss).toMatch(/\.data-header-defect-head\s*\{[\s\S]*height:\s*25px/)
+  })
+
+  it('renders QML CropDefectShow cards inside the DataHeader defect mode', () => {
+    const defectModeStart = dataShowSource.indexOf('<div className="data-header-defect-mode">')
+    const defectModeEnd = dataShowSource.indexOf(') : headDateShowModel === 1 ?', defectModeStart)
+    const defectModeSource = dataShowSource.slice(defectModeStart, defectModeEnd)
+
+    expect(defectModeStart).toBeGreaterThanOrEqual(0)
+    expect(defectModeSource).toContain('data-qml-show-defect-list')
+    expect(defectModeSource).toContain('data-qml-crop-defect-show')
+    expect(defectModeSource).toContain('getDataHeaderDefectCropUrl(defect, currentTwoDimensionalViewKey, imageBaseUrl)')
+    expect(defectModeSource).toContain('getDataHeaderDefectInfoRows(defect, pointValueOptionsBySurface[surfaceKey])')
+    expect(defectModeSource).toContain("getDataShowDefectClassName(defect).startsWith('2D_')")
+    expect(defectModeSource).toContain('data-qml-crop-defect-area-frame')
+    expect(defectModeSource).toContain('data-qml-crop-defect-focus-frame')
+    expect(defectModeSource).toContain('className="data-header-crop-defect-name"')
+    expect(defectModeSource).toContain('data-qml-crop-defect-info-grid')
+    expect(defectModeSource).toContain('onContextMenu={(event) => {')
+    expect(defectModeSource).toContain('resetDataShowView()')
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-list\s*\{[\s\S]*display:\s*flex/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-list\s*\{[\s\S]*gap:\s*5px/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-list\s*\{[\s\S]*overflow-x:\s*auto/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-card\s*\{[\s\S]*aspect-ratio:\s*1 \/ 1/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-focus-frame\s*\{[\s\S]*border:\s*2px solid #88ff0000/i)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-area-frame\s*\{[\s\S]*border:\s*2px solid #1890ff/i)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-info-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/)
+  })
+
+  it('mirrors QML DefectInfos hover buttons and defect-class right-click menu', () => {
+    const defectModeStart = dataShowSource.indexOf('<div className="data-header-defect-mode">')
+    const defectModeEnd = dataShowSource.indexOf(') : headDateShowModel === 1 ?', defectModeStart)
+    const defectModeSource = dataShowSource.slice(defectModeStart, defectModeEnd)
+
+    expect(defectModeStart).toBeGreaterThanOrEqual(0)
+    expect(dataShowSource).toContain('const [dataHeaderDefectCheckedNames, setDataHeaderDefectCheckedNames]')
+    expect(dataShowSource).toContain('const [dataHeaderDefectClassMenu, setDataHeaderDefectClassMenu]')
+    expect(dataShowSource).toContain('getDataHeaderDefectDisplayName(defect, dataHeaderDefectCheckedNames)')
+    expect(dataShowSource).toContain('setDataHeaderDefectCheckedName(defect.id, option.name)')
+    expect(defectModeSource).toContain('<button')
+    expect(defectModeSource).toContain('type="button"')
+    expect(defectModeSource).toContain('aria-label="确认缺陷"')
+    expect(defectModeSource).toContain('data-qml-defect-check-ok')
+    expect(defectModeSource).toContain('aria-label="否定缺陷"')
+    expect(defectModeSource).toContain('data-qml-defect-check-no')
+    expect(defectModeSource).toContain('onClick={(event) => event.stopPropagation()}')
+    expect(defectModeSource).toContain('onKeyDown={(event) => event.stopPropagation()}')
+    expect(defectModeSource).toContain('data-qml-defect-select-name')
+    expect(defectModeSource).toContain('setDataHeaderDefectClassMenu({ defectId: defect.id })')
+    expect(defectModeSource).toContain('data-qml-defect-select-menu')
+    expect(defectModeSource).toContain('defectFilterOptions.map((option) => (')
+    expect(defectModeSource).toContain('data-qml-defect-select-menu-item={option.name}')
+    expect(defectModeSource).toContain('data-qml-defect-class-checked={option.show}')
+    expect(defectModeSource).toContain('data-qml-defect-class-current={option.name === displayDefectName}')
+    expect(defectModeSource).toContain('data-qml-defect-class-level={option.level ?? 0}')
+    expect(defectModeSource).toContain("'--defect-class-level-color': getQmlDefectClassLevelColor(option.level)")
+    expect(defectModeSource).toContain('setDataHeaderDefectClassMenu(null)')
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*opacity:\s*0/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*font-family:\s*"SimHei",\s*"Microsoft YaHei",\s*sans-serif/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*font-size:\s*23px/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*font-weight:\s*700/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*transform:\s*scale\(0\.7\)/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*border:\s*0/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*background:\s*transparent/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*visibility:\s*hidden/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\s*\{[\s\S]*pointer-events:\s*none/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-card:hover\s+\.data-header-crop-defect-check\s*\{[\s\S]*opacity:\s*1/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-card:hover\s+\.data-header-crop-defect-check\s*\{[\s\S]*visibility:\s*visible/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-card:hover\s+\.data-header-crop-defect-check\s*\{[\s\S]*pointer-events:\s*auto/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\.ok\s*\{[\s\S]*color:\s*#52c41a/i)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-check\.no\s*\{[\s\S]*color:\s*#ff4d4f/i)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-menu\s*\{[\s\S]*position:\s*absolute/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-menu-item\[data-qml-defect-class-current='true'\]\s*\{[\s\S]*border-right:\s*10px solid var\(--defect-class-color/)
+    expect(dataShowCss).toMatch(/\.data-header-crop-defect-menu-item\s*\{[\s\S]*border-top:\s*1px solid color-mix\(in srgb,\s*var\(--defect-class-level-color,\s*#00000000\)\s*70%,\s*transparent\)/)
+    expect(dataShowCss).not.toContain('.data-header-crop-defect-menu-item:first-child')
+  })
+
+  it('closes the QML DefectSelectMenu when the operator clicks outside the popup', () => {
+    const defectModeStart = dataShowSource.indexOf('<div className="data-header-defect-mode">')
+    const defectModeEnd = dataShowSource.indexOf(') : headDateShowModel === 1 ?', defectModeStart)
+    const defectModeSource = dataShowSource.slice(defectModeStart, defectModeEnd)
+
+    expect(defectModeStart).toBeGreaterThanOrEqual(0)
+    expect(dataShowSource).toContain('const dataHeaderDefectClassMenuRef = useRef<HTMLSpanElement | null>(null)')
+    expect(dataShowSource).toContain('if (!dataHeaderDefectClassMenu) return')
+    expect(dataShowSource).toContain('const handleDataHeaderDefectMenuOutsidePointerDown = (event: PointerEvent) => {')
+    expect(dataShowSource).toContain('const menuElement = dataHeaderDefectClassMenuRef.current')
+    expect(dataShowSource).toContain('if (!menuElement || menuElement.contains(event.target as Node)) return')
+    expect(dataShowSource).toContain('setDataHeaderDefectClassMenu(null)')
+    expect(dataShowSource).toContain(
+      "document.addEventListener('pointerdown', handleDataHeaderDefectMenuOutsidePointerDown)",
+    )
+    expect(dataShowSource).toContain(
+      "document.removeEventListener('pointerdown', handleDataHeaderDefectMenuOutsidePointerDown)",
+    )
+    expect(defectModeSource).toContain('ref={defectClassMenuOpen ? dataHeaderDefectClassMenuRef : undefined}')
+  })
+
+  it('uses DataShow QML defect class identity for 2D configDefectName filtering', () => {
+    expect(dataShowSource).toContain('buildDataShowDefectClassFilterOptions')
+    expect(dataShowSource).toContain('countDataShowDefectsByClass')
+    expect(dataShowSource).toContain('() => buildDataShowDefectClassFilterOptions(defectDictData, allRawDefects)')
+    expect(dataShowSource).toContain('() => countDataShowDefectsByClass(defectFilterOptions, allRawDefects)')
+    expect(dataShowSource).not.toContain('() => buildDefectClassFilterOptions(defectDictData, allRawDefects)')
+    expect(dataShowSource).not.toContain('() => countDefectsByClass(defectFilterOptions, allRawDefects)')
+  })
+
+  it('keeps QML chartShowType in DataShowCore scope while switching header modes', () => {
+    expect(dataShowSource).toContain('const [qmlChartShowType, setQmlChartShowType] = useState<0 | 1>(0)')
+    expect(dataShowSource).toContain('qmlChartShowType={qmlChartShowType}')
+    expect(dataShowSource).toContain('onQmlChartShowTypeChange={setQmlChartShowType}')
+  })
+
+  it('keeps QML DrawView overlays on 2dShow single viewers and out of ViewArea split viewers', () => {
+    expect(dataShowSource).toContain('heightLineDataBySurface')
+    expect(dataShowSource).toContain('qmlDrawViewPerpendicularLine')
+    expect(dataShowSource).toContain("queryKey: ['heightLine', currentCoil?.id, 'S', lineCoords]")
+    expect(dataShowSource).toContain("queryKey: ['heightLine', currentCoil?.id, 'L', lineCoords]")
+    expect(dataShowSource).toContain("heightDataApi.getHeightLine('S', currentCoil?.id || 0, lineCoords)")
+    expect(dataShowSource).toContain("heightDataApi.getHeightLine('L', currentCoil?.id || 0, lineCoords)")
+
+    const areaBranchStart = dataShowSource.indexOf('visibleAreaSurfaces.map((surface) => (')
+    const singleBranchStart = dataShowSource.indexOf("viewMode === 'gray' || viewMode === 'depth' ? (")
+    const singleBranchEnd = dataShowSource.indexOf('<Canvas3D', singleBranchStart)
+    const areaBranchSource = dataShowSource.slice(areaBranchStart, singleBranchStart)
+    const singleBranchSource = dataShowSource.slice(singleBranchStart, singleBranchEnd)
+
+    expect(areaBranchStart).toBeGreaterThan(-1)
+    expect(singleBranchStart).toBeGreaterThan(areaBranchStart)
+    expect(singleBranchEnd).toBeGreaterThan(singleBranchStart)
+
+    expect(areaBranchSource).not.toContain('qmlDrawViewLineSegments=')
+    expect(areaBranchSource).not.toContain('qmlDrawViewInnerEllipse=')
+    expect(areaBranchSource).not.toContain('qmlDrawViewPerpendicularLine=')
+    expect(areaBranchSource).not.toContain('qmlDrawViewTaperEnabled=')
+    expect(singleBranchSource).toContain('qmlDrawViewLineSegments={heightLineDataBySurface[surfaceKey]}')
+    expect(singleBranchSource).toContain('qmlDrawViewInnerEllipse={dbPointInnerEllipseBySurface[surfaceKey]}')
+    expect(singleBranchSource).toContain('qmlDrawViewPerpendicularLine={qmlDrawViewPerpendicularLine}')
+    expect(singleBranchSource).toContain('qmlDrawViewTaperEnabled={taperShapeAnnotationEnabled}')
+  })
+
+  it('switches defect crop clicks back to the image view like QML CropDefectShow', () => {
+    const cropStart = dataShowSource.indexOf('className={`data-defect-crop-item ${selectedDefect?.id === defect.id ?')
+    const cropEnd = dataShowSource.indexOf('<Image src={cropUrl}', cropStart)
+    const cropSource = dataShowSource.slice(cropStart, cropEnd)
+    const clickStart = cropSource.indexOf('onClick={() => {')
+    const clickEnd = cropSource.indexOf('}}', clickStart)
+    const clickSource = cropSource.slice(clickStart, clickEnd)
+    const contextStart = cropSource.indexOf('onContextMenu={(event) => {')
+    const contextEnd = cropSource.indexOf('}}', contextStart)
+    const contextSource = cropSource.slice(contextStart, contextEnd)
+
+    expect(clickSource).toContain("setViewMode('area')")
+    expect(clickSource).toContain('setSelectedDefect(defect)')
+    expect(contextSource).toContain('event.preventDefault()')
+    expect(contextSource).toContain("setViewMode('area')")
+    expect(contextSource).toContain('resetDataShowView()')
+  })
+
+  it('focuses pending defects like QML DefectDataViewMenu rootViewto2D plus setDefectShowView', () => {
+    const pendingStart = dataShowSource.indexOf('if (!pendingDefect || pendingDefect.coilId !== currentCoil?.id) return')
+    const pendingEnd = dataShowSource.indexOf('}, [clearPendingDefect', pendingStart)
+    const pendingSource = dataShowSource.slice(pendingStart, pendingEnd)
+
+    expect(pendingSource).toContain("setViewMode('area')")
+    expect(pendingSource).toContain('setSurfaceKey(pendingDefect.surface)')
+    expect(pendingSource).toContain('setSelectedDefect(pendingDefect)')
+    expect(dataShowSource).toContain('focusSelectedDefect')
+  })
+})

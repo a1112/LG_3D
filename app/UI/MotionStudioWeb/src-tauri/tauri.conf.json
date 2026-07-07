@@ -1,11 +1,14 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Motion Studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.bkvision.motionstudio",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:3015",
+    "beforeDevCommand": {
+      "script": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ..\\..\\..\\scripts\\start_rust_motion_studio_dev.ps1 -StrictWebPort",
+      "cwd": ".."
+    },
+    "devUrl": "http://127.0.0.1:3015",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
