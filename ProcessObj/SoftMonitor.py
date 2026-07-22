@@ -1,4 +1,5 @@
 import json
+import socket
 import time
 from pathlib import Path
 
@@ -17,6 +18,8 @@ from enum_types.enums import SoftRunStateEnum
 
 
 class SoftMonitor(MonitorBase):
+    HEARTBEAT_RESTART_SECONDS = 200
+
     def __init__(self, parent=None):
         configF = "config/SoftMonitor.json"
         logFolder = "logs/SoftMonitor"
@@ -25,6 +28,7 @@ class SoftMonitor(MonitorBase):
             self.monitorData = []
             self.set_config_change(True)
         self.manualStopped = set()
+        self.heartbeatFailedSince = {}
         self.scanCompleted = False
         self.start()
 
@@ -50,6 +54,39 @@ class SoftMonitor(MonitorBase):
         except BaseException as e:
             self.log.error(f"启动异常 {exe} {args} {e}")
             return 0
+
+    def _heartbeat_healthy(self, item):
+        port = tryGetInt(item.get("heartbeatPort", 0))
+        if port <= 0:
+            return True
+        host = str(item.get("heartbeatHost", "127.0.0.1"))
+        try:
+            with socket.create_connection((host, port), timeout=1.0):
+                return True
+        except (OSError, ValueError):
+            return False
+
+    def _check_heartbeat(self, item):
+        name = item.get("name", "")
+        port = tryGetInt(item.get("heartbeatPort", 0))
+        if port <= 0:
+            self.heartbeatFailedSince.pop(name, None)
+            return
+        if self._heartbeat_healthy(item):
+            if name in self.heartbeatFailedSince:
+                self.log.info(f"{name} heartbeat recovered")
+            self.heartbeatFailedSince.pop(name, None)
+            return
+
+        now = time.monotonic()
+        failed_since = self.heartbeatFailedSince.setdefault(name, now)
+        failed_seconds = now - failed_since
+        if failed_seconds < self.HEARTBEAT_RESTART_SECONDS:
+            return
+        self.log.error(
+            f"{name} heartbeat failed for {int(failed_seconds)} seconds; restarting")
+        self.heartbeatFailedSince[name] = now
+        self.restartExe(name)
         # return 0
 
         # # Windows 特定标志
@@ -235,6 +272,16 @@ class SoftMonitor(MonitorBase):
             if exe in self.manualStopped:
                 continue
             state = self.stateDict.get(name, -2)
+            heartbeat_failed_since = self.heartbeatFailedSince.get(name)
+            if heartbeat_failed_since is not None:
+                failed_seconds = int(time.monotonic() - heartbeat_failed_since)
+                issues.append({
+                    "name": name,
+                    "exe": item.get("exe", ""),
+                    "state": state,
+                    "message": f"heartbeat failed for {failed_seconds} seconds",
+                })
+                continue
             if state == SoftRunStateEnum.RUNNING:
                 continue
             issues.append({
@@ -310,6 +357,7 @@ class SoftMonitor(MonitorBase):
                     pid = process.get("pid", 0)
                     self.stateDict[name] = SoftRunStateEnum.RUNNING
                 globSoftConfig.set_soft_state(exe, pid, self.stateDict[name])
+                self._check_heartbeat(item)
 
                 # 运行该软件
             self.scanCompleted = True

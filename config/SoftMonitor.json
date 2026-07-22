@@ -3,6 +3,7 @@
         "exe": "launchers/start_lg3d_api_source.bat",
         "args": "",
         "name": "LG_3D_API_源码",
+        "heartbeatPort": 5010,
         "delay": 5,
         "monitorAble": true
     },
@@ -10,6 +11,7 @@
         "exe": "launchers/start_lg3d_secondary_tcp_source.bat",
         "args": "",
         "name": "LG_3D_二级TCP_源码",
+        "heartbeatPort": 6001,
         "delay": 5,
         "monitorAble": true
     },
@@ -24,6 +26,7 @@
         "exe": "launchers/start_lg3d_capture_3d_source.bat",
         "args": "",
         "name": "LG_3D_采集服务_源码",
+        "heartbeatPort": 6100,
         "delay": 5,
         "monitorAble": true
     },
@@ -38,6 +41,7 @@
         "exe": "launchers/start_lg3d_algorithm_2d_source.bat",
         "args": "",
         "name": "LG_3D_2D算法_源码",
+        "heartbeatPort": 6020,
         "delay": 5,
         "monitorAble": true
     }
