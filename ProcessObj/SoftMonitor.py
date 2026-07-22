@@ -2,6 +2,7 @@ import json
 import socket
 import time
 from pathlib import Path
+from threading import Lock, Thread
 
 import win32api
 import win32gui
@@ -29,6 +30,8 @@ class SoftMonitor(MonitorBase):
             self.set_config_change(True)
         self.manualStopped = set()
         self.heartbeatFailedSince = {}
+        self.restartLock = Lock()
+        self.restarting = set()
         self.scanCompleted = False
         self.start()
 
@@ -181,25 +184,56 @@ class SoftMonitor(MonitorBase):
                 return True
         return False
 
-    @Slot(str, result=bool)
-    def restartExe(self, name):
+    def _find_monitor_item(self, name):
         normalized_target = normalize_path(name)
         for item in list(self.monitorData):
             item_name = item.get("name", "")
             exe = normalize_path(
                 self._resolve_exe_path(item.get("exe", "")))
-            if name != item_name and normalized_target != exe:
-                continue
-            self.log.info(f"主动重启 {item_name} {exe}")
+            if name == item_name or normalized_target == exe:
+                return item, exe
+        return None, ""
+
+    def _restart_exe_worker(self, item, exe):
+        item_name = item.get("name", "")
+        try:
+            self.log.info(f"后台重启 {item_name} {exe}")
             self.manualStopped.add(exe)
-            stopped = self._stop_target(exe, item_name)
-            if not stopped:
-                return False
+            if not self._stop_target(exe, item_name):
+                return
             time.sleep(1)
             self.manualStopped.discard(exe)
-            return self._start_exe_(item.get("exe", ""),
-                                    item.get("args", "")) > 32
-        return False
+            result = self._start_exe_(item.get("exe", ""),
+                                      item.get("args", ""))
+            if result <= 32:
+                self.log.error(f"重启后启动失败 {item_name} {exe}")
+        except Exception as e:
+            self.log.error(f"后台重启异常 {item_name} {exe}: {e}")
+        finally:
+            self.manualStopped.discard(exe)
+            with self.restartLock:
+                self.restarting.discard(exe)
+
+    @Slot(str, result=bool)
+    def restartExe(self, name):
+        item, exe = self._find_monitor_item(name)
+        if item is None:
+            return False
+        with self.restartLock:
+            if exe in self.restarting:
+                self.log.warning(f"服务正在重启，忽略重复请求 {name}")
+                return False
+            self.restarting.add(exe)
+        try:
+            Thread(target=self._restart_exe_worker,
+                   args=(dict(item), exe),
+                   name=f"service-restart-{item.get('name', 'unknown')}",
+                   daemon=True).start()
+        except Exception:
+            with self.restartLock:
+                self.restarting.discard(exe)
+            raise
+        return True
 
     @Slot(result=bool)
     def closeAll(self):
@@ -230,33 +264,51 @@ class SoftMonitor(MonitorBase):
                 started = True
         return started
 
-    @Slot(result=bool)
-    def restartAll(self):
+    def _restart_all_worker(self, restart_items):
         self.log.debug("全部重启。")
         ok = True
+        try:
+            for item, exe in restart_items:
+                self.manualStopped.add(exe)
+                ok = self._stop_target(exe, item.get("name", "")) and ok
+            time.sleep(1)
+            for item, exe in restart_items:
+                if self._get_target_pids(exe):
+                    self.log.error(
+                        f"跳过启动，进程仍未清理干净 {item.get('name', exe)}")
+                    ok = False
+                    continue
+                self.manualStopped.discard(exe)
+                self._start_exe_(item.get("exe", ""), item.get("args", ""))
+        except Exception as e:
+            self.log.error(f"后台全部重启异常: {e}")
+            ok = False
+        finally:
+            with self.restartLock:
+                for _, exe in restart_items:
+                    self.manualStopped.discard(exe)
+                    self.restarting.discard(exe)
+        return ok
+
+    @Slot(result=bool)
+    def restartAll(self):
         restart_items = []
         for item in list(self.monitorData):
             exe = normalize_path(self._resolve_exe_path(item.get("exe", "")))
-            if not exe:
-                continue
-            monitor = item["monitorAble"] if "monitorAble" in item else True
-            self.manualStopped.add(exe)
-            ok = self._stop_target(exe, item.get("name", "")) and ok
-            if monitor:
-                restart_items.append(item)
-
-        time.sleep(1)
-        for item in restart_items:
-            exe = normalize_path(self._resolve_exe_path(item.get("exe", "")))
-            if not exe:
-                continue
-            if self._get_target_pids(exe):
-                self.log.error(f"跳过启动，进程仍未清理干净 {item.get('name', exe)}")
-                ok = False
-                continue
-            self.manualStopped.discard(exe)
-            self._start_exe_(item.get("exe", ""), item.get("args", ""))
-        return ok
+            if exe and item.get("monitorAble", True):
+                restart_items.append((dict(item), exe))
+        if not restart_items:
+            return False
+        with self.restartLock:
+            if self.restarting:
+                self.log.warning("已有服务正在重启，忽略全部重启请求")
+                return False
+            self.restarting.update(exe for _, exe in restart_items)
+        Thread(target=self._restart_all_worker,
+               args=(restart_items,),
+               name="service-restart-all",
+               daemon=True).start()
+        return True
 
     @Slot(result=str)
     def getIssues(self):

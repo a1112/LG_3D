@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from threading import Lock
 
 from ProcessObj.SoftMonitor import SoftMonitor
 
@@ -6,7 +7,12 @@ from ProcessObj.SoftMonitor import SoftMonitor
 def _monitor():
     monitor = SoftMonitor.__new__(SoftMonitor)
     monitor.heartbeatFailedSince = {}
-    monitor.log = SimpleNamespace(info=lambda *_: None, error=lambda *_: None)
+    monitor.manualStopped = set()
+    monitor.log = SimpleNamespace(
+        info=lambda *_: None,
+        warning=lambda *_: None,
+        error=lambda *_: None,
+    )
     return monitor
 
 
@@ -38,3 +44,38 @@ def test_heartbeat_recovery_clears_failure_timer(monkeypatch):
     monitor._check_heartbeat(item)
 
     assert "api" not in monitor.heartbeatFailedSince
+
+
+def test_restart_request_returns_before_worker_runs(monkeypatch):
+    monitor = _monitor()
+    monitor.monitorData = [{
+        "name": "api",
+        "exe": "C:/services/api.bat",
+        "args": "",
+    }]
+    monitor.restartLock = Lock()
+    monitor.restarting = set()
+    workers = []
+
+    class PendingThread:
+        def __init__(self, target, args, **_):
+            self.target = target
+            self.args = args
+
+        def start(self):
+            workers.append(self)
+
+    monkeypatch.setattr("ProcessObj.SoftMonitor.Thread", PendingThread)
+    monkeypatch.setattr(monitor, "_resolve_exe_path", lambda value: value)
+    monkeypatch.setattr(monitor, "_stop_target", lambda *_: True)
+    monkeypatch.setattr(monitor, "_start_exe_", lambda *_: 33)
+    monkeypatch.setattr("ProcessObj.SoftMonitor.time.sleep", lambda _: None)
+
+    assert monitor.restartExe("api") is True
+    assert len(workers) == 1
+    assert monitor.restartExe("api") is False
+    assert "c:\\services\\api.bat" in monitor.restarting
+
+    workers[0].target(*workers[0].args)
+
+    assert monitor.restarting == set()
