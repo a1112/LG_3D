@@ -4,16 +4,29 @@ import QtQuick.Controls.Material
 
 ItemDelegate {
     width: parent.width
-    height: 60
+    height: 76
     spacing: 40
     property int item_state: -2
+    property string heartbeat_text: ""
     Timer{
         interval: 500
         running: true
         repeat: true
         onTriggered: {
             item_state=getState_(name)
+            heartbeat_text=getHeartbeatText(name)
         }
+    }
+    Label {
+        z: 2
+        anchors.left: parent.left
+        anchors.leftMargin: 70
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 2
+        text: heartbeat_text
+        visible: heartbeat_text.length > 0
+        color: heartbeat_text.indexOf("异常") >= 0 ? "#ff9800" : "#66bb6a"
+        font.pointSize: 10
     }
     Frame{
         anchors.fill: parent

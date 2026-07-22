@@ -7,6 +7,7 @@ from ProcessObj.SoftMonitor import SoftMonitor
 def _monitor():
     monitor = SoftMonitor.__new__(SoftMonitor)
     monitor.heartbeatFailedSince = {}
+    monitor.heartbeatLastCheckedAt = {}
     monitor.manualStopped = set()
     monitor.log = SimpleNamespace(
         info=lambda *_: None,
@@ -79,3 +80,39 @@ def test_restart_request_returns_before_worker_runs(monkeypatch):
     workers[0].target(*workers[0].args)
 
     assert monitor.restarting == set()
+
+
+def test_heartbeat_uses_configured_timeout(monkeypatch):
+    monitor = _monitor()
+    restarts = []
+    item = {
+        "name": "capture",
+        "heartbeatPort": 6100,
+        "heartbeatTimeoutSeconds": 30,
+    }
+    now = [1000.0]
+    monkeypatch.setattr("ProcessObj.SoftMonitor.time.monotonic", lambda: now[0])
+    monkeypatch.setattr(monitor, "_heartbeat_healthy", lambda _: False)
+    monkeypatch.setattr(monitor, "restartExe", restarts.append)
+
+    monitor._check_heartbeat(item)
+    now[0] += 29
+    monitor._check_heartbeat(item)
+    assert restarts == []
+    now[0] += 1
+    monitor._check_heartbeat(item)
+    assert restarts == ["capture"]
+
+
+def test_heartbeat_text_contains_last_check_time_and_timeout(monkeypatch):
+    monitor = _monitor()
+    monitor.monitorData = [{
+        "name": "api",
+        "exe": "C:/services/api.bat",
+        "heartbeatPort": 5010,
+        "heartbeatTimeoutSeconds": 200,
+    }]
+    monitor.heartbeatLastCheckedAt["api"] = 123.0
+    monkeypatch.setattr("ProcessObj.SoftMonitor.time.strftime", lambda *_: "12:34:56")
+
+    text = monitor.getHeartbeatText("api")

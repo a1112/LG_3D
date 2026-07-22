@@ -39,6 +39,10 @@ Item {
         return monitor.getState_(name)
     }
 
+    function getHeartbeatText(name){
+        return monitor.getHeartbeatText(name)
+    }
+
     function stopExe(exe){
         return monitor.stopExe(exe)
     }

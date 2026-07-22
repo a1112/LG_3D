@@ -4,6 +4,7 @@
         "args": "",
         "name": "LG_3D_API_源码",
         "heartbeatPort": 5010,
+        "heartbeatTimeoutSeconds": 200,
         "delay": 5,
         "monitorAble": true
     },
@@ -12,6 +13,7 @@
         "args": "",
         "name": "LG_3D_二级TCP_源码",
         "heartbeatPort": 6001,
+        "heartbeatTimeoutSeconds": 200,
         "delay": 5,
         "monitorAble": true
     },
@@ -27,6 +29,7 @@
         "args": "",
         "name": "LG_3D_采集服务_源码",
         "heartbeatPort": 6100,
+        "heartbeatTimeoutSeconds": 200,
         "delay": 5,
         "monitorAble": true
     },
@@ -42,6 +45,7 @@
         "args": "",
         "name": "LG_3D_2D算法_源码",
         "heartbeatPort": 6020,
+        "heartbeatTimeoutSeconds": 200,
         "delay": 5,
         "monitorAble": true
     }

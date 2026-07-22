@@ -30,6 +30,7 @@ class SoftMonitor(MonitorBase):
             self.set_config_change(True)
         self.manualStopped = set()
         self.heartbeatFailedSince = {}
+        self.heartbeatLastCheckedAt = {}
         self.restartLock = Lock()
         self.restarting = set()
         self.scanCompleted = False
@@ -74,7 +75,9 @@ class SoftMonitor(MonitorBase):
         port = tryGetInt(item.get("heartbeatPort", 0))
         if port <= 0:
             self.heartbeatFailedSince.pop(name, None)
+            self.heartbeatLastCheckedAt.pop(name, None)
             return
+        self.heartbeatLastCheckedAt[name] = time.time()
         if self._heartbeat_healthy(item):
             if name in self.heartbeatFailedSince:
                 self.log.info(f"{name} heartbeat recovered")
@@ -82,12 +85,16 @@ class SoftMonitor(MonitorBase):
             return
 
         now = time.monotonic()
+        timeout_seconds = max(
+            tryGetInt(item.get("heartbeatTimeoutSeconds",
+                               self.HEARTBEAT_RESTART_SECONDS)), 1)
         failed_since = self.heartbeatFailedSince.setdefault(name, now)
         failed_seconds = now - failed_since
-        if failed_seconds < self.HEARTBEAT_RESTART_SECONDS:
+        if failed_seconds < timeout_seconds:
             return
         self.log.error(
-            f"{name} heartbeat failed for {int(failed_seconds)} seconds; restarting")
+            f"{name} heartbeat failed for {int(failed_seconds)} seconds; "
+            f"timeout={timeout_seconds}; restarting")
         self.heartbeatFailedSince[name] = now
         self.restartExe(name)
         # return 0
@@ -331,7 +338,10 @@ class SoftMonitor(MonitorBase):
                     "name": name,
                     "exe": item.get("exe", ""),
                     "state": state,
-                    "message": f"heartbeat failed for {failed_seconds} seconds",
+                    "message": (
+                        f"heartbeat failed for {failed_seconds}/"
+                        f"{max(tryGetInt(item.get('heartbeatTimeoutSeconds', self.HEARTBEAT_RESTART_SECONDS)), 1)} seconds"
+                    ),
                 })
                 continue
             if state == SoftRunStateEnum.RUNNING:
@@ -414,3 +424,26 @@ class SoftMonitor(MonitorBase):
                 # 运行该软件
             self.scanCompleted = True
             time.sleep(10)
+
+    @Slot(str, result=str)
+    def getHeartbeatText(self, name):
+        item, _ = self._find_monitor_item(name)
+        if item is None:
+            return ""
+        port = tryGetInt(item.get("heartbeatPort", 0))
+        if port <= 0:
+            return ""
+        host = str(item.get("heartbeatHost", "127.0.0.1"))
+        timeout_seconds = max(
+            tryGetInt(item.get("heartbeatTimeoutSeconds",
+                               self.HEARTBEAT_RESTART_SECONDS)), 1)
+        checked_at = self.heartbeatLastCheckedAt.get(name)
+        checked_text = (time.strftime("%H:%M:%S", time.localtime(checked_at))
+                        if checked_at else "等待首次检测")
+        failed_since = self.heartbeatFailedSince.get(name)
+        if failed_since is not None:
+            failed_seconds = max(int(time.monotonic() - failed_since), 0)
+            return (f"心跳 {host}:{port} 异常 {failed_seconds}/{timeout_seconds}s "
+                    f"· 最近检测 {checked_text}")
+        return (f"心跳 {host}:{port} 正常 · 最近检测 {checked_text} "
+                f"· 超时 {timeout_seconds}s")
