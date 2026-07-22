@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import SoftMonitor 1.0
@@ -8,6 +9,9 @@ import QtQuick.Dialogs
 */
 Item {
     id:root
+    property var currentIssues: []
+    property string lastIssueSignature: ""
+    property int issueCount: currentIssues.length
     property SoftMonitor monitor:  SoftMonitor{
     }
 
@@ -43,6 +47,10 @@ Item {
         return monitor.startExe(name)
     }
 
+    function restartExe(name){
+        return monitor.restartExe(name)
+    }
+
     function changeValue(index,key,value){
         return monitor.changeValue(index,key,value)
     }
@@ -59,6 +67,16 @@ Item {
     }
     function stopAll(){
         return monitor.closeAll()
+    }
+
+    function restartAll(){
+        return monitor.restartAll()
+    }
+
+    function openIssueDialog(){
+        if (currentIssues.length > 0) {
+            deviceIssueDialog.open()
+        }
     }
 
     function closeAll(){
@@ -78,6 +96,34 @@ Item {
 
     Component.onCompleted: {
         initMonitor()
+    }
+
+    Timer {
+        interval: 3000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            let issues = []
+            try {
+                issues = JSON.parse(monitor.getIssues())
+            } catch (error) {
+                console.warn("设备问题解析失败", error)
+            }
+            root.currentIssues = issues
+            let keys = []
+            for (let i = 0; i < issues.length; ++i) {
+                keys.push(issues[i].name + ":" + issues[i].state)
+            }
+            let signature = keys.join("|")
+            if (!signature) {
+                root.lastIssueSignature = ""
+            } else if (signature !== root.lastIssueSignature
+                       && !deviceIssueDialog.visible) {
+                root.lastIssueSignature = signature
+                deviceIssueDialog.open()
+            }
+        }
     }
     ListModel{
         id: appModel
@@ -184,6 +230,101 @@ Item {
 
     AddPopup{
         id:dialogPop
+    }
+
+    Dialog {
+        id: deviceIssueDialog
+        anchors.centerIn: parent
+        width: Math.min(root.width - 40, 620)
+        modal: true
+        focus: true
+        title: qsTr("设备/服务异常")
+        closePolicy: Popup.CloseOnEscape
+
+        contentItem: ColumnLayout {
+            spacing: 12
+
+            Label {
+                Layout.fillWidth: true
+                text: qsTr("检测到 %1 个设备服务问题，请检查或执行重启。").arg(root.issueCount)
+                wrapMode: Text.WordWrap
+                font.bold: true
+                color: Material.color(Material.Orange)
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(issueColumn.implicitHeight + 16, 320)
+                color: Qt.rgba(1, 1, 1, 0.05)
+                radius: 4
+                clip: true
+
+                Column {
+                    id: issueColumn
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 8
+
+                    Repeater {
+                        model: root.currentIssues
+
+                        delegate: RowLayout {
+                            width: issueColumn.width
+                            spacing: 10
+
+                            Label {
+                                text: modelData.state === -1 ? "●" : "●"
+                                color: modelData.state === -1
+                                       ? Material.color(Material.Red)
+                                       : Material.color(Material.Orange)
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: modelData.name
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: modelData.message
+                                    opacity: 0.72
+                                    elide: Text.ElideRight
+                                }
+                            }
+                            Button {
+                                text: qsTr("重启")
+                                enabled: modelData.state !== -1
+                                onClicked: restartExe(modelData.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: qsTr("重启异常服务")
+                    Material.background: Material.Teal
+                    onClicked: {
+                        for (let i = 0; i < root.currentIssues.length; ++i) {
+                            if (root.currentIssues[i].state !== -1) {
+                                restartExe(root.currentIssues[i].name)
+                            }
+                        }
+                        deviceIssueDialog.close()
+                    }
+                }
+                Button {
+                    text: qsTr("关闭")
+                    onClicked: deviceIssueDialog.close()
+                }
+            }
+        }
     }
 
     DropArea{

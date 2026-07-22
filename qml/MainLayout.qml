@@ -25,7 +25,7 @@ Item {
                 Material.elevation: 5
                 TabButton {
                     width: 100
-                    text: qsTr("后台管理")
+                    text: qsTr("设备/服务")
                 }
                 TabButton {
                     width: tabWidth

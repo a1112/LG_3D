@@ -21,7 +21,8 @@ class DailyLogger:
             self.current_date = today
             log_file_path = os.path.join(self.log_dir, f"{today}.log")
             # 创建一个新的logger实例
-            self.logger = logging.getLogger(today)
+            logger_name = f"DailyLogger.{os.path.abspath(self.log_dir)}.{today}"
+            self.logger = logging.getLogger(logger_name)
             self.logger.setLevel(logging.INFO)
             # 创建FileHandler
             file_handler = logging.FileHandler(log_file_path, encoding="utf-8")

@@ -1,22 +1,16 @@
-import copy
 import json
-import os
-import subprocess
-import sys
 import time
 from pathlib import Path
-from threading import Thread
+
 import win32api
 import win32gui
+import psutil
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, Slot, Signal, Property
-from collections import defaultdict
-from Log import DailyLogger
+from PySide6.QtCore import Slot
+
 from MonitorBase.MonitorBase import MonitorBase
 from ProcessObj import tryGetInt
 from tools.soft import getProcessDict, getProcessesByTargets, kill_process_and_children, normalize_path
-
-import psutil
 
 from configs.GlobSoftConfig import globSoftConfig
 from enum_types.enums import SoftRunStateEnum
@@ -31,10 +25,20 @@ class SoftMonitor(MonitorBase):
             self.monitorData = []
             self.set_config_change(True)
         self.manualStopped = set()
+        self.scanCompleted = False
         self.start()
 
+    def _resolve_exe_path(self, exe):
+        exe = str(exe or "").replace("file:///", "").strip().strip('"')
+        if not exe:
+            return ""
+        exe_path = Path(exe)
+        if exe_path.is_absolute():
+            return str(exe_path)
+        return str(Path(self.configFile).resolve().parent / exe_path)
+
     def _start_exe_(self, exe, args):
-        exe = str(exe).replace("file:///", "")
+        exe = self._resolve_exe_path(exe)
         args = str(args or "")
         self.log.info(f"执行 \"{exe}\" {args}")
         exe_url = Path(exe)
@@ -75,14 +79,17 @@ class SoftMonitor(MonitorBase):
 
     @Slot(str, result=bool)
     def stopExe(self, exe):
-        normalized_exe = normalize_path(exe)
+        normalized_exe = normalize_path(self._resolve_exe_path(exe))
         name = Path(str(exe)).name
         self.log.debug(f"主动关闭 {name} {exe}")
         self.manualStopped.add(normalized_exe)
         return self._stop_target(normalized_exe, name)
 
     def _get_target_pids(self, normalized_exe):
-        pid_list = globSoftConfig.get_pid_list(normalized_exe)
+        pid_list = [
+            pid for pid in globSoftConfig.get_pid_list(normalized_exe)
+            if psutil.pid_exists(pid)
+        ]
         pid_list.extend(
             process["pid"]
             for process in getProcessesByTargets([normalized_exe])
@@ -108,7 +115,9 @@ class SoftMonitor(MonitorBase):
 
         if stopped:
             for item in list(self.monitorData):
-                if normalize_path(item.get("exe")) == normalized_exe:
+                item_exe = normalize_path(
+                    self._resolve_exe_path(item.get("exe", "")))
+                if item_exe == normalized_exe:
                     self.stateDict[item.get("name", name)] = SoftRunStateEnum.STOPPED
                     globSoftConfig.set_soft_state(normalized_exe, 0, SoftRunStateEnum.STOPPED)
         return True
@@ -126,13 +135,33 @@ class SoftMonitor(MonitorBase):
         normalized_target = normalize_path(name)
         for item in list(self.monitorData):
             item_name = item.get("name", "")
-            exe = item.get("exe", "")
+            exe = self._resolve_exe_path(item.get("exe", ""))
             if name == item_name or normalized_target == normalize_path(exe):
                 args = item["args"] if "args" in item else ""
                 self.manualStopped.discard(normalize_path(exe))
                 self.log.debug("主动启动 " + item_name + " " + exe + " " + args)
-                self._start_exe_(exe, args)
+                self._start_exe_(item.get("exe", ""), args)
                 return True
+        return False
+
+    @Slot(str, result=bool)
+    def restartExe(self, name):
+        normalized_target = normalize_path(name)
+        for item in list(self.monitorData):
+            item_name = item.get("name", "")
+            exe = normalize_path(
+                self._resolve_exe_path(item.get("exe", "")))
+            if name != item_name and normalized_target != exe:
+                continue
+            self.log.info(f"主动重启 {item_name} {exe}")
+            self.manualStopped.add(exe)
+            stopped = self._stop_target(exe, item_name)
+            if not stopped:
+                return False
+            time.sleep(1)
+            self.manualStopped.discard(exe)
+            return self._start_exe_(item.get("exe", ""),
+                                    item.get("args", "")) > 32
         return False
 
     @Slot(result=bool)
@@ -140,7 +169,7 @@ class SoftMonitor(MonitorBase):
         self.log.debug("全部关闭。")
         ok = True
         for item in list(self.monitorData):
-            exe = normalize_path(item.get("exe", ""))
+            exe = normalize_path(self._resolve_exe_path(item.get("exe", "")))
             if not exe:
                 continue
             self.manualStopped.add(exe)
@@ -150,17 +179,17 @@ class SoftMonitor(MonitorBase):
     @Slot(result=bool)
     def startAll(self):
         self.log.debug("全部启动。 ")
-        processDict = getProcessDict([item.get("exe", "") for item in self.monitorData])
+        processDict = getProcessDict([self._resolve_exe_path(item.get("exe", "")) for item in self.monitorData])
         started = False
         for item in list(self.monitorData):
-            exe = normalize_path(item["exe"])
+            exe = normalize_path(self._resolve_exe_path(item["exe"]))
             if exe in processDict:
                 continue
             args = item["args"] if "args" in item else ""
             monitor = item["monitorAble"] if "monitorAble" in item else True
             if monitor:
                 self.manualStopped.discard(exe)
-                self._start_exe_(exe, args)
+                self._start_exe_(item.get("exe", ""), args)
                 started = True
         return started
 
@@ -170,7 +199,7 @@ class SoftMonitor(MonitorBase):
         ok = True
         restart_items = []
         for item in list(self.monitorData):
-            exe = normalize_path(item.get("exe", ""))
+            exe = normalize_path(self._resolve_exe_path(item.get("exe", "")))
             if not exe:
                 continue
             monitor = item["monitorAble"] if "monitorAble" in item else True
@@ -181,7 +210,7 @@ class SoftMonitor(MonitorBase):
 
         time.sleep(1)
         for item in restart_items:
-            exe = normalize_path(item.get("exe", ""))
+            exe = normalize_path(self._resolve_exe_path(item.get("exe", "")))
             if not exe:
                 continue
             if self._get_target_pids(exe):
@@ -191,6 +220,30 @@ class SoftMonitor(MonitorBase):
             self.manualStopped.discard(exe)
             self._start_exe_(item.get("exe", ""), item.get("args", ""))
         return ok
+
+    @Slot(result=str)
+    def getIssues(self):
+        if not self.scanCompleted:
+            return "[]"
+        issues = []
+        for item in list(self.monitorData):
+            name = item.get("name", "")
+            if not item.get("monitorAble", True):
+                continue
+            exe = normalize_path(
+                self._resolve_exe_path(item.get("exe", "")))
+            if exe in self.manualStopped:
+                continue
+            state = self.stateDict.get(name, -2)
+            if state == SoftRunStateEnum.RUNNING:
+                continue
+            issues.append({
+                "name": name,
+                "exe": item.get("exe", ""),
+                "state": state,
+                "message": "启动文件不存在" if state == SoftRunStateEnum.NULL else "服务未运行",
+            })
+        return json.dumps(issues, ensure_ascii=False)
 
     @Slot(str, result=QtCore.QJsonValue)
     def getDefault(self, exe: str):
@@ -225,21 +278,22 @@ class SoftMonitor(MonitorBase):
     def run(self):
         while self._running:
             try:
-                processDict = getProcessDict([item.get("exe", "") for item in self.monitorData])
-            except BaseException as e:
+                processDict = getProcessDict([self._resolve_exe_path(item.get("exe", "")) for item in self.monitorData])
+            except Exception as e:
                 self.log.error(f"获取进程列表失败 {e}")
                 time.sleep(5)
                 continue
             for item in list(self.monitorData):
                 name = item.get("name", "")
-                exe = normalize_path(item.get("exe", ""))
+                exe_path = self._resolve_exe_path(item.get("exe", ""))
+                exe = normalize_path(exe_path)
                 args = item["args"] if "args" in item else ""
                 delay = tryGetInt(item["delay"]) if "delay" in item else 5
                 monitor = item["monitorAble"] if "monitorAble" in item else True
 
                 pid = 0
-                if not exe or not Path(exe).exists():
-                    self.log.error(f"{name}  不存在 {exe} {args}  延时 {delay}")
+                if not exe or not Path(exe_path).exists():
+                    self.log.error(f"{name}  不存在 {exe_path} {args}  延时 {delay}")
                     self.stateDict[name] = SoftRunStateEnum.NULL
                     continue
                 if exe not in processDict:
@@ -258,4 +312,5 @@ class SoftMonitor(MonitorBase):
                 globSoftConfig.set_soft_state(exe, pid, self.stateDict[name])
 
                 # 运行该软件
+            self.scanCompleted = True
             time.sleep(10)

@@ -113,6 +113,15 @@ ItemDelegate {
                         startExe(exe)
                     }
                 }
+                Button{
+                    height: 35
+                    enabled: item_state!=-1
+                    text: "重启"
+                    Material.background: Material.Teal
+                    onClicked: {
+                        restartExe(name)
+                    }
+                }
             }
         }
     }
@@ -139,6 +148,11 @@ ItemDelegate {
             text: "启动"
             enabled: item_state==0
             onClicked: {startExe(name)}
+        }
+        MenuItem{
+            text: "重启"
+            enabled: item_state!=-1
+            onClicked: {restartExe(name)}
         }
         MenuItem{
             text: "删除"

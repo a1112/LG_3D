@@ -28,6 +28,14 @@ Item {
                     restartAll()
                 }
             }
+            ButtonBase {
+                visible: issueCount > 0
+                text: "设备问题 (" + issueCount + ")"
+                Material.background: Material.Red
+                onClicked: {
+                    openIssueDialog()
+                }
+            }
         }
         Item{
             Layout.fillWidth: true
@@ -52,10 +60,10 @@ Item {
             }
 
             ItemDelegate{
-                text: "服务: <link>"+"http://0.0.0.0:8011"+"</link>"
+                text: "服务: <link>"+"http://0.0.0.0:5010"+"</link>"
                 height: parent.height
                 onClicked: {
-                    Qt.openUrlExternally("http://127.0.0.1:8011/docs")
+                    Qt.openUrlExternally("http://127.0.0.1:5010/docs")
                 }
             }
 
