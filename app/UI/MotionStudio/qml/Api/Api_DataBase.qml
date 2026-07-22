@@ -11,13 +11,16 @@ Api_Base {
         interval: 1000
         repeat: false
         onTriggered: {
+            if (!coreSetting.useRustTestServer) {
+                return
+            }
             heightPointSocket.active = false
             heightPointSocket.active = true
         }
     }
 
     function _scheduleHeightPointReconnect(){
-        if (!heightPointReconnectTimer.running) {
+        if (coreSetting.useRustTestServer && !heightPointReconnectTimer.running) {
             heightPointReconnectTimer.restart()
         }
     }
@@ -25,14 +28,14 @@ Api_Base {
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
         url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
-        active: true
+        active: coreSetting.useRustTestServer
         onStatusChanged: function(status) {
             if (status === WebSocket.Open) {
                 while (_heightPointQueue.length > 0) {
                     let payload = _heightPointQueue.shift()
                     sendTextMessage(payload)
                 }
-            } else if (status === WebSocket.Error || status === WebSocket.Closed) {
+            } else if (coreSetting.useRustTestServer && (status === WebSocket.Error || status === WebSocket.Closed)) {
                 console.log("heightPoint ws closed/error", status, errorString)
                 heightPointSocket.active = false
                 // flush pending with failure
@@ -76,6 +79,11 @@ Api_Base {
     property var _heightPointQueue: []
 
     function _sendHeightPointWs(payload, success, failure){
+        if (!coreSetting.useRustTestServer){
+            let url = apiConfig.url(apiConfig.serverUrlData, "coilData", "heightPoint", payload.surface_key, payload.coil_id)
+                    + `?x=${payload.x}&y=${payload.y}`
+            return ajax.get(url, success, failure)
+        }
         _heightPointReqId += 1
         payload.id = _heightPointReqId
         _heightPointRequests[payload.id] = {
@@ -242,6 +250,35 @@ Api_Base {
 
     function reconnectCameraAdjustment(cameraKey, success, failure){
         return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "camera_adjust", cameraKey, "reconnect"), {}, success, failure)
+    }
+
+    function getHardwareMonitor(success, failure){
+        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase, "hardware_monitor"), success, failure)
+    }
+
+    function reconnectCamera2D(cameraKey, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "cameras", cameraKey, "reconnect", "2d"), {}, success, failure)
+    }
+
+    function reconnectCamera3D(cameraKey, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "cameras", cameraKey, "reconnect", "3d"), {}, success, failure)
+    }
+
+    function resetCamera3D(cameraKey, success, failure){
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "cameras", cameraKey, "reset", "3d"), {}, success, failure)
+    }
+
+    function controlNetworkAdapter(adapterName, action, success, failure){
+        let encodedName = encodeURIComponent(adapterName)
+        let payload = {action: action}
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "network", "adapters", encodedName, "control"),
+                         payload, success, failure)
+    }
+
+    function restartService(serviceKey, success, failure){
+        let encodedKey = encodeURIComponent(serviceKey)
+        return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase, "services", encodedKey, "restart"),
+                         {}, success, failure)
     }
 
     function getCameraDataUrl(coilId_,camera_key,success,failure){

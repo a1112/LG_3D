@@ -8,6 +8,7 @@ import "MsgPop"
 import "Backup"
 import "ReDetection"
 import "GlobalAlarm"
+import "HardwareMonitor"
 import "../SettingPage"
 import "../Style"
 import "ServerMange"
@@ -48,6 +49,8 @@ Item {
     }
     GlobalAlarmView{id:globalAlarmView} // 设备报警
     function popupGlobalAlarmView(){globalAlarmView.popup()}
+    HardwareMonitorView{id:hardwareMonitorView}
+    function popupHardwareMonitorView(){hardwareMonitorView.popup()}
     ServerMangeView{id:serverMangeView}
     function popupServerMangeView(){serverMangeView.popup()}
     ListValueChangeView{id:listValueChangeView} // 列表数值变化取消
