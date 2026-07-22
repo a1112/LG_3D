@@ -1,29 +1,21 @@
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import os
-import datetime
 from pathlib import Path
+
 import CONFIG
+from Base.utils.nonblocking_logging import configure_nonblocking_logging
 
-# 创建 logger
+project_root = Path(__file__).resolve().parents[2]
+log_dir = Path(os.getenv("LG3D_LOG_DIR", project_root / "log")) / "CapTrue"
+config_name = Path(CONFIG.configFile).stem
+filename = log_dir / f"{config_name}_{os.getpid()}.log"
+
+# File and console writes run in separate daemon listeners. Capture, API and
+# camera SDK threads only enqueue records and can never wait for console I/O.
+logging_runtime = configure_nonblocking_logging(
+    filename,
+    root_level=logging.DEBUG,
+    file_level=logging.DEBUG,
+    console_level=logging.INFO,
+)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-# 创建控制台处理器
-log_dir_base = Path("log")
-# 创建 TimedRotatingFileHandler
-log_dir = log_dir_base/"CapTrue"/f"{CONFIG.configFile.stem}_{os.getpid()}"
-
-log_dir.parent.mkdir(parents=True, exist_ok=True)
-
-filename = str(log_dir)
-handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
-handler.suffix = "%Y-%m-%d.log"
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-console_handler.setFormatter(formatter)
-
-# logger.addHandler(handler)
-logger.addHandler(console_handler)
