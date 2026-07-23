@@ -21,6 +21,11 @@
         "exe": "launchers/start_lg3d_plc_write_source.bat",
         "args": "",
         "name": "LG_3D_writePLC_源码",
+        "processPidFiles": [
+            "D:/LCX_USER/LG_3D/app/plcServer/pids/plc_width_writer_watchdog.pid",
+            "D:/LCX_USER/LG_3D/app/plcServer/pids/plc_width_writer.pid",
+            "D:/LCX_USER/LG_3D/app/plcServer/log/plc_writer_heartbeat.json"
+        ],
         "delay": 5,
         "monitorAble": true
     },
@@ -37,6 +42,9 @@
         "exe": "launchers/start_lg3d_algorithm_3d_source.bat",
         "args": "",
         "name": "LG_3D_3D算法_源码",
+        "processPidFiles": [
+            "D:/LCX_USER/LG_3D/app/algorithm_runtime/log/runtime_heartbeat.json"
+        ],
         "delay": 5,
         "monitorAble": true
     },

@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import time
@@ -28,6 +29,86 @@ def _cmdline_matches_targets(cmdline, target_paths):
     return any(target and target in normalized_text for target in target_paths)
 
 
+def get_listening_pids(port):
+    try:
+        target_port = int(port)
+    except (TypeError, ValueError):
+        return []
+    if target_port <= 0:
+        return []
+    try:
+        connections = psutil.net_connections(kind="inet")
+    except (psutil.AccessDenied, OSError):
+        return []
+    result = set()
+    for connection in connections:
+        if connection.status != psutil.CONN_LISTEN or not connection.laddr:
+            continue
+        try:
+            local_port = getattr(connection.laddr, "port", connection.laddr[1])
+            process_id = int(connection.pid or 0)
+        except (IndexError, TypeError, ValueError):
+            continue
+        if int(local_port) == target_port and process_id > 0:
+            result.add(process_id)
+    return sorted(result)
+
+
+def get_process_ids_from_files(paths):
+    result = set()
+    for path in paths or []:
+        try:
+            text = Path(path).read_text(encoding="utf-8-sig").strip()
+            if not text:
+                continue
+            try:
+                payload = json.loads(text)
+            except json.JSONDecodeError:
+                payload = text
+            process_id = int(payload.get("pid") if isinstance(payload, dict)
+                             else payload)
+            if process_id > 0 and psutil.pid_exists(process_id):
+                result.add(process_id)
+        except (OSError, TypeError, ValueError):
+            continue
+    return sorted(result)
+
+
+def get_process_tree_roots(process_ids):
+    """Return the highest service-owned Python/cmd parent for each PID."""
+    protected = {os.getpid()}
+    try:
+        protected.update(parent.pid for parent in psutil.Process().parents())
+    except (psutil.Error, OSError):
+        pass
+
+    allowed_parent_names = {"cmd.exe", "python.exe", "pythonw.exe"}
+    roots = set()
+    for process_id in {
+            int(value) for value in process_ids or [] if int(value) > 0
+    }:
+        if not psutil.pid_exists(process_id):
+            continue
+        try:
+            process = psutil.Process(process_id)
+        except (psutil.Error, OSError):
+            continue
+        root = process
+        for _ in range(5):
+            try:
+                parent = root.parent()
+                parent_name = parent.name().casefold() if parent else ""
+            except (psutil.Error, OSError):
+                break
+            if (parent is None or parent.pid in protected
+                    or parent_name not in allowed_parent_names):
+                break
+            root = parent
+        if root.pid not in protected:
+            roots.add(root.pid)
+    return sorted(roots)
+
+
 def get_process(pid):
     """检查指定PID的进程是否正在运行"""
     try:
@@ -48,6 +129,7 @@ def kill_process_and_children(pid, timeout=5):
         print(f"进程 {pid} 不存在")
         return False
 
+    # 递归获取所有子进程
     try:
         children = parent.children(recursive=True)
     except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -61,6 +143,12 @@ def kill_process_and_children(pid, timeout=5):
             process.terminate()
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
+
+    # 终止父进程
+    try:
+        parent.terminate()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        pass
 
     _, alive = psutil.wait_procs(processes, timeout=timeout)
     for process in alive:
