@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "services": [
+    {
+      "key": "main_api",
+      "name": "LG_3D API 源码",
+      "category": "核心",
+      "launcher": "start_lg3d_api_source.bat",
+      "heartbeat": {"host": "127.0.0.1", "port": 5010, "timeoutSeconds": 200},
+      "process": {"commandTokens": ["server.py"], "cwd": "app/Server", "pidFiles": []},
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    },
+    {
+      "key": "secondary_tcp",
+      "name": "LG_3D 二级 TCP 源码",
+      "category": "通信",
+      "launcher": "start_lg3d_secondary_tcp_source.bat",
+      "heartbeat": {"host": "127.0.0.1", "port": 6001, "timeoutSeconds": 200},
+      "process": {"commandTokens": ["tcpserver.py"], "cwd": "app/Communication", "pidFiles": []},
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    },
+    {
+      "key": "plc_write",
+      "name": "LG_3D PLC 写入源码",
+      "category": "通信",
+      "launcher": "start_lg3d_plc_write_source.bat",
+      "process": {
+        "commandTokens": ["writeplc.py"],
+        "cwd": "app/plcServer",
+        "pidFiles": [
+          "app/plcServer/pids/plc_width_writer_watchdog.pid",
+          "app/plcServer/pids/plc_width_writer.pid",
+          "app/plcServer/log/plc_writer_heartbeat.json"
+        ]
+      },
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    },
+    {
+      "key": "capture",
+      "name": "LG_3D 采集服务源码",
+      "category": "核心",
+      "launcher": "start_lg3d_capture_3d_source.bat",
+      "heartbeat": {"host": "127.0.0.1", "port": 6100, "timeoutSeconds": 200},
+      "process": {"commandTokens": ["capall.py"], "cwd": "app/CapTrue", "pidFiles": []},
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    },
+    {
+      "key": "algorithm_3d",
+      "name": "LG_3D 3D 算法源码",
+      "category": "算法",
+      "launcher": "start_lg3d_algorithm_3d_source.bat",
+      "process": {
+        "commandTokens": ["main.py"],
+        "cwd": "app/algorithm_runtime",
+        "pidFiles": ["app/algorithm_runtime/log/runtime_heartbeat.json"]
+      },
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    },
+    {
+      "key": "algorithm_2d",
+      "name": "LG_3D 2D 算法源码",
+      "category": "算法",
+      "launcher": "start_lg3d_algorithm_2d_source.bat",
+      "heartbeat": {"host": "127.0.0.1", "port": 6020, "timeoutSeconds": 200},
+      "process": {"commandTokens": ["server.py"], "cwd": "app/algorithm_runtime_2D", "pidFiles": []},
+      "monitor": {"enabled": true, "delaySeconds": 5}
+    }
+  ]
+}

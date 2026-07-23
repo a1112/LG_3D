@@ -1,8 +1,0 @@
-{
-    "files": [
-        "main.py",
-        "main.qml",
-        "qml.qrc",
-        "qtquickcontrols2.conf"
-    ]
-}

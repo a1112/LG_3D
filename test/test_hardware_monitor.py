@@ -644,3 +644,29 @@ def test_api_health_remains_responsive_during_blocked_hardware_probe(
     assert health_response.status_code == 200
     assert hardware_response.status_code == 200
     assert elapsed < 0.5
+
+
+def test_service_registry_drives_restartable_lg3d_services():
+    definitions = {
+        item["key"]: item
+        for item in hardware_monitor._SERVICE_DEFINITIONS
+    }
+
+    assert definitions["main_api"]["port"] == 5010
+    assert definitions["capture"]["restartLauncher"] == (
+        "start_lg3d_capture_3d_source.bat")
+    assert definitions["algorithm_3d"]["cwdFragment"] == (
+        "/app/algorithm_runtime")
+    assert set(definitions["lis_watchdog"]["processNames"]) == {
+        "lg3dservicemonitor.exe",
+        "lis.exe",
+    }
+
+
+def test_shared_launcher_directory_has_priority():
+    project_root = PROJECT_ROOT
+
+    directories = hardware_monitor._launcher_directories()
+
+    assert directories[0] == (
+        project_root / "scripts" / "service_control" / "launchers")

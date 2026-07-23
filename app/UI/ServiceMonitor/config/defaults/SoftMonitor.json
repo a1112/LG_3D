@@ -1,0 +1,70 @@
+[
+  {
+    "key": "main_api",
+    "exe": "start_lg3d_api_source.bat",
+    "args": "",
+    "name": "LG_3D API 源码",
+    "heartbeatHost": "127.0.0.1",
+    "heartbeatPort": 5010,
+    "heartbeatTimeoutSeconds": 200,
+    "delay": 5,
+    "monitorAble": true
+  },
+  {
+    "key": "secondary_tcp",
+    "exe": "start_lg3d_secondary_tcp_source.bat",
+    "args": "",
+    "name": "LG_3D 二级 TCP 源码",
+    "heartbeatHost": "127.0.0.1",
+    "heartbeatPort": 6001,
+    "heartbeatTimeoutSeconds": 200,
+    "delay": 5,
+    "monitorAble": true
+  },
+  {
+    "key": "plc_write",
+    "exe": "start_lg3d_plc_write_source.bat",
+    "args": "",
+    "name": "LG_3D PLC 写入源码",
+    "processPidFiles": [
+      "app/plcServer/pids/plc_width_writer_watchdog.pid",
+      "app/plcServer/pids/plc_width_writer.pid",
+      "app/plcServer/log/plc_writer_heartbeat.json"
+    ],
+    "delay": 5,
+    "monitorAble": true
+  },
+  {
+    "key": "capture",
+    "exe": "start_lg3d_capture_3d_source.bat",
+    "args": "",
+    "name": "LG_3D 采集服务源码",
+    "heartbeatHost": "127.0.0.1",
+    "heartbeatPort": 6100,
+    "heartbeatTimeoutSeconds": 200,
+    "delay": 5,
+    "monitorAble": true
+  },
+  {
+    "key": "algorithm_3d",
+    "exe": "start_lg3d_algorithm_3d_source.bat",
+    "args": "",
+    "name": "LG_3D 3D 算法源码",
+    "processPidFiles": [
+      "app/algorithm_runtime/log/runtime_heartbeat.json"
+    ],
+    "delay": 5,
+    "monitorAble": true
+  },
+  {
+    "key": "algorithm_2d",
+    "exe": "start_lg3d_algorithm_2d_source.bat",
+    "args": "",
+    "name": "LG_3D 2D 算法源码",
+    "heartbeatHost": "127.0.0.1",
+    "heartbeatPort": 6020,
+    "heartbeatTimeoutSeconds": 200,
+    "delay": 5,
+    "monitorAble": true
+  }
+]

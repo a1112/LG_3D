@@ -39,7 +39,7 @@ _CONTROL_ACTIONS = {
     "disable": "Disable-NetAdapter",
     "restart": "Restart-NetAdapter",
 }
-_SERVICE_DEFINITIONS = (
+_DEFAULT_SERVICE_DEFINITIONS = (
     {
         "key": "main_api",
         "name": "主 API",
@@ -117,9 +117,55 @@ _SERVICE_DEFINITIONS = (
         "key": "lis_watchdog",
         "name": "LIS 服务守护",
         "category": "守护",
-        "processNames": ("lis.exe",),
+        "processNames": ("lg3dservicemonitor.exe", "lis.exe"),
     },
 )
+
+
+def _load_service_definitions() -> tuple[dict, ...]:
+    project_root = Path(__file__).resolve().parents[3]
+    registry_path = (
+        project_root / "CONFIG_3D" / "service_monitor" / "services.json")
+    try:
+        payload = json.loads(registry_path.read_text(encoding="utf-8-sig"))
+        registry_items = payload["services"]
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return _DEFAULT_SERVICE_DEFINITIONS
+
+    overrides = {}
+    for service in registry_items:
+        try:
+            process = service.get("process") or {}
+            heartbeat = service.get("heartbeat") or {}
+            cwd = str(process.get("cwd") or "").replace("\\", "/")
+            definition = {
+                "key": str(service["key"]),
+                "name": str(service["name"]),
+                "category": str(service.get("category") or "service"),
+                "restartLauncher": str(service["launcher"]),
+            }
+            if heartbeat.get("port"):
+                definition["port"] = int(heartbeat["port"])
+            if process.get("commandTokens"):
+                definition["commandTokens"] = tuple(
+                    str(token).casefold()
+                    for token in process["commandTokens"])
+            if process.get("processNames"):
+                definition["processNames"] = tuple(
+                    str(name).casefold()
+                    for name in process["processNames"])
+            if cwd:
+                definition["cwdFragment"] = "/" + cwd.strip("/").casefold()
+            overrides[definition["key"]] = definition
+        except (KeyError, TypeError, ValueError):
+            return _DEFAULT_SERVICE_DEFINITIONS
+
+    return tuple(
+        overrides.get(definition["key"], definition)
+        for definition in _DEFAULT_SERVICE_DEFINITIONS)
+
+
+_SERVICE_DEFINITIONS = _load_service_definitions()
 
 
 def _service_definition(service_key: str) -> dict:
@@ -136,6 +182,7 @@ def _launcher_directories() -> list[Path]:
     if configured:
         candidates.append(Path(configured))
     candidates.extend((
+        project_root / "scripts" / "service_control" / "launchers",
         project_root.parent / "bkvl_UI" / "config" / "launchers",
         project_root.parent / "bkvl_UI" / "dist" / "lis" / "config" / "launchers",
     ))
