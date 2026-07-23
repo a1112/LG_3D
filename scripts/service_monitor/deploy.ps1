@@ -61,13 +61,26 @@ foreach ($name in @("DiskMonitor.json", "SoftMonitor.json")) {
 if ($Activate) {
     $activePath = Join-Path $dataRoot "active.json"
     $previous = $null
+    $legacyExecutable = $null
     if (Test-Path -LiteralPath $activePath) {
-        $previous = (Get-Content -LiteralPath $activePath -Raw | ConvertFrom-Json).currentVersion
+        $existing = Get-Content -LiteralPath $activePath -Raw | ConvertFrom-Json
+        if (-not $existing.mode -or $existing.mode -eq "release") {
+            $previous = $existing.currentVersion
+        }
+        $legacyExecutable = $existing.legacyExecutable
+    }
+    if (-not $legacyExecutable) {
+        $legacyCandidate = Join-Path (Split-Path $LG3DRoot -Parent) "bkvl_UI\dist\lis\lis.exe"
+        if (Test-Path -LiteralPath $legacyCandidate) {
+            $legacyExecutable = $legacyCandidate
+        }
     }
     [ordered]@{
         schemaVersion = 1
+        mode = "release"
         currentVersion = $version
         previousVersion = $previous
+        legacyExecutable = $legacyExecutable
         activatedAt = (Get-Date).ToUniversalTime().ToString("o")
     } | ConvertTo-Json | Set-Content -LiteralPath $activePath -Encoding UTF8
 }

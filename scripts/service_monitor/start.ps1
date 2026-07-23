@@ -13,6 +13,24 @@ $dataRoot = Join-Path $LG3DRoot "var\ServiceMonitor"
 if (-not $Version) {
     $active = Get-Content -LiteralPath (Join-Path $dataRoot "active.json") -Raw |
         ConvertFrom-Json
+    if ($active.mode -eq "legacy") {
+        $legacyExecutable = [string]$active.legacyExecutable
+        if (-not $legacyExecutable -or -not (Test-Path -LiteralPath $legacyExecutable)) {
+            throw "Legacy ServiceMonitor executable not found: $legacyExecutable"
+        }
+        $process = Start-Process -FilePath $legacyExecutable -Verb RunAs -PassThru
+        Start-Sleep -Seconds 2
+        if ($process.HasExited) {
+            throw "Legacy ServiceMonitor exited during startup: $($process.ExitCode)"
+        }
+        [PSCustomObject]@{
+            Version = "legacy"
+            ProcessId = $process.Id
+            Executable = $legacyExecutable
+            ReadOnly = $false
+        }
+        exit 0
+    }
     $Version = [string]$active.currentVersion
 }
 $release = Join-Path $LG3DRoot "deploy\ServiceMonitor\releases\$Version"
