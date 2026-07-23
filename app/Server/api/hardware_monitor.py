@@ -17,6 +17,23 @@ _WINDOWS_LINK_SPEED_LOCK = threading.Lock()
 _WINDOWS_LINK_SPEED_CACHE: tuple[float, dict[str, int]] = (0.0, {})
 _WINDOWS_LINK_SPEED_REFRESHING = False
 _WINDOWS_LINK_SPEED_CACHE_SECONDS = 60.0
+_WATCHDOG_CHILD_ENVIRONMENTS = (
+    "LG3D_API_WATCHDOG_CHILD",
+    "LG3D_ALGORITHM_3D_WATCHDOG_CHILD",
+    "LG3D_ALGORITHM_2D_WATCHDOG_CHILD",
+    "LG3D_PLC_WATCHDOG_CHILD",
+)
+_RESTART_PARENT_PROCESS_NAMES = frozenset({
+    "cmd.exe",
+    "python.exe",
+    "pythonw.exe",
+})
+_RESTART_SUPERVISOR_TOKENS = (
+    "watchdog.py",
+    "write_plc_watchdog.py",
+    "start_lg3d_",
+)
+_RESTART_SHUTDOWN_TIMEOUT_SECONDS = 20
 _CONTROL_ACTIONS = {
     "enable": "Enable-NetAdapter",
     "disable": "Disable-NetAdapter",
@@ -136,17 +153,103 @@ def _resolve_restart_launcher(definition: dict) -> Path | None:
     return None
 
 
-def _schedule_service_restart(process_ids: list[int], launcher: Path) -> None:
-    pid_values = ",".join(str(pid) for pid in sorted(set(process_ids)) if pid > 0)
+def _is_restart_supervisor(process, *, allow_unidentified: bool = False) -> bool:
+    try:
+        process_name = str(process.name() or "").casefold()
+    except (psutil.Error, OSError):
+        return False
+    if process_name not in _RESTART_PARENT_PROCESS_NAMES:
+        return False
+    try:
+        command_text = _normalize_process_text(" ".join(process.cmdline()))
+    except (psutil.Error, OSError):
+        return allow_unidentified
+    return allow_unidentified or any(
+        token in command_text for token in _RESTART_SUPERVISOR_TOKENS)
+
+
+def _expand_restart_process_ids(process_ids: list[int]) -> set[int]:
+    """Include watchdog/launcher parents and every known child process."""
+    expanded_process_ids = {
+        int(process_id)
+        for process_id in process_ids
+        if int(process_id) > 0
+    }
+    current_process_id = os.getpid()
+
+    for process_id in tuple(expanded_process_ids):
+        try:
+            process = psutil.Process(process_id)
+        except (psutil.Error, OSError):
+            continue
+
+        child_process_id = process_id
+        for _ in range(4):
+            try:
+                parent = process.parent()
+            except (psutil.Error, OSError):
+                break
+            if parent is None or parent.pid <= 0:
+                break
+            allow_unidentified = child_process_id == current_process_id
+            if not _is_restart_supervisor(
+                    parent, allow_unidentified=allow_unidentified):
+                break
+            expanded_process_ids.add(parent.pid)
+            child_process_id = parent.pid
+            process = parent
+
+    # Snapshot descendants before creating the restart helper. The helper is
+    # itself a child of the API process, so discovering children afterwards
+    # would make the helper terminate itself.
+    for process_id in tuple(expanded_process_ids):
+        try:
+            expanded_process_ids.update(
+                child.pid
+                for child in psutil.Process(process_id).children(recursive=True)
+                if child.pid > 0)
+        except (psutil.Error, OSError):
+            continue
+    return expanded_process_ids
+
+
+def _schedule_service_restart(
+        process_ids: list[int],
+        launcher: Path,
+        ports: tuple[int, ...] = (),
+) -> None:
+    # Snapshot descendants before creating the restart helper.  The helper is
+    # itself a child of the API process, so using taskkill /T afterwards would
+    # kill the helper before it can launch the replacement service.
+    expanded_process_ids = _expand_restart_process_ids(process_ids)
+    pid_values = ",".join(
+        str(pid) for pid in sorted(expanded_process_ids))
+    port_values = ",".join(
+        str(port) for port in sorted({
+            int(port)
+            for port in ports
+            if int(port) > 0
+        }))
     escaped_launcher = str(launcher).replace("'", "''")
     escaped_workdir = str(launcher.parent).replace("'", "''")
     script = (
         "$ErrorActionPreference='Continue';"
         "Start-Sleep -Seconds 1;"
         f"$targets=@({pid_values});"
+        f"$ports=@({port_values});"
         "foreach($targetPid in $targets){"
         "Stop-Process -Id $targetPid -Force -ErrorAction SilentlyContinue};"
-        "Start-Sleep -Seconds 1;"
+        f"$deadline=(Get-Date).AddSeconds({_RESTART_SHUTDOWN_TIMEOUT_SECONDS});"
+        "do{"
+        "$alive=@($targets|Where-Object{"
+        "$null -ne (Get-Process -Id $_ -ErrorAction SilentlyContinue)});"
+        "$busy=@(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue|"
+        "Where-Object{$ports -contains $_.LocalPort});"
+        "if($alive.Count -gt 0 -or $busy.Count -gt 0){"
+        "Start-Sleep -Milliseconds 200}"
+        "}while(($alive.Count -gt 0 -or $busy.Count -gt 0) -and "
+        "(Get-Date) -lt $deadline);"
+        "if($alive.Count -gt 0 -or $busy.Count -gt 0){exit 1};"
         f"Start-Process -FilePath '{escaped_launcher}' "
         f"-WorkingDirectory '{escaped_workdir}'"
     )
@@ -156,11 +259,15 @@ def _schedule_service_restart(process_ids: list[int], launcher: Path) -> None:
         | getattr(subprocess, "DETACHED_PROCESS", 0)
         | getattr(subprocess, "CREATE_NO_WINDOW", 0)
     )
+    environment = os.environ.copy()
+    for variable_name in _WATCHDOG_CHILD_ENVIRONMENTS:
+        environment.pop(variable_name, None)
     subprocess.Popen(
         ["powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle",
          "Hidden", "-EncodedCommand", encoded],
         close_fds=True,
         creationflags=creation_flags,
+        env=environment,
     )
 
 
@@ -179,7 +286,11 @@ def restart_service(service_key: str) -> dict:
     port = int(definition.get("port") or 0)
     if port:
         process_ids.extend(listeners.get(port, set()))
-    _schedule_service_restart(process_ids, launcher)
+    _schedule_service_restart(
+        process_ids,
+        launcher,
+        ports=(port, ) if port else (),
+    )
     return {
         "ok": True,
         "serviceKey": service_key,

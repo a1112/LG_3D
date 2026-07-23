@@ -1,8 +1,13 @@
+import asyncio
+import base64
 import importlib.util
 import sys
+import threading
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 
@@ -43,6 +48,97 @@ def _counters(bytes_sent, bytes_recv):
         dropin=3,
         dropout=4,
     )
+
+
+def test_service_restart_clears_watchdog_child_markers_and_snapshots_tree(
+        monkeypatch, tmp_path):
+    launcher = tmp_path / "restart.bat"
+    launcher.write_text("@echo off\n", encoding="utf-8")
+    captured = {}
+
+    for variable_name in hardware_monitor._WATCHDOG_CHILD_ENVIRONMENTS:
+        monkeypatch.setenv(variable_name, "1")
+
+    def fake_popen(command, **kwargs):
+        captured["command"] = command
+        captured["kwargs"] = kwargs
+        return object()
+
+    class FakeProcess:
+
+        def __init__(self, process_id):
+            assert process_id in {320, 321}
+            self.pid = process_id
+
+        def parent(self):
+            if self.pid == 321:
+                return FakeProcess(320)
+            return None
+
+        def name(self):
+            return "python.exe"
+
+        def cmdline(self):
+            if self.pid == 320:
+                return ["python.exe", "D:/app/Server/watchdog.py"]
+            return ["python.exe", "D:/app/Server/Server.py"]
+
+        def children(self, recursive):
+            assert recursive is True
+            if self.pid == 320:
+                return [
+                    SimpleNamespace(pid=321),
+                    SimpleNamespace(pid=322),
+                    SimpleNamespace(pid=323),
+                ]
+            return [SimpleNamespace(pid=322), SimpleNamespace(pid=323)]
+
+    monkeypatch.setattr(hardware_monitor.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(hardware_monitor.psutil, "Process", FakeProcess)
+
+    hardware_monitor._schedule_service_restart(
+        [321], launcher, ports=(5010, ))
+
+    encoded = captured["command"][-1]
+    script = base64.b64decode(encoded).decode("utf-16-le")
+    assert "$targets=@(320,321,322,323)" in script
+    assert "$ports=@(5010)" in script
+    assert "Stop-Process -Id $targetPid" in script
+    assert "Get-NetTCPConnection -State Listen" in script
+    assert "if($alive.Count -gt 0 -or $busy.Count -gt 0){exit 1}" in script
+    assert "taskkill" not in script
+    assert "Start-Process" in script
+    for variable_name in hardware_monitor._WATCHDOG_CHILD_ENVIRONMENTS:
+        assert variable_name not in captured["kwargs"]["env"]
+
+
+def test_restart_process_expansion_does_not_include_unrelated_python_parent(
+        monkeypatch):
+
+    class FakeProcess:
+
+        def __init__(self, process_id):
+            self.pid = process_id
+
+        def parent(self):
+            return FakeProcess(400) if self.pid == 401 else None
+
+        def name(self):
+            return "python.exe"
+
+        def cmdline(self):
+            if self.pid == 400:
+                return ["python.exe", "unrelated_worker.py"]
+            return ["python.exe", "service.py"]
+
+        def children(self, recursive):
+            assert recursive is True
+            return []
+
+    monkeypatch.setattr(hardware_monitor.psutil, "Process", FakeProcess)
+    monkeypatch.setattr(hardware_monitor.os, "getpid", lambda: 999)
+
+    assert hardware_monitor._expand_restart_process_ids([401]) == {401}
 
 
 def test_network_monitor_reports_link_addresses_and_throughput(monkeypatch):
@@ -501,3 +597,50 @@ def test_hardware_monitor_qml_popup_is_wired():
     assert "popupHardwareMonitorView" in pops_qml
     assert "popManage.popupHardwareMonitorView()" in header_qml
     assert "qml/PopupView/HardwareMonitor/HardwareMonitorView.qml" in qrc
+
+
+def test_plc_api_default_port_matches_plc_service(monkeypatch):
+    monkeypatch.delenv("PLC_SERVER_PORT", raising=False)
+    monkeypatch.setenv("PLC_SERVER_IP", "127.0.0.1")
+    assert ApiDataBase._plc_service_base_url() == "http://127.0.0.1:1035"
+
+    monkeypatch.setenv("PLC_SERVER_PORT", "invalid")
+    assert ApiDataBase._plc_service_base_url() == "http://127.0.0.1:1035"
+
+
+def test_api_health_remains_responsive_during_blocked_hardware_probe(
+        monkeypatch):
+    entered = threading.Event()
+    release = threading.Event()
+
+    def blocked_hardware_probe():
+        entered.set()
+        release.wait(timeout=2)
+        return {"ok": True}
+
+    monkeypatch.setattr(ApiDataBase, "_hardware_monitor_value",
+                        blocked_hardware_probe)
+
+    async def exercise():
+        transport = httpx.ASGITransport(app=ApiDataBase.app)
+        async with httpx.AsyncClient(transport=transport,
+                                     base_url="http://test") as client:
+            blocked_request = asyncio.create_task(
+                client.get("/hardware_monitor"))
+            assert await asyncio.to_thread(entered.wait, 1)
+            started = time.monotonic()
+            health_response = await asyncio.wait_for(client.get("/health"),
+                                                     timeout=0.5)
+            elapsed = time.monotonic() - started
+            release.set()
+            hardware_response = await blocked_request
+            return health_response, hardware_response, elapsed
+
+    try:
+        health_response, hardware_response, elapsed = asyncio.run(exercise())
+    finally:
+        release.set()
+
+    assert health_response.status_code == 200
+    assert hardware_response.status_code == 200
+    assert elapsed < 0.5
