@@ -14,22 +14,22 @@ import "../Base"
 
 ApplicationWindow {
     id: root
-    width: 650
-    height: 500
+    width: adaptive.boundedWidth(650, 520, 820)
+    height: adaptive.boundedHeight(500, 380, 680)
     visible: false
     title: qsTr("报表导出")
     modality: Qt.ApplicationModal
     flags: Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowTitleHint
 
     // 屏幕居中
-    x: (Screen.width - width) / 2
-    y: (Screen.height - height) / 2
+    x: Math.max(0, (Screen.width - width) / 2)
+    y: Math.max(0, (Screen.height - height) / 2)
 
     function openDialog() {
         visible = true
         // 重新计算居中位置
-        x = (Screen.width - width) / 2
-        y = (Screen.height - height) / 2
+        x = Math.max(0, (Screen.width - width) / 2)
+        y = Math.max(0, (Screen.height - height) / 2)
         raise()
         requestActivate()
         // 初始化日期时间
@@ -67,6 +67,15 @@ ApplicationWindow {
     property string outputBaseUrl: outputFolder+"/"+outputName
 
     property ExportStatus exportStatus: ExportStatus{}
+
+    function refreshOutputName() {
+        outputName = Qt.formatDateTime(new Date(), "yyyy_MM_dd hh_mm_ss") + ".xlsx"
+    }
+
+    function quickOutputUrl(suffix) {
+        refreshOutputName()
+        return outputBaseUrl.replace(".xlsx", suffix + ".xlsx")
+    }
 
     background: Rectangle {
         color: Material.backgroundColor
@@ -144,9 +153,9 @@ ApplicationWindow {
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
                     root.exportStatus.stratExport()
-                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_today.xlsx")
+                    let outputUrl = root.quickOutputUrl("_today")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExportTodayUrl(),root.exportUrl,"")
+                    fileDownloader.downloadFile(api.getExportTodayUrl(),root.exportUrl)
                 }
             }
 
@@ -159,9 +168,9 @@ ApplicationWindow {
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
                     root.exportStatus.stratExport()
-                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_1h.xlsx")
+                    let outputUrl = root.quickOutputUrl("_1h")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExport1hUrl(),root.exportUrl,"")
+                    fileDownloader.downloadFile(api.getExport1hUrl(),root.exportUrl)
                 }
             }
 
@@ -174,9 +183,9 @@ ApplicationWindow {
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
                     root.exportStatus.stratExport()
-                    let outputUrl = root.outputBaseUrl.replace(".xlsx", "_24h.xlsx")
+                    let outputUrl = root.quickOutputUrl("_24h")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExport24hUrl(),root.exportUrl,"")
+                    fileDownloader.downloadFile(api.getExport24hUrl(),root.exportUrl)
                 }
             }
         }
@@ -204,6 +213,7 @@ ApplicationWindow {
                 onClicked:{
                     root.exportStatus.stratExport()
                     if (!saveFileInput.value){
+                        root.refreshOutputName()
                         root.exportUrl = root.outputBaseUrl
                     }
                     else{
