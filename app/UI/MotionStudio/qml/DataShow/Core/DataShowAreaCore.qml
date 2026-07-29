@@ -1,11 +1,10 @@
 import QtQuick
-import "_base_"
-import "../../Core/Surface"
-import "../../DataShow/2dShow/ViewTool"
 import "../../Model"
 Item {
-        property string key: "AREA"
-    id:root
+    id: root
+
+    required property var surfaceData
+    property string key: "AREA"
 
     property int _lastPreheatCoilId: -1
     property int _preheatRange: 2
@@ -240,6 +239,9 @@ Item {
     }
 
     function getAspectRatioByPoint(point){
+        if (canvasContentWidth <= 0 || canvasContentHeight <= 0) {
+            return Qt.point(0, 0)
+        }
         let asX =(point.x+canvasContentX)/canvasContentWidth
         let asY =(point.y+canvasContentY)/canvasContentHeight
         return Qt.point(asX,asY)
@@ -259,10 +261,10 @@ Item {
         return x*canvasScale
     }
     function toMm(w){
-        return w/canvasScale*surfaceData.scan3dScaleX
+        return canvasScale > 0 ? w/canvasScale*surfaceData.scan3dScaleX : 0
     }
     function pxto_top(px){
-        return parseInt(px/canvasScale)
+        return canvasScale > 0 ? parseInt(px/canvasScale) : 0
     }
     function px_to_width_mm(px){
         return px*surfaceData.scan3dScaleX
@@ -370,9 +372,13 @@ Item {
 
 
     function setDefectShowView(defect){
+        if (!flick || !defect) {
+            return false
+        }
         setToMaxScale()
-        flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
-        flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+        flick.contentX = Math.max(0, defect.defect_x - (flick.width - defect.defect_w) / 2)
+        flick.contentY = Math.max(0, defect.defect_y - (flick.height - defect.defect_h) / 2)
+        return true
     }
 
     // 监听从缺陷页面跳转时的待定位缺陷
@@ -380,17 +386,16 @@ Item {
         id: pendingDefectTimer
         interval: 500
         onTriggered: {
-            if (coreModel.pendingDefect && flick) {
+            if (coreModel.pendingDefect && flick && surfaceData.isAreaRootView) {
                 let pending = coreModel.pendingDefect
                 let currentCoilId = currentCoilModel ? currentCoilModel.coilId : surfaceData.coilId
-                console.log("DataShowAreaCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, currentCoilId)
-                // 检查是否匹配当前表面和卷材（使用 currentCoilModel.coilId）
-                if (pending.surface === surfaceData.key && pending.coilId === currentCoilId) {
-                    setDefectShowView(pending)
-                    console.log("定位到缺陷 (AREA)")
+                let targetView = pending.viewMode || "AREA"
+                if (targetView === "AREA"
+                        && pending.surface === surfaceData.key
+                        && Number(pending.coilId) === Number(currentCoilId)
+                        && setDefectShowView(pending)) {
+                    coreModel.pendingDefect = null
                 }
-                // 清除待定位缺陷
-                coreModel.pendingDefect = null
             }
         }
     }

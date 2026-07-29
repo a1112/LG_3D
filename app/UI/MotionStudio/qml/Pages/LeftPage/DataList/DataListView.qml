@@ -27,13 +27,17 @@ Item{
             AnimListView{
                 id: listView
                 anchors.fill: parent
-                currentIndex: core.coilIndex
-                onCurrentIndexChanged: {
-                    core.setCoilIndex(currentIndex)
-                }
+                currentIndex: leftCore.fliterEnable
+                              ? leftCore.visibleIndexForCoilId(core.currentCoilModel.coilId)
+                              : core.coilIndex
                 model: leftCore.fliterEnable?leftCore.fliterListModel : coreModel.currentCoilListModel
                 delegate:DataListViewIten{    //    -----------------------------
-                    width: listView.width
+                    width: ListView.view ? ListView.view.width : 0
+                    style: coreStyle
+                    coreController: core
+                    modelController: coreModel
+                    leftController: leftCore
+                    popupManager: popManage
                 }
             }
         }
@@ -48,7 +52,11 @@ Item{
     }
     HoverHandler{
         onPointChanged: {
-            leftCore.hoverPoint = Qt.point(point.position.x,point.position.y+100) // point.position
+            var nextPoint = Qt.point(point.position.x, point.position.y + 100)
+            if (Math.abs(leftCore.hoverPoint.x - nextPoint.x) >= 2
+                    || Math.abs(leftCore.hoverPoint.y - nextPoint.y) >= 2) {
+                leftCore.hoverPoint = nextPoint
+            }
         }
 
         onHoveredChanged: {

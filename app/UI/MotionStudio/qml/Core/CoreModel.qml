@@ -3,8 +3,11 @@ import QtQuick.Controls.Material
 import "_base_"
 import "Surface"
 CoreModel_ {
+    id: root
 
-    property CoreGlobalError coreGlobalError:CoreGlobalError{}
+    property CoreGlobalError coreGlobalError: CoreGlobalError {
+        model: root
+    }
 
     property int maxCoilListModelLen: 300
 

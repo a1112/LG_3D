@@ -49,6 +49,10 @@ SplitView{
        }
 
        FootView{
+           apiClient: api
+           style: coreStyle
+           model: coreModel
+           popupManager: popManage
            SplitView.fillWidth: true
            SplitView.preferredHeight: adaptive.scaleMetric(25, 22, 34)
        }

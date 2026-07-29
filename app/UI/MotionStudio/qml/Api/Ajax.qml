@@ -4,10 +4,16 @@ Item {
 
     id: root
 
+    property var requestLogger: null
     // Qt XMLHttpRequest does not provide a dependable default timeout.  A
     // stalled polling request must be completed explicitly or callers that
     // use an in-flight guard can remain stuck forever.
     property int requestTimeoutMs: 12000
+    property int activeRequestCount: 0
+    readonly property bool busy: activeRequestCount > 0
+
+    signal requestStarted(string method, string url)
+    signal requestFinished(string method, string url, int status)
 
     Component {
         id: requestTimeoutTimerComponent
@@ -32,29 +38,49 @@ Item {
             }
         }
 
+        function finish(status) {
+            if (finished) {
+                return false
+            }
+            finished = true
+            destroyTimeoutTimer()
+            root.activeRequestCount = Math.max(0, root.activeRequestCount - 1)
+            root.requestFinished(method, url, status)
+            return true
+        }
+
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE || finished) {
                 return
             }
-            finished = true
-            destroyTimeoutTimer()
+            if (!finish(xhr.status)) {
+                return
+            }
             handleResponse(xhr, success, failure)
         }
 
-        xhr.open(method, url)
+        root.activeRequestCount += 1
+        root.requestStarted(method, url)
+        try {
+            xhr.open(method, url)
+        } catch (error) {
+            finish(0)
+            if (failure) {
+                failure(String(error), 0)
+            }
+            return null
+        }
         if (method === "POST") {
             xhr.withCredentials = true
             xhr.setRequestHeader("Content-Type", "application/json")
         }
 
         timeoutTimer.triggered.connect(function() {
-            if (finished) {
+            if (!finish(0)) {
                 return
             }
-            finished = true
             xhr.abort()
-            destroyTimeoutTimer()
-            if (failure !== null && failure !== undefined) {
+            if (failure) {
                 failure("request timeout", 0)
             }
         })
@@ -65,7 +91,9 @@ Item {
 
     function get(url, success, failure)
     {
-        api.appendUrl(url,"get")
+        if (requestLogger && typeof requestLogger.appendUrl === "function") {
+            requestLogger.appendUrl(url, "get")
+        }
         return sendRequest("GET", url, null, success, failure)
     }
 
@@ -105,7 +133,7 @@ Item {
     // 处理返回值
     function handleResponse(xhr, success, failure){
         if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status ===  200){
+            if (xhr.status >= 200 && xhr.status < 300){
                 if (success !== null && success !== undefined)
                 {
                     var result = xhr.responseText

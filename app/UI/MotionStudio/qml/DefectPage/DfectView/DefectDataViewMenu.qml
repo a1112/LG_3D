@@ -74,7 +74,8 @@ Menu{
                     defect_w: defectItem.defectW,
                     defect_h: defectItem.defectH,
                     coilId: coilId,
-                    surface: surface
+                    surface: surface,
+                    viewMode: "2D"
                 }
             })
         }

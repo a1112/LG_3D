@@ -25,7 +25,6 @@
         <file>qml/Base/CheckBoxBase.qml</file>
         <file>qml/Base/CheckRec.qml</file>
         <file>qml/Base/CoreAction.qml</file>
-        <file>qml/Base/DateTime.qml</file>
         <file>qml/Base/DefectDraw.qml</file>
         <file>qml/Base/DefectInfoItem.qml</file>
         <file>qml/Base/DefectView.qml</file>
@@ -40,7 +39,6 @@
         <file>qml/Base/MenuItemBase.qml</file>
         <file>qml/Base/MsgBgBase.qml</file>
         <file>qml/Base/MsgView.qml</file>
-        <file>qml/Base/NowDate.qml</file>
         <file>qml/Base/PaneBase.qml</file>
         <file>qml/Base/RadioButtonBase.qml</file>
         <file>qml/Base/RadioDelegateBase.qml</file>
@@ -90,8 +88,6 @@
         <file>qml/Comp/CrossView/CrossView.qml</file>
         <file>qml/Comp/CrossView/DashHLine.qml</file>
         <file>qml/Comp/CrossView/DashVLine.qml</file>
-        <file>qml/Comp/DateTime.qml</file>
-        <file>qml/Comp/DateTimeLab.qml</file>
         <file>qml/Comp/DefecShowItemItem.qml</file>
         <file>qml/Comp/DefectItemList/DefectItemListView.qml</file>
         <file>qml/Comp/DefectRecView.qml</file>
@@ -99,7 +95,6 @@
         <file>qml/Comp/Images/AnimAlarm2.qml</file>
         <file>qml/Comp/LabelFootInfoKey.qml</file>
         <file>qml/Comp/MaxImageComp.qml</file>
-        <file>qml/Comp/NowDate.qml</file>
         <file>qml/Comp/SimpleList/HeadView.qml</file>
         <file>qml/Comp/SimpleList/HistoryBaseTextItem.qml</file>
         <file>qml/Comp/SimpleList/HistoryHeadItem.qml</file>
@@ -130,6 +125,8 @@
         <file>qml/Core/Auth/UserModel.qml</file>
         <file>qml/Core/Control.qml</file>
         <file>qml/Core/Core.qml</file>
+        <file>qml/Core/BootstrapController.qml</file>
+        <file>qml/Core/CoilListController.qml</file>
         <file>qml/Core/CoreControl.qml</file>
         <file>qml/Core/CoreGlobalError.qml</file>
         <file>qml/Core/CoreModel.qml</file>
@@ -187,6 +184,7 @@
         <file>qml/DataShow/Core/DataShowControl.qml</file>
         <file>qml/DataShow/Core/DataShowControl3D.qml</file>
         <file>qml/DataShow/Core/DataShowCore.qml</file>
+        <file>qml/DataShow/Core/ViewportMath.js</file>
         <file>qml/DataShow/Core/DefectManage.qml</file>
         <file>qml/DataShow/Core/TitleMenu.qml</file>
         <file>qml/DataShow/Core/TopDataManage.qml</file>
@@ -382,7 +380,6 @@
         <file>qml/Labels/AboutKeyLabel.qml</file>
         <file>qml/Labels/BaseBaseLabel.qml</file>
         <file>qml/Labels/BaseLabel.qml</file>
-        <file>qml/Labels/DateTimeLab.qml</file>
         <file>qml/Labels/EffectLabel.qml</file>
         <file>qml/Labels/EffectLabelInfoKey.qml</file>
         <file>qml/Labels/ErrorLabel.qml</file>

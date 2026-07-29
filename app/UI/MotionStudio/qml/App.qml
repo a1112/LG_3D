@@ -1,4 +1,3 @@
-import QtCore
 import QtQuick
 import QtQuick.Controls
 import "."
@@ -12,8 +11,7 @@ import "Dialogs"
 import "./Style/Adaptive"
 import "Graphs"
 AppBase {
-    id:app
-    Component.onCompleted: console.log("MotionStudio App completed")
+    id: app
     visible: true
     visibility:control.visibility
     onVisibilityChanged: function(visibility) {
@@ -33,7 +31,7 @@ AppBase {
     minimumHeight: Math.min(adaptive.minimumWindowHeight, availableWindowHeight)
     width: Math.max(minimumWidth, availableWindowWidth - adaptive.windowMargin * 2)
     height: Math.max(minimumHeight, availableWindowHeight - adaptive.windowMargin * 2)
-    title: qsTr("涟钢3D端面检测系统") + (coreSetting.testMode ? " - [测试模式]" : "")
+    title: qsTr("热轧 3D 端面检测系统") + (coreSetting.testMode ? qsTr(" - [测试模式]") : "")
     color: coreStyle.appBackgroundColor
     Material.accent: coreStyle.accentColor
     CoreAction{}
@@ -44,23 +42,49 @@ AppBase {
     }
 
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息
-    property Api api: Api{}     //    服务器 接口访问
+    property Api api: Api{
+        connectionState: app.coreState
+        errorModel: app.coreModel
+        statusSuccessColor: app.coreStyle.statusSuccessColor
+        statusWarningColor: app.coreStyle.statusWarningColor
+        statusErrorColor: app.coreStyle.statusErrorColor
+    }     //    服务器 接口访问
     property Global global:Global{}  // 全局功能
     property Dialogs dialogs: Dialogs{} // 全局 弹窗
     property Core core: Core{}          // 核心
     property Tool tool: Tool{}          // 功能
     property CoreModel coreModel:CoreModel{}// 全局模型
-    property CaptureAlarmWatcher captureAlarmWatcher: CaptureAlarmWatcher {}
-    property Init init:Init{}               // 初始化
+    property CaptureAlarmWatcher captureAlarmWatcher: CaptureAlarmWatcher {
+        apiClient: app.api
+        errorController: app.coreModel.coreGlobalError
+        connectionState: app.coreState
+    }
+    property Init init: Init {
+        apiClient: app.api
+        model: app.coreModel
+        coreController: app.core
+        globalContext: app.global
+        appContext: app
+    }               // 初始化
     property CoreStyle coreStyle: CoreStyle{}   // 样式
-    property CoreTimer coreTimer:CoreTimer{}     // 定时器
+    property CoreTimer coreTimer: CoreTimer {
+        apiClient: app.api
+        model: app.coreModel
+        settings: app.coreSetting
+        initController: app.init
+        connectionState: app.coreState
+    }     // 定时器
     property CoreSetting coreSetting: CoreSetting{}// 设置
     property ImageCache imageCache: ImageCache{} // 缓冲
     property LefeCore leftCore: LefeCore{}  //列表全局
     property Control control: Control{}
     property Auth auth: Auth{}
-    property CoreSignal coreSignal :CoreSignal{}
-    property CoreState coreState: CoreState{}
+    property CoreSignal coreSignal: CoreSignal {
+        initController: app.init
+    }
+    property CoreState coreState: CoreState {
+        signalController: app.coreSignal
+    }
     readonly property AdaptiveViewBase adaptive : coreStyle.currentAdaptive
     property CoreControl coreControl: CoreControl{}
     property Script autoScript:Script{}

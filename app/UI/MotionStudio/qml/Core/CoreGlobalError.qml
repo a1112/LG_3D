@@ -1,90 +1,90 @@
-import QtQuick 2.15
+import QtQuick
 
 Item {
-    id:root
+    id: root
+
+    required property var model
+
     property bool hasError: false
-    property int errorCode:-1
-    property string errorStr:"服务器连接失败！"
+    property int errorCode: -1
+    property string errorStr: ""
     property bool hasGlobalError: false
-    property var errorLevelDict:{
-    return {}
-    }
+    property var errorLevelDict: ({})
+    property var errorState: ({})
+    property var errorDict: ({})
 
-    Timer{
-        interval: 500
-        running:true
-        repeat: true
-        onTriggered:root.flushLevel()
-    }
-
-    function flushLevel(){
-        if(errorState)
-        {
-            let newLevel={}
-                            hasGlobalError=false
-            for(let key in errorState)
-            {
-                newLevel[key] = 0
-
-                for(let key2 in errorState[key])
-                {
-                    if(errorState[key][key2]>newLevel[key]){
-                        newLevel[key] = errorState[key][key2]
-                        hasGlobalError=true
-                    }
-                }
+    function flushLevel() {
+        let newLevels = {}
+        let anyError = false
+        let state = errorState || {}
+        for (let group in state) {
+            let groupLevel = 0
+            let groupState = state[group] || {}
+            for (let key in groupState) {
+                groupLevel = Math.max(groupLevel, Number(groupState[key]) || 0)
             }
-              errorLevelDict = newLevel
+            newLevels[group] = groupLevel
+            anyError = anyError || groupLevel > 0
         }
-
-
+        errorLevelDict = newLevels
+        hasGlobalError = anyError
     }
 
-    property var errorState: {
-        return {}
-    }
-    Component.onCompleted:{
-        var st={}
-        for(let key in coreModel.alarmGlobVis)
-        {
-            st[key] = {}
-        }
-
-        for(let key in coreModel.alarmVis)
-        {
-            st[key] = {}
-        }
-        errorState = st
-    }
-
-    onErrorStateChanged:{
+    function setStateLevel(group, key, level) {
+        let state = errorState || {}
+        let groupState = Object.assign({}, state[group] || {})
+        groupState[key] = Math.max(0, Number(level) || 0)
+        state[group] = groupState
+        errorState = Object.assign({}, state)
         flushLevel()
     }
 
-    property var errorDict: {
-        return {}
+    function refreshPrimaryError() {
+        let activeCode = -1
+        let activeMessage = ""
+        for (let code in errorDict) {
+            let item = errorDict[code]
+            if (item && item.hasError) {
+                activeCode = Number(code)
+                activeMessage = item.str || ""
+                break
+            }
+        }
+        errorCode = activeCode
+        errorStr = activeMessage
+        hasError = activeCode >= 0
     }
 
-    function setError(code,hasError){
-        var str=""
-        if (code == 1001) {
-            str="数据服务器连接失败！"
+    function setError(code, hasErrorValue) {
+        let message = ""
+        if (code === 1001) {
+            message = qsTr("数据服务器连接失败！")
+        } else if (code === 2001) {
+            message = qsTr("检测数据获取失败！")
         }
-        if (code == 2001){
-            str="检测数据获取失败！"
-        }
-        _setGlobalError(code,str,hasError)
+        _setGlobalError(code, message, hasErrorValue)
     }
 
-    function _setGlobalError(code,str,hasError_){
-        errorDict[code] = {}
-        errorDict[code].code = code
-        errorDict[code].str = str
-        errorDict[code].hasError = hasError_
-        if (errorCode == code || errorCode<0) {
-            errorCode = code
-            errorStr = str
-            hasError = hasError_
+    function _setGlobalError(code, message, hasErrorValue) {
+        let errors = errorDict || {}
+        errors[String(code)] = {
+            code: code,
+            str: message || "",
+            hasError: Boolean(hasErrorValue)
         }
+        errorDict = Object.assign({}, errors)
+        refreshPrimaryError()
+    }
+
+    Component.onCompleted: {
+        let state = {}
+        for (let key in model.alarmGlobVis) {
+            state[key] = {}
+        }
+        for (let key in model.alarmVis) {
+            state[key] = {}
+        }
+        errorState = state
+        flushLevel()
     }
 }

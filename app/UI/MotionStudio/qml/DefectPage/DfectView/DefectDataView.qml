@@ -1,36 +1,29 @@
 import QtQuick
 import QtQuick.Controls
-import Qt.labs.qmlmodels
-//
+
 Item {
-    id:root
+    id: root
     clip: true
 
-    ScrollView {
+    GridView {
+        id: grid
         anchors.fill: parent
         clip: true
+        model: defectCoreModel.defectsModel
+        readonly property int columnCount: Math.max(1, Math.floor(width / 190))
+        cellWidth: width / columnCount
+        cellHeight: 190
+        reuseItems: true
+        cacheBuffer: cellHeight * 2
+        boundsBehavior: Flickable.StopAtBounds
 
-        ScrollBar.vertical.policy: ScrollBar.AsNeeded
-        ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+        ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AsNeeded
+        }
 
-        GridView {
-            id : grid
-            width: parent.width
-            height: parent.height
-            // flow:Flow.TopToBottom
-            cellHeight: 200
-            cellWidth: 200
-            model: defectCoreModel.defectsModel
-
-            highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
-
-            delegate:Loader{
-                height: 200
-                width: height
-                asynchronous: true
-                sourceComponent: DefectItemShow{}
-            }
+        delegate: DefectItemShow {
+            width: GridView.view.cellWidth
+            height: GridView.view.cellHeight
         }
     }
 }
-

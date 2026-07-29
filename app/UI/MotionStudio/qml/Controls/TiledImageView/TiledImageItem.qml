@@ -1,28 +1,42 @@
 import QtQuick
 
-// TiledImageItem.qml - 简化版：直接加载目标级别瓦片
 Item {
-    // 基础属性
+    id: root
+
+    required property var settings
+
     property int row_: 0
     property int col_: 0
     property int count_: 3
     property string imageUrl: ""
     property string previewUrl: ""
-    property string coilNo: ""  // 钢卷编号
+    property string coilNo: ""
 
-    // 视口属性
     property real viewportX: 0
     property real viewportY: 0
     property real viewportW: 0
     property real viewportH: 0
     property bool enableParallelLoad: false
 
-    // ========== 多级加载属性 ==========
     property real currentScale: 1.0
     property int currentLevel: 0
     property int loadedLevel: -1
     property int targetLevel: 0
-    property bool debugLog: coreSetting ? coreSetting.showTileDebugBorders : false
+    property url targetSource: ""
+    property url previewSource: ""
+    property string lastLoadedUrl: ""
+    property bool debugLog: settings ? settings.showTileDebugBorders : false
+
+    readonly property bool isInViewport: {
+        var viewportRight = viewportX + viewportW
+        var viewportBottom = viewportY + viewportH
+        var tileRight = x + width
+        var tileBottom = y + height
+        return !(tileRight <= viewportX || x >= viewportRight
+                 || tileBottom <= viewportY || y >= viewportBottom)
+    }
+    readonly property bool shouldLoad: enableParallelLoad || isInViewport
+    readonly property bool targetReady: targetImage.status === Image.Ready
 
     function debugLogMessage(message) {
         if (debugLog) {
@@ -30,324 +44,157 @@ Item {
         }
     }
 
-    // ========== 视口检测 ==========
-    readonly property bool isInViewport: {
-        const vpX1 = viewportX
-        const vpY1 = viewportY
-        const vpX2 = vpX1 + viewportW
-        const vpY2 = vpY1 + viewportH
-        const tileX1 = x
-        const tileY1 = y
-        const tileX2 = tileX1 + width
-        const tileY2 = tileY1 + height
-        return !(tileX2 <= vpX1 || tileX1 >= vpX2 || tileY2 <= vpY1 || tileY1 >= vpY2)
-    }
-
-    readonly property bool shouldLoad: {
-        if (enableParallelLoad) {
-            return true
-        }
-        return isInViewport
-    }
-
-    // ========== 调试边框 ==========
-    Rectangle{
-        anchors.fill: parent
-        border.width: 1
-        color: "#00000000"
-        z: 1000
-        visible: coreSetting.showTileDebugBorders  // 由设置控制显示
-
-        border.color: {
-            if (!isInViewport) return "#33000000"
-            if (loadedLevel < 0) return "#FFA500"
-            if (loadedLevel >= targetLevel) return "#00FF00"
-            return "#FFFF00"
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: {
-                var txt = "[" + row_ + "," + col_ + "]"
-                if (coilNo) {
-                    txt += "\n" + coilNo
-                }
-                if (loadedLevel >= 0) {
-                    txt += "\nL" + loadedLevel
-                }
-                return txt
-            }
-            color: "white"
-            font.pixelSize: 10
-            font.bold: true
-            style: Text.Outline
-            styleColor: "black"
-            visible: isInViewport && width > 150
-        }
-    }
-
-    // ========== 预览图像（灰度，快速加载）==========
-    Image {
-        id: previewImage
-        anchors.fill: parent
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: grayscaleSource
-        cache: false
-        z: 0
-        visible: grayscaleSource !== "" && loadedLevel < 0
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                // 预览图加载完成后，开始加载目标级别的图像
-                updateLevel(currentLevel)
-            } else if (status === Image.Error) {
-                updateLevel(currentLevel)
-            }
-        }
-    }
-
-    // ========== 5个叠加的 Image 层（L0-L4）==========
-    // Level 0
-    Image {
-        id: levelImage0
-        anchors.fill: parent
-        cache: false
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: levelSource0
-        visible: levelSource0 !== "" && targetLevel === 0
-        z: 1
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                loadedLevel = 0
-            }
-        }
-    }
-
-    // Level 1
-    Image {
-        id: levelImage1
-        anchors.fill: parent
-        cache: false
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: levelSource1
-        visible: levelSource1 !== "" && targetLevel === 1
-        z: 2
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                loadedLevel = 1
-            }
-        }
-    }
-
-    // Level 2
-    Image {
-        id: levelImage2
-        anchors.fill: parent
-        cache: false
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: levelSource2
-        visible: levelSource2 !== "" && targetLevel === 2
-        z: 3
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                loadedLevel = 2
-            }
-        }
-    }
-
-    // Level 3
-    Image {
-        id: levelImage3
-        anchors.fill: parent
-        cache: false
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: levelSource3
-        visible: levelSource3 !== "" && targetLevel === 3
-        z: 4
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                loadedLevel = 3
-            }
-        }
-    }
-
-    // Level 4 (最高质量)
-    Image {
-        id: levelImage4
-        anchors.fill: parent
-        cache: false
-        asynchronous: true
-        fillMode: Image.Stretch
-        source: levelSource4
-        visible: levelSource4 !== "" && targetLevel === 4
-        z: 5
-
-        onStatusChanged: function(status) {
-            if (status === Image.Ready) {
-                loadedLevel = 4
-            }
-        }
-    }
-
-    // ========== 图像源属性 ==========
-    property url levelSource0: ""
-    property url levelSource1: ""
-    property url levelSource2: ""
-    property url levelSource3: ""
-    property url levelSource4: ""
-
-    // 灰度预览图（快速加载）
-    property url grayscaleSource: ""
-
-    // ========== 构建图像URL ==========
     function appendQuery(url, query) {
-        if (url === "" || url === undefined) {
+        if (!url) {
             return ""
         }
         return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
     }
 
     function buildImageUrl(level) {
-        if (imageUrl === "" || imageUrl === undefined) {
+        if (!imageUrl) {
             return ""
         }
-        return appendQuery(imageUrl, "row=" + row_ + "&col=" + col_ + "&count=" + count_ + "&level=" + level)
+        return appendQuery(imageUrl,
+                           "row=" + row_
+                           + "&col=" + col_
+                           + "&count=" + count_
+                           + "&level=" + level)
     }
 
-    // ========== 加载灰度预览图（快速显示）==========
-    function loadGrayscalePreview() {
-        if ((previewUrl === "" || previewUrl === undefined) && (imageUrl === "" || imageUrl === undefined)) {
+    function resetSources() {
+        targetSource = ""
+        previewSource = ""
+        loadedLevel = -1
+    }
+
+    function unloadHighResolution() {
+        if (!enableParallelLoad && targetLevel >= 2) {
+            targetSource = ""
+            loadedLevel = -1
+        }
+    }
+
+    function loadPreview() {
+        if (!settings || !settings.enable1024CacheMode) {
             return
         }
-        // 检查是否启用 1024 缓冲模式
-        if (!coreSetting.enable1024CacheMode) {
-            // 禁用时跳过预览图，直接加载目标级别
-            updateLevel(currentLevel)
+        previewSource = previewUrl ? previewUrl : appendQuery(imageUrl, "row=-2")
+    }
+
+    function updateLevel(newLevel) {
+        targetLevel = Math.max(0, Math.min(4, Number(newLevel) || 0))
+        if (!imageUrl || !shouldLoad) {
+            unloadHighResolution()
             return
         }
-        grayscaleSource = previewUrl && previewUrl !== "" ? previewUrl : appendQuery(imageUrl, "row=-2")
+
+        var urlChanged = lastLoadedUrl !== imageUrl
+        var nextSource = buildImageUrl(targetLevel)
+        if (urlChanged) {
+            lastLoadedUrl = imageUrl
+            resetSources()
+            loadPreview()
+        }
+        if (targetSource !== nextSource) {
+            loadedLevel = -1
+            targetSource = nextSource
+            debugLogMessage("[Tile " + row_ + "," + col_
+                            + "] CoilNo:" + coilNo
+                            + " Loading L" + targetLevel)
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#070B0F"
+    }
+
+    Image {
+        id: previewImage
+        anchors.fill: parent
+        asynchronous: true
+        cache: false
+        fillMode: Image.Stretch
+        source: root.previewSource
+        visible: source !== "" && status === Image.Ready && !root.targetReady
+    }
+
+    Image {
+        id: targetImage
+        anchors.fill: parent
+        asynchronous: true
+        cache: false
+        fillMode: Image.Stretch
+        source: root.targetSource
+        visible: source !== "" && status === Image.Ready
+        opacity: visible ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation { duration: 120 }
+        }
+
+        onStatusChanged: function(status) {
+            if (status === Image.Ready) {
+                root.loadedLevel = root.targetLevel
+            } else if (status === Image.Error) {
+                root.loadedLevel = -1
+                root.debugLogMessage("[Tile " + root.row_ + "," + root.col_
+                                     + "] failed L" + root.targetLevel)
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        border.width: 1
+        color: "transparent"
+        z: 10
+        visible: root.debugLog
+        border.color: !root.isInViewport ? "#334155"
+                                         : root.loadedLevel < 0 ? "#F59E0B"
+                                                                : "#22C55E"
+
+        Text {
+            anchors.centerIn: parent
+            text: "[" + root.row_ + "," + root.col_ + "]"
+                  + (root.coilNo ? "\n" + root.coilNo : "")
+                  + (root.loadedLevel >= 0 ? "\nL" + root.loadedLevel : "")
+            color: "white"
+            font.pixelSize: 10
+            font.bold: true
+            style: Text.Outline
+            styleColor: "black"
+            visible: root.isInViewport && parent.width > 150
+        }
+    }
+
+    Component.onCompleted: {
+        lastLoadedUrl = imageUrl
+        loadPreview()
         updateLevel(currentLevel)
     }
 
-    // ========== 更新等级 ==========
-    function updateLevel(newLevel) {
-        // 如果imageUrl为空，不进行加载
-        if (imageUrl === "" || imageUrl === undefined) {
-            return
-        }
+    onCurrentLevelChanged: updateLevel(currentLevel)
 
-        var oldTargetLevel = targetLevel
-        targetLevel = Math.max(0, Math.min(4, newLevel))
-
-        // URL 改变，重新加载
-        var urlChanged = false
-        if (lastLoadedUrl !== imageUrl) {
-            urlChanged = true
-            lastLoadedUrl = imageUrl
-            // 清空所有级别
-            levelSource0 = ""
-            levelSource1 = ""
-            levelSource2 = ""
-            levelSource3 = ""
-            levelSource4 = ""
-            loadedLevel = -1
-        }
-
-        var targetSourceMissing = (targetLevel === 0 && levelSource0 === "")
-                || (targetLevel === 1 && levelSource1 === "")
-                || (targetLevel === 2 && levelSource2 === "")
-                || (targetLevel === 3 && levelSource3 === "")
-                || (targetLevel === 4 && levelSource4 === "")
-
-        // 目标级别改变，直接加载目标级别
-        if (oldTargetLevel !== targetLevel || urlChanged || targetSourceMissing) {
-            if (!urlChanged) {
-                levelSource0 = ""
-                levelSource1 = ""
-                levelSource2 = ""
-                levelSource3 = ""
-                levelSource4 = ""
-            }
-            // 直接设置目标级别的源
-            if (targetLevel === 0) levelSource0 = buildImageUrl(0)
-            else if (targetLevel === 1) levelSource1 = buildImageUrl(1)
-            else if (targetLevel === 2) levelSource2 = buildImageUrl(2)
-            else if (targetLevel === 3) levelSource3 = buildImageUrl(3)
-            else levelSource4 = buildImageUrl(4)
-
-            debugLogMessage("[Tile " + row_ + "," + col_ + "] CoilNo:" + coilNo + " Loading L" + targetLevel)
-        }
-    }
-
-    // ========== 记录上次加载的 URL ==========
-    property string lastLoadedUrl: ""
-
-    // ========== 监听视口变化 ==========
-    onIsInViewportChanged: {
-        if (isInViewport && (loadedLevel < 0 || targetLevel !== currentLevel)) {
-            updateLevel(currentLevel)
-        }
-    }
-
-    // ========== 组件完成时初始加载 ==========
-    Component.onCompleted: {
-        lastLoadedUrl = imageUrl
-        if (shouldLoad) {
-            // 检查是否启用 1024 缓冲模式
-            if (!coreSetting.enable1024CacheMode) {
-                // 禁用时直接加载目标级别
-                updateLevel(currentLevel)
-            } else {
-                // 启用时先加载灰度预览图
-                loadGrayscalePreview()
-            }
-        }
-    }
-
-    // ========== 监听全局等级变化 ==========
-    onCurrentLevelChanged: {
+    onShouldLoadChanged: {
         if (shouldLoad) {
             updateLevel(currentLevel)
+        } else {
+            unloadHighResolution()
         }
     }
 
-    // ========== 监听 imageUrl 变化 ==========
     onImageUrlChanged: {
-        // URL 变化时，重置 lastLoadedUrl 强制检测为变化
         lastLoadedUrl = ""
-        // 清空所有级别源，确保重新加载
-        levelSource0 = ""
-        levelSource1 = ""
-        levelSource2 = ""
-        levelSource3 = ""
-        levelSource4 = ""
-        grayscaleSource = ""
-        loadedLevel = -1
-
-        if (isInViewport) {
-            // 检查是否启用 1024 缓冲模式
-            if (!coreSetting.enable1024CacheMode) {
-                // 禁用时直接加载目标级别
-                updateLevel(currentLevel)
-            } else {
-                // 启用时先加载灰度预览图（快速显示）
-                loadGrayscalePreview()
-                // 然后由 previewImage 的 onStatusChanged 触发目标级别加载
-            }
-        }
+        resetSources()
+        loadPreview()
+        updateLevel(currentLevel)
     }
 
-    // ========== 监听 previewUrl 变化 ==========
     onPreviewUrlChanged: {
-        // 不再使用预览图，直接加载瓦片
+        if (settings && settings.enable1024CacheMode) {
+            loadPreview()
+        }
     }
 }

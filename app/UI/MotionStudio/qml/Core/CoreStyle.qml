@@ -155,6 +155,9 @@ Item {
     property color headerBorderColor: "#2C4357"
     property color buttonHoverColor: "#233447"
     property color selectionColor: "#2F5F82"
+    property color statusSuccessColor: isDark ? "#4ADE80" : "#16803A"
+    property color statusWarningColor: isDark ? "#FBBF24" : "#A16207"
+    property color statusErrorColor: isDark ? "#FB7185" : "#C62828"
 
     // ========== 自适应视图 ==========
     property AdaptiveView adaptive_base: AdaptiveView {

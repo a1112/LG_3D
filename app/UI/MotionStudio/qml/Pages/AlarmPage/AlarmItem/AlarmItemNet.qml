@@ -53,7 +53,7 @@ Item {
             }
             netModel.setProperty(i, "valueText", ok ? delayValue + "  ms" : qsTr("连接错误"))
             netModel.setProperty(i, "level", ok ? 0 : 3)
-            coreModel.coreGlobalError.errorState["网络"][i] = ok ? 0 : 3
+            coreModel.coreGlobalError.setStateLevel("网络", i, ok ? 0 : 3)
         }
     }
 

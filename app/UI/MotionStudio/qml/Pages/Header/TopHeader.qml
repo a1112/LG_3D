@@ -99,7 +99,7 @@ Item {
                 WindowCaptionButton {
                     id: minimizeButton
                     buttonType: "minimize"
-                    tipText: "最小化"
+                    tipText: qsTr("最小化")
                     onClicked: {
                         const window = root.appWindow
                         if (window) {
@@ -111,7 +111,7 @@ Item {
                 }
                 WindowCaptionButton {
                     buttonType: "close"
-                    tipText: "关闭"
+                    tipText: qsTr("关闭")
                     onClicked: {
                         const window = root.appWindow
                         if (window) {

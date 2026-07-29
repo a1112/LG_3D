@@ -3,7 +3,6 @@ import QtQuick.Controls
 import "../Aerial"
 import "Draw"
 import "../Comps"
-import "ViewTool"
 Item {
     id:root
     anchors.fill: parent
@@ -50,7 +49,7 @@ Item {
 
     }
     CrossView{
-        visible: dataShowCore.chartHovered | dataShowCore.imageShowHovered
+        visible: dataShowCore.chartHovered || dataShowCore.imageShowHovered
         crossX:dataShowCore.hoverPoint.x
         crossY:dataShowCore.hoverPoint.y
     }
@@ -63,15 +62,15 @@ Item {
         id:hoverHandler
         onHoveredChanged: dataShowCore.imageShowHovered=hovered
         onPointChanged: {
-            if (Math.abs(dataShowCore.hoverPoint.x-point.position.x>5))
+            var deltaX = Math.abs(dataShowCore.hoverPoint.x - point.position.x)
+            var deltaY = Math.abs(dataShowCore.hoverPoint.y - point.position.y)
+            if (deltaX < 2 && deltaY < 2) {
+                return
+            }
+            if (deltaX > 5 || deltaY > 5) {
                 coreModel.setKeepLatest(false)
+            }
             dataShowCore.hoverPoint = point.position
-        }
-    }
-
-    Component.onCompleted:{
-        if (typeof dataShowCore.view2DTool !== 'undefined') {
-            dataShowCore.view2DTool = root.view2DTool
         }
     }
 }

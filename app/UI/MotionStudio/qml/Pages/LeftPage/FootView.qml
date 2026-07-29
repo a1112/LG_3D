@@ -1,49 +1,74 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Controls.Material
+
 Item {
+    id: root
+
+    required property var apiClient
+    required property var style
+    required property var model
+    required property var popupManager
+
     Layout.fillWidth: true
-    height: 25
+    implicitHeight: 30
+
     RowLayout {
         anchors.fill: parent
-        Label{
-            text: api.apiConfig.serverUrl
-            baseUrl: api.apiConfig.serverUrl
-            color: api.connectColor
-        ItemDelegate{
-            anchors.fill:parent
-            onClicked: {
-                popManage.popupConnectDialog()
+        spacing: 8
+
+        Rectangle {
+            Layout.preferredWidth: connectionRow.implicitWidth + 16
+            Layout.preferredHeight: 24
+            radius: 12
+            color: root.style.panelElevatedColor
+            border.width: 1
+            border.color: root.apiClient.connectColor
+
+            RowLayout {
+                id: connectionRow
+                anchors.centerIn: parent
+                spacing: 6
+
+                Rectangle {
+                    Layout.preferredWidth: 7
+                    Layout.preferredHeight: 7
+                    radius: 4
+                    color: root.apiClient.connectColor
+                }
+
+                Label {
+                    text: root.apiClient.connectionText
+                    color: root.style.textColor
+                    font.pixelSize: 12
+                }
+
+                Label {
+                    visible: root.apiClient.connected
+                    text: root.apiClient.delay + " ms"
+                    color: root.style.labelColor
+                    font.pixelSize: 12
+                }
             }
-        }
-        }
-        Label{
-            text: "延时："
-        }
-        Label{
-            text: api.delay
-            color: api.connectColor
+
+            TapHandler {
+                onTapped: root.popupManager.popupConnectDialog()
+            }
         }
 
-        Label{
-            visible:false
-            text: "检测记录：" +coreModel.currentCoilListModel.count
-        }
-        Item{
+        Label {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            text: root.apiClient.apiConfig.hostname
+            color: root.style.labelColor
+            elide: Text.ElideMiddle
+            font.pixelSize: 12
         }
-        Row{
-        CheckDelegate{
-            height: 25
-            text: "保持最新"
-            checked: coreModel.keepLatest
-            onClicked: {
-                coreModel.setKeepLatest(checked)
-            }
-        }
+
+        CheckDelegate {
+            Layout.preferredHeight: 28
+            text: qsTr("保持最新")
+            checked: root.model.keepLatest
+            onClicked: root.model.setKeepLatest(checked)
         }
     }
 }
-

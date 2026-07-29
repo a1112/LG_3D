@@ -1,18 +1,20 @@
 import QtQuick
+import QtQuick.Window
 import "../Model"
 Item {
     id:root
     property var nowTime: new Date()
     Timer{
-        interval:1000
-        running:true
-        repeat:true
-        onTriggered:{
+        interval: 1000
+        running: app.visibility !== Window.Minimized
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
             root.nowTime = new Date()
         }
     }
 
-property string appTitle: qsTr("涟钢热轧1580端面缺陷检测系统")
+property string appTitle: qsTr("热轧 1580 端面缺陷检测系统")
 
 function scriptDeveloperMode() {
     if (!ScriptLauncher || typeof ScriptLauncher.developerMode !== "function") {

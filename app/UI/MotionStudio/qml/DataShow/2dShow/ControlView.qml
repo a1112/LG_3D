@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "../Core/ViewportMath.js" as ViewportMath
 
 Item {
     anchors.fill: parent
@@ -34,26 +35,19 @@ Item {
 
     WheelHandler{  // 缩放
 
-        onWheel: (event)=> {
-                     let hX = event.x-flick.contentX
-                     let hY = event.y-flick.contentY
-                     dataShowCore.scaleTempPoint = dataShowCore.getAspectRatioByPoint (Qt.point(hX,hY))
-                     if (event.angleDelta.y > 0) {
-                        dataShowCore.canvasScale *= 1.1
-                     } else {
-                        dataShowCore.canvasScale *= 0.9
-                     }
-                     if (dataShowCore.canvasScale > dataShowCore.maxScale){
-                        dataShowCore.canvasScale = dataShowCore.maxScale
-                        dataShowCore.setMaxErrorScale("red")
-                     }
-                     else if (dataShowCore.canvasScale <= dataShowCore.minScale){
-
-                        dataShowCore.canvasScale = dataShowCore.minScale
-                         dataShowCore.setMaxErrorScale("blue")
-                     }
-                     dataShowCore.setFlickablebyPoint(Qt.point(hX, hY))
-                }
+        onWheel: function(event) {
+            var boundary = ViewportMath.zoomAt(dataShowCore,
+                                               flick,
+                                               event.x,
+                                               event.y,
+                                               event.angleDelta.y)
+            if (boundary > 0) {
+                dataShowCore.setMaxErrorScale("red")
+            } else if (boundary < 0) {
+                dataShowCore.setMaxErrorScale("blue")
+            }
+            event.accepted = true
+        }
     }
 
 }

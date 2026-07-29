@@ -2,15 +2,34 @@ import QtQuick
 
 Item {
 
-    id:api_base
+    id: api_base
 
-    property int delay: 0
-    property color connectColor: delay>0?delay<200?"green":"yellow" :"red"
+    required property var connectionState
+    required property var errorModel
+
+    property int delay: -1
+    readonly property bool connected: delay >= 0
+    property color statusSuccessColor: "#4ADE80"
+    property color statusWarningColor: "#FBBF24"
+    property color statusErrorColor: "#FB7185"
+    readonly property color connectColor: !connected
+                                          ? statusErrorColor
+                                          : delay < 200
+                                            ? statusSuccessColor
+                                            : statusWarningColor
+    readonly property string connectionText: !connected
+                                              ? qsTr("离线")
+                                              : delay < 200
+                                                ? qsTr("正常")
+                                                : qsTr("延迟")
     property bool delayRequestRunning: false
+    property int consecutiveDelayFailures: 0
 
     // WebSocket {}
 
-    property Ajax ajax: Ajax{}
+    property Ajax ajax: Ajax {
+        requestLogger: api_base
+    }
     function url(serverUrl, ...args){
         let reUrl=serverUrl
         for(let argIndex in args){
@@ -39,7 +58,7 @@ Item {
             success(delay)
         },function(err){
             let delay = new Date().getTime()-startTime
-            failure(delay-startTime)
+            failure(delay)
         }
         )
 
@@ -53,16 +72,22 @@ Item {
         let startTime = new Date().getTime()
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"delay"),function(data){
             delayRequestRunning = false
-            coreState.connectServer=true
+            consecutiveDelayFailures = 0
+            connectionState.connectServer = true
             delay = new Date().getTime()-startTime
             // delayTimer.restart()
-            coreModel.coreGlobalError.setError(1001,false)
+            if (errorModel && errorModel.coreGlobalError) {
+                errorModel.coreGlobalError.setError(1001, false)
+            }
         }
         ,function(err){
             delayRequestRunning = false
-            coreState.connectServer=false
+            consecutiveDelayFailures += 1
+            connectionState.connectServer = false
             delay= -1
-            coreModel.coreGlobalError.setError(1001,true)
+            if (errorModel && errorModel.coreGlobalError) {
+                errorModel.coreGlobalError.setError(1001, true)
+            }
             // delayTimer.restart()
         }
         )

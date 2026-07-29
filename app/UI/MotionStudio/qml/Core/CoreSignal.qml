@@ -6,11 +6,12 @@
 import QtQuick
 
 Item {
-    function flush_app(){
-        console.log("flush app")
-        // 刷新 连接状态，在 IP 刷新时 或者连接启动时
-        init.flushDefectDict()
-        init.flushList()
+    required property var initController
+
+    function flush_app() {
+        // A reconnect can point to another server. Refresh server metadata,
+        // the defect dictionary and the live coil list as one operation.
+        initController.refreshAll(true)
     }
 
 }

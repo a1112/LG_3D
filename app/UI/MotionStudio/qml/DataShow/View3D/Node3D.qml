@@ -25,6 +25,8 @@ Node {
                                               Math.max(0, modelBoundsMax.z - modelBoundsMin.z)
                                               )
     readonly property bool modelReady: runtimeModel.status === RuntimeLoader.Success
+    property int reloadAttempt: 0
+    property int maxReloadAttempts: 3
 
     function updateModelCenter() {
         let minBounds = runtimeModel.bounds.minimum
@@ -44,18 +46,37 @@ Node {
                                 ? ScriptLauncher.testDataMeshUrl(meshKey, surfaceData.coilId)
                                 : surfaceData.meshUrl
     onMeshes_urlChanged: {
-        runtimeModel.source = ""
+        reloadAttempt = 0
         autoCenterOffset = Qt.vector3d(0, 0, 0)
-        t_.start()
+        scheduleModelLoad(1)
     }
-    Timer{
-        id:t_
-        interval:5000
-        onTriggered: {
-            runtimeModel.source = meshes_url
+
+    function scheduleModelLoad(delayMs) {
+        if (!meshes_url) {
+            runtimeModel.source = ""
+            return
         }
+        modelLoadTimer.interval = Math.max(1, delayMs)
+        modelLoadTimer.restart()
     }
-    Component.onCompleted: t_.start()
+
+    function loadModel() {
+        let expectedUrl = meshes_url
+        runtimeModel.source = ""
+        Qt.callLater(function() {
+            if (expectedUrl === meshes_url) {
+                runtimeModel.source = expectedUrl
+            }
+        })
+    }
+
+    Timer {
+        id: modelLoadTimer
+        repeat: false
+        onTriggered: node.loadModel()
+    }
+
+    Component.onCompleted: scheduleModelLoad(1)
 
     Node {
         id: node3D_obj
@@ -72,12 +93,17 @@ Node {
             objectName: "defaultobject"
             source: ""
             onStatusChanged: {
-                console.log("3D state: "+status)
                 if (status === RuntimeLoader.Success) {
+                    node.reloadAttempt = 0
                     node.updateModelCenter()
-                    console.log("Model loaded successfully");
                 } else if (status === RuntimeLoader.Error) {
-                    console.log("Failed to load model:", errorString);
+                    if (node.reloadAttempt < node.maxReloadAttempts) {
+                        node.reloadAttempt += 1
+                        node.scheduleModelLoad(Math.min(3000,
+                                                        500 * Math.pow(2, node.reloadAttempt - 1)))
+                    } else {
+                        console.warn("3D model load failed:", errorString)
+                    }
                 }
 
 

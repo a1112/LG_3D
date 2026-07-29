@@ -1,98 +1,86 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Controls.Material
 import "Core"
 import "../../../Model"
 
 Item {
-    id:root
+    id: root
+
+    required property int index
+    required property var model
+    required property var style
+    required property var coreController
+    required property var modelController
+    required property var leftController
+    required property var popupManager
+
     width: 300
-    height: 25
-    visible:leftCore.fliterEnable? coilModel.checkDefectShow(leftCore.fliterDict) :true
-    property bool isCurrentIndex: index == core.coilIndex
-    property int currentIndex: listView.currentIndex
-    onCurrentIndexChanged:{
-        if (currentIndex==index){
-        core.currentCoilModel.init(coilModel.coilData)
-            }
-    }
-    property  CoilModel coilModel: CoilModel{}  // 数据
+    height: 30
+    readonly property bool isCurrentIndex: coilModel.coilId > 0
+                                                   && coilModel.coilId === coreController.currentCoilModel.coilId
 
-    // 监听 index 变化（ListView delegate 重用时 index 会改变）
-    property int delegateIndex: index
-    onDelegateIndexChanged: {
-        if (model && model.Id) {
+    property CoilModel coilModel: CoilModel {}
+    property ListItemCoil listItemCoil: ListItemCoil {
+        style: root.style
+        hasCoil: root.coilModel.hasCoil
+        alarmInfo: root.coilModel.coilData ? root.coilModel.coilData.AlarmInfo : null
+        maxDefectName: root.coilModel.maxDefectName || ""
+        maxDefectLevel: root.coilModel.maxDefectLevel || 0
+        maxDefectSurface: root.coilModel.maxDefectSurface || ""
+    }
+
+    function syncModel() {
+        if (model && model.Id !== undefined) {
             coilModel.init(model)
         }
     }
 
-    Component.onCompleted:{
-        if (model && model.Id) {
-            coilModel.init(model)
-        }
-    }
+    onIndexChanged: syncModel()
+    ListView.onReused: syncModel()
+    Component.onCompleted: syncModel()
 
-    // property CoilState coilState: CoilState{}
-
-    property ListItemCoil listItemCoil: ListItemCoil{
-        hasCoil: coilModel.hasCoil
-        alarmInfo: coilModel.coilData ? coilModel.coilData.AlarmInfo : null
-        maxDefectName: coilModel.maxDefectName || ""
-        maxDefectLevel: coilModel.maxDefectLevel || 0
-        maxDefectSurface: coilModel.maxDefectSurface || ""
-    }
-
-    Pane{
-        Material.elevation: 7
-        anchors.fill: parent
-        Material.background: root.isCurrentIndex ? coreStyle.panelAlternateColor : coreStyle.panelElevatedColor
-    }
     Rectangle {
         anchors.fill: parent
-        color: index%2==0 ? coreStyle.panelAlternateColor : coreStyle.panelElevatedColor
-        radius: 5
+        radius: root.style.controlRadius
+        color: root.isCurrentIndex
+               ? root.style.selectionColor
+               : hoverHandler.hovered
+                 ? root.style.buttonHoverColor
+                 : index % 2 === 0
+                   ? root.style.panelAlternateColor
+                   : root.style.panelElevatedColor
+        border.width: root.isCurrentIndex ? 1 : 0
+        border.color: root.style.accentColor
     }
 
-    ItemDelegate{
-        anchors.fill:parent
-            onClicked: {
-
-                listView.currentIndex = index
-                // core.setCoilIndex(index)
-                coreModel.setKeepLatest(false)
-            }
-    }
     Rectangle {
-        anchors.fill: parent
-        color: root.isCurrentIndex ? coreStyle.selectionColor : coreStyle.buttonHoverColor
-        radius: 5
-        visible: root.isCurrentIndex || hov.hovered
-        border.color: coreStyle.accentColor
-        border.width: 2
-    }
-
-    MouseArea{  //打开菜单
-        acceptedButtons: Qt.RightButton
-        anchors.fill: parent
-        onClicked: {
-            popManage.popupDataListItemMenu(coilModel)
-        }
-    }
-    Rectangle{
-        width: 3
+        width: root.isCurrentIndex ? 4 : 2
         height: parent.height
-        anchors.bottom: parent.bottom
-        color: root.isCurrentIndex ? coreStyle.accentColor : coreStyle.panelElevatedColor
+        anchors.left: parent.left
+        color: root.isCurrentIndex ? root.style.accentColor : "transparent"
+        radius: 2
     }
-    HoverHandler{
-        id:hov
+
+    TapHandler {
+        acceptedButtons: Qt.LeftButton
+        onTapped: {
+            if (root.leftController.selectVisibleIndex(root.index)) {
+                root.modelController.setKeepLatest(false)
+            }
+        }
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: root.popupManager.popupDataListItemMenu(root.coilModel)
+    }
+
+    HoverHandler {
+        id: hoverHandler
         onHoveredChanged: {
-            if(hovered){
-                leftCore.hovedIndex = index
-                // 使用 init 方法而不是直接赋值，避免修改列表数据
-                if (model && model.Id) {
-                    leftCore.hovedCoilModel.init(model)
-                }
+            if (hovered) {
+                root.leftController.hovedIndex = root.index
+            } else if (root.leftController.hovedIndex === root.index) {
+                root.leftController.hovedIndex = -1
             }
         }
     }

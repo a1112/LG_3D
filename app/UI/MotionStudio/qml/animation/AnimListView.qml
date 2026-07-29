@@ -3,23 +3,21 @@ import QtQuick.Controls
 
 
 ListView {
-
     add: Transition {
-
-
-             SequentialAnimation {
-                      NumberAnimation { properties: "x"; from: 500; duration: 1000 }
-                      ColorAnimation { duration: 1000 }
-                  }
-         }
-
-    spacing:5
-    highlight: Rectangle {
-        color: "lightsteelblue"
-        radius: 5
-        border.color: "steelblue"
-        border.width: 3
+        NumberAnimation {
+            property: "opacity"
+            from: 0
+            to: 1
+            duration: 140
+        }
     }
+
+    spacing: 3
+    reuseItems: true
+    cacheBuffer: Math.max(240, height)
+    boundsBehavior: Flickable.StopAtBounds
+    highlightMoveDuration: 120
     ScrollBar.vertical: ScrollBar {
+        policy: ScrollBar.AsNeeded
     }
 }
