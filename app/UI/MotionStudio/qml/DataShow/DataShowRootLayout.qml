@@ -21,7 +21,7 @@ Item {
         LayoutItemProxy{
             Layout.fillWidth: true
             target:dsh
-            height: 27
+            height: adaptive.scaleMetric(27, 24, 36)
         }
 
         LayoutItemProxy{

@@ -3,25 +3,27 @@ import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItem"
 import "../Base"
 PopupBase {
-    width:600
-    height:bodyV.height+25
+    id: root
+    width: adaptive.boundedWidth(600, 440, 760)
+    height: bodyV.height + adaptive.headerSideGap
     Column{
         id:bodyV
-        width: parent.width-10
+        width: parent.width - adaptive.mainSpacing
         anchors.centerIn:parent
         AlarmItemCameras{
                     width: parent.width
             alarmLevel:coreModel.coreGlobalError.errorLevelDict["相机"]
-            height: 100
+            height: adaptive.scaleMetric(100, 82, 130)
         }
         AlarmItemNet{
-                    width: parent.width
-            height: 100
+            width: parent.width
+            pollingEnabled: root.opened
+            height: adaptive.scaleMetric(100, 82, 130)
         }
         AlarmHardware{
                     width: parent.width
 
-            height: 100
+            height: adaptive.scaleMetric(100, 82, 130)
         }
     }
 }

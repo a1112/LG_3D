@@ -44,9 +44,6 @@ Item {
     }
 
     readonly property bool shouldLoad: {
-        if (!isInViewport) {
-            return false
-        }
         if (enableParallelLoad) {
             return true
         }
@@ -103,6 +100,8 @@ Item {
         onStatusChanged: function(status) {
             if (status === Image.Ready) {
                 // 预览图加载完成后，开始加载目标级别的图像
+                updateLevel(currentLevel)
+            } else if (status === Image.Error) {
                 updateLevel(currentLevel)
             }
         }
@@ -210,16 +209,18 @@ Item {
     property url grayscaleSource: ""
 
     // ========== 构建图像URL ==========
+    function appendQuery(url, query) {
+        if (url === "" || url === undefined) {
+            return ""
+        }
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
+    }
+
     function buildImageUrl(level) {
         if (imageUrl === "" || imageUrl === undefined) {
             return ""
         }
-        var url = imageUrl
-        url += "?row=" + row_
-        url += "&col=" + col_
-        url += "&count=" + count_
-        url += "&level=" + level
-        return url
+        return appendQuery(imageUrl, "row=" + row_ + "&col=" + col_ + "&count=" + count_ + "&level=" + level)
     }
 
     // ========== 加载灰度预览图（快速显示）==========
@@ -233,7 +234,8 @@ Item {
             updateLevel(currentLevel)
             return
         }
-        grayscaleSource = previewUrl && previewUrl !== "" ? previewUrl : imageUrl + "?row=-2"
+        grayscaleSource = previewUrl && previewUrl !== "" ? previewUrl : appendQuery(imageUrl, "row=-2")
+        updateLevel(currentLevel)
     }
 
     // ========== 更新等级 ==========
@@ -260,8 +262,14 @@ Item {
             loadedLevel = -1
         }
 
+        var targetSourceMissing = (targetLevel === 0 && levelSource0 === "")
+                || (targetLevel === 1 && levelSource1 === "")
+                || (targetLevel === 2 && levelSource2 === "")
+                || (targetLevel === 3 && levelSource3 === "")
+                || (targetLevel === 4 && levelSource4 === "")
+
         // 目标级别改变，直接加载目标级别
-        if (oldTargetLevel !== targetLevel || urlChanged) {
+        if (oldTargetLevel !== targetLevel || urlChanged || targetSourceMissing) {
             if (!urlChanged) {
                 levelSource0 = ""
                 levelSource1 = ""
@@ -307,7 +315,7 @@ Item {
 
     // ========== 监听全局等级变化 ==========
     onCurrentLevelChanged: {
-        if (isInViewport) {
+        if (shouldLoad) {
             updateLevel(currentLevel)
         }
     }

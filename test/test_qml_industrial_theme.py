@@ -70,6 +70,25 @@ def test_main_window_and_layout_use_solid_theme_backgrounds():
     assert "Material.background: coreStyle.panelBackgroundColor" in app
 
 
+def test_main_layout_lazy_loads_non_initial_pages():
+    main_layout = read_qml(Path("MainLayout.qml"))
+
+    assert "Loader {" in main_layout
+    assert 'source: "DataShowRoot.qml"' in main_layout
+    assert 'source: "DefectShowRoot.qml"' in main_layout
+    assert "active: StackLayout.isCurrentItem || status === Loader.Ready" in main_layout
+
+
+def test_server_connect_refresh_is_deferred_until_after_startup():
+    core_state = read_qml(Path("Core") / "CoreState.qml")
+
+    assert "id: connectServerFlushTimer" in core_state
+    assert "interval: 300" in core_state
+    assert "onTriggered: coreSignal.flush_app()" in core_state
+    assert "connectServerFlushTimer.restart()" in core_state
+    assert "if (connectServer){\n            coreSignal.flush_app()" not in core_state
+
+
 def test_primary_chrome_files_do_not_use_transparent_or_alpha_backgrounds():
     forbidden_patterns = [
         re.compile(r'color\s*:\s*"transparent"'),
@@ -213,19 +232,40 @@ def test_simulated_3d_view_uses_local_runtime_obj_loader():
 def test_initial_coil_selection_refreshes_after_async_list_load():
     init_text = read_qml(Path("Core") / "Init.qml")
 
-    assert "initCoilByData(JSON.parse(result))" in init_text
+    assert "initCoilBatchTimer" in init_text
+    assert "function appendPendingCoils()" in init_text
+    assert "initCoilByData(parsed)" in init_text
+    assert "pendingCoilData = coilData" in init_text
     assert "core.setCoilIndex(0)" in init_text
-    assert "core.flushListItem()" in init_text
-    assert init_text.index("initCoilByData(JSON.parse(result))") < init_text.index("core.flushListItem()")
+    assert "isListLoading = false" in init_text
+    assert init_text.index("function appendPendingCoils()") < init_text.index("core.setCoilIndex(0)")
 
 
-def test_test_mode_uses_main_api_for_image_urls():
+def test_api_list_delegate_width_does_not_depend_on_null_parent():
+    api_list_text = read_qml(Path("PopupView") / "ApiListPop" / "ApiListPopView.qml")
+
+    assert "id: apiListView" in api_list_text
+    assert "width: apiListView.width" in api_list_text
+    assert "width: parent.width" not in api_list_text
+
+
+def test_rust_services_use_fixed_ports_and_test_api_defaults_to_python():
     api_config_text = read_qml(Path("Api") / "ApiConfig.qml")
-    core_text = read_qml(Path("Core") / "Core.qml")
+    core_setting_text = read_qml(Path("Core") / "CoreSetting.qml")
+    api_database_text = read_qml(Path("Api") / "Api_DataBase.qml")
+    connect_dialog_text = read_qml(Path("PopupView") / "Connect" / "ConnectDialog.qml")
+    general_setting_text = read_qml(Path("SettingPage") / "GeneralSetting" / "GeneralSetting.qml")
 
-    assert "ScriptLauncher.developerMode()" in core_text
-    assert "activeImageServerPort: core.developer_mode ? port" in api_config_text
-    assert ": (coreSetting.useRustImageServer ? rustImageServerPort : port)" in api_config_text
+    assert "property bool useRustImageServer: true" in core_setting_text
+    assert "property bool useRustTestServer: false" in core_setting_text
+    assert "imageServerBackendDefaultVersion < currentImageServerBackendDefaultVersion" in core_setting_text
+    assert "readonly property int rustApiPort: 5011" in api_config_text
+    assert "activeApiPort: coreSetting.useRustTestServer ? rustApiPort : pythonApiPort" in api_config_text
+    assert "activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : pythonImageServerPort" in api_config_text
+    assert "active: coreSetting.useRustTestServer" in api_database_text
+    assert "if (!coreSetting.useRustTestServer)" in api_database_text
+    assert "server_port" not in connect_dialog_text
+    assert "rustImageServerPort" not in general_setting_text
 
 
 def test_header_time_text_is_readable_on_dark_theme():
@@ -241,9 +281,81 @@ def test_height_point_websocket_reconnects_after_close():
     assert "Timer {" in api_text
     assert "id: heightPointReconnectTimer" in api_text
     assert "function _scheduleHeightPointReconnect()" in api_text
-    assert "heightPointSocket.active = false" in api_text
-    assert "heightPointSocket.active = true" in api_text
+    assert "active: coreSetting.useRustTestServer && _heightPointConnectEnabled" in api_text
+    assert "heightPointSocket.active =" not in api_text
+    assert "_heightPointReconnectDelayMs * 2" in api_text
+    assert "_heightPointReconnectMaxDelayMs" in api_text
     assert "_scheduleHeightPointReconnect()" in api_text
+
+
+def test_area_tiles_use_column_for_x_and_row_for_y():
+    view_text = read_qml(Path("Controls") / "TiledImageView" / "TiledImageView.qml")
+    item_text = read_qml(Path("Controls") / "TiledImageView" / "TiledImageItem.qml")
+
+    assert "x: parseInt(index % count_) * width" in view_text
+    assert "y: parseInt(index / count_) * height" in view_text
+    assert "row_: parseInt(index/count_)" in view_text
+    assert "col_: parseInt(index%count_)" in view_text
+    assert "targetSourceMissing" in item_text
+    assert "if (oldTargetLevel !== targetLevel || urlChanged || targetSourceMissing)" in item_text
+
+
+def test_area_low_resolution_levels_load_the_complete_grid():
+    view_text = read_qml(Path("Controls") / "TiledImageView" / "TiledImageView.qml")
+    item_text = read_qml(Path("Controls") / "TiledImageView" / "TiledImageItem.qml")
+
+    assert "readonly property bool loadCompleteGrid: enableParallelLoad || currentLevel <= 1" in view_text
+    assert "enableParallelLoad: root.loadCompleteGrid" in view_text
+    assert "if (enableParallelLoad) {\n            return true\n        }\n        return isInViewport" in item_text
+    assert "onCurrentLevelChanged: {\n        if (shouldLoad)" in item_text
+
+
+def test_2d_view_key_uses_area_image_endpoint():
+    api_text = read_qml(Path("Api") / "Api.qml")
+    surface_text = read_qml(Path("Core") / "Surface" / "SurfaceData.qml")
+    area_core_text = read_qml(Path("DataShow") / "Core" / "DataShowAreaCore.qml")
+
+    assert '_viewKey_ = _viewKey_ === "2D" ? "AREA" : _viewKey_' in api_text
+    assert "function normalizeViewKey(viewKey)" in surface_text
+    assert 'return viewKey === "2D" ? "AREA" : viewKey' in surface_text
+    assert "function refreshAreaSource()" in surface_text
+    assert "refreshAreaSource()\n        rootViewIndex = 2" in surface_text
+    assert "onKeyChanged: {\n        rebuildViewHasData()\n        refreshAreaSource()\n    }" in surface_text
+    assert "surfaceData.refreshAreaSource()" in area_core_text
+
+
+def test_2d_area_context_menu_can_rebuild_tile_cache():
+    api_text = read_qml(Path("Api") / "Api.qml")
+    area_core_text = read_qml(Path("DataShow") / "Core" / "DataShowAreaCore.qml")
+    menu_text = read_qml(Path("DataShow") / "Menu" / "MainShow" / "MainShowMenu.qml")
+
+    assert "function recacheAreaTiles(surfaceKey, coilId, viewKey, success, failure)" in api_text
+    assert 'let url = apiConfig.serverUrl\n                + "/image/area/cache/rebuild/"' in api_text
+    assert '"/image/area/cache/rebuild/"' in api_text
+    assert "function clearRustImageCache(success, failure)" in api_text
+    assert '"/cache/clear"' in api_text
+    assert "property int areaCacheVersion" in area_core_text
+    assert "property bool recacheInProgress" in area_core_text
+    assert "property string lastRecacheMessage" in area_core_text
+    assert "api.clearRustImageCache" in area_core_text
+    assert "areaCacheVersion += 1" in area_core_text
+    assert "function recacheAreaTiles()" in area_core_text
+    assert "canRecacheAreaTiles" in menu_text
+    assert "dataShowCore_.recacheAreaTiles()" in menu_text
+    assert "\\u91cd\\u65b0\\u7f13\\u5b582D\\u56fe\\u50cf" in menu_text
+
+
+def test_2d_defects_share_defect_class_visibility_list():
+    defect_class_text = read_qml(Path("Property") / "DefectClassProperty.qml")
+    data_show_core_text = read_qml(Path("DataShow") / "Core" / "_base_" / "DataShowCore_.qml")
+    filter_core_text = read_qml(Path("DefectPage") / "Core" / "FilterCore.qml")
+
+    assert "function shared_defect_name(defectName)" in defect_class_text
+    assert "return name.slice(3)" in defect_class_text
+    assert "function normalize_defect_dict_data(data)" in defect_class_text
+    assert 'if (sharedName in normalized)' in defect_class_text
+    assert "let sharedName = global.defectClassProperty.shared_defect_name(defectName)" in data_show_core_text
+    assert "let sharedName = global.defectClassProperty.shared_defect_name(name)" in filter_core_text
 
 
 def test_qml_resource_file_builds(tmp_path):

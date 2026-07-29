@@ -186,35 +186,72 @@ DataShowCore_ {
         return surfaceData.zRawToRelativeMm(rawValue).toFixed(2)
     }
     property int hoverZRequestId: 0
+    property bool hoverZRequestRunning: false
+    property bool hoverZPending: false
+    property var hoverZRequest: null
+
+    function finishHoverZRequest(requestId) {
+        if (requestId !== hoverZRequestId) {
+            return
+        }
+        hoverZRequest = null
+        hoverZRequestRunning = false
+        if (hoverZPending) {
+            hoverZPending = false
+            hoverZRequestTimer.restart()
+        }
+    }
+
     function get_zValue(){
         if (!surfaceData.coilInfoReady || !surfaceData.coilId || !surfaceData.key || hoverdX < 0 || hoverdY < 0
                 || hoverdX >= sourceWidth || hoverdY >= sourceHeight) {
+            return
+        }
+        if (hoverZRequestRunning) {
+            hoverZPending = true
             return
         }
         hoverZRequestId += 1
         let requestId = hoverZRequestId
         let requestX = hoverdX
         let requestY = hoverdY
-        api.get_zValueData(surfaceData.key,surfaceData.coilId,
+        hoverZRequestRunning = true
+        hoverZRequest = api.get_zValueData(surfaceData.key,surfaceData.coilId,
                            requestX,
                            requestY,
                            (result)=>{
-                               if (requestId !== hoverZRequestId || requestX !== hoverdX || requestY !== hoverdY) {
-                                   return
+                               if (requestId === hoverZRequestId && requestX === hoverdX && requestY === hoverdY) {
+                                   hoverdZmm = zRawToRelativeMm(result)
                                }
-                               hoverdZmm = zRawToRelativeMm(result)
+                               finishHoverZRequest(requestId)
                            },
                            (error)=>{
-                               console.log("get_zValueData error:",error)
+                               if (requestId === hoverZRequestId) {
+                                   console.log("get_zValueData error:",error)
+                               }
+                               finishHoverZRequest(requestId)
                            }
-                        )
+                         )
     }
 
     Timer {
         id: hoverZRequestTimer
-        interval: 40
+        interval: 100
         repeat: false
         onTriggered: get_zValue()
+    }
+
+    Connections {
+        target: surfaceData
+        function onCoilIdChanged() {
+            hoverZRequestId += 1
+            hoverZPending = false
+            hoverZRequestRunning = false
+            if (hoverZRequest) {
+                hoverZRequest.abort()
+                hoverZRequest = null
+            }
+        }
     }
 
 

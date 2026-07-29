@@ -36,21 +36,32 @@ ScrollView {
                 HintLabel {
                     text: coreSetting.useRustImageServer
                           ? qsTr("当前使用 Rust 图像服务")
-                          : qsTr("当前使用 Python 图像服务（5010）")
+                          : qsTr("当前使用 Python 图像服务")
                 }
+            }
+        }
 
-                FieldLabel { text: qsTr("Rust 端口") }
-                SpinBox {
-                    id: rustPortBox
-                    from: 1
-                    to: 65535
-                    value: coreSetting.rustImageServerPort
-                    editable: true
-                    enabled: coreSetting.useRustImageServer
-                    Layout.preferredWidth: 140
-                    onValueModified: coreSetting.rustImageServerPort = value
+        Section {
+            title: qsTr("Rust 测试服务")
+
+            GridLayout {
+                columns: 3
+                columnSpacing: 14
+                rowSpacing: 10
+                Layout.fillWidth: true
+
+                FieldLabel { text: qsTr("Rust API") }
+                CheckBox {
+                    id: rustTestServerCheckBox
+                    text: qsTr("启用测试服务")
+                    checked: coreSetting.useRustTestServer
+                    onToggled: coreSetting.useRustTestServer = checked
                 }
-                HintLabel { text: qsTr("默认 6013，仅启用 Rust 后生效") }
+                HintLabel {
+                    text: coreSetting.useRustTestServer
+                          ? qsTr("已切换到 Rust API，用于联调测试")
+                          : qsTr("默认使用 Python API")
+                }
             }
         }
 

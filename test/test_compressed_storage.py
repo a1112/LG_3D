@@ -2,31 +2,34 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "app"))
 sys.path.insert(0, str(PROJECT_ROOT / "package" / "CoilDataBase"))
 
 from Base.property.ServerConfigProperty import SurfaceConfigProperty  # noqa: E402
+import Base.tools.compressed_storage as compressed_storage  # noqa: E402
 from Base.tools.compressed_storage import (  # noqa: E402
-    compressed_image_path,
-    compressed_numpy_path,
-    save_compressed_image,
-    save_compressed_numpy,
+    atomic_write_bytes, compressed_image_path, compressed_numpy_path,
+    save_compressed_image, save_compressed_numpy,
 )
 from Base.utils.cache_generator import generate_jet_thumbnail  # noqa: E402
 
 
 def test_compressed_image_path_replaces_bmp_with_jpg():
-    assert compressed_image_path(Path("coil/2d/0.bmp")) == Path("coil/2d/0.jpg")
-    assert compressed_image_path(Path("coil/2d/0.jpg")) == Path("coil/2d/0.jpg")
+    assert compressed_image_path(
+        Path("coil/2d/0.bmp")) == Path("coil/2d/0.jpg")
+    assert compressed_image_path(
+        Path("coil/2d/0.jpg")) == Path("coil/2d/0.jpg")
 
 
 def test_compressed_numpy_path_replaces_npy_with_npz():
-    assert compressed_numpy_path(Path("coil/3d/0.npy")) == Path("coil/3d/0.npz")
-    assert compressed_numpy_path(Path("coil/3d/0.npz")) == Path("coil/3d/0.npz")
+    assert compressed_numpy_path(
+        Path("coil/3d/0.npy")) == Path("coil/3d/0.npz")
+    assert compressed_numpy_path(
+        Path("coil/3d/0.npz")) == Path("coil/3d/0.npz")
 
 
 def test_save_compressed_image_writes_jpg_and_not_bmp(tmp_path):
@@ -55,23 +58,58 @@ def test_save_compressed_numpy_writes_npz_and_not_npy(tmp_path):
         assert np.array_equal(data["array"], array)
 
 
+def test_compressed_image_publish_is_atomic_on_encoder_failure(
+        tmp_path, monkeypatch):
+    output_path = tmp_path / "GRAY.jpg"
+    output_path.write_bytes(b"complete-old-image")
+    image = Image.fromarray(np.full((8, 8), 127, dtype=np.uint8))
+
+    def fail_after_partial_write(path, **kwargs):
+        Path(path).write_bytes(b"partial-new-image")
+        raise RuntimeError("encoder failed")
+
+    monkeypatch.setattr(image, "save", fail_after_partial_write)
+
+    with pytest.raises(RuntimeError, match="encoder failed"):
+        save_compressed_image(image, output_path)
+
+    assert output_path.read_bytes() == b"complete-old-image"
+    assert list(tmp_path.glob("*.tmp.jpg")) == []
+
+
+def test_atomic_bytes_preserve_previous_file_when_publish_fails(
+        tmp_path, monkeypatch):
+    output_path = tmp_path / "thumbnail_1024.jpg"
+    output_path.write_bytes(b"old-complete-thumbnail")
+
+    def fail_replace(_source, _destination):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(compressed_storage.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="replace failed"):
+        atomic_write_bytes(b"new-thumbnail", output_path)
+
+    assert output_path.read_bytes() == b"old-complete-thumbnail"
+    assert list(tmp_path.glob("*.tmp.jpg")) == []
+
+
 def test_surface_config_uses_npz_as_default_3d_path():
-    config = SurfaceConfigProperty(
-        {
-            "key": "S",
-            "saveFolder": "D:/data/S",
-            "rotate": 0,
-            "x_rotate": 0,
-            "direction": "R",
-            "folderList": [],
-        }
-    )
+    config = SurfaceConfigProperty({
+        "key": "S",
+        "saveFolder": "D:/data/S",
+        "rotate": 0,
+        "x_rotate": 0,
+        "direction": "R",
+        "folderList": [],
+    })
 
     assert Path(config.get_3d_file("193113")).name == "3D.npz"
 
 
 def test_capture_save_code_does_not_write_bmp_or_npy_outputs():
-    source = (PROJECT_ROOT / "app" / "CapTrue" / "ImageDataSave.py").read_text(encoding="utf-8")
+    source = (PROJECT_ROOT / "app" / "CapTrue" /
+              "ImageDataSave.py").read_text(encoding="utf-8")
 
     assert '.bmp"' not in source
     assert ".bmp'" not in source
@@ -84,7 +122,8 @@ def test_capture_save_code_does_not_write_bmp_or_npy_outputs():
 def test_jet_thumbnail_source_image_ignores_falsecolor_range(tmp_path):
     source_path = tmp_path / "source.jpg"
     cache_dir = tmp_path / "cache"
-    Image.fromarray(np.full((16, 16, 3), 128, dtype=np.uint8)).save(source_path)
+    Image.fromarray(np.full((16, 16, 3), 128,
+                            dtype=np.uint8)).save(source_path)
 
     ok = generate_jet_thumbnail(
         source_image=source_path,

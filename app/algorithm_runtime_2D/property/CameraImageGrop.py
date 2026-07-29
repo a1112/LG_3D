@@ -1,14 +1,15 @@
 from typing import List
 
+import cv2
 import numpy as np
 
-from JoinService.cv_count_tool import get_intersections, hconcat_list, im_show
-from area_alg.YoloModelResults import YoloModelSegResults
-from configs import CONFIG
-from configs.CONFIG import DEBUG
-from configs.CameraConfig import CameraConfig
-from configs.DebugConfigs import debug_config
-from utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.JoinService.cv_count_tool import get_intersections, hconcat_list, im_show
+from algorithm_runtime_2D.area_alg.YoloModelResults import YoloModelSegResults
+from algorithm_runtime_2D.configs import CONFIG
+from algorithm_runtime_2D.configs.CONFIG import DEBUG
+from algorithm_runtime_2D.configs.CameraConfig import CameraConfig
+from algorithm_runtime_2D.configs.DebugConfigs import debug_config
+from algorithm_runtime_2D.utils.MultiprocessColorLogger import logger
 
 
 def _image_line_has_data_(line:np.ndarray) -> bool:
@@ -39,23 +40,52 @@ class CameraImageGrop:
                     except Exception as e:
                         logger.warning("Error saving mask image: %s", e)
 
-
-        self.mask_list=[]
-        self.image_list=[]
+        raw_masks = []
+        self.image_list = []
         for seg_result in results:
             seg_result: "YoloModelSegResults"
-            mask = seg_result.get_mask()
-            if mask is not None:
-                self.mask_list.append(mask)
-            else:
-                self.mask_list.append(np.zeros(seg_result.image.shape[:2]))
-
+            raw_masks.append(seg_result.get_mask())
             self.image_list.append(seg_result.image)
+
+        valid_mask = next((mask for mask in raw_masks if mask is not None and mask.size), None)
+        if valid_mask is not None:
+            mask_shape = valid_mask.shape[:2]
+        else:
+            mask_size = max(int(round(self.config.surface_config.image_size / self.config.surface_config.scale)), 1)
+            mask_shape = (mask_size, mask_size)
+
+        self.mask_list = []
+        for mask in raw_masks:
+            if mask is None or not mask.size:
+                normalized_mask = np.zeros(mask_shape, dtype=np.uint8)
+            else:
+                normalized_mask = np.asarray(mask)
+                if normalized_mask.ndim == 3:
+                    normalized_mask = normalized_mask.max(axis=2)
+                if normalized_mask.shape != mask_shape:
+                    normalized_mask = cv2.resize(
+                        normalized_mask,
+                        (mask_shape[1], mask_shape[0]),
+                        interpolation=cv2.INTER_NEAREST,
+                    )
+                normalized_mask = np.where(normalized_mask > 0, 255, 0).astype(np.uint8)
+            self.mask_list.append(normalized_mask)
+
+        for seg_result in results:
+            seg_result.result = None
+        self.results = None
 
         self.format_images()
 
-        self.intersections = get_intersections(self.mask_list,fr"{self.coil_id}_{self.config.surface_key}_{self.config.key}")
-        self.intersections = [i * self.config.surface_config.scale for i in self.intersections]
+        self.mask_intersections = get_intersections(
+            self.mask_list,
+            fr"{self.coil_id}_{self.config.surface_key}_{self.config.key}",
+        )
+        self.intersections = []
+        for index, intersection in enumerate(self.mask_intersections):
+            image_width = self.image_list[index + 1].shape[1]
+            mask_width = self.mask_list[index + 1].shape[1]
+            self.intersections.append(int(round(intersection * image_width / mask_width)))
 
 
         # for mask, image in zip(self.mask_list, self.image_list):
@@ -95,15 +125,43 @@ class CameraImageGrop:
         # self.image_list = self.image_list[left_index:right_index+1]
 
     def init_image(self):
-        self.intersections=self.intersections[self.left_index:self.right_index]
-        self.mask_list = self.mask_list[self.left_index:self.right_index + 1]
-        self.image_list = self.image_list[self.left_index:self.right_index + 1]
+        image_count = len(self.image_list)
+        if image_count == 0:
+            self.intersections = []
+            self.mask_intersections = []
+            return
+
+        raw_left_index = 0 if self.left_index is None else self.left_index
+        raw_right_index = image_count - 1 if self.right_index is None else self.right_index
+        left_index = min(max(int(raw_left_index), 0), image_count - 1)
+        right_index = min(max(int(raw_right_index), left_index), image_count - 1)
+        self.intersections = self.intersections[left_index:right_index]
+        self.mask_intersections = self.mask_intersections[left_index:right_index]
+        self.mask_list = self.mask_list[left_index:right_index + 1]
+        self.image_list = self.image_list[left_index:right_index + 1]
+
+        required_intersections = max(len(self.image_list) - 1, 0)
+        self.intersections = self.intersections[:required_intersections]
+        self.mask_intersections = self.mask_intersections[:required_intersections]
+        self.intersections.extend([0] * (required_intersections - len(self.intersections)))
+        self.mask_intersections.extend([0] * (required_intersections - len(self.mask_intersections)))
 
     def set_intersections(self,new_):
         "设置统一的 参数"
-        self.intersections = new_.intersections
-        self.left_index = new_.left_index
-        self.right_index = new_.right_index
+        self.set_stitching(new_.left_index, new_.right_index, new_.intersections)
+
+    def set_stitching(self, left_index, right_index, intersections):
+        self.intersections = list(intersections)
+        self.mask_intersections = []
+        for index, intersection in enumerate(self.intersections):
+            if index + 1 >= len(self.image_list) or index + 1 >= len(self.mask_list):
+                self.mask_intersections.append(0)
+                continue
+            image_width = self.image_list[index + 1].shape[1]
+            mask_width = self.mask_list[index + 1].shape[1]
+            self.mask_intersections.append(int(round(intersection * mask_width / image_width)))
+        self.left_index = left_index
+        self.right_index = right_index
 
     def join_image(self):
 
@@ -119,3 +177,24 @@ class CameraImageGrop:
             im_show(image,fr"join_image {self.config.key}")
 
         return image
+
+    def join_mask(self):
+        mask = hconcat_list(self.mask_list, self.mask_intersections, False)
+        if mask is None:
+            return None
+        if mask.ndim == 3:
+            mask = mask.max(axis=2)
+        return np.where(mask > 0, 255, 0).astype(np.uint8)
+
+    def release_images(self) -> None:
+        """Release decoded 5120px source frames after their row is joined."""
+        self.image_list.clear()
+
+    def release_masks(self) -> None:
+        """Release segmentation masks after their row is joined."""
+        self.mask_list.clear()
+
+    def release(self) -> None:
+        self.release_images()
+        self.release_masks()
+        self.results = None

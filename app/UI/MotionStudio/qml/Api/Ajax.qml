@@ -2,16 +2,71 @@ import QtQuick
 
 Item {
 
+    id: root
+
+    // Qt XMLHttpRequest does not provide a dependable default timeout.  A
+    // stalled polling request must be completed explicitly or callers that
+    // use an in-flight guard can remain stuck forever.
+    property int requestTimeoutMs: 12000
+
+    Component {
+        id: requestTimeoutTimerComponent
+        Timer {
+            repeat: false
+        }
+    }
+
+    function sendRequest(method, url, data, success, failure)
+    {
+        var xhr = new XMLHttpRequest()
+        var finished = false
+        var timeoutTimer = requestTimeoutTimerComponent.createObject(root, {
+                                                                          "interval": root.requestTimeoutMs
+                                                                      })
+
+        function destroyTimeoutTimer() {
+            if (timeoutTimer) {
+                timeoutTimer.stop()
+                timeoutTimer.destroy()
+                timeoutTimer = null
+            }
+        }
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE || finished) {
+                return
+            }
+            finished = true
+            destroyTimeoutTimer()
+            handleResponse(xhr, success, failure)
+        }
+
+        xhr.open(method, url)
+        if (method === "POST") {
+            xhr.withCredentials = true
+            xhr.setRequestHeader("Content-Type", "application/json")
+        }
+
+        timeoutTimer.triggered.connect(function() {
+            if (finished) {
+                return
+            }
+            finished = true
+            xhr.abort()
+            destroyTimeoutTimer()
+            if (failure !== null && failure !== undefined) {
+                failure("request timeout", 0)
+            }
+        })
+        timeoutTimer.start()
+        xhr.send(data)
+        return xhr
+    }
+
     function get(url, success, failure)
     {
         api.appendUrl(url,"get")
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        xhr.onreadystatechange = function() {
-            handleResponse(xhr, success, failure);
-        }
-        xhr.send();
+        return sendRequest("GET", url, null, success, failure)
     }
 
     // POST
@@ -20,15 +75,7 @@ Item {
 
         // WARNING: For POST requests, body is set to null by browsers.
         var data = JSON.stringify(arg)
-
-        var xhr = new XMLHttpRequest()
-        xhr.withCredentials = true
-        xhr.onreadystatechange = function() {
-            handleResponse(xhr, success, failure);
-        }
-        xhr.open("POST", url);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(data);
+        return sendRequest("POST", url, data, success, failure)
 //        // WARNING: For POST requests, body is set to null by browsers.
 //        data = JSON.stringify(data)
 

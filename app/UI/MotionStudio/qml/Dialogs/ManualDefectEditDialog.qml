@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../Api"
+import "../Api"
 
 /**
  * 手动标注缺陷编辑对话框
@@ -11,8 +11,8 @@ Dialog {
     id: root
     title: "编辑缺陷标注"
     modal: true
-    width: 450
-    height: 400
+    width: adaptive.boundedWidth(450, 360, 560)
+    height: adaptive.boundedHeight(400, 320, 520)
 
     // 属性
     property var defectData: null
@@ -52,7 +52,7 @@ Dialog {
     }
 
     ColumnLayout {
-        spacing: 15
+        spacing: adaptive.mainSpacing
         anchors.fill: parent
 
         // 缺陷类型警告
@@ -72,8 +72,8 @@ Dialog {
 
             GridLayout {
                 columns: 2
-                columnSpacing: 10
-                rowSpacing: 10
+                columnSpacing: adaptive.mainSpacing
+                rowSpacing: adaptive.mainSpacing
                 anchors.fill: parent
 
                 // 缺陷类型
@@ -147,7 +147,7 @@ Dialog {
 
         // 按钮区域
         RowLayout {
-            spacing: 10
+            spacing: adaptive.mainSpacing
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignRight
 
@@ -203,8 +203,8 @@ Dialog {
             text: "确定要删除此缺陷标注吗？\n此操作无法撤销。"
         }
 
-        buttons: Row {
-            spacing: 10
+        footer: Row {
+            spacing: adaptive.mainSpacing
             layoutDirection: Qt.RightToLeft
 
             Button {

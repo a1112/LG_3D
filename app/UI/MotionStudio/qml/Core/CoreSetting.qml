@@ -13,15 +13,12 @@ Item {
 
 
     property string server_ip: "127.0.0.1"
-    property int server_port: 5010
-    property int server_port_count: 1
-
-    property int databasPort: 6011
-    property int imageServerPort: 6012
-    property bool useRustImageServer: false
-    property int rustImageServerPort: 6013
-    property int dataPort: 6013
-    property int plcPort: 6014
+    property bool useRustTestServer: false
+    property bool useRustImageServer: true
+    property int imageServerBackendDefaultVersion: 0
+    readonly property int server_port: useRustTestServer ? 5011 : 5010
+    readonly property int imageServerPort: 6012
+    readonly property int rustImageServerPort: 6013
 
     property int updataTime: 8000
 
@@ -45,8 +42,6 @@ Item {
     property real clipDynamicBL: 220.0
     property real clipDynamicCL: 4000.0
 
-property int alg2dPort: 6020
-
 property bool testMode: false
 
 property bool showErrorOverlay: true  // 是否显示错误叠加层（3D Error 图像）
@@ -57,6 +52,16 @@ property string softwareUpdatePackageUrl: ""
 property bool softwareUpdateAutoOpen: false
 
 property int headDateShowModel: 0
+
+    readonly property int currentImageServerBackendDefaultVersion: 1
+
+    Component.onCompleted: {
+        if (imageServerBackendDefaultVersion < currentImageServerBackendDefaultVersion) {
+            useRustImageServer = true
+            imageServerBackendDefaultVersion = currentImageServerBackendDefaultVersion
+        }
+    }
+
     property int dataHeaderHeight:320
     SettingsBase{
         property alias useImageCache: root.useImageCache
@@ -68,14 +73,9 @@ property int headDateShowModel: 0
         property alias sharedFolderBaseName: root.sharedFolderBaseName
 
         property alias server_ip: root.server_ip
-        property alias server_port: root.server_port
-        property alias server_port_count: root.server_port_count
-        property alias databasPort: root.databasPort
-        property alias imageServerPort: root.imageServerPort
+        property alias useRustTestServer: root.useRustTestServer
         property alias useRustImageServer: root.useRustImageServer
-        property alias rustImageServerPort: root.rustImageServerPort
-        property alias dataPort: root.dataPort
-        property alias plcPort: root.plcPort
+        property alias imageServerBackendDefaultVersion: root.imageServerBackendDefaultVersion
 
         property alias headDateShowModel:root.headDateShowModel
         property alias dataHeaderHeight:root.dataHeaderHeight
@@ -92,7 +92,6 @@ property int headDateShowModel: 0
         property alias clipDynamicBL: root.clipDynamicBL
         property alias clipDynamicCL: root.clipDynamicCL
 
-property alias alg2dPort: root.alg2dPort
 property alias testMode: root.testMode
 property alias showErrorOverlay: root.showErrorOverlay
 property alias showTileDebugBorders: root.showTileDebugBorders

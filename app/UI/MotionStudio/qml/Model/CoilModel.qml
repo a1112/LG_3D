@@ -132,7 +132,7 @@ QtObject {
         let items = _normalizeDefectsData(defectsData)
         for (let i = 0; i < items.length; i++) {
             let defect = items[i]
-            let defectName = _getDefectName(defect)
+            let defectName = global.defectClassProperty.shared_defect_name(_getDefectName(defect))
             if (defectName && fliterDict[defectName]) {
                 return true
             }

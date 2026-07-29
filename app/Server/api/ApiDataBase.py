@@ -53,6 +53,25 @@ router = APIRouter(tags=["数据库服务"])
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _CAMERA_SERVICE_TIMEOUT = 1.5
 _CAPTURE_MONITOR_TIMEOUT = 4.0
+
+
+def _bounded_positive_int_env(name: str, default: int,
+                              hard_max: int) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        value = default
+    return min(max(value, 1), hard_max)
+
+
+_MAX_DEFECT_RANGE_RESULTS = _bounded_positive_int_env(
+    "API_MAX_DEFECT_RANGE_RESULTS", 10000, 50000)
+_MAX_SUMMARY_SYNC_IDS = _bounded_positive_int_env(
+    "API_MAX_SUMMARY_SYNC_IDS", 1000, 10000)
+_MAX_DEFECT_EXPORT_ITEMS = _bounded_positive_int_env(
+    "API_MAX_DEFECT_EXPORT_ITEMS", 500, 5000)
+_MAX_TEXT_DATA_RESULTS = _bounded_positive_int_env(
+    "API_MAX_TEXT_DATA_RESULTS", 10000, 50000)
 logger = logging.getLogger(__name__)
 
 
@@ -366,7 +385,7 @@ def _load_coil_alarm_payload(coil_id: int) -> dict:
 
 
 @router.get("/coilList/{number}")
-async def get_coil(number: int, coil_id=None, rev=True):
+def get_coil(number: int, coil_id=None, rev=True):
     """
     获取 n 条数据（优先查询摘要表，快速返回）
 
@@ -385,7 +404,7 @@ async def get_coil(number: int, coil_id=None, rev=True):
 
 
 @router.get("/flush/{coil_id:int}")
-async def get_flush(coil_id: int):
+def get_flush(coil_id: int):
     """
     向上刷新（仅查询摘要表，快速返回）
     """
@@ -401,32 +420,32 @@ async def get_flush(coil_id: int):
 
 
 @router.get("/search/coilNo/{coil_no:str}")
-async def search_by_coil_no(coil_no: str):
+def search_by_coil_no(coil_no: str):
     return search_coils_by_coil_no_summary(coil_no, by_coil=True)
 
 
 @router.get("/search/coilId/{coil_id}")
-async def search_by_coil_id(coil_id: int):
+def search_by_coil_id(coil_id: int):
     coil_id = int(coil_id)
     return search_coils_by_id_summary(coil_id, by_coil=True)
 
 
 @router.get("/search/DateTime/{start:str}/{end:str}")
-async def search_by_date_time(start: str, end: str):
+def search_by_date_time(start: str, end: str):
     start = datetime.datetime.strptime(start, "%Y%m%d%H%M")
     end = datetime.datetime.strptime(end, "%Y%m%d%H%M")
     return search_coils_by_datetime_summary(start, end, by_coil=True)
 
 
 @router.get("/search/CoilState/{coil_id:int}")
-async def get_coil_state(coil_id: int):
+def get_coil_state(coil_id: int):
     coil_id = int(coil_id)
     r = Coil.getCoilState(coil_id)
     return tool.to_dict(r)
 
 
 @router.get("/search/PlcData/{coil_id:int}")
-async def get_plc_data(coil_id: int):
+def get_plc_data(coil_id: int):
     coil_id = int(coil_id)
     r = Coil.get_plc_data(coil_id)
     return tool.to_dict(r)
@@ -465,7 +484,7 @@ def _query_plc_curve_rows(start_id: int = 0,
 
 
 @router.get("/plc_curve/{field}")
-async def get_plc_curve(field: str,
+def get_plc_curve(field: str,
                         start_id: int = 0,
                         end_id: int = 0,
                         limit: int = 200):
@@ -525,7 +544,7 @@ async def get_plc_curve(field: str,
 
 
 @router.get("/plc_curve_all")
-async def get_plc_curve_all(start_id: int = 0,
+def get_plc_curve_all(start_id: int = 0,
                             end_id: int = 0,
                             limit: int = 200):
     rows = _query_plc_curve_rows(start_id, end_id, limit)
@@ -575,13 +594,27 @@ async def get_plc_curve_all(start_id: int = 0,
 
 
 @router.get("/search/defects/{coil_id:int}/{direction}")
-async def get_defects(coil_id: int, direction: str):
-    return Coil.get_defects(coil_id, direction)
+def get_defects(coil_id: int, direction: str):
+    try:
+        return Coil.get_defects(
+            coil_id,
+            direction,
+            max_count=_MAX_DEFECT_RANGE_RESULTS,
+        )
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.get("/search/getDefectAll/{start_coil_id:int}/{end_coil_id:int}")
-async def get_defect_all(start_coil_id, end_coil_id):
-    return Coil.get_defects_all(start_coil_id, end_coil_id)
+def get_defect_all(start_coil_id, end_coil_id):
+    try:
+        return Coil.get_defects_all(
+            start_coil_id,
+            end_coil_id,
+            max_count=_MAX_DEFECT_RANGE_RESULTS,
+        )
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.get("/defectDict")
@@ -591,7 +624,7 @@ async def get_defect_dict():
 
 
 @router.get("/defectDictAll")
-async def get_defect_dict_all():
+def get_defect_dict_all():
     """
     获取全部的表面缺陷数据字段
     """
@@ -599,7 +632,7 @@ async def get_defect_dict_all():
 
 
 @router.get("/coilInfo/{coil_id:int}/{surface_key:str}")
-async def get_info(coil_id: int, surface_key: str):
+def get_info(coil_id: int, surface_key: str):
     data = serverConfigProperty.get_info(coil_id, surface_key)
     if data is None and _test_mode_enabled() and str(coil_id) == get_testdata_coil_id():
         return get_testdata_coil_info(surface_key)
@@ -611,7 +644,7 @@ async def get_camera_config(coil_id: int, surface_key: str, c):
 
 
 @router.get("/hardware")
-async def get_hardware():
+def get_hardware():
     return Hardware.getHardwareInfo()
 
 
@@ -962,9 +995,11 @@ def _plc_service_base_url() -> str:
     host = os.getenv("PLC_SERVER_IP", "127.0.0.1")
     host = _normalize_service_host(host)
     try:
-        port = int(os.getenv("PLC_SERVER_PORT", "1211"))
-    except ValueError:
-        port = 1211
+        port = int(os.getenv("PLC_SERVER_PORT", "1035"))
+        if not 1 <= port <= 65535:
+            raise ValueError("port out of range")
+    except (TypeError, ValueError):
+        port = 1035
     return f"http://{host}:{port}"
 
 
@@ -1197,12 +1232,12 @@ def reconnect_camera():
 
 @router.get("/plc/info")
 @router.get("/plc/info/")
-async def get_plc_info():
+def get_plc_info():
     return _plc_service_request("get", "/plc/info/")
 
 
 @router.get("/plc/connect/{plc_ip}/{rack}/{slot}")
-async def connect_plc(plc_ip: str, rack: int, slot: int):
+def connect_plc(plc_ip: str, rack: int, slot: int):
     return _plc_service_request(
         "get",
         f"/plc/connect/{plc_ip}/{rack}/{slot}",
@@ -1210,7 +1245,7 @@ async def connect_plc(plc_ip: str, rack: int, slot: int):
 
 
 @router.get("/plc/get/{addr}/{type_str}/{length}")
-async def read_plc_value(addr: str, type_str: str, length: int):
+def read_plc_value(addr: str, type_str: str, length: int):
     if length < 0:
         raise HTTPException(status_code=400, detail="length must be non-negative")
     return _plc_service_request(
@@ -1295,7 +1330,7 @@ def _demo_camera_alarm_payload() -> Optional[dict]:
 
 
 @router.get("/cameraAlarm")
-async def get_camera_alarm():
+def get_camera_alarm():
     """
       获取相机报警信息
     Returns:
@@ -1326,7 +1361,7 @@ async def get_camera_alarm():
 
 
 @router.get("/cameraData/{coil_id:int}/{camera_key:str}")
-async def get_camera_data(coil_id: int, camera_key: str):
+def get_camera_data(coil_id: int, camera_key: str):
     if CONFIG.isLoc:
         with open("demo/camera_config.json", "r", encoding="utf-8") as f:
             camera_config = json.load(f)
@@ -1343,7 +1378,12 @@ async def backup_image_task(from_id: int, to_id: int, save_folder: str):
         to_id,
         save_folder,
     )
-    return Backup.backup_image_task(from_id, to_id, save_folder)
+    try:
+        return await Backup.backup_image_task(from_id, to_id, save_folder)
+    except Backup.BackupRangeLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except Backup.BackupBusyError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/get_point_data/{coil_id:int}/{surface_key:str}")
@@ -1352,19 +1392,29 @@ async def get_point_data(coil_id: int, surface_key: str):
     获取点数据
     """
     surface_key = get_surface_key(surface_key)
-    return await run_in_threadpool(
-        lambda: tool.to_dict(Coil.get_point_data(coil_id, surface_key)))
+    try:
+        return await run_in_threadpool(lambda: tool.to_dict(
+            Coil.get_point_data(coil_id,
+                                surface_key,
+                                max_count=_MAX_TEXT_DATA_RESULTS)))
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.get("/get_line_data/{coil_id:int}/{surface_key:str}")
 async def get_line_data(coil_id: int, surface_key: str):
     surface_key = get_surface_key(surface_key)
-    return await run_in_threadpool(
-        lambda: tool.to_dict(Coil.get_line_data(coil_id, surface_key)))
+    try:
+        return await run_in_threadpool(lambda: tool.to_dict(
+            Coil.get_line_data(coil_id,
+                               surface_key,
+                               max_count=_MAX_TEXT_DATA_RESULTS)))
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.get("/check/get_coil_status/{coil_id:int}")
-async def get_coil_status(coil_id):
+def get_coil_status(coil_id):
     item = tool.to_dict(get_coil_status_by_coil_id(coil_id))
     if not item:
         item = {"status": 0, "msg": "", "secondaryCoilId": coil_id, "Id": -1}
@@ -1373,12 +1423,12 @@ async def get_coil_status(coil_id):
 
 @router.get("/check/set_coil_status/{coil_id:int}/{status:int}/{msg:str}")
 @router.get("/check/set_coil_status/{coil_id:int}/{status:int}")
-async def set_coil_status(coil_id, status, msg=""):
+def set_coil_status(coil_id, status, msg=""):
     set_coil_status_by_data(coil_id, status, msg)
 
 
 @router.get("/detail/{coil_id:int}")
-async def get_coil_detail_api(coil_id: int):
+def get_coil_detail_api(coil_id: int):
     """
     获取卷材详情（完整数据）
     包括：基本信息、报警详情、缺陷列表、塔形点数据、松卷/扁卷报警等
@@ -1391,27 +1441,34 @@ async def get_coil_detail_api(coil_id: int):
 
 
 @router.get("/coilAlarm/get_info")
-async def get_coil_alarm_info():
+def get_coil_alarm_info():
     return None
 
 
 @router.get("/coilAlarm/{coil_id:int}")
-async def get_coil_alarm(coil_id: int):
+def get_coil_alarm(coil_id: int):
     return _load_coil_alarm_payload(coil_id)
 
 
 @router.post("/sync_summaries")
-async def sync_summaries_api(limit: int = 1000):
+def sync_summaries_api(limit: int = 1000):
     """
     手动触发批量同步摘要数据
     用于初始化摘要表
     """
+    if limit < 1:
+        raise HTTPException(status_code=400, detail="limit must be positive")
+    if limit > _MAX_SUMMARY_SYNC_IDS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"summary sync exceeds {_MAX_SUMMARY_SYNC_IDS} coils",
+        )
     count = batch_sync_summaries(limit=limit)
     return {"synced": count, "message": f"Synced {count} summaries"}
 
 
 @router.post("/sync_summaries_range")
-async def sync_summaries_range_api(request: dict):
+def sync_summaries_range_api(request: dict):
     """
     快速同步指定 ID 范围的摘要数据
     只更新已存在的记录，不创建新记录
@@ -1421,6 +1478,14 @@ async def sync_summaries_range_api(request: dict):
     coil_ids = request.get("coil_ids", [])
     if not coil_ids:
         return {"error": "coil_ids is required", "synced": 0}
+    if not isinstance(coil_ids, list):
+        raise HTTPException(status_code=400,
+                            detail="coil_ids must be a list")
+    if len(coil_ids) > _MAX_SUMMARY_SYNC_IDS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"summary sync exceeds {_MAX_SUMMARY_SYNC_IDS} coils",
+        )
     count = sync_summaries_range(coil_ids)
     return {"synced": count, "message": f"Updated {count} summaries"}
 
@@ -1584,7 +1649,7 @@ def _get_manual_image_path(defect_data: dict) -> Path | None:
 
 
 @router.get("/search/defects_all/{coil_id:int}/{direction}")
-async def get_defects_all_including_manual(coil_id: int, direction: str):
+def get_defects_all_including_manual(coil_id: int, direction: str):
     """
     获取所有缺陷（包括自动检测和手动标注）
 
@@ -1595,11 +1660,18 @@ async def get_defects_all_including_manual(coil_id: int, direction: str):
     Returns:
         包含自动检测缺陷和手动标注缺陷的列表
     """
-    return Coil.get_all_defects_including_manual(coil_id, direction)
+    try:
+        return Coil.get_all_defects_including_manual(
+            coil_id,
+            direction,
+            max_count=_MAX_DEFECT_RANGE_RESULTS,
+        )
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.get("/manual_defects/{coil_id:int}/{direction}")
-async def get_manual_defects_api(coil_id: int, direction: str):
+def get_manual_defects_api(coil_id: int, direction: str):
     """
     获取手动标注的缺陷列表
 
@@ -1610,11 +1682,18 @@ async def get_manual_defects_api(coil_id: int, direction: str):
     Returns:
         手动标注缺陷列表
     """
-    return Coil.get_manual_defect_dicts(coil_id, direction)
+    try:
+        return Coil.get_manual_defect_dicts(
+            coil_id,
+            direction,
+            max_count=_MAX_DEFECT_RANGE_RESULTS,
+        )
+    except Coil.QueryResultLimitExceeded as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
 
 
 @router.post("/manual_defect/add")
-async def add_manual_defect_api(request: dict):
+def add_manual_defect_api(request: dict):
     """
     添加手动标注的缺陷
 
@@ -1642,7 +1721,7 @@ async def add_manual_defect_api(request: dict):
 
 
 @router.put("/manual_defect/update/{defect_id:int}")
-async def update_manual_defect_api(defect_id: int, request: dict):
+def update_manual_defect_api(defect_id: int, request: dict):
     """
     更新手动标注的缺陷
 
@@ -1664,7 +1743,7 @@ async def update_manual_defect_api(defect_id: int, request: dict):
 
 
 @router.delete("/manual_defect/delete/{defect_id:int}")
-async def delete_manual_defect_api(defect_id: int):
+def delete_manual_defect_api(defect_id: int):
     """
     删除手动标注的缺陷
 
@@ -1685,7 +1764,7 @@ async def delete_manual_defect_api(defect_id: int):
 
 
 @router.post("/export_defects")
-async def export_defects(request: dict):
+def export_defects(request: dict):
     """
     导出当前显示的缺陷图像到本地文件夹
 
@@ -1715,6 +1794,13 @@ async def export_defects(request: dict):
 
     if not defects:
         return {"error": "没有可导出的缺陷数据", "exported": 0}
+    if not isinstance(defects, list):
+        raise HTTPException(status_code=400, detail="defects must be a list")
+    if len(defects) > _MAX_DEFECT_EXPORT_ITEMS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"defect export exceeds {_MAX_DEFECT_EXPORT_ITEMS} items",
+        )
 
     # 创建导出目录
     export_base = Path(folder_path)
@@ -1739,9 +1825,15 @@ async def export_defects(request: dict):
     for defect_name, defect_list in defect_groups.items():
         # 为每个类别创建子文件夹
         category_folder = export_base / defect_name
-        category_folder.mkdir(exist_ok=True)
+        try:
+            category_folder.mkdir(exist_ok=True)
+        except Exception as exc:
+            error_count += len(defect_list)
+            logger.warning("create defect export category failed: %s", exc)
+            continue
 
         for idx, defect_data in enumerate(defect_list):
+            defect_image = None
             try:
                 # 获取缺陷参数
                 coil_id = defect_data.get("secondaryCoilId", 0)
@@ -1781,11 +1873,6 @@ async def export_defects(request: dict):
                 # 保存图像
                 save_path = category_folder / filename
                 defect_image.save(save_path, quality=95)
-                try:
-                    defect_image.close()
-                except Exception as close_exc:
-                    logger.debug("manual defect image close failed: %s",
-                                 close_exc)
                 exported_count += 1
 
             except Exception as e:
@@ -1796,6 +1883,13 @@ async def export_defects(request: dict):
                     defect_name,
                     e,
                 )
+            finally:
+                if defect_image is not None:
+                    try:
+                        defect_image.close()
+                    except Exception as close_exc:
+                        logger.debug("manual defect image close failed: %s",
+                                     close_exc)
 
     _close_source_image_cache(source_image_cache)
 

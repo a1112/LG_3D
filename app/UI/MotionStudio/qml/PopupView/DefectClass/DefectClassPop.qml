@@ -6,8 +6,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 PopupBase {
     id:root
-    width:500
-    height:500
+    width: adaptive.boundedWidth(500, 380, 640)
+    height: adaptive.boundedHeight(500, 380, 680)
 
     function set_defect_dict_property(index,key,value){
         // let list_item = global.defectClassProperty.defectDictModel.get(index)
@@ -26,7 +26,7 @@ PopupBase {
 
     Item{
         width:root.width
-        height:root.height-20
+        height: root.height - adaptive.headerSideGap
         ColumnLayout{
             anchors.fill:parent
             TitleLabel{
@@ -44,17 +44,17 @@ PopupBase {
                     model:global.defectClassProperty.defectDictModel
                     delegate:DefectClassShowItem{
                         width:list.width
-                        height:30
+                        height: adaptive.headerTabHeight
                     }
                 }
             }
             RowLayout{
                 Layout.fillWidth:true
-                implicitHeight:30
-                spacing:20
+                implicitHeight: adaptive.headerTabHeight
+                spacing: adaptive.headerSideGap
                 Item{
                     Layout.fillWidth:true
-                    implicitHeight:30
+                    implicitHeight: adaptive.headerTabHeight
                 }
                 Button{
                     text:qsTr("保存 ")

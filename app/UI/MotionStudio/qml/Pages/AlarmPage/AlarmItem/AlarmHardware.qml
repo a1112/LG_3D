@@ -5,6 +5,7 @@ import QtQuick.Layouts
 Item {
     id:root
     property int alarmLevel: 0
+    property bool requestRunning: false
     property var hardwareData:t
     property var t : {"cpu":{"key":"芯片","value":"1.4%","msg":"CPU 使用率: 1.4%"},
     "memory":{"key":"内存","value":"44.2%","msg":"内存使用率: 44.2%, 可用内存: 22754.19 MB"},
@@ -21,8 +22,13 @@ Item {
         repeat:true
         interval: 2000
         onTriggered:{
+            if (root.requestRunning) {
+                return
+            }
+            root.requestRunning = true
             api.getHardware(
                         (res)=>{
+                            root.requestRunning = false
                             hardwareData=JSON.parse(res)
                             // 清空并重新填充模型
                             hardwareModel.clear()
@@ -37,6 +43,7 @@ Item {
                             }
                         },
                         (err)=>{
+                            root.requestRunning = false
                         }
                         )
         }

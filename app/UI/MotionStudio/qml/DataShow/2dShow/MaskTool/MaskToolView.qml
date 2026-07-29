@@ -26,6 +26,16 @@ Item {
                         // dataShowCore.telescopedJointView =! dataShowCore.telescopedJointView
                     }
                 }
+                ItemDelegateItem {
+                    height: 20
+                    text: coreModel.imageMaskChecked ? qsTr("AREA") : qsTr("AREA_MASK")
+                    selected: coreModel.imageMaskChecked
+                    font.bold:true
+                    visible: surfaceData.isAreaRootView
+                    onClicked: {
+                        coreModel.imageMaskChecked = !coreModel.imageMaskChecked
+                    }
+                }
             }
         }
     }

@@ -7,7 +7,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 
 from .config import get_url
-from .db_settings import sqlalchemy_pool_settings
+from .db_settings import (sqlalchemy_connect_args, sqlalchemy_pool_settings,
+                          sqlalchemy_timeout_url)
 from .models import *
 
 
@@ -62,6 +63,7 @@ def ensure_runtime_indexes(engine_):
         add_index("AlarmFlatRoll", "idx_alarm_flat_roll_secondary", '"secondaryCoilId"')
         add_index("AlarmTaperShape", "idx_alarm_taper_shape_secondary", '"secondaryCoilId"')
         add_index("AlarmLooseCoil", "idx_alarm_loose_coil_secondary", '"secondaryCoilId"')
+        add_index("PointData", "idx_pointdata_secondary_surface", '"secondaryCoilId", surface')
         add_index("coil_summary", "idx_summary_hascoil_id_desc", '"HasCoil", "Id" DESC')
     else:
         add_index("CoilDefect", "idx_coil_defect_secondary_coil_id", "secondaryCoilId")
@@ -75,6 +77,7 @@ def ensure_runtime_indexes(engine_):
         add_index("AlarmFlatRoll", "idx_alarm_flat_roll_secondary", "secondaryCoilId")
         add_index("AlarmTaperShape", "idx_alarm_taper_shape_secondary", "secondaryCoilId")
         add_index("AlarmLooseCoil", "idx_alarm_loose_coil_secondary", "secondaryCoilId")
+        add_index("PointData", "idx_pointdata_secondary_surface", "secondaryCoilId, surface")
         add_index("coil_summary", "idx_summary_hascoil_id_desc", "HasCoil, Id DESC")
 
     if not statements:
@@ -97,10 +100,18 @@ def ensure_runtime_indexes(engine_):
 def get_engine(url=None):
     if url is None:
         url = get_url()
-    engine_ = create_engine(url, **sqlalchemy_pool_settings())
+    engine_ = create_engine(
+        url,
+        connect_args=sqlalchemy_connect_args(url),
+        **sqlalchemy_pool_settings(),
+    )
     auto_create_schema = should_auto_create_schema(url)
-    if auto_create_schema and not database_exists(engine_.url):
-        create_database(engine_.url)
+    # sqlalchemy-utils creates a separate administrative engine internally.
+    # Put the same driver timeouts in that URL so database discovery/creation
+    # cannot bypass the runtime engine's finite connect and query limits.
+    administrative_url = sqlalchemy_timeout_url(url)
+    if auto_create_schema and not database_exists(administrative_url):
+        create_database(administrative_url)
     if auto_create_schema:
         Base.metadata.create_all(engine_)
         ensure_runtime_indexes(engine_)

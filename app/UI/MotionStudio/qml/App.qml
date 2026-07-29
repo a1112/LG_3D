@@ -13,6 +13,7 @@ import "./Style/Adaptive"
 import "Graphs"
 AppBase {
     id:app
+    Component.onCompleted: console.log("MotionStudio App completed")
     visible: true
     visibility:control.visibility
     onVisibilityChanged: function(visibility) {
@@ -22,8 +23,16 @@ AppBase {
     }
     Material.theme: coreStyle.theme
     Material.background: coreStyle.panelBackgroundColor
-    width: global.screenConfig.width-100
-    height: global.screenConfig.height-100
+    readonly property int availableWindowWidth: (global.screenConfig.desktopAvailableWidth > 0
+        ? global.screenConfig.desktopAvailableWidth : global.screenConfig.width)
+    readonly property int availableWindowHeight: (global.screenConfig.desktopAvailableHeight > 0
+        ? global.screenConfig.desktopAvailableHeight : global.screenConfig.height)
+    x: adaptive.windowMargin
+    y: adaptive.windowMargin
+    minimumWidth: Math.min(adaptive.minimumWindowWidth, availableWindowWidth)
+    minimumHeight: Math.min(adaptive.minimumWindowHeight, availableWindowHeight)
+    width: Math.max(minimumWidth, availableWindowWidth - adaptive.windowMargin * 2)
+    height: Math.max(minimumHeight, availableWindowHeight - adaptive.windowMargin * 2)
     title: qsTr("涟钢3D端面检测系统") + (coreSetting.testMode ? " - [测试模式]" : "")
     color: coreStyle.appBackgroundColor
     Material.accent: coreStyle.accentColor

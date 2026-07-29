@@ -30,7 +30,7 @@ Row {
     Label {
         font.family: fonts.timeFamioly || "Microsoft YaHei"
         id: label
-        font.pixelSize: 24
+        font.pixelSize: adaptive.fontMetric(24, 18, 30)
         color: coreStyle.isDark ? "#DDEBFF" : coreStyle.textColor
     }
 }

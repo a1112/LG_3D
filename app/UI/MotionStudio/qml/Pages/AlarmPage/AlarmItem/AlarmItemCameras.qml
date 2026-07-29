@@ -6,6 +6,7 @@ Item {
     id:root
     property string global_key: ""
     property int alarmLevel: 0
+    property bool requestRunning: false
     property ListModel cameraModel: ListModel{
     }
     Timer{
@@ -14,8 +15,13 @@ Item {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
+            if (root.requestRunning) {
+                return
+            }
+            root.requestRunning = true
             api.getCameraAlarm(
                         (result)=>{
+                            root.requestRunning = false
                             console.log(result)
                             cameraModel.clear()
                             let data = JSON.parse(result)
@@ -25,6 +31,7 @@ Item {
                             }
                         },
                         (error)=>{
+                            root.requestRunning = false
                             // console.log(error)
                         }
                         )

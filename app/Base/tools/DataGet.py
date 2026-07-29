@@ -74,7 +74,7 @@ class DataGet:
         url = self.get_source()
         if self.sourceType == "preview":
             return previewCache.get_image(url, pil=pil,clip_num=clip_num)
-        elif self.type_.lower() == "area":
+        elif self.type_.lower().startswith("area"):
             return areaCache.get_image(url, pil=pil,clip_num=clip_num)
         elif self.sourceType in ["image", "source"]:
             return imageCache.get_image(url, pil=pil,clip_num=clip_num)

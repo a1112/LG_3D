@@ -2,6 +2,16 @@
 记录服务器日志
 
 """
+from collections import deque
+import os
+from threading import RLock
+
+
+def _message_history_limit() -> int:
+    try:
+        return max(int(os.getenv("LG3D_SERVER_MESSAGE_HISTORY", "1000")), 1)
+    except ValueError:
+        return 1000
 
 
 class ServerMsg:
@@ -11,20 +21,30 @@ class ServerMsg:
 
     def __init__(self):
         self.msgDict = {}
-        self.msgList = []
+        self._messages = deque(maxlen=_message_history_limit())
+        self._lock = RLock()
+
+    @property
+    def msgList(self):
+        # Preserve the legacy JSON-serializable list interface while keeping
+        # the retained history bounded internally.
+        with self._lock:
+            return list(self._messages)
 
     def addMsg(self, msgType, msg):
-        self.msgList.append([msgType, msg])
-        self.msgDict[msgType] = msg
+        with self._lock:
+            self._messages.append([msgType, msg])
+            self.msgDict[msgType] = msg
 
     def getLastMsg(self, msgType=None):
-        if msgType:
-            if msgType in self.msgDict:
-                return self.msgDict[msgType]
-        else:
-            if len(self.msgList) > 0:
-                return self.msgList[-1]
+        with self._lock:
+            if msgType:
+                if msgType in self.msgDict:
+                    return self.msgDict[msgType]
+            elif self._messages:
+                return self._messages[-1]
         return None
 
     def getAllType(self):
-        return list(self.msgDict.keys())
+        with self._lock:
+            return list(self.msgDict.keys())

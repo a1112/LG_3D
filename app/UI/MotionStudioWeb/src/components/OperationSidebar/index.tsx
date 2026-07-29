@@ -91,7 +91,11 @@ import {
   parseReDetectionWebSocketMessage,
   resolveReDetectionWsUrl,
 } from '@/utils/reDetection'
-import { buildApiDelayView, buildOperationSidebarAlarmRows, readImageServiceHealthOk } from '@/utils/serviceConnection'
+import {
+  buildOperationSidebarAlarmRows,
+  readImageServiceHealthOk,
+  type ApiDelayView,
+} from '@/utils/serviceConnection'
 import './OperationSidebar.css'
 
 type SearchMode = 'coilNo' | 'date' | 'coilId'
@@ -245,9 +249,10 @@ function buildQmlCoilCheckMenuLabel(option: CoilCheckOption, selected: boolean) 
 
 interface OperationSidebarProps {
   onOpenConnectSettings: () => void
+  apiDelayView: ApiDelayView
 }
 
-export default function OperationSidebar({ onOpenConnectSettings }: OperationSidebarProps) {
+export default function OperationSidebar({ onOpenConnectSettings, apiDelayView }: OperationSidebarProps) {
   const {
     currentCoil,
     coilList,
@@ -357,16 +362,6 @@ export default function OperationSidebar({ onOpenConnectSettings }: OperationSid
     },
     retry: 1,
     refetchInterval: 10_000,
-  })
-  const sidebarApiDelayQuery = useQuery({
-    queryKey: ['operationSidebar', 'apiDelay'],
-    queryFn: async () => {
-      const startTime = Date.now()
-      await systemApi.getDelay()
-      return Date.now() - startTime
-    },
-    retry: 1,
-    refetchInterval: 8_000,
   })
   const qmlCurrentCoilList = useMemo(
     () => selectVisibleCoilList(listMode, coilList, historyCoils),
@@ -829,7 +824,7 @@ export default function OperationSidebar({ onOpenConnectSettings }: OperationSid
       ? readImageServiceHealthOk(imageServiceHealth)
       : undefined
   const alarmRows = buildOperationSidebarAlarmRows({ imageHealthOk: imageServiceHealthOk })
-  const sidebarApiDelayView = buildApiDelayView(sidebarApiDelayQuery.isError ? -1 : sidebarApiDelayQuery.data)
+  const sidebarApiDelayView = apiDelayView
   const sidebarApiDelayText = sidebarApiDelayView.label.startsWith('API ')
     ? sidebarApiDelayView.label.slice(4)
     : sidebarApiDelayView.label

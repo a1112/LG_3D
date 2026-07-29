@@ -4,6 +4,10 @@
 #include <QNetworkRequest>
 #include <QUrl>
 
+namespace {
+constexpr int DOWNLOAD_INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+}
+
 FileDownloader::FileDownloader(QObject *parent) : QObject(parent), reply(nullptr), errorEmitted(false) {}
 
 static QString buildReplyError(QNetworkReply *reply) {
@@ -28,6 +32,7 @@ void FileDownloader::downloadFile(const QString &url, const QString &filePath) {
 
     QUrl qurl(url);
     QNetworkRequest request(qurl);
+    request.setTransferTimeout(DOWNLOAD_INACTIVITY_TIMEOUT_MS);
     reply = manager.get(request);
 
     connect(reply, &QNetworkReply::downloadProgress, this, &FileDownloader::onDownloadProgress);
@@ -45,6 +50,7 @@ void FileDownloader::downloadFile(const QString &url, const QString &filePath, c
 
     QUrl qurl(url);
     QNetworkRequest request(qurl);
+    request.setTransferTimeout(DOWNLOAD_INACTIVITY_TIMEOUT_MS);
     // 将 QString 转换为 QByteArray
     QByteArray postDataBytes = postData.toUtf8();
 
@@ -72,7 +78,16 @@ void FileDownloader::onReadyRead() {
         currentReply = reply;
     }
     if (currentReply && file.isOpen()) {
-        file.write(currentReply->readAll());
+        const QByteArray data = currentReply->readAll();
+        if (!data.isEmpty() && file.write(data) != data.size()) {
+            const QString errorString = "Failed to write download file: " + file.errorString();
+            closeAndRemovePartialFile();
+            if (!errorEmitted) {
+                errorEmitted = true;
+                emit downloadError(errorString);
+            }
+            currentReply->abort();
+        }
     }
 }
 
@@ -91,7 +106,33 @@ void FileDownloader::onDownloadFinished() {
 
     if (currentReply->error() == QNetworkReply::NoError) {
         if (file.isOpen()) {
-            file.write(currentReply->readAll());
+            const QByteArray remaining = currentReply->readAll();
+            if (!remaining.isEmpty() && file.write(remaining) != remaining.size()) {
+                const QString errorString = "Failed to write download file: " + file.errorString();
+                closeAndRemovePartialFile();
+                if (!errorEmitted) {
+                    errorEmitted = true;
+                    emit downloadError(errorString);
+                }
+                currentReply->deleteLater();
+                if (reply == currentReply) {
+                    reply = nullptr;
+                }
+                return;
+            }
+            if (!file.flush()) {
+                const QString errorString = "Failed to flush download file: " + file.errorString();
+                closeAndRemovePartialFile();
+                if (!errorEmitted) {
+                    errorEmitted = true;
+                    emit downloadError(errorString);
+                }
+                currentReply->deleteLater();
+                if (reply == currentReply) {
+                    reply = nullptr;
+                }
+                return;
+            }
             file.close();
         }
         emit downloadFinished();

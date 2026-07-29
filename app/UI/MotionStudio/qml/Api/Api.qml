@@ -30,6 +30,7 @@ Api_DataBase {
     }
 
     function getFileSource(_key_,_coilId_,_viewKey_,preView=false,mask=true){
+        _viewKey_ = _viewKey_ === "2D" ? "AREA" : _viewKey_
         if(preView){
                 return buildImageUrl("image/preview/"+_key_,_coilId_,_viewKey_)
         }
@@ -42,16 +43,35 @@ Api_DataBase {
         return buildImageUrl("image", "source",_key_,_coilId_,_viewKey_)+`?mask=${mask}`
     }
 
-    function setImageServerBackend(useRust, rustPort=6013){
+    function setImageServerBackend(useRust){
         coreSetting.useRustImageServer = useRust
-        if (rustPort > 0){
-            coreSetting.rustImageServerPort = rustPort
-        }
     }
 
     function getImageServerBackend(){
         return coreSetting.useRustImageServer ? "rust" : "python"
     }
+
+    function getRustImageServerUrl(){
+        return apiConfig.rustImageServerUrl
+    }
+
+    function recacheAreaTiles(surfaceKey, coilId, viewKey, success, failure){
+        viewKey = viewKey === "2D" ? "AREA" : viewKey
+        if (viewKey !== "AREA" && viewKey !== "AREA_MASK") {
+            viewKey = "AREA"
+        }
+        let url = apiConfig.serverUrl
+                + "/image/area/cache/rebuild/"
+                + encodeURIComponent(surfaceKey)
+                + "/" + encodeURIComponent(coilId)
+                + "/" + encodeURIComponent(viewKey)
+        return ajax.post(url, {}, success, failure)
+    }
+
+    function clearRustImageCache(success, failure){
+        return ajax.post(getRustImageServerUrl() + "/cache/clear", {}, success, failure)
+    }
+
     //全局下载器
     function downloadFile(url,save_path,success,failure){
         return fileDownloader.downloadFile(url, save_path)
@@ -109,8 +129,10 @@ Api_DataBase {
         // E:\Save_L\53501\classifier\背景\53501_1148_5058_1177_5080.png
     }
 
-    function has_data(coil_id, success, failure){
-        return ajax.get(apiConfig.url(apiConfig.serverUrlData, "data_has", coil_id), success, failure)
+    function has_data(coil_id, success, failure, fast=false){
+        let url = fast ? apiConfig.url(apiConfig.serverUrlData, "data_has", coil_id, {fast: true})
+                       : apiConfig.url(apiConfig.serverUrlData, "data_has", coil_id)
+        return ajax.get(url, success, failure)
     }
 
 }

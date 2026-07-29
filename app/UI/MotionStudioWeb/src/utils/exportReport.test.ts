@@ -6,6 +6,7 @@ import {
   buildQmlExportDefaultFileName,
   buildQmlExportDefaultOutputPath,
   buildQuickExportFileName,
+  fetchExportPayload,
   openSavedExportPath,
   resolveExportFolderPath,
   resolveQuickExportUrl,
@@ -13,6 +14,40 @@ import {
 } from './exportReport'
 
 describe('export report helpers', () => {
+  it('streams report bytes and reports real download progress', async () => {
+    const progress = vi.fn()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1, 2, 3, 4]), {
+          headers: { 'Content-Length': '4' },
+        }),
+      ),
+    )
+
+    const payload = await fetchExportPayload('/export.xlsx', {}, progress)
+
+    expect(Array.from(new Uint8Array(payload))).toEqual([1, 2, 3, 4])
+    expect(progress).toHaveBeenLastCalledWith({ received: 4, total: 4 })
+    vi.unstubAllGlobals()
+  })
+
+  it('rejects truncated report responses instead of saving a corrupt workbook', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1, 2]), {
+          headers: { 'Content-Length': '4' },
+        }),
+      ),
+    )
+
+    await expect(fetchExportPayload('/export.xlsx')).rejects.toThrow(
+      'export download incomplete: expected 4 bytes, received 2',
+    )
+    vi.unstubAllGlobals()
+  })
+
   it('builds QML ExportConfigView-compatible default xlsx config', () => {
     expect(
       buildDefaultExportXlsxConfig({

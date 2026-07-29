@@ -3,21 +3,22 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../Base"
 PopupBase {
-    width:500
-    height:600
+    id: root
+    width: adaptive.boundedWidth(500, 380, 640)
+    height: adaptive.boundedHeight(600, 420, 760)
     ColumnLayout{
-        width:500
-        height:600
+        anchors.fill: parent
         TitleLabel{
             text: "API 调用记录"
         }
         ListView{
+            id: apiListView
             Layout.fillHeight: true
             Layout.fillWidth: true
             ScrollBar.vertical: ScrollBar{}
             delegate: ApiListItem{
-                width: parent.width
-                height: 35
+                width: apiListView.width
+                height: adaptive.headerTabHeight
             }
             model: api.urlListModel
 

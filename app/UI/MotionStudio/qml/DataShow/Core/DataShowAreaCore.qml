@@ -47,8 +47,15 @@ Item {
             return
         }
         let areaUrl = api.getFileSource(key, coilId, surfaceData.areaViewKey, false)
-        api.ajax.get(areaUrl, function(){}, function(){})
-        imageCache.pushCache(areaUrl)
+        api.ajax.get(appendQuery(areaUrl, "count=0"), function(){}, function(){})
+        imageCache.pushCache(api.getFileSource(key, coilId, surfaceData.areaViewKey, true))
+    }
+
+    function appendQuery(url, query) {
+        if (!url || url.length === 0) {
+            return ""
+        }
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
     }
 
     function preheatAreaAround() {
@@ -70,6 +77,9 @@ Item {
     }
     function flush(){
         surfaceData.error_visible=false
+        if (surfaceData.coilId > 0 && surfaceData.area_source === "") {
+            surfaceData.refreshAreaSource()
+        }
         // 延迟加载缺陷数据，优先保证图像加载
         defectLoadTimer.restart()
     }
@@ -97,13 +107,70 @@ Item {
         if (!defectName) {
             return false
         }
-        return global.defectClassProperty.defectDictAll[defectName] ?? false
+        let sharedName = global.defectClassProperty.shared_defect_name(defectName)
+        return global.defectClassProperty.defectDictAll[sharedName] ?? false
     }
 
-    property string source: surfaceData.hasViewData(surfaceData.areaViewKey) ? surfaceData.area_source : "" //"http://127.0.0.1:5012/image/area/S/66252?"//
-    // AREA 缩略图跟随当前原图/MASK 图层。
+    readonly property bool hasAreaDecision: coreModel && coreModel.hasDataCoilId === surfaceData.coilId
+                                           && coreModel.has_data !== null && coreModel.has_data !== undefined
+    property int areaCacheVersion: 0
+    property bool recacheInProgress: false
+    property string lastRecacheMessage: ""
+    readonly property string areaBaseSource: (!hasAreaDecision || surfaceData.hasViewData(surfaceData.areaViewKey)) ? surfaceData.area_source : ""
+    property string source: areaCacheVersion > 0 ? appendQuery(areaBaseSource, "areaCacheVersion=" + areaCacheVersion) : areaBaseSource
     property string pre_source: surfaceData.getSouceByKey(surfaceData.areaViewKey, true)
 
+    function resetImageStateForSource() {
+        sourceWidth = 0
+        sourceHeight = 0
+        canvasScale = 1.0
+        if (flick) {
+            flick.contentX = 0
+            flick.contentY = 0
+        }
+    }
+
+    onSourceChanged: {
+        resetImageStateForSource()
+    }
+
+    function recacheAreaTiles() {
+        if (recacheInProgress || !surfaceData || surfaceData.coilId <= 0 || !surfaceData.key) {
+            return
+        }
+        recacheInProgress = true
+        lastRecacheMessage = "rebuilding"
+        api.recacheAreaTiles(surfaceData.key,
+                             surfaceData.coilId,
+                             surfaceData.areaViewKey,
+                             function(result) {
+                                 recacheInProgress = false
+                                 lastRecacheMessage = result
+                                 if (coreSetting.useRustImageServer) {
+                                     api.clearRustImageCache(function() {
+                                         console.log("Rust image cache cleared")
+                                         refreshAreaTilesAfterRecache()
+                                     }, function(error, status) {
+                                         console.log("Rust image cache clear failed:", status, error)
+                                         refreshAreaTilesAfterRecache()
+                                     })
+                                 } else {
+                                     refreshAreaTilesAfterRecache()
+                                 }
+                                 console.log("AREA tile cache rebuilt:", result)
+                             },
+                             function(error, status) {
+                                 recacheInProgress = false
+                                 lastRecacheMessage = "failed: " + status + " " + error
+                                 console.log("AREA tile cache rebuild failed:", status, error)
+                             })
+    }
+
+    function refreshAreaTilesAfterRecache() {
+        areaCacheVersion += 1
+        surfaceData.refreshAreaSource()
+        resetImageStateForSource()
+    }
 
     // 琢诲竷鏁版嵁
     property real canvasScale: 1.0 // 鐢诲竷缂╂斁姣斾緥锛屽垵濮嬪€璁句负 1.0锛屽悗缁皢鑷姭璁★級

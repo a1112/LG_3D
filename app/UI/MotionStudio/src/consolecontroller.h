@@ -1,9 +1,8 @@
-// ConsoleController.h
-
 #ifndef CONSOLECONTROLLER_H
 #define CONSOLECONTROLLER_H
 
 #include <QObject>
+#include <cstdio>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -15,52 +14,72 @@ class ConsoleController : public QObject
     Q_PROPERTY(bool isShow READ isShow WRITE setIsShow NOTIFY isShowChanged)
 
 public:
-
-    explicit ConsoleController(QObject *parent = nullptr) : QObject(parent), m_isShow(false) {
+    explicit ConsoleController(QObject *parent = nullptr)
+        : QObject(parent)
+        , m_isShow(false)
+    {
     }
 
-    // Getter for isShow
-    bool isShow() const {
+    bool isShow() const
+    {
         return m_isShow;
     }
 
-    // Setter for isShow
-    void setIsShow(bool show) {
-        if (m_isShow != show) {
-            m_isShow = show;
-            if (show) {
-                showConsole();
-            } else {
-                hideConsole();
-            }
-            emit isShowChanged();
+    void setIsShow(bool show)
+    {
+        if (m_isShow == show) {
+            return;
+        }
+        if (show) {
+            showConsole();
+        } else {
+            hideConsole();
         }
     }
 
-    Q_INVOKABLE void showConsole() {
+    Q_INVOKABLE void showConsole()
+    {
 #ifdef _WIN32
         HWND consoleWindow = GetConsoleWindow();
+        if (!consoleWindow) {
+            if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+                AllocConsole();
+            }
+            freopen("CONOUT$", "w", stdout);
+            freopen("CONOUT$", "w", stderr);
+            consoleWindow = GetConsoleWindow();
+        }
         if (consoleWindow) {
             ShowWindow(consoleWindow, SW_SHOW);
-            setIsShow(true);  // 更新 isShow 状态
         }
 #endif
+        setShowState(true);
     }
 
-    Q_INVOKABLE void hideConsole() {
+    Q_INVOKABLE void hideConsole()
+    {
 #ifdef _WIN32
         HWND consoleWindow = GetConsoleWindow();
         if (consoleWindow) {
             ShowWindow(consoleWindow, SW_HIDE);
-            setIsShow(false);  // 更新 isShow 状态
         }
 #endif
+        setShowState(false);
     }
 
 signals:
     void isShowChanged();
 
 private:
+    void setShowState(bool show)
+    {
+        if (m_isShow == show) {
+            return;
+        }
+        m_isShow = show;
+        emit isShowChanged();
+    }
+
     bool m_isShow;
 };
 

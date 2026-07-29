@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  HeightPointReconnectBackoffError,
+  HeightPointSupersededError,
   HeightPointWebSocketClient,
   buildHeightPointWebSocketMessage,
   parseHeightPointWebSocketMessage,
@@ -42,9 +44,17 @@ class FakeHeightPointWebSocket {
   emitMessage(message: string): void {
     this.onmessage?.({ data: message })
   }
+
+  fail(): void {
+    this.onerror?.()
+  }
 }
 
 describe('heightPoint websocket helpers', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('resolves QML heightPoint websocket URLs through the Vite proxy or direct API base', () => {
     expect(resolveHeightPointWsUrl('/api', '/ws/coilData/heightPoint', 'http://127.0.0.1:3015')).toBe(
       'ws://127.0.0.1:3015/ws/coilData/heightPoint',
@@ -112,6 +122,85 @@ describe('heightPoint websocket helpers', () => {
 
     await expect(first).resolves.toBe(60371)
     await expect(second).resolves.toBe(0)
+    client.close()
+  })
+
+  it('keeps only the latest queued request for the same surface and coil', async () => {
+    FakeHeightPointWebSocket.instances = []
+    const client = new HeightPointWebSocketClient({
+      apiBaseUrl: '/api',
+      wsPath: '/ws/coilData/heightPoint',
+      origin: 'http://127.0.0.1:3015',
+      WebSocketCtor: FakeHeightPointWebSocket,
+      timeoutMs: 1000,
+    })
+
+    const first = client.request({ surfaceKey: 'S', coilId: 193113, x: 1, y: 2 })
+    const firstResult = first.catch((error: unknown) => error)
+    const latest = client.request({ surfaceKey: 'S', coilId: 193113, x: 9, y: 10 })
+    const socket = FakeHeightPointWebSocket.instances[0]
+
+    socket.open()
+    expect(socket.sent.map((message) => JSON.parse(message))).toEqual([
+      { id: 2, surface_key: 'S', coil_id: '193113', x: 9, y: 10 },
+    ])
+    expect(await firstResult).toBeInstanceOf(HeightPointSupersededError)
+
+    socket.emitMessage(JSON.stringify({ id: 2, value: 42 }))
+    await expect(latest).resolves.toBe(42)
+    client.close()
+  })
+
+  it('does not flush a timed-out queued request when the socket opens later', async () => {
+    vi.useFakeTimers()
+    FakeHeightPointWebSocket.instances = []
+    const client = new HeightPointWebSocketClient({
+      apiBaseUrl: '/api',
+      wsPath: '/ws/coilData/heightPoint',
+      origin: 'http://127.0.0.1:3015',
+      WebSocketCtor: FakeHeightPointWebSocket,
+      timeoutMs: 100,
+    })
+
+    const request = client.request({ surfaceKey: 'L', coilId: 193113, x: 3, y: 4 })
+    const rejection = expect(request).rejects.toThrow('heightPoint websocket timeout')
+    vi.advanceTimersByTime(100)
+    await rejection
+
+    const socket = FakeHeightPointWebSocket.instances[0]
+    socket.open()
+    expect(socket.sent).toEqual([])
+    client.close()
+  })
+
+  it('applies reconnect backoff instead of opening sockets in a tight loop', async () => {
+    vi.useFakeTimers()
+    FakeHeightPointWebSocket.instances = []
+    const client = new HeightPointWebSocketClient({
+      apiBaseUrl: '/api',
+      wsPath: '/ws/coilData/heightPoint',
+      origin: 'http://127.0.0.1:3015',
+      WebSocketCtor: FakeHeightPointWebSocket,
+      timeoutMs: 1000,
+    })
+
+    const pending = client.request({ surfaceKey: 'S', coilId: 193113, x: 1, y: 1 })
+    const failed = expect(pending).rejects.toThrow('heightPoint websocket error')
+    FakeHeightPointWebSocket.instances[0].fail()
+    await failed
+
+    await expect(
+      client.request({ surfaceKey: 'S', coilId: 193113, x: 2, y: 2 }),
+    ).rejects.toBeInstanceOf(HeightPointReconnectBackoffError)
+    expect(FakeHeightPointWebSocket.instances).toHaveLength(1)
+
+    vi.advanceTimersByTime(1000)
+    const retried = client.request({ surfaceKey: 'S', coilId: 193113, x: 3, y: 3 })
+    expect(FakeHeightPointWebSocket.instances).toHaveLength(2)
+    const retrySocket = FakeHeightPointWebSocket.instances[1]
+    retrySocket.open()
+    retrySocket.emitMessage(JSON.stringify({ id: 3, value: 7 }))
+    await expect(retried).resolves.toBe(7)
     client.close()
   })
 })

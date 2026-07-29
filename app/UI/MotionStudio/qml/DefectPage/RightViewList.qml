@@ -21,7 +21,7 @@ import "../Pages/LeftPage/SearchView"
 import "../Pages/LeftPage/FliterSelect"
 import "../Pages/LeftPage"
 SplitView{
-      SplitView.preferredWidth: 400
+      SplitView.preferredWidth: adaptive.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
        orientation: Qt.Vertical
        DefectInfoView{
@@ -50,7 +50,7 @@ SplitView{
 
        FootView{
            SplitView.fillWidth: true
-           SplitView.preferredHeight: 25
+           SplitView.preferredHeight: adaptive.scaleMetric(25, 22, 34)
        }
 
       // Item{

@@ -1,9 +1,9 @@
-﻿use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
-use std::io::{Cursor, Write};
 use std::hash::{Hash, Hasher};
+use std::io::{Cursor, Write};
 use std::path::{Path as FsPath, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -27,6 +27,7 @@ use rusqlite::{Connection, params};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 use sysinfo::{Disks, System};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, info};
@@ -66,7 +67,19 @@ const CAMERA_STATUS_CACHE_TTL: Duration = Duration::from_millis(800);
 const CAPTURE_STATUS_TIMEOUT: Duration = Duration::from_millis(1200);
 const CAMERA_STATUS_TIMEOUT: Duration = Duration::from_millis(800);
 const XLSX_FLAT_ROLL_PIXEL_SCALE: f64 = 0.3415023386478424;
-const API_BODY_LIMIT_BYTES: usize = 512 * 1024 * 1024;
+const API_BODY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
+const MAX_BATCH_COILS: usize = 500;
+const MAX_BATCH_DEFECTS: usize = 10_000;
+const MAX_XLSX_RESPONSE_BYTES: usize = 256 * 1024 * 1024;
+const XLSX_EXPORT_ADMISSION_TIMEOUT: Duration = Duration::from_secs(10);
+
+fn bounded_env_usize(name: &str, default_value: usize, max_value: usize) -> usize {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(default_value)
+        .clamp(1, max_value)
+}
 const PYTHON_DETAIL_ROOT_KEYS: &[&str] = &[
     "hasCoil",
     "hasAlarmInfo",
@@ -214,7 +227,6 @@ impl ReDetectionState {
         Some(self.queue.remove(0))
     }
 
-
     fn mark_done(&mut self) {
         if self.total > 0 {
             self.done = (self.done + 1).min(self.total);
@@ -300,8 +312,7 @@ fn external_re_detection_command(start_id: i64, end_id: i64) -> Option<ExternalC
     }
 
     Some(ExternalCommandInvocation {
-        executable: std::env::var("RUST_API_PYTHON")
-            .unwrap_or_else(|_| "python".to_string()),
+        executable: std::env::var("RUST_API_PYTHON").unwrap_or_else(|_| "python".to_string()),
         args: vec![
             "-u".to_string(),
             script,
@@ -348,8 +359,7 @@ fn external_alg_test_command(
     }
 
     Some(ExternalCommandInvocation {
-        executable: std::env::var("RUST_API_PYTHON")
-            .unwrap_or_else(|_| "python".to_string()),
+        executable: std::env::var("RUST_API_PYTHON").unwrap_or_else(|_| "python".to_string()),
         args: vec![
             "-u".to_string(),
             script,
@@ -798,6 +808,7 @@ pub struct ApiState {
     capture_status_cache: Arc<Mutex<Option<TimedJson>>>,
     camera_adjust_cache: Arc<Mutex<Option<TimedJson>>>,
     camera_alarm_cache: Arc<Mutex<Option<TimedJson>>>,
+    xlsx_export_semaphore: Arc<Semaphore>,
 }
 
 #[derive(Clone, Debug)]
@@ -890,6 +901,11 @@ impl ApiState {
             capture_status_cache: Arc::new(Mutex::new(None)),
             camera_adjust_cache: Arc::new(Mutex::new(None)),
             camera_alarm_cache: Arc::new(Mutex::new(None)),
+            xlsx_export_semaphore: Arc::new(Semaphore::new(bounded_env_usize(
+                "RUST_API_EXPORT_CONCURRENCY",
+                1,
+                4,
+            ))),
         }
     }
 
@@ -974,7 +990,8 @@ impl ApiState {
         if length < 0 {
             return Err(python_internal_server_error_response());
         }
-        let requested = usize::try_from(length).map_err(|_| python_internal_server_error_response())?;
+        let requested =
+            usize::try_from(length).map_err(|_| python_internal_server_error_response())?;
         let Ok(state) = self.plc_runtime.lock() else {
             return Err(python_internal_server_error_response());
         };
@@ -983,11 +1000,19 @@ impl ApiState {
     }
 
     fn runtime_info_value(&self) -> Value {
-        cached_json(&self.runtime_info_cache, RUNTIME_INFO_CACHE_TTL, runtime_info_uncached)
+        cached_json(
+            &self.runtime_info_cache,
+            RUNTIME_INFO_CACHE_TTL,
+            runtime_info_uncached,
+        )
     }
 
     fn hardware_value(&self) -> Value {
-        cached_json(&self.hardware_cache, HARDWARE_CACHE_TTL, hardware_info_uncached)
+        cached_json(
+            &self.hardware_cache,
+            HARDWARE_CACHE_TTL,
+            hardware_info_uncached,
+        )
     }
 
     async fn capture_status_value(&self) -> Value {
@@ -995,7 +1020,11 @@ impl ApiState {
             return value;
         }
         let value = capture_status_value_uncached().await;
-        cached_json_put(&self.capture_status_cache, value.clone(), CAPTURE_STATUS_CACHE_TTL);
+        cached_json_put(
+            &self.capture_status_cache,
+            value.clone(),
+            CAPTURE_STATUS_CACHE_TTL,
+        );
         value
     }
 
@@ -1004,7 +1033,11 @@ impl ApiState {
             return value;
         }
         let value = camera_adjust_value_uncached().await;
-        cached_json_put(&self.camera_adjust_cache, value.clone(), CAMERA_STATUS_CACHE_TTL);
+        cached_json_put(
+            &self.camera_adjust_cache,
+            value.clone(),
+            CAMERA_STATUS_CACHE_TTL,
+        );
         value
     }
 
@@ -1013,7 +1046,11 @@ impl ApiState {
             return value;
         }
         let value = camera_alarm_value_uncached().await;
-        cached_json_put(&self.camera_alarm_cache, value.clone(), CAMERA_STATUS_CACHE_TTL);
+        cached_json_put(
+            &self.camera_alarm_cache,
+            value.clone(),
+            CAMERA_STATUS_CACHE_TTL,
+        );
         value
     }
 
@@ -1022,10 +1059,24 @@ impl ApiState {
         let end_id = from_id.max(to_id);
         let queue = match self
             .repository
-            .search_coils_by_id_range(start_id, end_id)
+            .search_coils_by_id_range(start_id, end_id, (MAX_BATCH_COILS + 1) as u32)
             .await
         {
-            Ok(rows) => rows.into_iter().map(|row| row.id).collect::<Vec<_>>(),
+            Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
+                rows.into_iter().map(|row| row.id).collect::<Vec<_>>()
+            }
+            Ok(_) => {
+                return json!({
+                    "error": format!("re-detection queue exceeds {MAX_BATCH_COILS} coils"),
+                    "running": false,
+                    "total": 0,
+                    "done": 0,
+                    "pending": 0,
+                    "queue": [],
+                    "messages": [],
+                    "progress": 0.0,
+                });
+            }
             Err(error) => {
                 return json!({
                     "error": error.to_string(),
@@ -1042,12 +1093,19 @@ impl ApiState {
         match self.re_detection.lock() {
             Ok(mut status) => {
                 let generation = status.generation.saturating_add(1);
-                *status = ReDetectionState::started(start_id, end_id, queue, status.messages.clone(), generation);
+                *status = ReDetectionState::started(
+                    start_id,
+                    end_id,
+                    queue,
+                    status.messages.clone(),
+                    generation,
+                );
                 let response = status.to_json();
                 let repository = self.repository.clone();
                 let re_detection = self.re_detection.clone();
                 tokio::spawn(async move {
-                    run_re_detection_worker(repository, re_detection, generation, start_id, end_id).await;
+                    run_re_detection_worker(repository, re_detection, generation, start_id, end_id)
+                        .await;
                 });
                 response
             }
@@ -1060,10 +1118,24 @@ impl ApiState {
         let end_id = from_id.max(to_id);
         let queue = match self
             .repository
-            .search_coils_by_id_range(start_id, end_id)
+            .search_coils_by_id_range(start_id, end_id, (MAX_BATCH_COILS + 1) as u32)
             .await
         {
-            Ok(rows) => rows.into_iter().map(|row| row.id).collect::<Vec<_>>(),
+            Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
+                rows.into_iter().map(|row| row.id).collect::<Vec<_>>()
+            }
+            Ok(_) => {
+                return json!({
+                    "error": format!("re-detection queue exceeds {MAX_BATCH_COILS} coils"),
+                    "running": false,
+                    "total": 0,
+                    "done": 0,
+                    "pending": 0,
+                    "queue": [],
+                    "messages": [],
+                    "progress": 0.0,
+                });
+            }
             Err(error) => {
                 return json!({
                     "error": error.to_string(),
@@ -1485,7 +1557,10 @@ pub fn build_app(state: ApiState) -> Router {
         .route("/settings/test_mode_status", get(settings_test_mode_status))
         .route("/data_has/{coil_id}", get(data_has))
         .route("/coilInfo/{coil_id}/{surface_key}", get(coil_info))
-        .route("/coilData/heightData/{surface_key}/{coil_id}", get(height_data))
+        .route(
+            "/coilData/heightData/{surface_key}/{coil_id}",
+            get(height_data),
+        )
         .route(
             "/coilData/heightPoint/{surface_key}/{coil_id}",
             get(height_point),
@@ -1582,7 +1657,10 @@ pub fn build_app(state: ApiState) -> Router {
         .route("/search/PlcData/{coil_id}", get(search_plc_data))
         .route("/plc_curve/{field}", get(plc_curve))
         .route("/plc_curve_all", get(plc_curve_all))
-        .route("/get_point_data/{coil_id}/{surface_key}", get(get_point_data))
+        .route(
+            "/get_point_data/{coil_id}/{surface_key}",
+            get(get_point_data),
+        )
         .route("/get_line_data/{coil_id}/{surface_key}", get(get_line_data))
         .route("/check/get_coil_status/{coil_id}", get(get_coil_status))
         .route(
@@ -1595,10 +1673,7 @@ pub fn build_app(state: ApiState) -> Router {
         )
         .layer(DefaultBodyLimit::max(API_BODY_LIMIT_BYTES))
         .layer(CorsLayer::permissive())
-        .layer(
-            TraceLayer::new_for_http()
-                .on_response(DefaultOnResponse::new().level(Level::INFO)),
-        )
+        .layer(TraceLayer::new_for_http().on_response(DefaultOnResponse::new().level(Level::INFO)))
         .with_state(state)
 }
 
@@ -1861,7 +1936,11 @@ async fn current_coil(State(state): State<ApiState>) -> Json<Value> {
             let mut compatible_coil_no: Option<String> = None;
             let mut compatible_act_width: Option<f64> = None;
 
-            if let Ok(secondary_rows) = state.repository.secondary_coils(row.secondary_coil_id).await {
+            if let Ok(secondary_rows) = state
+                .repository
+                .secondary_coils(row.secondary_coil_id)
+                .await
+            {
                 if let Some(secondary_row) = secondary_rows.into_iter().next() {
                     if !secondary_row.coil_no.trim().is_empty() {
                         compatible_coil_no = Some(secondary_row.coil_no);
@@ -1873,10 +1952,8 @@ async fn current_coil(State(state): State<ApiState>) -> Json<Value> {
             }
 
             if compatible_coil_no.is_none() || compatible_act_width.is_none() {
-                if let Ok(Some(detail_row)) = state
-                    .repository
-                    .coil_detail(row.secondary_coil_id)
-                    .await
+                if let Ok(Some(detail_row)) =
+                    state.repository.coil_detail(row.secondary_coil_id).await
                 {
                     if compatible_coil_no.is_none() {
                         let coil_no = detail_row.coil_no.trim().to_string();
@@ -2707,9 +2784,9 @@ fn openapi_description(route: &OpenApiRoute) -> Option<&'static str> {
         ("get", "/ws/backupImageTask") => {
             Some("图片备份 WebSocket 通道。发送备份请求后接收进度消息。")
         }
-        ("get", "/ws/coilData/heightPoint") => {
-            Some("通过 WebSocket 查询点位高度。发送 JSON 请求并返回 surface / coil / x/y / value 或错误。")
-        }
+        ("get", "/ws/coilData/heightPoint") => Some(
+            "通过 WebSocket 查询点位高度。发送 JSON 请求并返回 surface / coil / x/y / value 或错误。",
+        ),
         ("get", "/coilData/heightData/{surface_key}/{coil_id}") => Some(
             "Return line segments for curve display.\n\nThe UI expects:\n[\n  {\n    \"pointL\": [x0, y0],\n    \"pointR\": [x1, y1],\n    \"points\": [[x, y, z], ...]\n  },\n  ...\n]",
         ),
@@ -3043,7 +3120,9 @@ fn openapi_operation_id(method: &str, path: &str) -> String {
         ("post", "/cameras/{camera_key}/reconnect") => {
             return "reconnect_camera_by_key_cameras__camera_key__reconnect_post".to_string();
         }
-        ("get", "/capture/status") => return "get_capture_status_compat_capture_status_get".to_string(),
+        ("get", "/capture/status") => {
+            return "get_capture_status_compat_capture_status_get".to_string();
+        }
         ("get", "/capture/files") => return "get_capture_files_capture_files_get".to_string(),
         ("get", "/getListenerAddFile") => {
             return "get_listener_add_file_get_listener_add_file_get".to_string();
@@ -7386,9 +7465,7 @@ fn plc_fake_read_bytes(
     let mut value = hasher.finish();
     (0..byte_count)
         .map(|_| {
-            value = value
-                .wrapping_mul(1_664_525)
-                .wrapping_add(1_013_904_223);
+            value = value.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
             (value & 0xFF) as u8
         })
         .collect()
@@ -7407,24 +7484,17 @@ fn plc_parse_plc_value(type_str: &str, bytes: &[u8]) -> Option<Value> {
             if bytes.len() < 4 {
                 return None;
             }
-            let value = f32::from_bits(u32::from_be_bytes([
-                bytes[0],
-                bytes[1],
-                bytes[2],
-                bytes[3],
-            ]));
+            let value =
+                f32::from_bits(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]));
             Some(json!(value))
         }
         "dword" => {
             if bytes.len() < 4 {
                 return None;
             }
-            Some(json!(u32::from_be_bytes([
-                bytes[0],
-                bytes[1],
-                bytes[2],
-                bytes[3],
-            ]) as u64))
+            Some(json!(
+                u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3],]) as u64
+            ))
         }
         "word" => {
             if bytes.len() < 2 {
@@ -7966,16 +8036,12 @@ fn parse_optional_u32_query_range(
     let input = query.get(field).map(String::as_str).unwrap_or_default();
     if value < min as i32 {
         return Err(fastapi_greater_than_equal_query_error(
-            field,
-            input,
-            min as i32,
+            field, input, min as i32,
         ));
     }
     if value > max as i32 {
         return Err(fastapi_less_than_equal_query_error(
-            field,
-            input,
-            max as i32,
+            field, input, max as i32,
         ));
     }
     Ok(Some(value as u32))
@@ -8007,16 +8073,12 @@ fn parse_optional_u8_query_range(
     let input = query.get(field).map(String::as_str).unwrap_or_default();
     if value < min as i32 {
         return Err(fastapi_greater_than_equal_query_error(
-            field,
-            input,
-            min as i32,
+            field, input, min as i32,
         ));
     }
     if value > max as i32 {
         return Err(fastapi_less_than_equal_query_error(
-            field,
-            input,
-            max as i32,
+            field, input, max as i32,
         ));
     }
     Ok(Some(value as u8))
@@ -8361,7 +8423,11 @@ fn append_clear_query(path: &str, clear: Option<bool>) -> String {
 async fn capture_camera_status_default() -> Response {
     let mut cameras = capture_cameras();
     let Some(camera) = cameras.pop() else {
-        return (StatusCode::NOT_FOUND, Json(json!({"detail": "未找到相机: 无"}))).into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"detail": "未找到相机: 无"})),
+        )
+            .into_response();
     };
     Json(camera_service_get(&camera, "/camera/status").await).into_response()
 }
@@ -8369,7 +8435,11 @@ async fn capture_camera_status_default() -> Response {
 async fn capture_camera_set_params(Json(payload): Json<Value>) -> Response {
     let mut cameras = capture_cameras();
     let Some(camera) = cameras.pop() else {
-        return (StatusCode::NOT_FOUND, Json(json!({"detail": "未找到相机: 无"}))).into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"detail": "未找到相机: 无"})),
+        )
+            .into_response();
     };
     let camera_key = camera_string(&camera, "key");
     camera_service_post(&camera_key, CameraPostAction::Params, payload).await
@@ -8378,7 +8448,11 @@ async fn capture_camera_set_params(Json(payload): Json<Value>) -> Response {
 async fn capture_camera_reconnect() -> Response {
     let mut cameras = capture_cameras();
     let Some(camera) = cameras.pop() else {
-        return (StatusCode::NOT_FOUND, Json(json!({"detail": "未找到相机: 无"}))).into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"detail": "未找到相机: 无"})),
+        )
+            .into_response();
     };
     let camera_key = camera_string(&camera, "key");
     camera_service_post(&camera_key, CameraPostAction::Reconnect, json!({})).await
@@ -9504,7 +9578,9 @@ async fn run_re_detection_command(
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let details = format!("stdout={stdout}\nstderr={stderr}").trim().to_string();
+        let details = format!("stdout={stdout}\nstderr={stderr}")
+            .trim()
+            .to_string();
         return Err(format!(
             "外部重识别执行器失败 {}: {}",
             output.status.code().unwrap_or(-1),
@@ -9532,7 +9608,6 @@ async fn run_re_detection_command(
 
     Ok(message)
 }
-
 
 async fn re_detection_status(State(state): State<ApiState>) -> Json<Value> {
     Json(state.re_detection_status())
@@ -12981,8 +13056,11 @@ async fn search_defect_all(
     };
     let rows = state
         .repository
-        .defects_between(start_coil_id, end_coil_id)
+        .defects_between(start_coil_id, end_coil_id, (MAX_BATCH_DEFECTS + 1) as u32)
         .await?;
+    if rows.len() > MAX_BATCH_DEFECTS {
+        return Ok(batch_too_large_response("defect range", MAX_BATCH_DEFECTS));
+    }
     Ok(Json(Value::Array(
         rows.iter().map(defect_to_python_json).collect(),
     ))
@@ -13100,8 +13178,12 @@ async fn export_xlsx_by_id(
         Ok(end) => end,
         Err(response) => return response,
     };
-    match state.repository.search_coils_by_id_range(start, end).await {
-        Ok(rows) => {
+    match state
+        .repository
+        .search_coils_by_id_range(start, end, (MAX_BATCH_COILS + 1) as u32)
+        .await
+    {
+        Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
             let title = format!(
                 "By Coil Id ({})",
                 query.export_type.as_deref().unwrap_or("3D")
@@ -13111,7 +13193,7 @@ async fn export_xlsx_by_id(
                 &title,
                 &start.to_string(),
                 &end.to_string(),
-                &rows,
+                rows,
                 "example.xlsx",
                 false,
                 true,
@@ -13121,6 +13203,7 @@ async fn export_xlsx_by_id(
             )
             .await
         }
+        Ok(_) => batch_too_large_response("export", MAX_BATCH_COILS),
         Err(_) => export_xlsx_error_response(),
     }
 }
@@ -13136,10 +13219,10 @@ async fn export_xlsx_by_datetime(
 
     match state
         .repository
-        .search_coils_by_datetime_for_export(&start, &end)
+        .search_coils_by_datetime_for_export(&start, &end, (MAX_BATCH_COILS + 1) as u32)
         .await
     {
-        Ok(rows) => {
+        Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
             let title = format!(
                 "By Date Time ({})",
                 query.export_type.as_deref().unwrap_or("3D")
@@ -13149,7 +13232,7 @@ async fn export_xlsx_by_datetime(
                 &title,
                 &start,
                 &end,
-                &rows,
+                rows,
                 "example.xlsx",
                 false,
                 true,
@@ -13159,6 +13242,7 @@ async fn export_xlsx_by_datetime(
             )
             .await
         }
+        Ok(_) => batch_too_large_response("export", MAX_BATCH_COILS),
         Err(_) => export_xlsx_error_response(),
     }
 }
@@ -13184,25 +13268,30 @@ async fn export_xlsx_post(
     );
     match state
         .repository
-        .search_coils_by_datetime_for_export(&request.start_date, &request.end_date)
+        .search_coils_by_datetime_for_export(
+            &request.start_date,
+            &request.end_date,
+            (MAX_BATCH_COILS + 1) as u32,
+        )
         .await
     {
-        Ok(rows) => {
+        Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
             xlsx_response_for_rows(
                 &state,
                 &title,
                 &request.start_date,
                 &request.end_date,
-                &rows,
+                rows,
                 "example.xlsx",
                 request.export_plc_data,
                 request.defect_info,
-                request.defect_show_info,
-                request.defect_un_show_info,
-                request.area_defect_image.unwrap_or(true),
+                request.defect_info && request.defect_show_info,
+                request.defect_info && request.defect_un_show_info,
+                request.defect_info && request.area_defect_image.unwrap_or(true),
             )
             .await
         }
+        Ok(_) => batch_too_large_response("export", MAX_BATCH_COILS),
         Err(_) => export_xlsx_error_response(),
     }
 }
@@ -13215,7 +13304,7 @@ async fn export_data_simple(State(state): State<ApiState>) -> Response {
                 "Simple Export",
                 "",
                 "",
-                &rows,
+                rows,
                 "exportDataSimple.xlsx",
                 false,
                 true,
@@ -13325,16 +13414,16 @@ async fn quick_xlsx_export(state: ApiState, kind: QuickXlsxExportKind) -> Respon
 
     match state
         .repository
-        .search_coils_by_datetime_for_export(&start_query, &end_query)
+        .search_coils_by_datetime_for_export(&start_query, &end_query, (MAX_BATCH_COILS + 1) as u32)
         .await
     {
-        Ok(rows) => {
+        Ok(rows) if rows.len() <= MAX_BATCH_COILS => {
             xlsx_response_for_rows(
                 &state,
                 kind.title(),
                 &start_query,
                 &end_query,
-                &rows,
+                rows,
                 &filename,
                 false,
                 true,
@@ -13344,6 +13433,7 @@ async fn quick_xlsx_export(state: ApiState, kind: QuickXlsxExportKind) -> Respon
             )
             .await
         }
+        Ok(_) => batch_too_large_response("export", MAX_BATCH_COILS),
         Err(_) => export_xlsx_error_response(),
     }
 }
@@ -13352,12 +13442,20 @@ fn export_xlsx_error_response() -> Response {
     (StatusCode::INTERNAL_SERVER_ERROR, "export xlsx failed").into_response()
 }
 
+fn batch_too_large_response(operation: &str, max_items: usize) -> Response {
+    (
+        StatusCode::PAYLOAD_TOO_LARGE,
+        format!("{operation} exceeds {max_items} items"),
+    )
+        .into_response()
+}
+
 async fn xlsx_response_for_rows(
     state: &ApiState,
     title: &str,
     start_query: &str,
     end_query: &str,
-    rows: &[CoilSummaryRow],
+    rows: Vec<CoilSummaryRow>,
     filename: &str,
     export_plc_data: bool,
     export_defect_data: bool,
@@ -13365,34 +13463,71 @@ async fn xlsx_response_for_rows(
     export_defect_un_show_sheet: bool,
     export_area_defect_sheet: bool,
 ) -> Response {
-    let defects = match export_xlsx_defects_for_rows(state, rows).await {
-        Ok(defects) => defects,
-        Err(_) => return export_xlsx_error_response(),
+    let permit = match tokio::time::timeout(
+        XLSX_EXPORT_ADMISSION_TIMEOUT,
+        state.xlsx_export_semaphore.clone().acquire_owned(),
+    )
+    .await
+    {
+        Ok(Ok(permit)) => permit,
+        Ok(Err(_)) => return export_xlsx_error_response(),
+        Err(_) => {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                "another XLSX export is still running",
+            )
+                .into_response();
+        }
     };
-    let plc_rows = match export_xlsx_plc_for_rows(state, rows, export_plc_data).await {
+
+    let needs_defects = export_defect_data
+        || export_defect_show_sheet
+        || export_defect_un_show_sheet
+        || export_area_defect_sheet;
+    let defects = if needs_defects {
+        match export_xlsx_defects_for_rows(state, &rows).await {
+            Ok(defects) => defects,
+            Err(_) => return export_xlsx_error_response(),
+        }
+    } else {
+        Vec::new()
+    };
+    let plc_rows = match export_xlsx_plc_for_rows(state, &rows, export_plc_data).await {
         Ok(plc_rows) => plc_rows,
         Err(_) => return export_xlsx_error_response(),
     };
-    let alarm_rows = match export_xlsx_alarm_rows(state, rows).await {
+    let alarm_rows = match export_xlsx_alarm_rows(state, &rows).await {
         Ok(alarm_rows) => alarm_rows,
         Err(_) => return export_xlsx_error_response(),
     };
-    match build_quick_xlsx_bytes(
-        title,
-        start_query,
-        end_query,
-        rows,
-        &defects,
-        &plc_rows,
-        &alarm_rows,
-        export_plc_data,
-        export_defect_data,
-        export_defect_show_sheet,
-        export_defect_un_show_sheet,
-        export_area_defect_sheet,
-    ) {
-        Ok(bytes) => xlsx_response(bytes, filename),
-        Err(_) => export_xlsx_error_response(),
+    let title = title.to_owned();
+    let start_query = start_query.to_owned();
+    let end_query = end_query.to_owned();
+    let filename = filename.to_owned();
+    let build_result = tokio::task::spawn_blocking(move || {
+        build_quick_xlsx_bytes(
+            &title,
+            &start_query,
+            &end_query,
+            &rows,
+            &defects,
+            &plc_rows,
+            &alarm_rows,
+            export_plc_data,
+            export_defect_data,
+            export_defect_show_sheet,
+            export_defect_un_show_sheet,
+            export_area_defect_sheet,
+        )
+    })
+    .await;
+
+    match build_result {
+        Ok(Ok(bytes)) if bytes.len() <= MAX_XLSX_RESPONSE_BYTES => {
+            xlsx_response(bytes, &filename, Arc::new(permit))
+        }
+        Ok(Ok(_)) => batch_too_large_response("XLSX response bytes", MAX_XLSX_RESPONSE_BYTES),
+        Ok(Err(_)) | Err(_) => export_xlsx_error_response(),
     }
 }
 
@@ -13407,7 +13542,13 @@ async fn export_xlsx_defects_for_rows(
         return Ok(Vec::new());
     };
     let row_ids: HashSet<i64> = rows.iter().map(|row| row.id).collect();
-    let defects = state.repository.defects_between(min_id, max_id).await?;
+    let defects = state
+        .repository
+        .defects_between(min_id, max_id, (MAX_BATCH_DEFECTS + 1) as u32)
+        .await?;
+    if defects.len() > MAX_BATCH_DEFECTS {
+        anyhow::bail!("export exceeds {MAX_BATCH_DEFECTS} defects");
+    }
     Ok(defects
         .into_iter()
         .filter(|defect| row_ids.contains(&defect.secondary_coil_id))
@@ -13469,7 +13610,7 @@ async fn export_xlsx_alarm_rows(
     Ok(result)
 }
 
-fn xlsx_response(bytes: Vec<u8>, filename: &str) -> Response {
+fn xlsx_response(bytes: Vec<u8>, filename: &str, permit: Arc<OwnedSemaphorePermit>) -> Response {
     let length = bytes.len();
     let mut response = Response::new(axum::body::Body::from(bytes));
     let headers = response.headers_mut();
@@ -13489,6 +13630,10 @@ fn xlsx_response(bytes: Vec<u8>, filename: &str) -> Response {
         header::CONTENT_LENGTH,
         length.to_string().parse().expect("content length"),
     );
+    // Keep the concurrency slot until Axum drops the complete response. This
+    // prevents slow clients from retaining several in-memory workbooks at the
+    // same time.
+    response.extensions_mut().insert(permit);
     response
 }
 
@@ -15379,9 +15524,11 @@ fn analyze_alg_test_image(path: &FsPath, model_type: &str, threshold: f64) -> Al
     let is_empty_hint = ["empty", "blank", "none"]
         .iter()
         .any(|token| file_name.contains(token));
-    let is_abnormal_hint = ["bad", "abnormal", "defect", "ng", "fault", "hole", "crack", "spot"]
-        .iter()
-        .any(|token| file_name.contains(token))
+    let is_abnormal_hint = [
+        "bad", "abnormal", "defect", "ng", "fault", "hole", "crack", "spot",
+    ]
+    .iter()
+    .any(|token| file_name.contains(token))
         || ((avg_brightness > 240.0) && (seed % 2 == 0));
 
     if model_type == "classifier" {
@@ -15405,7 +15552,11 @@ fn analyze_alg_test_image(path: &FsPath, model_type: &str, threshold: f64) -> Al
         } else {
             "abnormal"
         };
-        let combo = if label.is_empty() { "empty".to_string() } else { label };
+        let combo = if label.is_empty() {
+            "empty".to_string()
+        } else {
+            label
+        };
         return AlgTestImageAnalysis {
             classification: classification.to_string(),
             reason,
@@ -15474,7 +15625,10 @@ fn analyze_alg_test_image(path: &FsPath, model_type: &str, threshold: f64) -> Al
     } else {
         describe_overlap_boxes(&boxes).to_string()
     };
-    let mut labels = boxes.iter().map(|box_| box_.label.clone()).collect::<Vec<_>>();
+    let mut labels = boxes
+        .iter()
+        .map(|box_| box_.label.clone())
+        .collect::<Vec<_>>();
     labels.sort_unstable();
     labels.dedup();
     let combo = labels.join("_");
@@ -15483,7 +15637,11 @@ fn analyze_alg_test_image(path: &FsPath, model_type: &str, threshold: f64) -> Al
         "classified" | "empty" => "normal",
         _ => "abnormal",
     };
-    let combo = if combo.is_empty() { "empty".to_string() } else { combo };
+    let combo = if combo.is_empty() {
+        "empty".to_string()
+    } else {
+        combo
+    };
 
     AlgTestImageAnalysis {
         classification: classification.to_string(),
@@ -15654,18 +15812,19 @@ fn run_alg_test_file_job(
                         errors,
                         skipped,
                         "任务已停止",
-                         true,
-                         started_at,
-                         Some(&run_options),
-                         &summary,
-                     ),
-                     true,
-                 );
+                        true,
+                        started_at,
+                        Some(&run_options),
+                        &summary,
+                    ),
+                    true,
+                );
             }
             return;
         }
 
-        let analysis = analyze_alg_test_image(image_path, &run_options.model_type, run_options.threshold);
+        let analysis =
+            analyze_alg_test_image(image_path, &run_options.model_type, run_options.threshold);
         let is_normal = analysis.classification == "normal";
         if is_normal {
             summary.add_normal(analysis.reason == "empty");
@@ -15684,7 +15843,9 @@ fn run_alg_test_file_job(
                     .unwrap_or("image")
             )
         } else {
-            let mut dest_dir = output_path.join(&analysis.classification).join(&analysis.reason);
+            let mut dest_dir = output_path
+                .join(&analysis.classification)
+                .join(&analysis.reason);
             if run_options.classify_save && analysis.combo != "empty" {
                 dest_dir.push(safe_folder_name(&analysis.combo));
             }
@@ -15704,9 +15865,7 @@ fn run_alg_test_file_job(
                         Ok(()) => {
                             item_message.push_str(&format!(
                                 " -> {}/{} [{}]",
-                                analysis.classification,
-                                analysis.reason,
-                                analysis.combo,
+                                analysis.classification, analysis.reason, analysis.combo,
                             ));
                             if run_options.save_label && !analysis.boxes.is_empty() {
                                 let xml_path = dest_path.with_extension("xml");
@@ -15718,11 +15877,8 @@ fn run_alg_test_file_job(
                                     &analysis.boxes,
                                 ) {
                                     errors += 1;
-                                    item_message = format!(
-                                        "{} 标注写入失败: {}",
-                                        item_message,
-                                        error
-                                    );
+                                    item_message =
+                                        format!("{} 标注写入失败: {}", item_message, error);
                                 }
                             }
                             item_message
@@ -15802,7 +15958,9 @@ fn run_alg_test_external_command(
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let details = format!("stdout={stdout}\nstderr={stderr}").trim().to_string();
+        let details = format!("stdout={stdout}\nstderr={stderr}")
+            .trim()
+            .to_string();
         return Err(format!(
             "外部算法测试执行器失败 {}: {}",
             output.status.code().unwrap_or(-1),
@@ -15829,8 +15987,7 @@ fn run_alg_test_external_command(
 
     Ok(format!(
         "算法测试执行完成: {} [{}]",
-        run_options.model,
-        run_options.model_type
+        run_options.model, run_options.model_type
     ))
 }
 
@@ -16490,10 +16647,7 @@ async fn capture_status_value_uncached() -> Value {
     }
 
     let cameras = capture_cameras();
-    let camera_items: Vec<Value> = cameras
-        .iter()
-        .map(camera_capture_item)
-        .collect();
+    let camera_items: Vec<Value> = cameras.iter().map(camera_capture_item).collect();
     let mut status = result;
     if let Some(object) = status.as_object_mut() {
         object.insert("service".to_string(), json!("CapAll"));
@@ -16505,10 +16659,7 @@ async fn capture_status_value_uncached() -> Value {
             "serviceUrl".to_string(),
             json!(format!("{}/capture/status", capture_service_base_url())),
         );
-        object.insert(
-            "cameras".to_string(),
-            Value::Array(camera_items),
-        );
+        object.insert("cameras".to_string(), Value::Array(camera_items));
     }
     status
 }
@@ -17272,12 +17423,8 @@ fn ws_height_point_response(state: &ApiState, message: &str) -> Option<Value> {
         .or_else(|| request.get("coilId"))
         .and_then(value_to_non_empty_string)
         .unwrap_or_default();
-    let x = request
-        .get("x")
-        .map_or(Some(0), value_to_i32_like_python);
-    let y = request
-        .get("y")
-        .map_or(Some(0), value_to_i32_like_python);
+    let x = request.get("x").map_or(Some(0), value_to_i32_like_python);
+    let y = request.get("y").map_or(Some(0), value_to_i32_like_python);
     let (x, y) = match (x, y) {
         (Some(x), Some(y)) => (x, y),
         _ => return None,
@@ -17379,19 +17526,23 @@ fn value_to_i32(value: &Value) -> Option<i32> {
 fn value_to_i32_like_python(value: &Value) -> Option<i32> {
     match value {
         Value::Bool(value) => Some(if *value { 1 } else { 0 }),
-        Value::Number(number) => {
-            number
-                .as_i64()
-                .and_then(|value| i32::try_from(value).ok())
-                .or_else(|| number.as_u64().and_then(|number| i32::try_from(number).ok()))
-                .or_else(|| number.as_f64().map(|number| number as i32))
-        }
+        Value::Number(number) => number
+            .as_i64()
+            .and_then(|value| i32::try_from(value).ok())
+            .or_else(|| {
+                number
+                    .as_u64()
+                    .and_then(|number| i32::try_from(number).ok())
+            })
+            .or_else(|| number.as_f64().map(|number| number as i32)),
         Value::String(text) => {
             let text = text.trim();
             if text.is_empty() {
                 None
             } else {
-                text.parse::<i64>().ok().and_then(|value| i32::try_from(value).ok())
+                text.parse::<i64>()
+                    .ok()
+                    .and_then(|value| i32::try_from(value).ok())
             }
         }
         _ => None,
@@ -17523,15 +17674,13 @@ fn image_file_response_with_query_for_path(
     let image = if target_width == source_width && target_height == source_height {
         source
     } else {
-        source.resize(
-            target_width,
-            target_height,
-            imageops::FilterType::Lanczos3,
-        )
+        source.resize(target_width, target_height, imageops::FilterType::Lanczos3)
     };
     profile_stage(endpoint, "resize", resize_started, &context);
 
-    let format = query.format.unwrap_or_else(|| image_file_default_format(&path));
+    let format = query
+        .format
+        .unwrap_or_else(|| image_file_default_format(&path));
     let quality = query.quality.unwrap_or(90);
     let encode_started = Instant::now();
     let bytes = match format {

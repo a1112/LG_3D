@@ -9,7 +9,7 @@ import Globs
 router = APIRouter(tags=["工具服务"])
 
 @router.get("/clipMaxImage/{coil_id:int}/{key:str}")
-async def clip_max_image(coil_id, key, save_url = None):
+def clip_max_image(coil_id, key, save_url = None):
     """
     切割图像，保持到存储位置
     :param coil_id: id

@@ -161,5 +161,8 @@ finally {
 
 Assert-Contains $source '-ExpectedService "rust_api_service"' "API startup must verify the rust_api_service health identity."
 Assert-Contains $source '-ExpectedService "rust_image_service"' "Image startup must verify the rust_image_service health identity."
+Assert-Contains $source '[string]$BindHost = "0.0.0.0"' "LAN startup must bind services on all interfaces."
+Assert-Contains $source '[string]$PublicHost = "10.9.41.112"' "LAN startup must advertise the configured production address."
+Assert-Contains $source 'npm run dev -- --host $BindHost' "The web UI must listen on the LAN bind host."
 
 Write-Host "start_rust_motion_studio_dev tests passed"

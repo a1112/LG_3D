@@ -12,78 +12,93 @@ from CoilDataBase.models import AlarmLooseCoil
 from CoilDataBase.models import AlarmInfo
 
 from Base import CONFIG
-from .export_tool import format_time ,spit_data_list
+from .export_tool import format_time, spit_data_list
 
 from .export_config import ExportConfig
+from .defect_visibility import should_export_defect
 
 
-def get_header_data(secondary_coil:SecondaryCoil):
+def get_header_data(secondary_coil: SecondaryCoil):
     coil_list = secondary_coil.childrenCoil
     if coil_list:
-        coil=coil_list[0]
-        coil:Coil
+        coil = coil_list[0]
+        coil: Coil
         # res_data.update({
         #     "检测完成日期":formatTime(coil.DetectionTime),
         # })
-    return  OrderedDict({
-                "流水号": secondary_coil.Id,
-                "卷号": secondary_coil.CoilNo,
-                "钢种": secondary_coil.CoilType,
-                "去向": CONFIG.infoConfigProperty.get_next(secondary_coil.Weight),
-                # "二级内径": secondary_coil.CoilInside,
-                "二级外径": secondary_coil.CoilDia,
-                "二级厚度": secondary_coil.Thickness,
-                "二级宽度": secondary_coil.Width,
-                # "二级目标宽度": secondary_coil.ActWidth,
-                "二级数据接受时间": format_time(secondary_coil.CreateTime),
-            })
+    return OrderedDict({
+        "流水号":
+        secondary_coil.Id,
+        "卷号":
+        secondary_coil.CoilNo,
+        "钢种":
+        secondary_coil.CoilType,
+        "去向":
+        CONFIG.infoConfigProperty.get_next(secondary_coil.Weight),
+        # "二级内径": secondary_coil.CoilInside,
+        "二级外径":
+        secondary_coil.CoilDia,
+        "二级厚度":
+        secondary_coil.Thickness,
+        "二级宽度":
+        secondary_coil.Width,
+        # "二级目标宽度": secondary_coil.ActWidth,
+        "二级数据接受时间":
+        format_time(secondary_coil.CreateTime),
+    })
 
-def get_plc_data(secondary_coil:SecondaryCoil):
+
+def get_plc_data(secondary_coil: SecondaryCoil):
     plc_data_list = secondary_coil.childrenPlcData
 
     if len(plc_data_list):
-        plc_data=plc_data_list[0]
-        plc_data:PlcData
+        plc_data = plc_data_list[0]
+        plc_data: PlcData
         return {
-            "激光距离":plc_data.location_laser,
-            "S端移动位置":plc_data.location_L,
-            "L端移动位置":plc_data.location_S,
+            "激光距离": plc_data.location_laser,
+            "S端移动位置": plc_data.location_L,
+            "L端移动位置": plc_data.location_S,
         }
 
 
-
 def get_coil_state(secondary_coil):
-    res_data={}
-    coil_state_list=secondary_coil.childrenCoilState
+    res_data = {}
+    coil_state_list = secondary_coil.childrenCoilState
     if len(coil_state_list):
-        coil_state=coil_state_list[0]
-        coil_state:CoilState
+        coil_state = coil_state_list[0]
+        coil_state: CoilState
         res_data.update({
-            "X 标定":coil_state.scan3dCoordinateScaleX,
-            "Y 标定":coil_state.scan3dCoordinateScaleY,
-            "Z 标定":coil_state.scan3dCoordinateScaleZ,
+            "X 标定": coil_state.scan3dCoordinateScaleX,
+            "Y 标定": coil_state.scan3dCoordinateScaleY,
+            "Z 标定": coil_state.scan3dCoordinateScaleZ,
         })
     return res_data
 
-def get_alarm_info(secondary_coil,alarm_info_dict):
-    res_data={}
+
+def get_alarm_info(secondary_coil, alarm_info_dict):
+    res_data = {}
     alarm_flat_roll_list = secondary_coil.childrenAlarmFlatRoll
-    alarm_flat_roll_dict={"S":[],"L":[]}
-    [alarm_flat_roll_dict[alarmFlatRoll.surface].append(alarmFlatRoll) for alarmFlatRoll in alarm_flat_roll_list]
+    alarm_flat_roll_dict = {"S": [], "L": []}
+    [
+        alarm_flat_roll_dict[alarmFlatRoll.surface].append(alarmFlatRoll)
+        for alarmFlatRoll in alarm_flat_roll_list
+    ]
     for key, value in alarm_flat_roll_dict.items():
         if len(value):
-            alarm_flat_roll=value[0]
-            alarm_flat_roll:AlarmFlatRoll
+            alarm_flat_roll = value[0]
+            alarm_flat_roll: AlarmFlatRoll
             res_data.update({
-                key + "端 检测外径":alarm_flat_roll.out_circle_width*0.3415023386478424,
-                key + "端 检测内径":alarm_flat_roll.inner_circle_width*0.3415023386478424,
+                key + "端 检测外径":
+                alarm_flat_roll.out_circle_width * 0.3415023386478424,
+                key + "端 检测内径":
+                alarm_flat_roll.inner_circle_width * 0.3415023386478424,
                 # 更多参数
             })
             if alarm_info_dict[key]:
-                alarm_info=alarm_info_dict[key]
-                alarm_info:AlarmInfo
+                alarm_info = alarm_info_dict[key]
+                alarm_info: AlarmInfo
                 res_data.update({
-                    key + "端 扁卷报警等级":alarm_info.flatRollGrad,
+                    key + "端 扁卷报警等级": alarm_info.flatRollGrad,
                     key + "端 扁卷报警信息": alarm_info.flatRollMsg,
                 })
     return res_data
@@ -152,53 +167,77 @@ def _taper_alarm_severity(alarm_taper_shape):
 
 
 def _select_taper_alarm_shape(alarm_taper_shapes):
-    shapes = [shape for shape in (alarm_taper_shapes or []) if shape is not None]
+    shapes = [
+        shape for shape in (alarm_taper_shapes or []) if shape is not None
+    ]
     if not shapes:
         return None
     return max(shapes, key=_taper_alarm_severity)
 
 
-def get_taper_shape_info(secondary_coil,alarm_info_dict):
+def get_taper_shape_info(secondary_coil, alarm_info_dict):
     res_data = {}
-    alarm_taper_shape_dict = spit_data_list(secondary_coil.childrenAlarmTaperShape, one=False)
+    alarm_taper_shape_dict = spit_data_list(
+        secondary_coil.childrenAlarmTaperShape, one=False)
     for key, alarm_taper_shapes in alarm_taper_shape_dict.items():
         alarmTaperShape = _select_taper_alarm_shape(alarm_taper_shapes)
         alarmTaperShape: AlarmTaperShape
         if alarmTaperShape:
             alarmTaperShape: AlarmTaperShape
             res_data.update({
-                key + "端 检测角度": alarmTaperShape.rotation_angle,
-                key + "端 外圈最大值": alarmTaperShape.out_taper_max_value,
-                key + "端 外圈最小值": alarmTaperShape.out_taper_min_value,
-                key + "端 内圈最大值": alarmTaperShape.in_taper_max_value,
-                key + "端 内圈最小值": alarmTaperShape.in_taper_min_value,
+                key + "端 检测角度":
+                alarmTaperShape.rotation_angle,
+                key + "端 外圈最大值":
+                alarmTaperShape.out_taper_max_value,
+                key + "端 外圈最小值":
+                alarmTaperShape.out_taper_min_value,
+                key + "端 内圈最大值":
+                alarmTaperShape.in_taper_max_value,
+                key + "端 内圈最小值":
+                alarmTaperShape.in_taper_min_value,
             })
             alarm_data = _alarm_taper_shape_data(alarmTaperShape)
             if alarm_data:
                 res_data.update({
-                    key + "端 塔形最严重类型": alarm_data.get("worst_label", ""),
-                    key + "端 塔形最严重值": alarm_data.get("worst_mm", ""),
-                    key + "端 塔形最严重绝对值": alarm_data.get("worst_abs_mm", ""),
-                    key + "端 塔形最严重点类型": alarm_data.get("worst_point_type", ""),
-                    key + "端 塔形最严重点X": alarm_data.get("worst_x", ""),
-                    key + "端 塔形最严重点Y": alarm_data.get("worst_y", ""),
-                    key + "端 塔形最严重点Z": alarm_data.get("worst_z", ""),
-                    key + "端 塔形最严重角度": alarm_data.get(
-                        "worst_angle", alarmTaperShape.rotation_angle
-                    ),
-                    key + "端 塔形判定角度": _format_taper_angle_filter(
-                        alarm_data.get("angle_filter")
-                    ),
-                    key + "端 塔形角度容差": alarm_data.get("angle_tolerance", ""),
-                    key + "端 塔形有效角度覆盖率": alarm_data.get("valid_angle_coverage_ratio", ""),
-                    key + "端 塔形有效线数量": alarm_data.get("valid_line_count", ""),
-                    key + "端 塔形覆盖角度数量": alarm_data.get("covered_angle_count", ""),
-                    key + "端 塔形检测角度数量": alarm_data.get("taper_attempt_count", ""),
-                    key + "端 塔形原始检测角度数量": alarm_data.get("raw_taper_attempt_count", ""),
-                    key + "端 塔形检测失败数量": alarm_data.get("detection_error_count", ""),
-                    key + "端 塔形原始检测失败数量": alarm_data.get("raw_detection_error_count", ""),
-                    key + "端 塔形配置警告数量": alarm_data.get("warning_count", ""),
-                    key + "端 塔形分级无效线数量": alarm_data.get("grading_error_count", ""),
+                    key + "端 塔形最严重类型":
+                    alarm_data.get("worst_label", ""),
+                    key + "端 塔形最严重值":
+                    alarm_data.get("worst_mm", ""),
+                    key + "端 塔形最严重绝对值":
+                    alarm_data.get("worst_abs_mm", ""),
+                    key + "端 塔形最严重点类型":
+                    alarm_data.get("worst_point_type", ""),
+                    key + "端 塔形最严重点X":
+                    alarm_data.get("worst_x", ""),
+                    key + "端 塔形最严重点Y":
+                    alarm_data.get("worst_y", ""),
+                    key + "端 塔形最严重点Z":
+                    alarm_data.get("worst_z", ""),
+                    key + "端 塔形最严重角度":
+                    alarm_data.get("worst_angle",
+                                   alarmTaperShape.rotation_angle),
+                    key + "端 塔形判定角度":
+                    _format_taper_angle_filter(alarm_data.get("angle_filter")),
+                    key + "端 塔形角度容差":
+                    alarm_data.get("angle_tolerance", ""),
+                    key + "端 塔形有效角度覆盖率":
+                    alarm_data.get("valid_angle_coverage_ratio", ""),
+                    key + "端 塔形有效线数量":
+                    alarm_data.get("valid_line_count", ""),
+                    key + "端 塔形覆盖角度数量":
+                    alarm_data.get("covered_angle_count", ""),
+                    key + "端 塔形检测角度数量":
+                    alarm_data.get("taper_attempt_count", ""),
+                    key + "端 塔形原始检测角度数量":
+                    alarm_data.get("raw_taper_attempt_count", ""),
+                    key + "端 塔形检测失败数量":
+                    alarm_data.get("detection_error_count", ""),
+                    key + "端 塔形原始检测失败数量":
+                    alarm_data.get("raw_detection_error_count", ""),
+                    key + "端 塔形配置警告数量":
+                    alarm_data.get("warning_count", ""),
+                    key + "端 塔形分级无效线数量":
+                    alarm_data.get("grading_error_count", ""),
                 })
         if alarm_info_dict[key]:
             alarm_info = alarm_info_dict[key]
@@ -209,55 +248,63 @@ def get_taper_shape_info(secondary_coil,alarm_info_dict):
             })
     return res_data
 
-def add_alarm_loose_info(secondary_coil,alarm_info_dict):
-    res_data={}
-    alarm_loose_coil_dict = spit_data_list(secondary_coil.childrenAlarmLooseCoil, one=True)
+
+def add_alarm_loose_info(secondary_coil, alarm_info_dict):
+    res_data = {}
+    alarm_loose_coil_dict = spit_data_list(
+        secondary_coil.childrenAlarmLooseCoil, one=True)
     for key, alarmLooseCoil in alarm_loose_coil_dict.items():
         if alarmLooseCoil:
-            alarmLooseCoil:AlarmLooseCoil
+            alarmLooseCoil: AlarmLooseCoil
             res_data.update({
-                key+"端 松卷检测角度":alarmLooseCoil.rotation_angle,
-                key+"端 松卷检测最宽":alarmLooseCoil.max_width
+                key + "端 松卷检测角度": alarmLooseCoil.rotation_angle,
+                key + "端 松卷检测最宽": alarmLooseCoil.max_width
             })
             if alarm_info_dict[key]:
-                alarm_info=alarm_info_dict[key]
-                alarm_info:AlarmInfo
+                alarm_info = alarm_info_dict[key]
+                alarm_info: AlarmInfo
                 res_data.update({
-                    key+"端 松卷报警等级":alarm_info.looseCoilGrad,
-                    key+"端 松卷报警信息":alarm_info.looseCoilMsg,
+                    key + "端 松卷报警等级": alarm_info.looseCoilGrad,
+                    key + "端 松卷报警信息": alarm_info.looseCoilMsg,
                 })
     return res_data
 
-def get_defects(secondary_coil:SecondaryCoil):
+
+def get_defects(secondary_coil: SecondaryCoil):
     return secondary_coil.childrenCoilDefect
 
-def get_defect_data(secondary_coil:SecondaryCoil):
-    res_data=OrderedDict()
-    defect_list = secondary_coil.childrenCoilDefect
-    defect_count_dict={"S":[],"L":[]}
+
+def get_defect_data(secondary_coil: SecondaryCoil,
+                    export_config: ExportConfig = None):
+    res_data = OrderedDict()
+    defect_list = [
+        defect for defect in (secondary_coil.childrenCoilDefect or [])
+        if should_export_defect(defect, export_config)
+    ]
+    defect_count_dict = {"S": [], "L": []}
     [defect_count_dict[d.surface].append(d) for d in defect_list]
     res_data.update({
-        "S端 缺陷数":len(defect_count_dict["S"]),
-        "L端 缺陷数量":len(defect_count_dict["L"]),
+        "S端 缺陷数": len(defect_count_dict["S"]),
+        "L端 缺陷数量": len(defect_count_dict["L"]),
     })
     defect_dict = defaultdict(list)
     for defect in defect_list:
-        defect:CoilDefect
+        defect: CoilDefect
         defect_dict[defect.defectName].append(defect)
-    for k_,v_ in {
-        "边裂":["烂边"],
-        "刮丝":["刮丝"],
-        "边部褶皱":["边部褶皱"],
-        "折叠":["折叠"],
-        "分层":["分层"]
+    for k_, v_ in {
+            "边裂": ["烂边"],
+            "刮丝": ["刮丝"],
+            "边部褶皱": ["边部褶皱"],
+            "折叠": ["折叠"],
+            "分层": ["分层"]
     }.items():
-        item_count=[]
+        item_count = []
         for defectName in defect_dict:
             if defectName in v_:
-                item_count=item_count+defect_dict[defectName]
+                item_count = item_count + defect_dict[defectName]
         res_data.update({
-            k_:len(item_count),
-            f"{k_}_报警":"是" if len(item_count)>0 else "否",
+            k_: len(item_count),
+            f"{k_}_报警": "是" if len(item_count) > 0 else "否",
         })
     return res_data
 
@@ -269,11 +316,9 @@ def get_grad(alarm_info_dict):
         if value:
             alarm_info = alarm_info_dict[key]
             alarm_info: AlarmInfo
-            if alarm_info.grad>glob_grad:
-                glob_grad=alarm_info.grad
-    res_data.update({
-        "综合报警等级":glob_grad
-    })
+            if alarm_info.grad > glob_grad:
+                glob_grad = alarm_info.grad
+    res_data.update({"综合报警等级": glob_grad})
     # res_data.update({
     #     "灰度缩略图":"",
     #     "深度缩略图": "",
@@ -281,38 +326,41 @@ def get_grad(alarm_info_dict):
     return res_data
 
 
-def get_item_data(secondary_coil:SecondaryCoil,export_config:ExportConfig=None):
-    res_data={}
-    alarm_info_dict=_alarm_info_by_surface(secondary_coil)
+def get_item_data(secondary_coil: SecondaryCoil,
+                  export_config: ExportConfig = None):
+    res_data = {}
+    alarm_info_dict = _alarm_info_by_surface(secondary_coil)
     if export_config.export_header_data:
-        res_data.update(get_header_data(secondary_coil))   # 添加 二级数据信息
+        res_data.update(get_header_data(secondary_coil))  # 添加 二级数据信息
 
     if export_config.export_plc_data:
         res_data.update(get_plc_data(secondary_coil))  # PLC 数据
 
     if export_config.export_alarm_info:
-        res_data.update(get_alarm_info(secondary_coil,alarm_info_dict))
+        res_data.update(get_alarm_info(secondary_coil, alarm_info_dict))
 
     if export_config.export_taper_shape_info:
-        res_data.update(get_taper_shape_info(secondary_coil,alarm_info_dict))
-
+        res_data.update(get_taper_shape_info(secondary_coil, alarm_info_dict))
 
     if export_config.export_alarm_loose:
         res_data.update(add_alarm_loose_info(secondary_coil, alarm_info_dict))
 
     if export_config.export_defect_data:
-        res_data.update(get_defect_data(secondary_coil))
+        res_data.update(get_defect_data(secondary_coil, export_config))
 
     return res_data
 
 
-def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None,format_=None):
+def export_info_data(coil_id_list,
+                     workbook,
+                     export_config: ExportConfig = None,
+                     format_=None):
     data_all = []
     head_key_list = []
     head_key_set = set()
     worksheet = workbook.add_worksheet(export_config.worksheet_name)
     for secondaryCoil in coil_id_list:
-        item_dict = get_item_data(secondaryCoil,export_config)
+        item_dict = get_item_data(secondaryCoil, export_config)
         data_all.append(item_dict)
         for key in item_dict.keys():
             if key not in head_key_set:
@@ -320,23 +368,28 @@ def export_info_data(coil_id_list, workbook,export_config:ExportConfig=None,form
                 head_key_list.append(key)
     data = [head_key_list]
     for itemData in data_all:
-        row=[]
+        row = []
         for key in head_key_list:
             try:
                 row.append(itemData[key])
-            except (Exception,) as e:
+            except (Exception, ) as e:
                 row.append("")
         data.append(row)
-  # 写入数据
+
+# 写入数据
     for row_num, row_data in enumerate(data):
         worksheet.write_row(row_num, 0, row_data)
     # 添加表格格式
     worksheet.add_table(
-        0, 0, len(data) - 1, len(data[0]) - 1,  # 表格的范围
+        0,
+        0,
+        len(data) - 1,
+        len(data[0]) - 1,  # 表格的范围
         {
-            "columns": [{"header": col} for col in data[0]],  # 设置表头
+            "columns": [{
+                "header": col
+            } for col in data[0]],  # 设置表头
             "style": "Table Style Medium 9",  # 表格样式
             "autofilter": True,  # 启用自动筛选
-        }
-    )
+        })
     return data_all

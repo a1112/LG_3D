@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "../../Api"
+import "../Api"
 
 /**
  * 标记缺陷导出对话框
@@ -12,8 +12,8 @@ Dialog {
     id: root
     title: "导出标记缺陷"
     modal: true
-    width: 500
-    height: 400
+    width: adaptive.boundedWidth(500, 390, 620)
+    height: adaptive.boundedHeight(400, 330, 540)
 
     // 属性
     property int coilId: 0
@@ -35,7 +35,7 @@ Dialog {
     }
 
     ColumnLayout {
-        spacing: 15
+        spacing: adaptive.mainSpacing
         anchors.fill: parent
 
         // 导出范围选择
@@ -44,7 +44,7 @@ Dialog {
             Layout.fillWidth: true
 
             ColumnLayout {
-                spacing: 10
+                spacing: adaptive.mainSpacing
                 anchors.fill: parent
 
                 RadioButton {
@@ -78,7 +78,7 @@ Dialog {
             Layout.fillWidth: true
 
             RowLayout {
-                spacing: 10
+                spacing: adaptive.mainSpacing
                 anchors.fill: parent
 
                 TextField {
@@ -101,7 +101,7 @@ Dialog {
             Layout.fillWidth: true
 
             ColumnLayout {
-                spacing: 10
+                spacing: adaptive.mainSpacing
                 anchors.fill: parent
 
                 CheckBox {
@@ -126,7 +126,7 @@ Dialog {
 
         // 按钮区域
         RowLayout {
-            spacing: 10
+            spacing: adaptive.mainSpacing
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignRight
 
@@ -155,11 +155,11 @@ Dialog {
         anchors.centerIn: parent
 
         Column {
-            spacing: 15
+            spacing: adaptive.mainSpacing
 
             ProgressBar {
                 id: progressBar
-                width: 300
+                width: adaptive.boundedWidth(300, 240, 420)
                 indeterminate: true
             }
 
@@ -169,7 +169,7 @@ Dialog {
             }
         }
 
-        buttons: Button {
+        footer: Button {
             text: "后台运行"
             onClicked: progressDialog.close()
         }
@@ -257,7 +257,7 @@ Dialog {
             text: ""
         }
 
-        buttons: Button {
+        footer: Button {
             text: "确定"
             highlighted: true
             onClicked: resultDialog.close()

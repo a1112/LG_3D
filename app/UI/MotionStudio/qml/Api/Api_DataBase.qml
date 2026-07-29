@@ -5,6 +5,11 @@ Api_Base {
 
 
     property string oldHeightDatUrl:""
+    property int _heightPointReconnectDelayMs: 1000
+    readonly property int _heightPointReconnectMaxDelayMs: 30000
+    readonly property int _heightPointPendingLimit: 16
+    property bool _heightPointFailureHandling: false
+    property bool _heightPointConnectEnabled: true
 
     Timer {
         id: heightPointReconnectTimer
@@ -14,39 +19,104 @@ Api_Base {
             if (!coreSetting.useRustTestServer) {
                 return
             }
-            heightPointSocket.active = false
-            heightPointSocket.active = true
+            // Keep the WebSocket.active binding intact. Assigning active
+            // directly here permanently detached it from useRustTestServer.
+            _heightPointConnectEnabled = true
         }
     }
 
     function _scheduleHeightPointReconnect(){
         if (coreSetting.useRustTestServer && !heightPointReconnectTimer.running) {
+            heightPointReconnectTimer.interval = _heightPointReconnectDelayMs
             heightPointReconnectTimer.restart()
+            _heightPointReconnectDelayMs = Math.min(_heightPointReconnectMaxDelayMs,
+                                                    _heightPointReconnectDelayMs * 2)
+        }
+    }
+
+    Connections {
+        target: coreSetting
+        function onUseRustTestServerChanged() {
+            heightPointReconnectTimer.stop()
+            _heightPointReconnectDelayMs = 1000
+            if (coreSetting.useRustTestServer) {
+                _heightPointConnectEnabled = true
+                return
+            }
+
+            _heightPointConnectEnabled = false
+            let latestRequestId = _heightPointPendingOrder.length > 0
+                    ? _heightPointPendingOrder[_heightPointPendingOrder.length - 1] : -1
+            for (let key in _heightPointRequests) {
+                let cb = _heightPointRequests[key]
+                if (cb && cb.failure) {
+                    cb.failure(Number(key) === Number(latestRequestId)
+                               ? "ws error" : "superseded")
+                }
+            }
+            _heightPointRequests = {}
+            _heightPointQueue = []
+            _heightPointPendingOrder = []
+        }
+    }
+
+    function _removeHeightPointPendingId(reqId) {
+        let nextOrder = []
+        for (let i = 0; i < _heightPointPendingOrder.length; ++i) {
+            if (_heightPointPendingOrder[i] !== reqId) {
+                nextOrder.push(_heightPointPendingOrder[i])
+            }
+        }
+        _heightPointPendingOrder = nextOrder
+    }
+
+    function _trimHeightPointPending() {
+        while (_heightPointPendingOrder.length >= _heightPointPendingLimit) {
+            let reqId = _heightPointPendingOrder.shift()
+            let cb = _heightPointRequests[reqId]
+            delete _heightPointRequests[reqId]
+            if (cb && cb.failure) {
+                cb.failure("superseded")
+            }
+        }
+        while (_heightPointQueue.length >= _heightPointPendingLimit) {
+            _heightPointQueue.shift()
         }
     }
 
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
         url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
-        active: coreSetting.useRustTestServer
+        active: coreSetting.useRustTestServer && _heightPointConnectEnabled
         onStatusChanged: function(status) {
             if (status === WebSocket.Open) {
+                _heightPointReconnectDelayMs = 1000
                 while (_heightPointQueue.length > 0) {
                     let payload = _heightPointQueue.shift()
                     sendTextMessage(payload)
                 }
             } else if (coreSetting.useRustTestServer && (status === WebSocket.Error || status === WebSocket.Closed)) {
+                if (_heightPointFailureHandling) {
+                    return
+                }
+                _heightPointFailureHandling = true
                 console.log("heightPoint ws closed/error", status, errorString)
-                heightPointSocket.active = false
-                // flush pending with failure
+                _heightPointConnectEnabled = false
+                // Only the newest hover request may fall back to HTTP. Older
+                // requests are obsolete and would otherwise create a burst.
+                let latestRequestId = _heightPointPendingOrder.length > 0
+                        ? _heightPointPendingOrder[_heightPointPendingOrder.length - 1] : -1
                 for (let key in _heightPointRequests) {
                     let cb = _heightPointRequests[key]
                     if (cb && cb.failure) {
-                        cb.failure("ws error")
+                        cb.failure(Number(key) === Number(latestRequestId)
+                                   ? "ws error" : "superseded")
                     }
                 }
                 _heightPointRequests = {}
                 _heightPointQueue = []
+                _heightPointPendingOrder = []
+                _heightPointFailureHandling = false
                 _scheduleHeightPointReconnect()
             }
         }
@@ -56,6 +126,7 @@ Api_Base {
                 let reqId = data.id
                 let cb = _heightPointRequests[reqId]
                 delete _heightPointRequests[reqId]
+                _removeHeightPointPendingId(reqId)
                 if (!cb) return
                 if (data.error !== undefined){
                     cb.failure && cb.failure(data.error)
@@ -77,6 +148,7 @@ Api_Base {
     property int _heightPointReqId: 0
     property var _heightPointRequests: ({})
     property var _heightPointQueue: []
+    property var _heightPointPendingOrder: []
 
     function _sendHeightPointWs(payload, success, failure){
         if (!coreSetting.useRustTestServer){
@@ -86,10 +158,12 @@ Api_Base {
         }
         _heightPointReqId += 1
         payload.id = _heightPointReqId
+        _trimHeightPointPending()
         _heightPointRequests[payload.id] = {
             success: success,
             failure: failure
         }
+        _heightPointPendingOrder.push(payload.id)
         let text = JSON.stringify(payload)
         if (heightPointSocket.status === WebSocket.Open){
             heightPointSocket.sendTextMessage(text)
@@ -114,12 +188,15 @@ Api_Base {
 
     function get_zValueData(_key_,coilId_,x1,y1,success,failure){
         // Prefer WebSocket for low-latency single-point queries; fallback to HTTP.
-        _sendHeightPointWs({
+        return _sendHeightPointWs({
                               "surface_key": _key_,
                               "coil_id": coilId_,
                               "x": x1,
                               "y": y1
                           }, success, function(err){
+                              if (err === "superseded") {
+                                  return
+                              }
                               let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
                               let failureCb = failure ? failure : function(e){console.log("heightPoint http error", e, err)}
                               return ajax.get(url,function(val){

@@ -14,8 +14,8 @@ Menu{
 
     x:parent.width
     id:root
-    width: 590
-    height: col.height+80
+    width: adaptive.boundedWidth(590, 460, 760)
+    height: col.height + adaptive.scaleMetric(80, 56, 110)
 
     property string outputFolder:(""+StandardPaths.writableLocation(StandardPaths.DesktopLocation)).substring(8)
     property string outputName:Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
@@ -32,13 +32,13 @@ Menu{
     ColumnLayout{
         id:col
         width:parent.width
-        spacing:20
+        spacing: adaptive.headerSideGap
         Row{
-            spacing:10
+            spacing: adaptive.mainSpacing
             Layout.alignment: Qt.AlignHCenter
             Label{
             text: "数据备份"
-            font.pixelSize: 25
+            font.pixelSize: adaptive.fontMetric(25, 20, 32)
             font.family:"Microsoft YaHei"
             font.bold: true
 

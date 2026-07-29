@@ -6,6 +6,7 @@ Item {
 
     property int delay: 0
     property color connectColor: delay>0?delay<200?"green":"yellow" :"red"
+    property bool delayRequestRunning: false
 
     // WebSocket {}
 
@@ -45,14 +46,20 @@ Item {
     }
 
     function getDelay__(){
+        if (delayRequestRunning) {
+            return null
+        }
+        delayRequestRunning = true
         let startTime = new Date().getTime()
         return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"delay"),function(data){
+            delayRequestRunning = false
             coreState.connectServer=true
             delay = new Date().getTime()-startTime
             // delayTimer.restart()
             coreModel.coreGlobalError.setError(1001,false)
         }
         ,function(err){
+            delayRequestRunning = false
             coreState.connectServer=false
             delay= -1
             coreModel.coreGlobalError.setError(1001,true)

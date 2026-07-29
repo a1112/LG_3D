@@ -61,6 +61,7 @@ HeaderBase {
             height: 20
             text: qsTr("2D")
             key:qsTr("2D")
+            has_data: true
             selected:surfaceData.rootViewIndex  == 2
             onClicked: {
                 surfaceData.rootViewtoArea()  // 2

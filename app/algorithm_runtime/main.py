@@ -13,15 +13,27 @@ import sys
 import time
 from pathlib import Path
 
-faulthandler.enable(all_threads=True)
+APP_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(APP_ROOT))
+sys.path.append(str(APP_ROOT / "Base"))
 
-sys.path.append(str(Path(__file__).parent.parent))
-sys.path.append(str(Path(__file__).parent.parent/"Base"))
+from Base.utils.watchdog_bootstrap import maybe_exec_watchdog  # noqa: E402
+
+maybe_exec_watchdog(
+    __name__,
+    Path(__file__).with_name("watchdog.py"),
+    child_environment="LG3D_ALGORITHM_3D_WATCHDOG_CHILD",
+    disable_environment="LG3D_ALGORITHM_3D_DISABLE_AUTO_WATCHDOG",
+    service_name="LG3D 3D algorithm",
+)
+
+faulthandler.enable(all_threads=True)
 
 from Base.utils.StdoutLog import Logger
 from Base.utils.LoggerProcess import LoggerProcess
 from SplicingService.ImageMosaicThread import ImageMosaicThread
 from Base.utils.Singleton import SingletonLock
+from algorithm_runtime.runtime_heartbeat import runtime_heartbeat
 import Globs
 from CoilDataBase.Coil import deleteCoilByCoilId
 # deleteCoilByCoilId(1296711)
@@ -92,10 +104,12 @@ def _acquire_runtime_lock() -> SingletonLock:
 def main() -> None:
     # 防重复启动检查
     lock = _acquire_runtime_lock()
+    runtime_heartbeat.start()
 
     try:
         _run_main()
     finally:
+        runtime_heartbeat.stop()
         lock.release()
 
 
@@ -113,8 +127,14 @@ def _run_main() -> None:
 
     queue = multiprocessing.Queue(maxsize=100)
 
-    image_mosaic_thread = ImageMosaicThread(queue, logger_process)
-    image_mosaic_thread.start()
+    startup_activity = runtime_heartbeat.begin_activity(
+        "3d_runtime_initialization"
+    )
+    try:
+        image_mosaic_thread = ImageMosaicThread(queue, logger_process)
+        image_mosaic_thread.start()
+    finally:
+        runtime_heartbeat.end_activity(startup_activity)
     Globs.imageMosaicThread = image_mosaic_thread
 
     zip_server = None
@@ -123,7 +143,15 @@ def _run_main() -> None:
         zip_server = ZipServer(queue)
     else:
         logging.info("Legacy bmp/npy compression disabled; capture already writes jpg/npz.")
-    import Lis  # noqa: F401
+    if os.getenv("LG3D_ENABLE_LEGACY_CAPTURE_LIS", "0") == "1":
+        import Lis  # noqa: F401
+        logging.warning(
+            "legacy capture file watcher enabled; it may terminate capture "
+            "executables when a coil is incomplete")
+    else:
+        logging.info(
+            "legacy capture file watcher disabled; capture watchdog owns "
+            "service recovery")
     try:
         while True:
             time.sleep(1)

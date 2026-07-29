@@ -1,8 +1,8 @@
 import cv2
 
-from JoinService.cv_count_tool import im_show
-from configs import CONFIG
-from configs.SurfaceConfig import SurfaceConfig
+from algorithm_runtime_2D.JoinService.cv_count_tool import im_show
+from algorithm_runtime_2D.configs import CONFIG
+from algorithm_runtime_2D.configs.SurfaceConfig import SurfaceConfig
 
 
 class ClipImageItem:

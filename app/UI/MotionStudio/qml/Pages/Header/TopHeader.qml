@@ -14,7 +14,7 @@ Item {
     implicitHeight: coreStyle.topHeight
 
     id:root
-    width: 1080
+    implicitWidth: adaptive.designWidth
     height: coreStyle.topHeight
     clip: false
     readonly property var appWindow: Window.window
@@ -35,9 +35,9 @@ Item {
     }
     RowLayout{
         anchors.fill: parent
-        spacing: 10
+        spacing: adaptive.headerSpacing
         Item{
-            Layout.preferredWidth: 1
+            Layout.preferredWidth: adaptive.headerSideGap
             Layout.preferredHeight: 1
         }
         ItemDelegateButtonBase {
@@ -55,7 +55,7 @@ Item {
         TopSettingButton{}
 
         Item{
-            implicitWidth: 50
+            implicitWidth: adaptive.headerLargeGap
             Layout.fillHeight: true
         }
         TopMsg{}
@@ -73,7 +73,7 @@ Item {
         FillLayout{}
         TopCoilTools{}
         Item{
-            implicitWidth: 20
+            implicitWidth: adaptive.headerSideGap
             Layout.fillHeight: true
         }
         RowLayout{

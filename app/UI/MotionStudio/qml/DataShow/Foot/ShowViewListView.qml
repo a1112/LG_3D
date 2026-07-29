@@ -15,7 +15,7 @@ Item {
     delegate: ItemDelegate {
         height: root.height
         width: height
-        enabled: surfaceData ? surfaceData.hasViewData(key) : true
+        enabled: typeof has_data === "boolean" ? has_data : (surfaceData ? surfaceData.hasViewData(key) : true)
         opacity: enabled ? 1 : 0.35
         Image {
             asynchronous: true

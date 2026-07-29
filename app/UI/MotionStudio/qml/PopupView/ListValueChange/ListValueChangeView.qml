@@ -6,15 +6,15 @@ import QtQuick.Controls
 import QtQuick.Layouts
 PopupBase {
     id:root
-    width:850
-    height:500
+    width: adaptive.boundedWidth(850, 620, 1080)
+    height: adaptive.boundedHeight(500, 380, 680)
     onOpened:{
         inputRow.init()
 
     }
     Item{
         width:root.width
-        height:root.height-20
+        height: root.height - adaptive.headerSideGap
         ColumnLayout{
             anchors.fill:parent
             TitleLabel{

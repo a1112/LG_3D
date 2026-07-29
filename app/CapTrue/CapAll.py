@@ -148,7 +148,9 @@ def main():
         CONFIG.capTureConfig.apiServerIp,
         CONFIG.capTureConfig.apiServerPort,
     )
-    Server.start_capture_api(CONFIG.capTureConfig, cap_map)
+    Server.start_capture_api(CONFIG.capTureConfig,
+                             cap_map,
+                             signal_listener=Signal.signal)
 
     logger.debug("Starting capture signal listener")
     Signal.signal.start()

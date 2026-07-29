@@ -1,37 +1,28 @@
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import os
-import datetime
+from pathlib import Path
+import sys
+
+
+APP_ROOT = Path(__file__).resolve().parents[1]
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
+from Base.utils.nonblocking_logging import configure_nonblocking_logging
 
 # 屏蔽 PIL 的 DEBUG 日志
 logging.getLogger('PIL').setLevel(logging.WARNING)
 logging.getLogger('PIL.PngImagePlugin').setLevel(logging.WARNING)
 logging.getLogger('PIL.Image').setLevel(logging.WARNING)
 
-# 创建 logger
+project_root = APP_ROOT.parent
+log_dir = Path(os.getenv("LG3D_LOG_DIR", project_root / "log")) / "Communication"
+logging_runtime = configure_nonblocking_logging(
+    log_dir / f"TcpServer_{os.getpid()}.log",
+    root_level=logging.DEBUG,
+    file_level=logging.DEBUG,
+    console_level=logging.INFO,
+)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-# 创建控制台处理器
-
-
-# 创建 TimedRotatingFileHandler
-log_dir = 'log/二级'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-
-filename = os.path.join(log_dir, 'log')
-handler = TimedRotatingFileHandler(filename, when="midnight", interval=1, backupCount=1000)
-handler.suffix = "%Y-%m-%d.log"
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-console_handler.setFormatter(formatter)
-
-logger.addHandler(handler)
-logger.addHandler(console_handler)
 
 

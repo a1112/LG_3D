@@ -7,17 +7,17 @@ import "../Base"
 PopupBase {
     id: root
     anchors.centerIn: parent
-    width: 800
-    height: 500
+    width: adaptive.boundedWidth(800, 560, 980)
+    height: adaptive.boundedHeight(500, 380, 680)
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 2
-        spacing: 8
+        anchors.margins: adaptive.scaleMetric(2, 2, 4)
+        spacing: adaptive.mainSpacing
 
         Label {
             text: qsTr("系统信息")
-            font.pixelSize: 22
+            font.pixelSize: adaptive.fontMetric(22, 18, 28)
             font.bold: true
             color: Material.color(Material.Blue)
             Layout.alignment: Qt.AlignHCenter

@@ -17,10 +17,14 @@ Rectangle {
     property real viewportH: viewport ? viewport.height : height
     property int defaultTileCount: Math.max(1, coreSetting ? coreSetting.defaultAreaTileCount : 3)
     property string previewUrl: dataAreaShowCore && dataAreaShowCore.pre_source ? dataAreaShowCore.pre_source : ""
-    // Parallel load toggle; when true all tiles activate immediately
-    property bool enableParallelLoad: true
+    // Low-resolution levels are small enough to load as a complete 3x3 image.
+    // Higher levels continue to use viewport loading to avoid decoding all
+    // full-resolution tiles at once.
+    property bool enableParallelLoad: false
+    readonly property bool loadCompleteGrid: enableParallelLoad || currentLevel <= 1
     property int maxParallel: 16
     property int _requestToken: 0
+    property var _imageInfoRequest: null
     property bool debugLog: coreSetting ? coreSetting.showTileDebugBorders : false
 
     function debugLogMessage(message) {
@@ -137,7 +141,7 @@ Rectangle {
         debugLogMessage("[TiledView] updateAllTiles: level=" + currentLevel + ", count=" + tiledImage.count)
         for (var i = 0; i < tiledImage.count; i++) {
             var item = tiledImage.itemAt(i)
-            if (item && item.updateLevel) {
+            if (item && item.updateLevel && item.shouldLoad) {
                 item.updateLevel(currentLevel)
             }
         }
@@ -146,8 +150,8 @@ Rectangle {
     // ========== 新增：检查瓦片是否在视口内 ==========
     function isTileInView(tileX, tileY, tileW, tileH) {
         // 视口边界（考虑Flickable的contentX/Y是负值）
-        var vpX1 = -viewportX
-        var vpY1 = -viewportY
+        var vpX1 = viewportX
+        var vpY1 = viewportY
         var vpX2 = vpX1 + viewportW
         var vpY2 = vpY1 + viewportH
 
@@ -168,6 +172,9 @@ Rectangle {
     onHeightChanged: evaluateLevel()
 
     function get_num(px_width){
+        if (!isFinite(px_width) || px_width <= 0 || tileSize <= 0) {
+            return 1
+        }
         let i = 1
         while (true){
             if (px_width / i <= tileSize){
@@ -177,16 +184,28 @@ Rectangle {
         }
     }
 
+    function appendQuery(url, query) {
+        if (!url || url.length === 0) {
+            return ""
+        }
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
+    }
+
     function requestImageInfo() {
+        if (_imageInfoRequest) {
+            _imageInfoRequest.abort()
+            _imageInfoRequest = null
+        }
         if (!imageUrl || imageUrl.length === 0) {
             return
         }
         _requestToken += 1
         const currentToken = _requestToken
         // 添加 count=0 参数获取图像尺寸信息
-        let infoUrl = imageUrl + "?count=0"
+        let infoUrl = appendQuery(imageUrl, "count=0")
         debugLogMessage("[TiledView] requestImageInfo: " + infoUrl)
-        api.ajax.get(infoUrl,(text)=>{
+        _imageInfoRequest = api.ajax.get(infoUrl,(text)=>{
+                         _imageInfoRequest = null
                          if (currentToken !== _requestToken){
                              return
                          }
@@ -206,6 +225,7 @@ Rectangle {
                          }
                          imageInfoReady(imageUrl)
                      },(err)=>{
+                        _imageInfoRequest = null
                         // 保留错误日志用于调试
                         debugLogMessage("[TiledView] Image info error: " + err)
                      })
@@ -217,15 +237,25 @@ Rectangle {
         evaluateLevel()
     }
 
-    onImageUrlChanged: requestImageInfo()
+    Component.onDestruction: {
+        if (_imageInfoRequest) {
+            _imageInfoRequest.abort()
+            _imageInfoRequest = null
+        }
+    }
+
+    onImageUrlChanged: {
+        count_ = fixedTileCount
+        requestImageInfo()
+    }
 
     Repeater {
         id: tiledImage
         model: count_ * count_
         TiledImageItem{
             // 瓦片位置和大小
-            x: parseInt(index / count_)*width
-            y: parseInt(index%count_)*height
+            x: parseInt(index % count_) * width
+            y: parseInt(index / count_) * height
             width: root.width/count_
             height: root.height/count_
 
@@ -239,7 +269,7 @@ Rectangle {
             viewportY: root.viewportY
             viewportW: root.viewportW
             viewportH: root.viewportH
-            enableParallelLoad: root.enableParallelLoad
+            enableParallelLoad: root.loadCompleteGrid
 
             // 多级加载相关属性
             currentScale: root.currentScale

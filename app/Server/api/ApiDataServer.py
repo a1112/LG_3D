@@ -1,14 +1,19 @@
+import asyncio
 import io
+import itertools
 import json
 import logging
 import math
+import os
+import threading
 import time
+from functools import wraps
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
-from fastapi import APIRouter, Query, WebSocket
+from fastapi import APIRouter, HTTPException, Query, WebSocket
 from fastapi.responses import FileResponse, Response
 from starlette.responses import StreamingResponse
 from starlette.websockets import WebSocketDisconnect
@@ -21,10 +26,125 @@ from Base.CONFIG import serverConfigProperty
 from ._tool_ import get_bool
 from .api_core import app
 from cache import cacheProvider
+from cache.bounded_cache import (MemoryBoundedTTLCache, memory_budget_bytes,
+                                 singleflight_cached)
 
 router = APIRouter(tags=["深度数据访问服务"])
 log = logging.getLogger(__name__)
 DEFAULT_ERROR_SCALE_FACTOR = 0.016229506582021713
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    try:
+        return max(int(os.getenv(name, str(default))), 1)
+    except (TypeError, ValueError):
+        return default
+
+
+def _positive_float_env(name: str, default: float) -> float:
+    try:
+        value = float(os.getenv(name, str(default)))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return value if math.isfinite(value) and value > 0 else default
+
+
+_RENDER_CONCURRENCY = _positive_int_env("API_RENDER_CONCURRENCY", 2)
+_render_slots = threading.BoundedSemaphore(_RENDER_CONCURRENCY)
+_RENDER_HEALTH_STALL_SECONDS = _positive_float_env(
+    "API_RENDER_HEALTH_STALL_SECONDS", 120.0)
+_render_operation_ids = itertools.count(1)
+_render_operations_lock = threading.Lock()
+_render_operations: dict[int, float] = {}
+_height_point_slots = asyncio.Semaphore(
+    _positive_int_env("API_HEIGHT_POINT_MAX_INFLIGHT", 4))
+_HEIGHT_POINT_ADMISSION_TIMEOUT = _positive_float_env(
+    "API_HEIGHT_POINT_ADMISSION_TIMEOUT", 2.0)
+_HEIGHT_POINT_OPERATION_TIMEOUT = _positive_float_env(
+    "API_HEIGHT_POINT_OPERATION_TIMEOUT", 30.0)
+_HEIGHT_DATA_CACHE_TTL_SECONDS = _positive_int_env(
+    "API_HEIGHT_DATA_CACHE_TTL_SECONDS", 5)
+_height_data_cache = MemoryBoundedTTLCache(
+    max_bytes=memory_budget_bytes("API_HEIGHT_DATA_CACHE_MAX_MB", 16),
+    max_entries=_positive_int_env("API_HEIGHT_DATA_CACHE_MAX_ENTRIES", 32),
+    ttl=_HEIGHT_DATA_CACHE_TTL_SECONDS,
+)
+
+
+def _bounded_render(function):
+    """Reject excess memory-heavy renders before they exhaust the process."""
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if not _render_slots.acquire(blocking=False):
+            raise HTTPException(status_code=503,
+                                detail="render capacity is busy; retry shortly")
+        operation_id = next(_render_operation_ids)
+        with _render_operations_lock:
+            _render_operations[operation_id] = time.monotonic()
+        try:
+            return function(*args, **kwargs)
+        finally:
+            with _render_operations_lock:
+                _render_operations.pop(operation_id, None)
+            _render_slots.release()
+
+    return wrapper
+
+
+def _render_executor_health() -> dict:
+    now = time.monotonic()
+    with _render_operations_lock:
+        started_times = tuple(_render_operations.values())
+    durations = [max(now - started_at, 0.0) for started_at in started_times]
+    stalled_workers = sum(duration >= _RENDER_HEALTH_STALL_SECONDS
+                          for duration in durations)
+    return {
+        "ok": stalled_workers < _RENDER_CONCURRENCY,
+        "active": len(durations),
+        "stalledWorkers": stalled_workers,
+        "workers": _RENDER_CONCURRENCY,
+        "oldestRunningSeconds": round(max(durations, default=0.0), 3),
+        "stallThresholdSeconds": _RENDER_HEALTH_STALL_SECONDS,
+    }
+
+
+app.state.render_operation_health = _render_executor_health
+
+
+async def _run_height_point_operation(operation):
+    """Bound default-executor work and retain admission until it really exits."""
+    try:
+        await asyncio.wait_for(_height_point_slots.acquire(),
+                               timeout=_HEIGHT_POINT_ADMISSION_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(status_code=503,
+                            detail="height point service is busy") from exc
+
+    loop = asyncio.get_running_loop()
+    try:
+        future = loop.run_in_executor(None, operation)
+    except Exception:
+        _height_point_slots.release()
+        raise
+
+    def _release_slot(completed_future) -> None:
+        try:
+            completed_future.exception()
+        except (asyncio.CancelledError, Exception):
+            pass
+        finally:
+            try:
+                loop.call_soon_threadsafe(_height_point_slots.release)
+            except RuntimeError:
+                _height_point_slots.release()
+
+    future.add_done_callback(_release_slot)
+    try:
+        return await asyncio.wait_for(asyncio.shield(future),
+                                      timeout=_HEIGHT_POINT_OPERATION_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(status_code=504,
+                            detail="height point load timed out") from exc
 
 
 def _positive_finite_float(value):
@@ -95,7 +215,14 @@ def _error_cache_matches(error_cache_path: Path, threshold_down_mm: float, thres
 
 
 @router.get("/coilData/heightData/{surface_key:str}/{coil_id:str}")
-async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x2: int = 0, y2: int = 0):
+@singleflight_cached(_height_data_cache)
+@_bounded_render
+def _get_height_data_sync(surface_key,
+                          coil_id: str,
+                          x1: int = 0,
+                          y1: int = 0,
+                          x2: int = 0,
+                          y2: int = 0):
     """
     Return line segments for curve display.
 
@@ -140,11 +267,25 @@ async def get_height_data(surface_key, coil_id: str, x1: int = 0, y1: int = 0, x
     return result
 
 
+async def get_height_data(surface_key,
+                          coil_id: str,
+                          x1: int = 0,
+                          y1: int = 0,
+                          x2: int = 0,
+                          y2: int = 0):
+    """Compatibility wrapper for direct callers and existing tests."""
+    return await asyncio.to_thread(_get_height_data_sync, surface_key, coil_id,
+                                   x1, y1, x2, y2)
+
+
 @router.get("/coilData/heightPoint/{surface_key:str}/{coil_id:str}")
-async def get_height_point(surface_key, coil_id: str, x: int = 0, y: int = 0):
+async def get_height_point(surface_key,
+                           coil_id: str,
+                           x: int = 0,
+                           y: int = 0):
 
     data_get = DataGet("image", surface_key, coil_id, "MASK", False)
-    npy_data = data_get.get_3d_data()
+    npy_data = await _run_height_point_operation(data_get.get_3d_data)
     try:
         if npy_data is None:
             raise ValueError("3D data not found")
@@ -182,7 +323,7 @@ async def ws_height_point(websocket: WebSocket):
                 continue
 
             data_get = DataGet("image", surface_key, coil_id, "MASK", False)
-            npy_data = data_get.get_3d_data()
+            npy_data = await _run_height_point_operation(data_get.get_3d_data)
             try:
                 value = int(npy_data[int(y)][int(x)])
                 await websocket.send_json({**base_resp, "value": value})
@@ -193,7 +334,8 @@ async def ws_height_point(websocket: WebSocket):
 
 
 @router.get("/coilData/Render/{surfaceKey:str}/{coil_id:str}")
-async def getRender(
+@_bounded_render
+def getRender(
     surfaceKey: str,
     coil_id: str,
     scale: float = Query(1.0, description="缩放比例"),
@@ -255,14 +397,19 @@ async def getRender(
                 max_value
             )
             if thumb_data:
-                log.info(f"Thumbnail ({colormap_name}): {'from cache' if from_cache else 'generated'} in {time.time()-s_t:.3f}s")
+                log.info(
+                    "Thumbnail (%s): %s in %.3fs",
+                    colormap_name,
+                    "from cache" if from_cache else "generated",
+                    time.time() - s_t,
+                )
                 return Response(thumb_data, media_type="image/jpeg", headers={
                     "X-Thumbnail": "true",
                     "X-From-Cache": str(from_cache),
                     "X-Colormap": colormap_name
                 })
         else:
-            log.warning(f"falsecolor_cache is not available for {colormap_name} thumbnail")
+            log.warning("falsecolor_cache is not available for %s thumbnail", colormap_name)
 
     # ========== 完整渲染模式 ==========
     s_t = time.time()
@@ -295,7 +442,7 @@ async def getRender(
     _, img_encoded = cv2.imencode('.jpg', rendered_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
     img_bytes = img_encoded.tobytes()
 
-    log.info(f"Full render ({colormap_name}): {time.time()-s_t:.3f}s")
+    log.info("Full render (%s): %.3fs", colormap_name, time.time() - s_t)
     return Response(img_bytes, media_type="image/jpeg", headers={
         "X-Thumbnail": "false",
         "X-Colormap": colormap_name
@@ -303,7 +450,8 @@ async def getRender(
 
 
 @router.get("/coilData/Area/{surface_key:str}/{coil_id:str}")
-async def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueFrom=0, valueTo=255, r=255, g=0, b=0):
+@_bounded_render
+def get_area(surface_key, coil_id: str, scale=1, mask: bool = True, valueFrom=0, valueTo=255, r=255, g=0, b=0):
     mask = get_bool(mask)
     scale = float(scale)
     min_value, max_value = int(valueFrom), int(valueTo)
@@ -341,7 +489,8 @@ def _clip_box(x: int, y: int, w: int, h: int, img_w: int, img_h: int):
 
 
 @router.get("/classifier_image/{coil_id:int}/{surface_key:str}/{class_name:str}/{x:int}/{y:int}/{w:int}/{h:int}")
-async def get_classifier_image(coil_id: int, surface_key: str, class_name: str, x: int, y: int, w: int, h: int):
+@_bounded_render
+def get_classifier_image(coil_id: int, surface_key: str, class_name: str, x: int, y: int, w: int, h: int):
     try:
         image_path = Path(serverConfigProperty.get_classifier_image(coil_id, surface_key, class_name, x, y, w, h))
         if image_path.exists():
@@ -365,7 +514,8 @@ async def get_classifier_image(coil_id: int, surface_key: str, class_name: str, 
 
 
 @router.get("/coilData/Error/{surface_key:str}/{coil_id:str}")
-async def get_error(
+@_bounded_render
+def get_error(
         surface_key: str,
         coil_id: str,
         scale: float = 1.0,

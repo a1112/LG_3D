@@ -30,8 +30,8 @@ class ExportConfig:
             self.defect_show_info = self.export_config.defect_show_info
             self.defect_un_show_info = self.export_config.defect_un_show_info
             self.export_area_defect_image = self.get("area_defect_image", True)
-            # 确保图像导出始终启用
-            self.export_defect_image = True
+            # 数据报告关闭缺陷信息时，也跳过解码和嵌入缺陷图像。
+            self.export_defect_image = bool(self.export_defect_data)
 
     def get(self, key, default_value):
         if self.export_config is None:

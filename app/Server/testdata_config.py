@@ -63,11 +63,11 @@ def get_testdata_asset_dir(path: Path | str | None = None) -> Path:
 def _load_npz_array(path: Path) -> np.ndarray | None:
     if not path.exists():
         return None
-    data = np.load(path)
-    if "array" in data:
-        return data["array"]
-    first_key = data.files[0] if data.files else None
-    return data[first_key] if first_key else None
+    with np.load(path) as data:
+        if "array" in data:
+            return np.array(data["array"], copy=True)
+        first_key = data.files[0] if data.files else None
+        return np.array(data[first_key], copy=True) if first_key else None
 
 
 def _surface_asset_dir(surface_key: str) -> Path:

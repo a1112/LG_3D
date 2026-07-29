@@ -164,6 +164,21 @@ describe('api service url helpers', () => {
         '192.168.1.20',
       ),
     ).toBe('http://192.168.1.20:6025')
+
+    const lanBases = resolveServiceBaseUrls({
+      VITE_API_BASE_URL: 'http://10.9.41.112:5011',
+      VITE_IMAGE_BASE_URL: 'http://10.9.41.112:6013',
+    })
+    expect(
+      resolveImageRuntimeBaseUrl(
+        {
+          useRustImageServer: true,
+          rustImageServerPort: 6013,
+        },
+        lanBases,
+        '127.0.0.1',
+      ),
+    ).toBe('http://10.9.41.112:6013')
   })
 
   it('resolves QML shared-folder image URLs while keeping AREA on HTTP', () => {
@@ -554,6 +569,16 @@ describe('api service url helpers', () => {
     )
     expect(() => buildClipMaxImagePath(0, 'S')).toThrow('valid coil id')
     expect(() => buildClipMaxImagePath(193113, 'X')).toThrow('valid surface')
+
+    const previousImageBaseUrl = serviceBaseUrls.imageBaseUrl
+    try {
+      serviceBaseUrls.imageBaseUrl = 'http://10.9.41.112:6013'
+      expect(apiModule.imageToolApi.getClassifierImageUrl(193113, 'S', '压痕', 10, 20, 30, 40)).toBe(
+        'http://10.9.41.112:6013/classifier_image/193113/S/%E5%8E%8B%E7%97%95/10/20/30/40',
+      )
+    } finally {
+      serviceBaseUrls.imageBaseUrl = previousImageBaseUrl
+    }
   })
 
   it('builds QML-compatible area and error image routes', () => {
@@ -588,6 +613,16 @@ describe('api service url helpers', () => {
     expect(buildDefaultCoilDataErrorPath('S', 193113, { minValue: -45, maxValue: 75 })).toBe(
       '/coilData/Error/S/193113?scale=1&mask=false&minValue=-45&maxValue=75',
     )
+
+    const previousImageBaseUrl = serviceBaseUrls.imageBaseUrl
+    try {
+      serviceBaseUrls.imageBaseUrl = 'http://10.9.41.112:6013'
+      expect(apiModule.heightDataApi.getErrorImageUrl('S', 193113)).toBe(
+        'http://10.9.41.112:6013/coilData/Error/S/193113?scale=1&mask=false&minValue=-100&maxValue=100',
+      )
+    } finally {
+      serviceBaseUrls.imageBaseUrl = previousImageBaseUrl
+    }
   })
 
   it('builds QML-compatible image preview/source/area routes', () => {

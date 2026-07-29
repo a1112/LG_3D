@@ -7,6 +7,16 @@ import tileImageViewerSource from './index.tsx?raw'
 const tileImageViewerCss = readFileSync(fileURLToPath(new URL('./TileImageViewer.css', import.meta.url)), 'utf8')
 
 describe('TileImageViewer QML hover point-value parity', () => {
+  it('bounds decoded tile memory and concurrent retry pressure', () => {
+    expect(tileImageViewerSource).toContain('const TILE_CACHE_MAX_ENTRIES = 24')
+    expect(tileImageViewerSource).toContain('const TILE_MAX_PARALLEL_LOADS = 6')
+    expect(tileImageViewerSource).toContain(
+      'new BoundedLruCache<string, HTMLImageElement>(TILE_CACHE_MAX_ENTRIES)',
+    )
+    expect(tileImageViewerSource).toContain('tileLoading.size < TILE_MAX_PARALLEL_LOADS')
+    expect(tileImageViewerSource).toContain('tileRetryAfter.set(url, Date.now() + TILE_RETRY_DELAY_MS)')
+  })
+
   it('can draw QML non-AREA 2D source images without tile URL mutation', () => {
     expect(tileImageViewerSource).toContain('tiled = true')
     expect(tileImageViewerSource).toContain('if (!tiled) {')
@@ -21,7 +31,11 @@ describe('TileImageViewer QML hover point-value parity', () => {
     expect(tileImageViewerSource).toContain('pointValueOptions')
     expect(tileImageViewerSource).toContain('requestHeightPointByWebSocket')
     expect(tileImageViewerSource).toContain('heightDataApi.getHeightPoint(surfaceKey, coilId,')
-    expect(tileImageViewerSource).toContain('.catch(() => heightDataApi.getHeightPoint(surfaceKey, coilId, point))')
+    expect(tileImageViewerSource).toContain('isHeightPointReconnectBackoffError')
+    expect(tileImageViewerSource).toContain(
+      'if (isHeightPointSupersededError(error) || isHeightPointReconnectBackoffError(error)) throw error',
+    )
+    expect(tileImageViewerSource).toContain('return heightDataApi.getHeightPoint(surfaceKey, coilId, point)')
     expect(tileImageViewerSource).toContain('buildQmlHoverPointInfo')
     expect(tileImageViewerSource).toContain('data-point-value-hud={hoverPoint ?')
     expect(tileImageViewerSource).toContain('className="tile-point-value-hud"')

@@ -11,15 +11,15 @@ from pathlib import Path
 from PIL import Image
 from typing import Optional
 
+from Base.tools.compressed_storage import atomic_write_bytes, save_compressed_image
 
-def generate_gray_thumbnail(
-    npy_data: Optional[np.ndarray] = None,
-    cache_dir: Optional[Path] = None,
-    source_image: Optional[Path] = None,
-    source_pil_image: Optional[Image.Image] = None,
-    size: int = 1024,
-    quality: int = 85
-) -> bool:
+
+def generate_gray_thumbnail(npy_data: Optional[np.ndarray] = None,
+                            cache_dir: Optional[Path] = None,
+                            source_image: Optional[Path] = None,
+                            source_pil_image: Optional[Image.Image] = None,
+                            size: int = 1024,
+                            quality: int = 85) -> bool:
     """
     生成 GRAY 灰度缩略图并缓存
 
@@ -35,7 +35,8 @@ def generate_gray_thumbnail(
     """
     try:
         # 优先从源图像文件生成
-        if source_pil_image is not None or (source_image and source_image.exists()):
+        if source_pil_image is not None or (source_image
+                                            and source_image.exists()):
             if source_pil_image is not None:
                 img = source_pil_image.copy()
             else:
@@ -52,7 +53,7 @@ def generate_gray_thumbnail(
             cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = cache_dir / "thumbnail_1024.jpg"
 
-            img.save(cache_path, quality=quality, optimize=True)
+            save_compressed_image(img, cache_path, quality=quality)
             return True
 
         # 兼容旧代码：从 numpy 数据生成
@@ -65,16 +66,18 @@ def generate_gray_thumbnail(
             if scale < 1.0:
                 new_w = int(w * scale)
                 new_h = int(h * scale)
-                clip_npy = cv2.resize(clip_npy, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                clip_npy = cv2.resize(clip_npy, (new_w, new_h),
+                                      interpolation=cv2.INTER_AREA)
 
             gray_bgr = cv2.cvtColor(clip_npy, cv2.COLOR_GRAY2BGR)
 
             cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = cache_dir / "thumbnail_1024.jpg"
 
-            ok, buf = cv2.imencode('.jpg', gray_bgr, [cv2.IMWRITE_JPEG_QUALITY, quality])
+            ok, buf = cv2.imencode('.jpg', gray_bgr,
+                                   [cv2.IMWRITE_JPEG_QUALITY, quality])
             if ok:
-                cache_path.write_bytes(buf.tobytes())
+                atomic_write_bytes(buf.tobytes(), cache_path)
                 return True
 
         return False
@@ -84,17 +87,15 @@ def generate_gray_thumbnail(
         return False
 
 
-def generate_jet_thumbnail(
-    npy_data: Optional[np.ndarray] = None,
-    cache_dir: Optional[Path] = None,
-    source_image: Optional[Path] = None,
-    source_pil_image: Optional[Image.Image] = None,
-    mask: Optional[np.ndarray] = None,
-    size: int = 1024,
-    min_value: int = 0,
-    max_value: int = 255,
-    quality: int = 85
-) -> bool:
+def generate_jet_thumbnail(npy_data: Optional[np.ndarray] = None,
+                           cache_dir: Optional[Path] = None,
+                           source_image: Optional[Path] = None,
+                           source_pil_image: Optional[Image.Image] = None,
+                           mask: Optional[np.ndarray] = None,
+                           size: int = 1024,
+                           min_value: int = 0,
+                           max_value: int = 255,
+                           quality: int = 85) -> bool:
     """
     生成 JET 伪彩色缩略图并缓存
 
@@ -113,7 +114,8 @@ def generate_jet_thumbnail(
     """
     try:
         # 优先从源图像文件生成
-        if source_pil_image is not None or (source_image and source_image.exists()):
+        if source_pil_image is not None or (source_image
+                                            and source_image.exists()):
             if source_pil_image is not None:
                 img = source_pil_image.copy()
             else:
@@ -130,13 +132,15 @@ def generate_jet_thumbnail(
             cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = cache_dir / "thumbnail_1024.jpg"
 
-            img.save(cache_path, quality=quality, optimize=True)
+            save_compressed_image(img, cache_path, quality=quality)
             return True
 
         # 兼容旧代码：从 numpy 数据生成
         if npy_data is not None and cache_dir is not None:
             if max_value <= min_value:
-                raise ValueError(f"invalid falsecolor range: min={min_value}, max={max_value}")
+                raise ValueError(
+                    f"invalid falsecolor range: min={min_value}, max={max_value}"
+                )
 
             clip_npy = np.clip(npy_data, min_value, max_value)
             clip_npy = (clip_npy - min_value) / (max_value - min_value) * 255
@@ -147,21 +151,26 @@ def generate_jet_thumbnail(
             if scale < 1.0:
                 new_w = int(w * scale)
                 new_h = int(h * scale)
-                clip_npy = cv2.resize(clip_npy, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                clip_npy = cv2.resize(clip_npy, (new_w, new_h),
+                                      interpolation=cv2.INTER_AREA)
                 if mask is not None:
-                    mask = cv2.resize(mask, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+                    mask = cv2.resize(mask, (new_w, new_h),
+                                      interpolation=cv2.INTER_NEAREST)
 
             colored_image = cv2.applyColorMap(clip_npy, cv2.COLORMAP_JET)
 
             if mask is not None:
-                colored_image = cv2.bitwise_and(colored_image, colored_image, mask=mask)
+                colored_image = cv2.bitwise_and(colored_image,
+                                                colored_image,
+                                                mask=mask)
 
             cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = cache_dir / "thumbnail_1024.jpg"
 
-            ok, buf = cv2.imencode('.jpg', colored_image, [cv2.IMWRITE_JPEG_QUALITY, quality])
+            ok, buf = cv2.imencode('.jpg', colored_image,
+                                   [cv2.IMWRITE_JPEG_QUALITY, quality])
             if ok:
-                cache_path.write_bytes(buf.tobytes())
+                atomic_write_bytes(buf.tobytes(), cache_path)
                 return True
 
         return False
@@ -210,14 +219,12 @@ def get_error_cache_dir(image_path: str) -> Path:
     return coil_dir / "png"
 
 
-def generate_error_image(
-    npy_data: np.ndarray,
-    png_dir: Path,
-    median_z_int: int = 0,
-    threshold_down: int = 100,
-    threshold_up: int = 100,
-    scale_factor: float = 0.016229506582021713
-) -> bool:
+def generate_error_image(npy_data: np.ndarray,
+                         png_dir: Path,
+                         median_z_int: int = 0,
+                         threshold_down: int = 100,
+                         threshold_up: int = 100,
+                         scale_factor: float = 0.016229506582021713) -> bool:
     """
     生成 Error 塔形报警图像并保存到 png 目录
 
@@ -260,10 +267,13 @@ def generate_error_image(
 
         # 蓝色区域：低于下限 (塔形过小，远离这一侧)
         # 1000 是一个基准值，低于这个值说明有效数据不足
-        output_image[(npy_data > 1000) & (npy_data < min_value)] = [255, 0, 0, 255]  # B, G, R, A = 蓝色
+        output_image[(npy_data > 1000)
+                     & (npy_data < min_value)] = [255, 0, 0,
+                                                  255]  # B, G, R, A = 蓝色
 
         # 红色区域：高于上限 (塔形过大，靠近这一侧)
-        output_image[npy_data > max_value] = [0, 0, 255, 255]  # B, G, R, A = 红色
+        output_image[npy_data > max_value] = [0, 0, 255,
+                                              255]  # B, G, R, A = 红色
 
         # 保存为 PNG 文件
         png_dir.mkdir(parents=True, exist_ok=True)
@@ -271,13 +281,17 @@ def generate_error_image(
 
         ok, buf = cv2.imencode('.png', output_image)
         if ok:
-            error_path.write_bytes(buf.tobytes())
-            (png_dir / "Error.json").write_text(json.dumps({
-                "median_z_int": int(median_z_int),
-                "threshold_down": float(threshold_down),
-                "threshold_up": float(threshold_up),
-                "scale_factor": float(scale_factor),
-            }, ensure_ascii=False, indent=2), encoding="utf-8")
+            atomic_write_bytes(buf.tobytes(), error_path)
+            (png_dir / "Error.json").write_text(json.dumps(
+                {
+                    "median_z_int": int(median_z_int),
+                    "threshold_down": float(threshold_down),
+                    "threshold_up": float(threshold_up),
+                    "scale_factor": float(scale_factor),
+                },
+                ensure_ascii=False,
+                indent=2),
+                                                encoding="utf-8")
             e_t = time.time()
             median_mm = median_z_int * scale_factor
             min_mm = median_mm - threshold_down

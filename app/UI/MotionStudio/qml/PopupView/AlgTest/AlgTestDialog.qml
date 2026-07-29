@@ -14,8 +14,8 @@ ApplicationWindow {
     id: root
 
 
-    width: 900
-    height: 640
+    width: adaptive.boundedWidth(900, 680, 1100)
+    height: adaptive.boundedHeight(640, 500, 820)
     property var modelList: []
     property var selectedModel: null
     property string targetFolder: ""

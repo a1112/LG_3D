@@ -12,7 +12,7 @@ from .api_core import app
 router = APIRouter(tags=["参数控制服务"])
 
 @router.get("/control/config")
-async def get_config():
+def get_config():
     """
     控制配置获取
     """
@@ -20,7 +20,7 @@ async def get_config():
 
 
 @router.post("/control/set_config")
-async def set_config(data: Dict):
+def set_config(data: Dict):
     """
     控制配置设置
     """
@@ -28,7 +28,7 @@ async def set_config(data: Dict):
 
 
 @router.get("/control/set_property")
-async def set_property(key,value):
+def set_property(key,value):
     """
     控制配置设置
     """

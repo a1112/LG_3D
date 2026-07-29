@@ -3,7 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { buildHeightPointWsPath, heightDataApi, serviceBaseUrls } from '@/services/api'
 import type { DefectData, HeightLineSegment, SurfaceKey } from '@/types'
 import type { QmlPointValueShowType } from '@/stores/uiSettingsStore'
-import { requestHeightPointByWebSocket } from '@/utils/heightPoint'
+import { BoundedLruCache } from '@/utils/boundedLru'
+import {
+  isHeightPointReconnectBackoffError,
+  isHeightPointSupersededError,
+  requestHeightPointByWebSocket,
+} from '@/utils/heightPoint'
 import {
   buildQmlHoverPointInfo,
   getQmlCrossViewZColor,
@@ -42,8 +47,30 @@ import {
 } from './utils'
 import './TileImageViewer.css'
 
-const tileCache = new Map<string, HTMLImageElement>()
+const TILE_CACHE_MAX_ENTRIES = 24
+const TILE_MAX_PARALLEL_LOADS = 6
+const TILE_RETRY_DELAY_MS = 3000
+const tileCache = new BoundedLruCache<string, HTMLImageElement>(TILE_CACHE_MAX_ENTRIES)
 const tileLoading = new Set<string>()
+const tileRetryAfter = new BoundedLruCache<string, number>(TILE_CACHE_MAX_ENTRIES * 2)
+
+function canStartTileLoad(url: string): boolean {
+  return tileLoading.size < TILE_MAX_PARALLEL_LOADS
+    && Date.now() >= (tileRetryAfter.get(url) ?? 0)
+}
+
+function finishTileLoad(url: string, image: HTMLImageElement, requestDraw: () => void): void {
+  tileCache.set(url, image)
+  tileRetryAfter.delete(url)
+  tileLoading.delete(url)
+  requestDraw()
+}
+
+function failTileLoad(url: string, requestDraw: () => void): void {
+  tileLoading.delete(url)
+  tileRetryAfter.set(url, Date.now() + TILE_RETRY_DELAY_MS)
+  window.setTimeout(requestDraw, TILE_RETRY_DELAY_MS)
+}
 
 export interface TileImageViewerTransform {
   x: number
@@ -463,7 +490,10 @@ export default function TileImageViewer({
           wsPath: buildHeightPointWsPath(),
         },
       )
-        .catch(() => heightDataApi.getHeightPoint(surfaceKey, coilId, point))
+        .catch((error) => {
+          if (isHeightPointSupersededError(error) || isHeightPointReconnectBackoffError(error)) throw error
+          return heightDataApi.getHeightPoint(surfaceKey, coilId, point)
+        })
         .then((rawValue) => {
           if (hoverRequestIdRef.current !== requestId) return
           setHoverPoint((current) => {
@@ -589,15 +619,11 @@ export default function TileImageViewer({
         ctx.drawImage(preview, transform.x, transform.y, imageInfo.width * transform.scale, imageInfo.height * transform.scale)
         ctx.globalAlpha = 1
         ctx.filter = 'none'
-      } else if (!tileLoading.has(previewUrlToLoad)) {
+      } else if (!tileLoading.has(previewUrlToLoad) && canStartTileLoad(previewUrlToLoad)) {
         tileLoading.add(previewUrlToLoad)
         const img = new Image()
-        img.onload = () => {
-          tileCache.set(previewUrlToLoad, img)
-          tileLoading.delete(previewUrlToLoad)
-          requestDraw()
-        }
-        img.onerror = () => tileLoading.delete(previewUrlToLoad)
+        img.onload = () => finishTileLoad(previewUrlToLoad, img, requestDraw)
+        img.onerror = () => failTileLoad(previewUrlToLoad, requestDraw)
         img.src = previewUrlToLoad
       }
     }
@@ -614,15 +640,11 @@ export default function TileImageViewer({
         }
         ctx.drawImage(sourceImage, 0, 0, imageInfo.width, imageInfo.height)
         ctx.filter = 'none'
-      } else if (!tileLoading.has(imageUrl)) {
+      } else if (!tileLoading.has(imageUrl) && canStartTileLoad(imageUrl)) {
         tileLoading.add(imageUrl)
         const img = new Image()
-        img.onload = () => {
-          tileCache.set(imageUrl, img)
-          tileLoading.delete(imageUrl)
-          requestDraw()
-        }
-        img.onerror = () => tileLoading.delete(imageUrl)
+        img.onload = () => finishTileLoad(imageUrl, img, requestDraw)
+        img.onerror = () => failTileLoad(imageUrl, requestDraw)
         img.src = imageUrl
       }
     }
@@ -654,15 +676,11 @@ export default function TileImageViewer({
           }
           ctx.drawImage(cached, tile.x, tile.y, tile.width, tile.height)
           ctx.filter = 'none'
-        } else if (!tileLoading.has(url)) {
+        } else if (!tileLoading.has(url) && canStartTileLoad(url)) {
           tileLoading.add(url)
           const img = new Image()
-          img.onload = () => {
-            tileCache.set(url, img)
-            tileLoading.delete(url)
-            requestDraw()
-          }
-          img.onerror = () => tileLoading.delete(url)
+          img.onload = () => finishTileLoad(url, img, requestDraw)
+          img.onerror = () => failTileLoad(url, requestDraw)
           img.src = url
         }
         const debugBorderStyle = getTileDebugBorderStyle(

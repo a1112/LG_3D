@@ -2,6 +2,8 @@ param(
     [int]$ApiPort = 5011,
     [int]$ImagePort = 6013,
     [int]$WebPort = 3015,
+    [string]$BindHost = "0.0.0.0",
+    [string]$PublicHost = "10.9.41.112",
     [string]$ImageConfigPath = "",
     [switch]$StrictWebPort,
     [switch]$DryRun
@@ -156,7 +158,7 @@ Start-RustExecutable `
     -WorkDir $RustApiDir `
     -ExePath $RustApiExe `
     -BuildCommand "cargo build" `
-    -Arguments "--host 127.0.0.1 --port $ResolvedApiPort" `
+    -Arguments "--host $BindHost --port $ResolvedApiPort" `
     -HealthUrl "http://127.0.0.1:$ResolvedApiPort/health" `
     -ExpectedService "rust_api_service"
 
@@ -198,14 +200,15 @@ Start-RustExecutable `
     -WorkDir $RustImageDir `
     -ExePath $RustImageExe `
     -BuildCommand "cargo build" `
-    -Arguments "--config `"$ServerConfig`" --host 127.0.0.1 --port $ResolvedImagePort" `
+    -Arguments "--config `"$ServerConfig`" --host $BindHost --port $ResolvedImagePort" `
     -HealthUrl "http://127.0.0.1:$ResolvedImagePort/health" `
     -ExpectedService "rust_image_service"
 
 $WebDir = Join-Path $Root "app\UI\MotionStudioWeb"
-$webCommand = "`$env:VITE_API_BASE_URL='/api'; `$env:VITE_IMAGE_BASE_URL='/image-api'; `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:$ResolvedApiPort'; `$env:VITE_IMAGE_PROXY_TARGET='http://127.0.0.1:$ResolvedImagePort'; npm run dev -- --host 127.0.0.1 --port $ResolvedWebPort"
-$ResolvedWebUrl = "http://127.0.0.1:$ResolvedWebPort/"
-if (Test-WebUiHealthy -Url $ResolvedWebUrl) {
+$webCommand = "`$env:VITE_API_BASE_URL='/api'; `$env:VITE_IMAGE_BASE_URL='/image-api'; `$env:VITE_API_PROXY_TARGET='http://127.0.0.1:$ResolvedApiPort'; `$env:VITE_IMAGE_PROXY_TARGET='http://127.0.0.1:$ResolvedImagePort'; npm run dev -- --host $BindHost --port $ResolvedWebPort"
+$WebHealthUrl = "http://127.0.0.1:$ResolvedWebPort/"
+$ResolvedWebUrl = "http://${PublicHost}:$ResolvedWebPort/"
+if (Test-WebUiHealthy -Url $WebHealthUrl) {
     Write-Host "motion_studio_web already healthy at $ResolvedWebUrl"
 }
 elseif ($DryRun) {
@@ -222,8 +225,8 @@ else {
 }
 
 [PSCustomObject]@{
-    ApiUrl = "http://127.0.0.1:$ResolvedApiPort"
-    ImageUrl = "http://127.0.0.1:$ResolvedImagePort"
+    ApiUrl = "http://${PublicHost}:$ResolvedApiPort"
+    ImageUrl = "http://${PublicHost}:$ResolvedImagePort"
     WebUrl = $ResolvedWebUrl.TrimEnd("/")
     Logs = $StartupLogDir
 }

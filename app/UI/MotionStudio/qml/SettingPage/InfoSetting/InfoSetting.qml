@@ -131,7 +131,7 @@ ColumnLayout{
                     font.bold: true
                 }
                 Label{
-                    text: app.coreSetting.server_port.toString()
+                    text: app.coreSetting.useRustTestServer ? qsTr("Rust 测试") : qsTr("Python")
                     font.pixelSize: 13
                     color: coreStyle.labelColor
                 }

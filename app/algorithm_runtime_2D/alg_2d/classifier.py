@@ -1,12 +1,13 @@
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Optional, Sequence
 
 from PIL import Image
 
-from configs import CONFIG
-from utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.configs import CONFIG
+from algorithm_runtime_2D.utils.MultiprocessColorLogger import logger
 
 
 AREA_DEFECT_NAME_PREFIX = "2D_"
@@ -14,6 +15,8 @@ DEFAULT_2D_DEFECT_CLASS = 101
 
 _classifier_model = None
 _classifier_load_failed = False
+_classifier_load_lock = Lock()
+_classifier_predict_lock = Lock()
 
 
 @dataclass
@@ -88,12 +91,15 @@ def _get_classifier_model():
     if _classifier_model is not None:
         return _classifier_model
 
-    try:
-        _classifier_model = _create_classifier_model()
-        logger.info("2D classifier loaded")
-    except Exception as e:
-        _classifier_load_failed = True
-        logger.error("2D classifier load failed: %s", e)
+    with _classifier_load_lock:
+        if _classifier_model is not None or _classifier_load_failed:
+            return _classifier_model
+        try:
+            _classifier_model = _create_classifier_model()
+            logger.info("2D classifier loaded")
+        except Exception as e:
+            _classifier_load_failed = True
+            logger.error("2D classifier load failed: %s", e)
     return _classifier_model
 
 
@@ -137,29 +143,37 @@ def classify_boxes(source_image, boxes: Sequence[tuple[int, int, int, int]]) -> 
     if not CONFIG.enable_classifier or source_image is None or not boxes:
         return results
 
+    owns_pil_image = not isinstance(source_image, Image.Image)
     pil_image = _to_pil_image(source_image)
     crop_images = []
     crop_indexes = []
-    for index, (x, y, w, h) in enumerate(boxes):
-        crop_box = _expand_box(pil_image.size, x, y, x + w, y + h)
-        if crop_box is None:
-            continue
-        crop_images.append(pil_image.crop(crop_box))
-        crop_indexes.append(index)
-
-    if not crop_images:
-        return results
-
-    classifier_model = _get_classifier_model()
-    if classifier_model is None:
-        return results
-
     try:
-        res_index, res_source, names = classifier_model.predict_image(crop_images)
-    except Exception as e:
-        logger.error("2D classifier predict failed: %s", e)
-        return results
+        for index, (x, y, w, h) in enumerate(boxes):
+            crop_box = _expand_box(pil_image.size, x, y, x + w, y + h)
+            if crop_box is None:
+                continue
+            crop_images.append(pil_image.crop(crop_box))
+            crop_indexes.append(index)
 
-    for index, label, source, name in zip(crop_indexes, res_index, res_source, names):
-        results[index] = ClassificationResult(label, source, name)
-    return results
+        if not crop_images:
+            return results
+
+        classifier_model = _get_classifier_model()
+        if classifier_model is None:
+            return results
+
+        try:
+            with _classifier_predict_lock:
+                res_index, res_source, names = classifier_model.predict_image(crop_images)
+        except Exception as e:
+            logger.error("2D classifier predict failed: %s", e)
+            return results
+
+        for index, label, source, name in zip(crop_indexes, res_index, res_source, names):
+            results[index] = ClassificationResult(label, source, name)
+        return results
+    finally:
+        for crop_image in crop_images:
+            crop_image.close()
+        if owns_pil_image:
+            pil_image.close()

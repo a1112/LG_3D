@@ -6,6 +6,9 @@ Item {
     id:root
     property var glob_port
     property int alarmLevel: 0
+    property bool pollingEnabled: true
+    property bool requestRunning: false
+    property var pendingPorts: []
     property ListModel netModel: ListModel{
     }
     function init() {
@@ -40,6 +43,60 @@ Item {
                             port:api.apiConfig.dataPort,
                             msg: "api服务:PLC 交互"
                         })
+    }
+
+    function updatePortStatus(portNumber, delayValue, ok) {
+        for (let i = 0; i < netModel.count; ++i) {
+            let item = netModel.get(i)
+            if (Number(item.port) !== Number(portNumber)) {
+                continue
+            }
+            netModel.setProperty(i, "valueText", ok ? delayValue + "  ms" : qsTr("连接错误"))
+            netModel.setProperty(i, "level", ok ? 0 : 3)
+            coreModel.coreGlobalError.errorState["网络"][i] = ok ? 0 : 3
+        }
+    }
+
+    function pollNextPort() {
+        if (pendingPorts.length === 0) {
+            requestRunning = false
+            return
+        }
+        let portNumber = pendingPorts.shift()
+        api.__getDelay__(portNumber, function(delayValue) {
+            updatePortStatus(portNumber, delayValue, true)
+            pollNextPort()
+        }, function() {
+            updatePortStatus(portNumber, 0, false)
+            pollNextPort()
+        })
+    }
+
+    function refresh() {
+        if (requestRunning) {
+            return
+        }
+        let uniquePorts = []
+        for (let i = 0; i < netModel.count; ++i) {
+            let portNumber = Number(netModel.get(i).port)
+            if (isFinite(portNumber) && uniquePorts.indexOf(portNumber) < 0) {
+                uniquePorts.push(portNumber)
+            }
+        }
+        if (uniquePorts.length === 0) {
+            return
+        }
+        requestRunning = true
+        pendingPorts = uniquePorts
+        pollNextPort()
+    }
+
+    Timer {
+        interval: 10000
+        repeat: true
+        triggeredOnStart: true
+        running: root.visible && root.pollingEnabled
+        onTriggered: root.refresh()
     }
 
     Component.onCompleted: init()
@@ -101,6 +158,8 @@ Item {
                 cellHeight: 25
                 delegate: AlarmItemNetItem {
                     title: titleText
+                    valueText: model.valueText
+                    level: model.level
                     width: body.width / 2-1
                     height:25
                     onClicked:{

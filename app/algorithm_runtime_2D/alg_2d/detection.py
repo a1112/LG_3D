@@ -1,6 +1,6 @@
 from pathlib import Path
 from queue import Full, Queue
-from threading import Thread
+from threading import Lock, Thread
 from typing import List
 
 import numpy as np
@@ -9,12 +9,13 @@ from PIL import Image
 from ultralytics import YOLO
 
 from CoilDataBase.Coil import add_defects, replace_defects
-from alg_2d.classifier import (AREA_DEFECT_NAME_PREFIX,
+from algorithm_runtime_2D.alg_2d.classifier import (AREA_DEFECT_NAME_PREFIX,
                                DEFAULT_2D_DEFECT_CLASS, area_defect_name,
                                classify_boxes)
-from configs import CONFIG
-from property.DataIntegration import ClipImageItem, DataIntegration
-from utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.configs import CONFIG
+from algorithm_runtime_2D.property.DataIntegration import ClipImageItem, DataIntegration
+from algorithm_runtime_2D.utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.utils.model_memory import release_predictor_input_references
 
 
 class DetectionSave(Thread):
@@ -35,6 +36,8 @@ class DetectionSave(Thread):
 
     def run(self) -> None:
         while True:
+            item = None
+            image = None
             try:
                 item = self.queue.get()
                 image, url = item
@@ -43,6 +46,11 @@ class DetectionSave(Thread):
                 image.save(url)
             except Exception as e:
                 logger.exception("DetectionSave save failed: %s", e)
+            finally:
+                if item is not None:
+                    self.queue.task_done()
+                image = None
+                item = None
 
 
 detect_save = DetectionSave()
@@ -63,7 +71,7 @@ def create_xml(file_name, img_shape, bounding_boxes, output_folder) -> None:
     height = etree.SubElement(size, "height")
     height.text = str(img_shape[0])
     depth = etree.SubElement(size, "depth")
-    depth.text = str(img_shape[2])
+    depth.text = str(img_shape[2] if len(img_shape) > 2 else 1)
 
     for bbox in bounding_boxes:
         bbox: CoilDetectionResult
@@ -127,7 +135,7 @@ class YoloResult:
         self.file_name = image_info.get_file_name()
         self.image = image_info.image
         self.debug_save_folder = CONFIG.base_debug_image_save_folder
-        if self.has_det():
+        if CONFIG.DEBUG and self.has_det():
             self.save_det()
 
     def save_det(self) -> None:
@@ -150,27 +158,63 @@ class CoilDetectionModel:
         logger.info("CoilDetection model is %s", model_url)
         self.model_url = model_url
         self.model = YOLO(model_url)
+        self._model_lock = Lock()
 
     def predict(self, item_info: ClipImageItem):
-        results = self.model(item_info.image, imgsz=CONFIG.area_detection_image_size)
-        res_list = []
         if not isinstance(item_info, list):
             item_info = [item_info]
+        if not item_info:
+            return []
 
-        for result, image in zip(results, item_info):
-            res_item_list = []
-            for box in result.boxes:
-                xyxy = box.xyxy[0].cpu().numpy()
-                label_index = int(box.cls[0].cpu().numpy())
-                name = self.model.names[label_index]
-                xmin, ymin, xmax, ymax = xyxy
-                source = float(box.conf[0].cpu().numpy())
-                res_item_list.append(
-                    CoilDetectionResult(int(xmin), int(ymin), int(xmax),
-                                        int(ymax), label_index, source, name,
-                                        image))
-            res_list.append(YoloResult(image, res_item_list))
-        return res_list
+        model_images = []
+        owned_model_images = []
+        for item in item_info:
+            image = item.image
+            owns_image = False
+            if not isinstance(image, Image.Image):
+                image = Image.fromarray(image)
+                owns_image = True
+            if image.mode != "RGB":
+                converted_image = image.convert("RGB")
+                if owns_image:
+                    image.close()
+                image = converted_image
+                owns_image = True
+            if owns_image:
+                owned_model_images.append(image)
+            model_images.append(image)
+
+        try:
+            with self._model_lock:
+                try:
+                    results = self.model(
+                        model_images,
+                        imgsz=CONFIG.area_detection_image_size,
+                        verbose=False,
+                    )
+                finally:
+                    release_predictor_input_references(self.model)
+            res_list = []
+
+            for result, image in zip(results, item_info):
+                res_item_list = []
+                for box in result.boxes:
+                    xyxy = box.xyxy[0].cpu().numpy()
+                    label_index = int(box.cls[0].cpu().numpy())
+                    name = self.model.names[label_index]
+                    xmin, ymin, xmax, ymax = xyxy
+                    source = float(box.conf[0].cpu().numpy())
+                    res_item_list.append(
+                        CoilDetectionResult(int(xmin), int(ymin), int(xmax),
+                                            int(ymax), label_index, source, name,
+                                            image.image))
+                if hasattr(result, "orig_img"):
+                    result.orig_img = None
+                res_list.append(YoloResult(image, res_item_list))
+            return res_list
+        finally:
+            for image in owned_model_images:
+                image.close()
 
 
 coil_detection_model = CoilDetectionModel()
@@ -248,16 +292,25 @@ def add_db(det_info: List[YoloResult]) -> None:
     add_defects(defect_list)
 
 
-def detection(data_integration: DataIntegration) -> None:
+def persist_detection_results(data_integration: DataIntegration, defect_list: List[dict]) -> None:
+    if CONFIG.add_to_database:
+        replace_defects(
+            defect_list,
+            data_integration.coil_id,
+            data_integration.config.surface_key,
+            AREA_DEFECT_NAME_PREFIX,
+        )
+
+
+def detection(data_integration: DataIntegration, *, persist: bool = True) -> List[dict]:
     clip_image_list = data_integration.clip_image()
     det_info_list = []
-    for item in clip_image_list:
-        item: ClipImageItem
-        det_info = coil_detection_model.predict(item)
+    batch_size = CONFIG.area_detection_batch_size
+    for start in range(0, len(clip_image_list), batch_size):
+        det_info = coil_detection_model.predict(clip_image_list[start:start + batch_size])
         det_info_list.extend(det_info)
     apply_classifier(det_info_list, data_integration.max_image)
-    if CONFIG.add_to_database:
-        defect_list = build_defect_list(det_info_list)
-        replace_defects(defect_list, data_integration.coil_id,
-                        data_integration.config.surface_key,
-                        AREA_DEFECT_NAME_PREFIX)
+    defect_list = build_defect_list(det_info_list)
+    if persist:
+        persist_detection_results(data_integration, defect_list)
+    return defect_list

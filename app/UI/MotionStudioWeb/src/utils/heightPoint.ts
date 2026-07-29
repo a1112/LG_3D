@@ -38,11 +38,42 @@ interface PendingRequest {
   resolve: (value: number | string) => void
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
+  requestKey: string
+}
+
+interface QueuedRequest {
+  id: number
+  requestKey: string
+  message: string
+}
+
+export class HeightPointSupersededError extends Error {
+  constructor() {
+    super('heightPoint request superseded')
+    this.name = 'HeightPointSupersededError'
+  }
+}
+
+export class HeightPointReconnectBackoffError extends Error {
+  constructor() {
+    super('heightPoint websocket reconnect backoff')
+    this.name = 'HeightPointReconnectBackoffError'
+  }
+}
+
+export function isHeightPointSupersededError(error: unknown): error is HeightPointSupersededError {
+  return error instanceof HeightPointSupersededError
+}
+
+export function isHeightPointReconnectBackoffError(error: unknown): error is HeightPointReconnectBackoffError {
+  return error instanceof HeightPointReconnectBackoffError
 }
 
 const OPEN_READY_STATE = 1
 const CLOSED_READY_STATE = 3
 const DEFAULT_TIMEOUT_MS = 1200
+const RECONNECT_BASE_DELAY_MS = 1000
+const RECONNECT_MAX_DELAY_MS = 30000
 const defaultClientByUrl = new Map<string, HeightPointWebSocketClient>()
 
 function normalizeSurfaceKey(surfaceKey: string): string {
@@ -134,8 +165,10 @@ export class HeightPointWebSocketClient {
   private readonly options: HeightPointWebSocketClientOptions
   private socket: WebSocketLike | null = null
   private nextId = 0
-  private queue: string[] = []
+  private queue: QueuedRequest[] = []
   private pending = new Map<number, PendingRequest>()
+  private reconnectFailures = 0
+  private nextConnectAt = 0
 
   constructor(options: HeightPointWebSocketClientOptions) {
     this.options = options
@@ -149,37 +182,48 @@ export class HeightPointWebSocketClient {
 
     const id = this.nextId + 1
     this.nextId = id
+    const requestKey = `${normalizeSurfaceKey(request.surfaceKey)}:${String(request.coilId)}`
     const message = buildHeightPointWebSocketMessage(request, id)
-    this.ensureSocket(WebSocketCtor)
+    this.supersedePending(requestKey)
+    if (!this.ensureSocket(WebSocketCtor)) {
+      return Promise.reject(new HeightPointReconnectBackoffError())
+    }
 
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id)
+        this.removeQueued(id)
         reject(new Error('heightPoint websocket timeout'))
       }, this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
-      this.pending.set(id, { resolve, reject, timer })
-      this.sendOrQueue(message)
+      this.pending.set(id, { resolve, reject, timer, requestKey })
+      this.sendOrQueue({ id, requestKey, message })
     })
   }
 
   close(): void {
-    this.socket?.close()
+    const socket = this.socket
     this.socket = null
-    this.queue = []
+    this.rejectAll(new Error('heightPoint websocket closed'))
+    socket?.close()
   }
 
-  private ensureSocket(WebSocketCtor: WebSocketConstructorLike): void {
-    if (this.socket && this.socket.readyState !== CLOSED_READY_STATE) return
+  private ensureSocket(WebSocketCtor: WebSocketConstructorLike): boolean {
+    if (this.socket && this.socket.readyState !== CLOSED_READY_STATE) return true
+    this.socket = null
+    if (Date.now() < this.nextConnectAt) return false
 
     const socket = new WebSocketCtor(this.url)
-    socket.onopen = () => this.flushQueue()
-    socket.onmessage = (event) => this.handleMessage(String(event.data))
-    socket.onerror = () => this.rejectAll(new Error('heightPoint websocket error'))
-    socket.onclose = () => {
-      this.socket = null
-      this.rejectAll(new Error('heightPoint websocket closed'))
+    socket.onopen = () => {
+      if (this.socket !== socket) return
+      this.reconnectFailures = 0
+      this.nextConnectAt = 0
+      this.flushQueue()
     }
+    socket.onmessage = (event) => this.handleMessage(String(event.data))
+    socket.onerror = () => this.failSocket(socket, new Error('heightPoint websocket error'))
+    socket.onclose = () => this.failSocket(socket, new Error('heightPoint websocket closed'))
     this.socket = socket
+    return true
   }
 
   private get url(): string {
@@ -187,12 +231,12 @@ export class HeightPointWebSocketClient {
     return resolveHeightPointWsUrl(baseUrl, this.options.wsPath, this.options.origin)
   }
 
-  private sendOrQueue(message: string): void {
+  private sendOrQueue(request: QueuedRequest): void {
     if (this.socket?.readyState === OPEN_READY_STATE) {
-      this.socket.send(message)
+      this.socket.send(request.message)
       return
     }
-    this.queue.push(message)
+    this.queue.push(request)
   }
 
   private flushQueue(): void {
@@ -200,7 +244,10 @@ export class HeightPointWebSocketClient {
     if (!socket || socket.readyState !== OPEN_READY_STATE) return
 
     while (this.queue.length > 0) {
-      socket.send(this.queue.shift() as string)
+      const request = this.queue.shift() as QueuedRequest
+      if (this.pending.has(request.id)) {
+        socket.send(request.message)
+      }
     }
   }
 
@@ -227,6 +274,35 @@ export class HeightPointWebSocketClient {
     }
     this.pending.clear()
     this.queue = []
+  }
+
+  private supersedePending(requestKey: string): void {
+    for (const [id, pending] of this.pending.entries()) {
+      if (pending.requestKey !== requestKey) continue
+      clearTimeout(pending.timer)
+      this.pending.delete(id)
+      pending.reject(new HeightPointSupersededError())
+    }
+    this.queue = this.queue.filter((request) => request.requestKey !== requestKey)
+  }
+
+  private removeQueued(id: number): void {
+    this.queue = this.queue.filter((request) => request.id !== id)
+  }
+
+  private failSocket(socket: WebSocketLike, error: Error): void {
+    if (this.socket !== socket) return
+    this.socket = null
+    this.reconnectFailures += 1
+    const retryDelay = Math.min(
+      RECONNECT_MAX_DELAY_MS,
+      RECONNECT_BASE_DELAY_MS * (2 ** Math.max(0, this.reconnectFailures - 1)),
+    )
+    this.nextConnectAt = Date.now() + retryDelay
+    this.rejectAll(error)
+    if (socket.readyState !== CLOSED_READY_STATE) {
+      socket.close()
+    }
   }
 }
 

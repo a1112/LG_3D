@@ -85,7 +85,8 @@ Item {
     property int un_show_num:0
 
     function defect_show(defectName){
-        return global.defectClassProperty.defectDictAll[defectName]??false
+        let sharedName = global.defectClassProperty.shared_defect_name(defectName)
+        return global.defectClassProperty.defectDictAll[sharedName]??false
     }
 
     function appendDefect(item){
@@ -123,9 +124,11 @@ Item {
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
                                     if (!item) return
-                                    let defectName = item.defectName
-                                    if (global.defectClassProperty.is_area_defect_name(defectName)){
-                                        global.defectClassProperty.ensure_defect_class_item(defectName)
+                                    let rawDefectName = item.defectName
+                                    let defectName = global.defectClassProperty.shared_defect_name(rawDefectName)
+                                    let isAreaDefect = global.defectClassProperty.is_area_defect_name(rawDefectName)
+                                    if (isAreaDefect){
+                                        global.defectClassProperty.ensure_defect_class_item(rawDefectName)
                                     }
                                     if (defectName in defectDict){
                                         defectDict[defectName].push(item)
@@ -143,9 +146,9 @@ Item {
                                     }
                                     cleanItem["configDefectName"] = defectName
 
-                                    if(defectName.indexOf("2D_")>=0){
+                                    if(isAreaDefect){
                                         cleanItem["is_area"]=true
-                                        cleanItem.defectName=cleanItem.defectName.slice(3)
+                                        cleanItem.defectName=defectName
                                         areaDefectModel.append(cleanItem)
                                     }
                                     else{

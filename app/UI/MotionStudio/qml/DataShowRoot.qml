@@ -14,8 +14,8 @@ SplitView{
         id:left
         SplitView.fillHeight: true
         SplitView.preferredWidth:coreStyle.leftWidth
-        SplitView.minimumWidth: 330
-        SplitView.maximumWidth: 550
+        SplitView.minimumWidth: coreStyle.leftMinimumWidth
+        SplitView.maximumWidth: coreStyle.leftMaximumWidth
     }
     DataShowLayout{    // 数据显示
         Layout.fillWidth: true

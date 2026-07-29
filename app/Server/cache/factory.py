@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 from .area_cache import DiskAreaImageCache
+from .bounded_cache import positive_int_env
 from .falsecolor_cache import FalseColorCache
 from .memory_cache import Memory3dCache, MemoryImageCache
 from .redis_cache import RedisImageCache
@@ -40,9 +41,28 @@ class CacheProvider:
                              time.perf_counter() - start_time)
 
     def shutdown(self) -> None:
-        for component in self._components:
+        for component in reversed(self._components):
             if hasattr(component, "shutdown"):
-                component.shutdown()
+                try:
+                    component.shutdown()
+                except Exception:
+                    logging.exception("failed to shut down cache component: %s",
+                                      component.__class__.__name__)
+
+    def stats(self) -> dict:
+        components = {
+            "preview": self.preview_cache,
+            "image": self.image_cache,
+            "area": self.area_cache,
+            "classifier": self.classifier_cache,
+            "3d": self.d3_cache,
+            "falsecolor": self.falsecolor_cache,
+        }
+        return {
+            name: component.cache_stats()
+            for name, component in components.items()
+            if component is not None and hasattr(component, "cache_stats")
+        }
 
 
 def _get_cache_mode(mode: Optional[str]) -> str:
@@ -53,12 +73,18 @@ def _get_cache_mode(mode: Optional[str]) -> str:
 
 def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
     cache_mode = _get_cache_mode(mode)
-    ttl = int(os.getenv("CACHE_TTL", "600"))  # 默认 10 分钟
-    redis_ttl = int(os.getenv("CACHE_REDIS_TTL", str(ttl)))
+    ttl = positive_int_env("CACHE_TTL", 600)
+    redis_ttl = positive_int_env("CACHE_REDIS_TTL", ttl)
     redis_host = os.getenv("CACHE_REDIS_HOST", "localhost")
-    redis_port = int(os.getenv("CACHE_REDIS_PORT", "6379"))
-    redis_db = int(os.getenv("CACHE_REDIS_DB", "0"))
+    redis_port = positive_int_env("CACHE_REDIS_PORT", 6379)
+    redis_db = positive_int_env("CACHE_REDIS_DB", 0, minimum=0)
     redis_password = os.getenv("CACHE_REDIS_PASSWORD")
+    preview_memory_mb = positive_int_env("CACHE_PREVIEW_MAX_MB", 64)
+    image_memory_mb = positive_int_env("CACHE_SOURCE_IMAGE_MAX_MB", 256)
+    area_memory_mb = positive_int_env("CACHE_AREA_MAX_MB", 192)
+    classifier_memory_mb = positive_int_env("CACHE_CLASSIFIER_MAX_MB", 64)
+    falsecolor_memory_mb = positive_int_env("CACHE_FALSECOLOR_MAX_MB", 32)
+    d3_memory_mb = positive_int_env("CACHE_3D_MAX_MB", 512)
     logging.info("init_cache_provider %s", cache_mode)
     if cache_mode == "redis":
         preview_cache = RedisImageCache(
@@ -69,6 +95,7 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
             cache_size=256,
             ttl=redis_ttl,
             prefix="preview",
+            max_memory_mb=preview_memory_mb,
         )
         image_cache = RedisImageCache(
             host=redis_host,
@@ -78,8 +105,11 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
             cache_size=128,
             ttl=redis_ttl,
             prefix="image",
+            max_memory_mb=image_memory_mb,
         )
-        area_cache = DiskAreaImageCache(32, ttl=ttl)
+        area_cache = DiskAreaImageCache(32,
+                                        ttl=ttl,
+                                        max_memory_mb=area_memory_mb)
         classifier_cache = RedisImageCache(
             host=redis_host,
             port=redis_port,
@@ -88,18 +118,31 @@ def init_cache_provider(mode: Optional[str] = None) -> CacheProvider:
             cache_size=100,
             ttl=redis_ttl,
             prefix="classifier",
+            max_memory_mb=classifier_memory_mb,
         )
     else:
-        preview_cache = MemoryImageCache(512, ttl=ttl)  # 增加预览缓存
-        image_cache = MemoryImageCache(256, ttl=ttl)    # 增加图像缓存
-        area_cache = DiskAreaImageCache(64, ttl=ttl)    # 增加 AREA 缓存
-        classifier_cache = MemoryImageCache(100, ttl=ttl)
+        preview_cache = MemoryImageCache(512,
+                                         ttl=ttl,
+                                         max_memory_mb=preview_memory_mb)
+        image_cache = MemoryImageCache(256,
+                                       ttl=ttl,
+                                       max_memory_mb=image_memory_mb)
+        area_cache = DiskAreaImageCache(64,
+                                        ttl=ttl,
+                                        max_memory_mb=area_memory_mb)
+        classifier_cache = MemoryImageCache(
+            100, ttl=ttl, max_memory_mb=classifier_memory_mb)
         cache_mode = "memory"
 
-    d3_cache = Memory3dCache(16, ttl=ttl)
+    d3_cache = Memory3dCache(16,
+                             ttl=ttl,
+                             max_memory_mb=d3_memory_mb)
 
     # 伪彩色图像缓存
-    falsecolor_cache = FalseColorCache(cache_size=64, ttl=ttl, thumbnail_size=1024)
+    falsecolor_cache = FalseColorCache(cache_size=64,
+                                       ttl=ttl,
+                                       thumbnail_size=1024,
+                                       max_memory_mb=falsecolor_memory_mb)
 
     return CacheProvider(
         cache_mode,

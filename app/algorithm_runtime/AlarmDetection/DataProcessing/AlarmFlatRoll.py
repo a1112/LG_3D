@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from Base.property.Base import DataIntegration, DataIntegrationList
 from Base.property.detection3D.FlatRollData import CircleDataItem
+from Base.tools import tool
 from Base.utils.Log import logger
 from AlarmDetection.Result.FlatRollData import FlatRollData
 
@@ -26,6 +27,23 @@ def contour_to_data(contour, key):
 
 
 def get_inner_circle_contour(mask):
+    recovered_ellipse = tool.get_inner_ellipse_by_mask(mask)
+    if recovered_ellipse is not None:
+        (center_x, center_y), (ellipse_width,
+                               ellipse_height), _ = recovered_ellipse
+        return CircleDataItem({
+            "circle": [
+                int(center_x),
+                int(center_y),
+                int(max(ellipse_width, ellipse_height) / 2),
+            ],
+            "ellipse": recovered_ellipse,
+            "inner_circle": [
+                center_x,
+                center_y,
+                min(ellipse_width, ellipse_height) / 2,
+            ],
+        }, "in")
     # 获取内圆轮廓
     mask = cv2.bitwise_not(mask)
     # 找到轮廓

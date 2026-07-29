@@ -32,6 +32,13 @@ export type ExportSaveResult = NativeFileSaveResult | { status: 'downloaded' }
 export type ExportOpenTarget = 'file' | 'folder'
 export type ExportOpenResult = 'native' | 'skipped'
 
+export interface ExportDownloadProgress {
+  received: number
+  total: number | null
+}
+
+const DEFAULT_EXPORT_TIMEOUT_MS = 10 * 60 * 1000
+
 interface SaveExportPayloadDeps {
   saveFile: (defaultName: string, contents: Uint8Array) => Promise<NativeFileSaveResult>
   downloadBlob: (blob: Blob, filename: string) => void
@@ -39,6 +46,63 @@ interface SaveExportPayloadDeps {
 
 interface OpenSavedExportPathDeps {
   openPath?: (path: string) => Promise<NativeOpenPathResult>
+}
+
+export async function fetchExportPayload(
+  url: string,
+  init: RequestInit = {},
+  onProgress?: (progress: ExportDownloadProgress) => void,
+  timeoutMs = DEFAULT_EXPORT_TIMEOUT_MS,
+): Promise<ArrayBuffer> {
+  const controller = new AbortController()
+  const timeout = globalThis.setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal })
+    if (!response.ok) {
+      const detail = (await response.text()).trim()
+      throw new Error(detail || `export failed: ${response.status}`)
+    }
+
+    const contentLength = Number.parseInt(response.headers.get('Content-Length') || '', 10)
+    const total = Number.isFinite(contentLength) && contentLength >= 0 ? contentLength : null
+    if (!response.body) {
+      const payload = await response.arrayBuffer()
+      onProgress?.({ received: payload.byteLength, total: total ?? payload.byteLength })
+      return payload
+    }
+
+    const reader = response.body.getReader()
+    const chunks: Uint8Array[] = []
+    let received = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value?.byteLength) continue
+      chunks.push(value)
+      received += value.byteLength
+      onProgress?.({ received, total })
+    }
+
+    if (total !== null && received !== total) {
+      throw new Error(`export download incomplete: expected ${total} bytes, received ${received}`)
+    }
+
+    const payload = new Uint8Array(received)
+    let offset = 0
+    for (const chunk of chunks) {
+      payload.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    return payload.buffer
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('报表导出超时，请缩小时间范围后重试')
+    }
+    throw error
+  } finally {
+    globalThis.clearTimeout(timeout)
+  }
 }
 
 function parseCoilDate(value: string): Date | null {

@@ -1,31 +1,58 @@
 import QtQuick
-// 定时器
-Item {
 
-    Timer{  // 数据刷新 定时器
-        interval:  coreSetting.updataTime
-        repeat: true
-        running: true
-        onTriggered: {
-            api.getDataFlush(
-                        coreModel.getLastCoilId()-3,(result)=>{
-                            coreModel.updateData(JSON.parse(result))
-                        },(error)=>{
-                            console.log("刷新数据失败")
-                        }
-                    )
+Item {
+    id: root
+
+    property bool dataFlushBusy: false
+
+    function flushData() {
+        if (dataFlushBusy || !api || !coreModel) {
+            return
         }
+        if (app && app.init && app.init.isListLoading) {
+            return
+        }
+
+        let lastId = coreModel.getLastCoilId()
+        if (lastId <= 0) {
+            return
+        }
+
+        dataFlushBusy = true
+        api.getDataFlush(
+                    Math.max(0, lastId - 3),
+                    (result)=>{
+                        try {
+                            coreModel.updateData(JSON.parse(result))
+                        } catch (e) {
+                            console.log("data flush parse error", e)
+                        }
+                        dataFlushBusy = false
+                    },
+                    (error)=>{
+                        console.log("data flush error", error)
+                        dataFlushBusy = false
+                    }
+                )
     }
 
-    Timer{  // 保持最新数据数据 定时器
+    Timer {
+        id: dataFlushTimer
+        interval: Math.max(1000, coreSetting.updataTime)
+        repeat: true
+        running: true
+        onTriggered: root.flushData()
+    }
+
+    Timer {
         interval: 7000
         running: !coreModel.keepLatest
         repeat: true
         onTriggered: {
-            coreModel.autoKeepTime+=1
-            if(coreModel.autoKeepTime>=coreModel.autoKeepTimeMax){
+            coreModel.autoKeepTime += 1
+            if (coreModel.autoKeepTime >= coreModel.autoKeepTimeMax) {
                 coreModel.keepLatest = true
-                coreModel.autoKeepTime=0
+                coreModel.autoKeepTime = 0
             }
         }
     }

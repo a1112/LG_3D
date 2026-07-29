@@ -3,10 +3,15 @@
 
 a = Analysis(
     ['writePLC.py'],
-    pathex=[],
+    pathex=['..'],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=[
+        'write_plc_watchdog',
+        'plc_writer_heartbeat',
+        'Base.utils.Singleton',
+        'Base.utils.watchdog_bootstrap',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

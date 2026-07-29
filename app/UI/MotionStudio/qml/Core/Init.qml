@@ -6,6 +6,16 @@ Item {
     property bool coreInfoPathLoaded: false
     // 列表加载状态标志，防止并发修改
     property bool isListLoading: false
+    property var pendingCoilData: []
+    property int pendingCoilIndex: 0
+    property int initBatchSize: 8
+
+    Timer {
+        id: initCoilBatchTimer
+        interval: 1
+        repeat: true
+        onTriggered: appendPendingCoils()
+    }
 
     function initDefectDict(defectDictData){
         // 初始化 缺陷图谱
@@ -22,14 +32,33 @@ Item {
         if (!coilData || !Array.isArray(coilData)) {
             coilData = []
         }
-        let data={
-            "coilList":coilData
+        pendingCoilData = coilData
+        pendingCoilIndex = 0
+        if (pendingCoilData.length === 0) {
+            isListLoading = false
+            return
         }
-        // API 返回的数据已经是按 ID 倒序排列，直接 append 即可
-        for(var i=0;i<coilData.length;i++){
-            var coil = coilData[i]
-            coreModel.coilListModel.append(coil)
+        initCoilBatchTimer.restart()
+    }
+
+    function appendPendingCoils() {
+        if (!pendingCoilData || pendingCoilIndex >= pendingCoilData.length) {
+            initCoilBatchTimer.stop()
+            pendingCoilData = []
+            pendingCoilIndex = 0
+            if (coreModel.coilListModel.count > 0) {
+                core.setCoilIndex(0)
+            }
+            isListLoading = false
+            console.log("init coil list done")
+            return
         }
+
+        let endIndex = Math.min(pendingCoilIndex + initBatchSize, pendingCoilData.length)
+        for (var i = pendingCoilIndex; i < endIndex; i++) {
+            coreModel.coilListModel.append(pendingCoilData[i])
+        }
+        pendingCoilIndex = endIndex
     }
 
 
@@ -80,9 +109,18 @@ Item {
 
 
     function flushList(){
+        if (isListLoading) {
+            console.log("List is already loading, skipping flushList")
+            return
+        }
+        isListLoading = true
 
         api.getInfo((result)=>{
-            initApp(JSON.parse(result))
+            try {
+                initApp(JSON.parse(result))
+            } catch (e) {
+                console.log("info parse error", e)
+            }
         },(error)=>{
             console.log("error")
         })
@@ -135,20 +173,19 @@ Item {
             console.log("version error", error)
         })
 
-        coreModel.coilListModel.clear()//实时数据
 
         // 添加加载状态保护，防止并发
-        if (isListLoading) {
-            console.log("List is already loading, skipping flushList")
-            return
-        }
-        isListLoading = true
-
         api.getCoilList(init_num, (result)=>{
                              console.log("init_num")
-                        initCoilByData(JSON.parse(result))
-                        core.setCoilIndex(0)
-                        isListLoading = false  // 完成后重置状态
+                        try {
+                            let parsed = JSON.parse(result)
+                            let parsedList = parsed && parsed.value !== undefined ? parsed.value : parsed
+                            console.log("init parse done", parsedList && parsedList.length !== undefined ? parsedList.length : 0)
+                            initCoilByData(parsed)
+                        } catch (e) {
+                            console.log("coil list parse error", e)
+                            isListLoading = false
+                        }
                         },(error)=>{
                             console.log("error")
                             isListLoading = false  // 错误时也要重置状态

@@ -3,5 +3,9 @@
   "server_port": 1035,
   "plc_ip": "192.168.0.1",
   "plc_slot": 0,
-  "plc_rack": 0
+  "plc_rack": 0,
+  "plc_connect_timeout_ms": 2000,
+  "plc_receive_timeout_ms": 2000,
+  "plc_operation_lock_timeout_seconds": 6.0,
+  "plc_stuck_threshold_seconds": 20.0
 }

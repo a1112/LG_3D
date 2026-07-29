@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
-import { Button, Checkbox, DatePicker, Input, Modal, Progress, message } from 'antd'
+import { Button, Checkbox, DatePicker, Input, Modal, Progress, Spin, message } from 'antd'
 import { FileExcelOutlined, FolderOpenOutlined } from '@ant-design/icons'
 
 import { exportApi } from '@/services/api'
@@ -11,6 +11,7 @@ import {
   buildExportInitialDateRange,
   buildQmlExportDefaultFileName,
   buildQuickExportFileName,
+  fetchExportPayload,
   openSavedExportPath,
   resolveQuickExportUrl,
   saveExportPayload,
@@ -75,6 +76,7 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
   const [options, setOptions] = useState<Required<ExportOptionState>>(DEFAULT_OPTIONS)
   const [downloading, setDownloading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [exportStage, setExportStage] = useState<'idle' | 'preparing' | 'downloading' | 'saving'>('idle')
   const [lastExportPath, setLastExportPath] = useState('')
   const [exportError, setExportError] = useState('')
 
@@ -152,14 +154,17 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
 
   const openQuickExport = async (kind: QuickExportKind) => {
     setDownloading(true)
-    setProgress(0.2)
+    setProgress(0)
+    setExportStage('preparing')
     setLastExportPath('')
     setExportError('')
     try {
-      const response = await fetch(resolveQuickExportUrl(kind, exportApi))
-      if (!response.ok) throw new Error(`export failed: ${response.status}`)
-      const payload = await response.arrayBuffer()
+      const payload = await fetchExportPayload(resolveQuickExportUrl(kind, exportApi), {}, ({ received, total }) => {
+        setExportStage('downloading')
+        setProgress(total && total > 0 ? received / total : 0)
+      })
       setProgress(1)
+      setExportStage('saving')
       const result = await saveExportPayload(payload, buildQuickExportFileName(kind, outputName), {
         saveFile: saveWorkbook,
         downloadBlob,
@@ -170,12 +175,14 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
       message.error('报表导出失败')
     } finally {
       setDownloading(false)
+      setExportStage('idle')
     }
   }
 
   const runConfigExport = async () => {
     setDownloading(true)
-    setProgress(0.2)
+    setProgress(0)
+    setExportStage('preparing')
     setLastExportPath('')
     setExportError('')
     try {
@@ -186,8 +193,20 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
         },
         options,
       )
-      const payload = await exportApi.exportXlsx(config)
+      const payload = await fetchExportPayload(
+        exportApi.exportXlsxUrl(),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config),
+        },
+        ({ received, total }) => {
+          setExportStage('downloading')
+          setProgress(total && total > 0 ? received / total : 0)
+        },
+      )
       setProgress(1)
+      setExportStage('saving')
       const result = await saveExportPayload(payload, outputName, {
         saveFile: saveWorkbook,
         downloadBlob,
@@ -198,6 +217,7 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
       message.error('报表导出失败')
     } finally {
       setDownloading(false)
+      setExportStage('idle')
     }
   }
 
@@ -295,7 +315,14 @@ export default function ExportReportModal({ open, onClose }: ExportReportModalPr
             关闭
           </Button>
         </div>
-        {downloading && <Progress percent={Math.round(progress * 100)} status="active" />}
+        {downloading && exportStage === 'downloading' && progress > 0 ? (
+          <Progress percent={Math.round(progress * 100)} status="active" />
+        ) : downloading ? (
+          <div className="export-report-progress-stage">
+            <Spin size="small" />
+            <span>{exportStage === 'saving' ? '正在保存报表...' : '正在生成报表，请稍候...'}</span>
+          </div>
+        ) : null}
         {lastExportPath && !downloading && (
           <div className="export-report-finished">
             <span>导出进度：</span>

@@ -10,7 +10,7 @@ from Base import Init
 from Base.CONFIG import serverConfigProperty, defectClassesProperty
 from .api_core import app
 from CoilDataBase.core import engine
-from cache import get_cache_mode
+from cache import get_cache_mode, get_cache_stats
 from CoilDataBase.Coil import get_coil, list_data_keys, get_coil_list, get_grad_list
 from CoilDataBase.tool import to_dict
 from testdata_config import get_testdata_asset_dir
@@ -35,7 +35,7 @@ async def info():
 
 
 @router.get("/runtime_info")
-async def runtime_info():
+def runtime_info():
     """
     运行环境信息：Python 版本、缓存模式、CPU/GPU 型号等，
     以及当前 3D 服务的运行模式（本地 / 开发者模式）。
@@ -61,6 +61,7 @@ async def runtime_info():
     return {
         "python_version": sys.version,
         "cache_mode": get_cache_mode(),
+        "cache_stats": get_cache_stats(),
         "cpu_model": cpu_model,
         "gpus": gpu_models,
         # 3D 后台运行模式信息，供 QML / “系统信息” 显示
@@ -83,8 +84,8 @@ def _get_grader_list_(num):
 
 
 @router.get("/grader_list")
-async def grader_list(count: int = 100):
-    return _get_grader_list_(count)
+def grader_list(count: int = 100):
+    return _get_grader_list_(min(max(int(count), 1), 1000))
 
 
 # @router.get("/defectClasses")
@@ -93,7 +94,7 @@ async def grader_list(count: int = 100):
 
 
 @router.get("/database_info")
-async def database_info():
+def database_info():
     """
     获取数据库信息。
     """
@@ -153,6 +154,13 @@ def _file_has_testdata(path_str: str, kind: str, coil_id: int) -> bool:
                     return True
         return False
 
+    if kind == "AREA_MASK":
+        for folder in ("jpg", "png"):
+            for ext in (".jpg", ".jpeg", ".png"):
+                if (base / folder / f"AREA_MASK{ext}").exists():
+                    return True
+        return False
+
     return False
 
 
@@ -166,15 +174,26 @@ def file_has(path_str: str, kind: str, coil_id: int) -> bool:
     return _file_has_testdata(path_str, kind, coil_id)
 
 
+def _surface_data_has(surface_config, coil_id: int, fast: bool) -> dict:
+    data = {
+        "JPG": file_has(surface_config.get_file(coil_id, "GRAY"), "JPG", coil_id),
+        "2D": file_has(surface_config.get_file(coil_id, "AREA"), "2D", coil_id),
+        "AREA_MASK": file_has(surface_config.get_file(coil_id, "AREA_MASK"), "AREA_MASK", coil_id),
+    }
+    if fast:
+        return data
+
+    data.update({
+        "3D": file_has(surface_config.get_3d_file(coil_id), "3D", coil_id),
+        "MESH": file_has(surface_config.get_mesh_file(coil_id), "MESH", coil_id),
+    })
+    return data
+
+
 @router.get("/data_has/{coil_id:int}")
-async def get_daa_has(coil_id: int):
+def get_daa_has(coil_id: int, fast: bool = False):
     return {
-        key: {
-            "3D": file_has(surface_config.get_3d_file(coil_id), "3D", coil_id),
-            "MESH": file_has(surface_config.get_mesh_file(coil_id), "MESH", coil_id),
-            "JPG": file_has(surface_config.get_file(coil_id, "GRAY"), "JPG", coil_id),
-            "2D": file_has(surface_config.get_file(coil_id, "AREA"), "2D", coil_id),
-        }
+        key: _surface_data_has(surface_config, coil_id, fast)
         for key, surface_config in serverConfigProperty.surfaceConfigPropertyDict.items()
     }
 

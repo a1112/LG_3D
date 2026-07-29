@@ -13,7 +13,9 @@ describe('SystemDiagnostics DetectionState websocket parity', () => {
 
   it('keeps HTTP polling only as a fallback while the websocket is not ready', () => {
     expect(systemDiagnosticsSource).toContain('enabled: !serverStateWsReady')
-    expect(systemDiagnosticsSource).toContain('refetchInterval: serverStateWsReady ? false : 1000')
+    expect(systemDiagnosticsSource).toContain('refetchInterval: serverStateWsReady ? false : 5000')
+    expect(systemDiagnosticsSource).toContain('reconnectDelayMs = Math.min(30_000, reconnectDelayMs * 2)')
+    expect(systemDiagnosticsSource).toContain('reconnectTimer = window.setTimeout(connect, delayMs)')
   })
 })
 
@@ -30,7 +32,7 @@ describe('SystemDiagnostics reDetection websocket parity', () => {
     expect(systemDiagnosticsSource).toContain('buildReDetectionWebSocketStartMessage(range, reDetectionFolder)')
     expect(systemDiagnosticsSource).toContain('socket.send(buildReDetectionWebSocketStartMessage(range, reDetectionFolder))')
     expect(systemDiagnosticsSource).toContain('enabled: !reDetectionWsReady')
-    expect(systemDiagnosticsSource).toContain('refetchInterval: reDetectionWsReady ? false : 1000')
+    expect(systemDiagnosticsSource).toContain('refetchInterval: reDetectionWsReady ? false : 5000')
   })
 
   it('mirrors QML ReDetectionView websocket close, start, and failure status transitions', () => {
@@ -38,15 +40,16 @@ describe('SystemDiagnostics reDetection websocket parity', () => {
     const openHandlerStart = systemDiagnosticsSource.indexOf('socket.onopen = () =>', reDetectionEffectStart)
     const openHandlerEnd = systemDiagnosticsSource.indexOf('socket.onmessage =', openHandlerStart)
     const openHandlerSource = systemDiagnosticsSource.slice(openHandlerStart, openHandlerEnd)
-    const closeHandlerStart = systemDiagnosticsSource.indexOf('socket.onclose = () =>', reDetectionEffectStart)
-    const closeHandlerEnd = systemDiagnosticsSource.indexOf('return () =>', closeHandlerStart)
-    const closeHandlerSource = systemDiagnosticsSource.slice(closeHandlerStart, closeHandlerEnd)
+    const reDetectionEffectEnd = systemDiagnosticsSource.indexOf('const syncMutation = useMutation', reDetectionEffectStart)
+    const reDetectionEffectSource = systemDiagnosticsSource.slice(reDetectionEffectStart, reDetectionEffectEnd)
     const mutationStart = systemDiagnosticsSource.indexOf('const reDetectionStartMutation = useMutation')
     const mutationEnd = systemDiagnosticsSource.indexOf('const refreshAll = () =>', mutationStart)
     const mutationSource = systemDiagnosticsSource.slice(mutationStart, mutationEnd)
 
     expect(openHandlerSource).toContain('setReDetectionWsStatus({})')
-    expect(closeHandlerSource).toContain("setReDetectionWsStatus({ error: '连接断开!' })")
+    expect(reDetectionEffectSource).toContain("setReDetectionWsStatus({ error: '连接断开!' })")
+    expect(reDetectionEffectSource).toContain('socket.onerror = scheduleReconnect')
+    expect(reDetectionEffectSource).toContain('socket.onclose = scheduleReconnect')
     expect(mutationSource).toContain('setReDetectionWsStatus({ running: true, progress: 0, total: 0, pending: 0 })')
     expect(mutationSource.indexOf('setReDetectionWsStatus({ running: true')).toBeLessThan(
       mutationSource.indexOf('socket.send(buildReDetectionWebSocketStartMessage'),

@@ -1,24 +1,44 @@
 import os
 from pathlib import Path
+from threading import BoundedSemaphore
 
 from PIL import Image
 
-from area_alg.YoloModelResults import YoloModelSegResults
-from area_alg.YoloSeg import SteelSegModel
-from configs.CONFIG import DEBUG
-from configs.DebugConfigs import debug_config
-from utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.area_alg.YoloModelResults import YoloModelSegResults
+from algorithm_runtime_2D.area_alg.YoloSeg import SteelSegModel
+from algorithm_runtime_2D.configs.CONFIG import DEBUG
+from algorithm_runtime_2D.configs.DebugConfigs import debug_config
+from algorithm_runtime_2D.utils.MultiprocessColorLogger import logger
 
-from property.CameraImageGrop import CameraImageGrop
-from utils.DetectionSpeedRecord import DetectionSpeedRecord
+from algorithm_runtime_2D.property.CameraImageGrop import CameraImageGrop
+from algorithm_runtime_2D.utils.DetectionSpeedRecord import DetectionSpeedRecord
 from .cv_count_tool import get_intersections, hconcat_list
 from .SaverWork import DebugSaveWork
 from .WorkBase import WorkBaseThread
-from configs.CameraConfig import CameraConfig
-from configs import CONFIG
+from algorithm_runtime_2D.configs.CameraConfig import CameraConfig
+from algorithm_runtime_2D.configs import CONFIG
 
 model = SteelSegModel()
-MIN_IMAGES_PER_CAMERA = int(os.getenv("ALG_2D_MIN_IMAGES_PER_CAMERA", "2"))
+
+
+def _min_images_per_camera() -> int:
+    try:
+        return max(int(os.getenv("ALG_2D_MIN_IMAGES_PER_CAMERA", "2")), 1)
+    except ValueError:
+        return 2
+
+
+MIN_IMAGES_PER_CAMERA = _min_images_per_camera()
+
+
+def _camera_pipeline_concurrency() -> int:
+    try:
+        return max(int(os.getenv("ALG_2D_CAMERA_PIPELINE_CONCURRENCY", "2")), 1)
+    except ValueError:
+        return 2
+
+
+CAMERA_PIPELINE_SEMAPHORE = BoundedSemaphore(_camera_pipeline_concurrency())
 
 
 def _image_sort_key(path: Path):
@@ -33,9 +53,8 @@ class CameraWork(WorkBaseThread):
     相机加载线程
     """
     def __init__(self, config):
-        super().__init__(config)
+        super().__init__(config, deduplicate=True)
         self.scale = 1
-        self.start()
         self.config:CameraConfig
 
         self.surface_key=config.surface_key
@@ -45,6 +64,7 @@ class CameraWork(WorkBaseThread):
 
         if CONFIG.DEBUG:
             self.debug_work = DebugSaveWork(self.config)
+        self.start()
 
     def opem_image(self, url):
         """
@@ -56,7 +76,8 @@ class CameraWork(WorkBaseThread):
 
         """
         try:
-            image = Image.open(url).convert("RGB")
+            with Image.open(url) as source_image:
+                image = source_image.convert("RGB")
 
             if DEBUG:
                 image=image.resize((self.config.surface_config.image_size, self.config.surface_config.image_size))
@@ -105,23 +126,23 @@ class CameraWork(WorkBaseThread):
 
     def run(self):
         self.config: CameraConfig
-        while self._run_:
-            coil_id = self.queue_in.get()
-            self.coil_id = coil_id
-            if not self.config.is_run():
-                logger.info("2D camera disabled: coil_id=%s camera=%s", coil_id, self.config.key)
-                self.set(None)
-                continue
-            folder = self.config.get_folder(coil_id)
-            images = self.get_images(folder, coil_id)
-            if not images:
-                self.set(None)
-                continue
+        while True:
+            work_request = self.get_next_work()
+            if work_request is None:
+                break
+            coil_id = self.get_work_value(work_request)
+            self.mark_started(work_request)
+            camera_image_grop = None
+            images = []
             try:
-                camera_image_grop = self.horizontal_concat(images)
-
-                # max_image.save(fr"test_{self.config.key}.jpg")
-                self.set(camera_image_grop)
+                if not self.config.is_run():
+                    logger.info("2D camera disabled: coil_id=%s camera=%s", coil_id, self.config.key)
+                else:
+                    with CAMERA_PIPELINE_SEMAPHORE:
+                        folder = self.config.get_folder(coil_id)
+                        images = self.get_images(folder, coil_id)
+                        if images:
+                            camera_image_grop = self.horizontal_concat(images, coil_id)
             except Exception as e:
                 logger.exception(
                     "2D camera horizontal concat failed: coil_id=%s camera=%s image_count=%s error=%s",
@@ -130,12 +151,20 @@ class CameraWork(WorkBaseThread):
                     len(images),
                     e,
                 )
-                self.set(None)
                 if DEBUG:
                     raise
+            finally:
+                self.set(camera_image_grop, work_request=work_request)
+                camera_image_grop = None
+                images.clear()
+                self.mark_finished(work_request)
+                self.queue_in.task_done()
+
+    def _child_workers(self):
+        return (self.debug_work,) if self.debug_work is not None else ()
 
     @DetectionSpeedRecord.timing_decorator("图像拼接 ")
-    def horizontal_concat(self,images):
+    def horizontal_concat(self, images, coil_id=None):
         """
         单行数据的拼接流程
         Args:
@@ -147,7 +176,7 @@ class CameraWork(WorkBaseThread):
 
         try:
             seg_results = model.predict(images)
-            return CameraImageGrop(self.coil_id,self.config, seg_results)
+            return CameraImageGrop(self.coil_id if coil_id is None else coil_id, self.config, seg_results)
         finally:
             for image in images:
                 try:

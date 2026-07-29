@@ -149,10 +149,6 @@ def auto_data_leveling_3d(data, mask_src):
         mask_o = np.ones(data.shape, np.uint8)
         mask = np.where(abs(mask_src)>0.5, mask_o, mask_z)
     # 过滤干扰
-    # import  cv2
-    # cv2.namedWindow("mask", 0)
-    # cv2.imshow("mask", mask*128)
-    # cv2.waitKey(0)
     # 调平来去除旋转干扰, 限制一定范围
     xx, yy, zz = [], [], []
     for i in range(0, data.shape[0], sample_inv):

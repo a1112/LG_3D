@@ -2,6 +2,7 @@
 import io
 import json
 import logging
+import os
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -9,15 +10,24 @@ from CoilDataBase.models import CoilDefect, SecondaryCoil
 
 from Base import CONFIG
 from Base.CONFIG import serverConfigProperty
+from .defect_visibility import format_defect_name, is_show_defect_class, should_export_defect
 from .export_config import ExportConfig, XlsxWriterFormatConfig
 from .export_database import get_defects, get_header_data
 from Base.tools.DataGet import DataGet, get_pil_image
 from Base.tools.tool import expansion_box
 
-
 # Per side; exported crop width/height can grow by up to 80 px.
 AREA_2D_DEFECT_CROP_MARGIN_PX = 40
 logger = logging.getLogger(__name__)
+
+try:
+    MAX_EXPORT_SOURCE_IMAGE_CACHE_ITEMS = min(
+        max(1,
+            int(os.getenv("REPORT_EXPORT_SOURCE_IMAGE_CACHE_ITEMS", "1"))),
+        8,
+    )
+except ValueError:
+    MAX_EXPORT_SOURCE_IMAGE_CACHE_ITEMS = 1
 
 
 def _defect_int(value, default=0) -> int:
@@ -27,7 +37,8 @@ def _defect_int(value, default=0) -> int:
         return default
 
 
-def _defect_box_values(defect: CoilDefect) -> tuple[int, int, int, int, int, int]:
+def _defect_box_values(
+        defect: CoilDefect) -> tuple[int, int, int, int, int, int]:
     x1 = _defect_int(getattr(defect, "defectX", 0))
     y1 = _defect_int(getattr(defect, "defectY", 0))
     w = _defect_int(getattr(defect, "defectW", 0))
@@ -75,13 +86,34 @@ def _classifier_file_names(defect: CoilDefect,
     return list(dict.fromkeys(names))
 
 
+def _classifier_lookup_margins(crop_margin: int | None) -> list[int | None]:
+    margins = []
+    if crop_margin is not None:
+        margins.append(crop_margin)
+    margins.append(None)
+    return margins
+
+
+def _classifier_glob_patterns(defect: CoilDefect,
+                              crop_margin: int | None = None) -> list[str]:
+    x1, y1, *_ = _defect_box_values(defect)
+    coil_id = getattr(defect, "secondaryCoilId", "")
+    suffix = "" if crop_margin is None else f"_m{crop_margin}"
+    return [
+        f"{coil_id}_{x1}_{y1}_*{suffix}.png",
+        f"{coil_id}_{x1}_{y1}_*{suffix}.jpg",
+        f"{coil_id}_{x1}_{y1}_*{suffix}.jpeg",
+    ]
+
+
 def _load_image_copy(image_path: Path):
     try:
         if image_path.exists() and image_path.is_file():
             with Image.open(image_path) as image:
                 return image.copy()
     except Exception as e:
-        logger.warning("[Export] failed to load saved defect image %s: %s", image_path, e)
+        logger.warning("[Export] failed to load saved defect image %s: %s",
+                       image_path, e)
     return None
 
 
@@ -141,7 +173,8 @@ def _defect_data_image_paths(defect: CoilDefect) -> list[Path]:
             if image_path.suffix.lower() not in image_suffixes:
                 continue
             if not image_path.is_absolute():
-                for config in serverConfigProperty.surfaceConfigPropertyDict.values():
+                for config in serverConfigProperty.surfaceConfigPropertyDict.values(
+                ):
                     candidate = Path(config.saveFolder) / image_path
                     if candidate not in seen_paths:
                         seen_paths.add(candidate)
@@ -158,7 +191,8 @@ def _classifier_dirs(defect: CoilDefect,
     coil_id = getattr(defect, "secondaryCoilId", "")
     surface = getattr(defect, "surface", None)
     configs = []
-    surface_config = serverConfigProperty.surfaceConfigPropertyDict.get(surface)
+    surface_config = serverConfigProperty.surfaceConfigPropertyDict.get(
+        surface)
     if surface_config:
         configs.append(surface_config)
     configs.extend(serverConfigProperty.surfaceConfigPropertyDict.values())
@@ -191,28 +225,32 @@ def get_pil_image_from_classifier_save(defect: CoilDefect,
                 if image is not None:
                     return image
 
-        x1, y1, *_ = _defect_box_values(defect)
-        coil_id = getattr(defect, "secondaryCoilId", "")
-        glob_patterns = [
-            f"{coil_id}_{x1}_{y1}_*.png",
-            f"{coil_id}_{x1}_{y1}_*.jpg",
-            f"{coil_id}_{x1}_{y1}_*.jpeg",
-        ]
+        lookup_margins = _classifier_lookup_margins(crop_margin)
         for classifier_dir in _classifier_dirs(defect, defect_name):
             if not classifier_dir.exists():
                 continue
-            for name in _classifier_file_names(defect, crop_margin):
-                image_path = classifier_dir / name
-                image = _load_image_copy(image_path)
-                if image is not None:
-                    return image
-            if crop_margin is not None:
-                continue
-            for glob_pattern in glob_patterns:
-                for image_path in sorted(classifier_dir.glob(glob_pattern)):
+
+            seen_paths = set()
+            for lookup_margin in lookup_margins:
+                for name in _classifier_file_names(defect, lookup_margin):
+                    image_path = classifier_dir / name
+                    if image_path in seen_paths:
+                        continue
+                    seen_paths.add(image_path)
                     image = _load_image_copy(image_path)
                     if image is not None:
                         return image
+
+            for lookup_margin in lookup_margins:
+                for glob_pattern in _classifier_glob_patterns(
+                        defect, lookup_margin):
+                    for image_path in sorted(classifier_dir.glob(glob_pattern)):
+                        if image_path in seen_paths:
+                            continue
+                        seen_paths.add(image_path)
+                        image = _load_image_copy(image_path)
+                        if image is not None:
+                            return image
 
         return None
 
@@ -228,13 +266,14 @@ def _crop_source_for_defect(defect: CoilDefect) -> tuple[str, str]:
 
 
 def _get_cached_source_image(defect: CoilDefect,
-                             source_image_cache: dict | None = None):
+                              source_image_cache: dict | None = None):
     if source_image_cache is None:
         source_image_cache = {}
 
     source_type, image_type = _crop_source_for_defect(defect)
-    key = (str(getattr(defect, "secondaryCoilId", "")),
-           str(getattr(defect, "surface", "")), source_type, image_type)
+    key = (str(getattr(defect, "secondaryCoilId",
+                       "")), str(getattr(defect, "surface",
+                                         "")), source_type, image_type)
     if key in source_image_cache:
         return source_image_cache[key]
 
@@ -244,6 +283,13 @@ def _get_cached_source_image(defect: CoilDefect,
                           type_=image_type)
     if image is None:
         return None
+    while len(source_image_cache) >= MAX_EXPORT_SOURCE_IMAGE_CACHE_ITEMS:
+        stale_key = next(iter(source_image_cache))
+        stale_image = source_image_cache.pop(stale_key)
+        try:
+            stale_image.close()
+        except Exception as e:
+            logger.debug("failed to close evicted export source image: %s", e)
     source_image_cache[key] = image.copy()
     return source_image_cache[key]
 
@@ -260,8 +306,7 @@ def _crop_defect_image_cached(defect: CoilDefect,
     if crop_margin is None:
         crop_box = expansion_box(box, source_image.size, 0.1, 10, 50)
     else:
-        crop_box = _expand_box_with_margin(box, source_image.size,
-                                           crop_margin)
+        crop_box = _expand_box_with_margin(box, source_image.size, crop_margin)
     return source_image.crop([
         crop_box[0],
         crop_box[1],
@@ -430,8 +475,7 @@ def export_defect_image_by_names(coil_id_list,
             if defect_filter is not None and not defect_filter(defect):
                 continue
 
-            defect_name = CONFIG.defectClassesProperty.format_name(
-                defect.defectName)
+            defect_name = format_defect_name(defect.defectName)
             if in_list:
                 if defect_name not in names:
                     continue
@@ -470,12 +514,14 @@ def export_defect_image_by_names(coil_id_list,
         image_found_count,
         len(skipped_images),
     )
-    logger.debug("[Export] Source images loaded for crop: %s", len(source_image_cache))
+    logger.debug("[Export] Source images loaded for crop: %s",
+                 len(source_image_cache))
     _close_source_image_cache(source_image_cache)
 
     # 输出跳过的图像统计
     if skipped_images:
-        logger.warning("Skipped %s defect images due to loading errors", len(skipped_images))
+        logger.warning("Skipped %s defect images due to loading errors",
+                       len(skipped_images))
         for item in skipped_images[:5]:  # 只打印前5个
             logger.warning(
                 "Skipped defect image: coil=%s defect=%s at (%s, %s)",
@@ -485,7 +531,8 @@ def export_defect_image_by_names(coil_id_list,
                 item["y"],
             )
         if len(skipped_images) > 5:
-            logger.warning("... and %s more skipped defect images", len(skipped_images) - 5)
+            logger.warning("... and %s more skipped defect images",
+                           len(skipped_images) - 5)
 
 
 def _is_2d_defect(defect: CoilDefect) -> bool:
@@ -498,18 +545,7 @@ def _is_3d_defect(defect: CoilDefect) -> bool:
 
 
 def _is_show_defect_class(defect: CoilDefect) -> bool:
-    raw_name = str(getattr(defect, "defectName", "") or "")
-    try:
-        defect_name = CONFIG.defectClassesProperty.format_name(raw_name)
-    except Exception:
-        defect_name = raw_name
-
-    defect_config = CONFIG.defectClassesProperty.data.get(defect_name)
-    if defect_config is None:
-        defect_config = CONFIG.defectClassesProperty.data.get(raw_name)
-    if defect_config is None:
-        return bool(CONFIG.defectClassesProperty.default.get("show", True))
-    return bool(defect_config.get("show", True))
+    return is_show_defect_class(defect)
 
 
 def _is_3d_show_defect(defect: CoilDefect) -> bool:
@@ -518,6 +554,12 @@ def _is_3d_show_defect(defect: CoilDefect) -> bool:
 
 def _is_3d_un_show_defect(defect: CoilDefect) -> bool:
     return _is_3d_defect(defect) and not _is_show_defect_class(defect)
+
+
+def _is_2d_export_selected_defect(defect: CoilDefect,
+                                  export_config: ExportConfig = None) -> bool:
+    return _is_2d_defect(defect) and should_export_defect(
+        defect, export_config)
 
 
 def _sheet_name(base_name: str, suffix: str) -> str:
@@ -555,11 +597,7 @@ def _load_area_image(coil_id, surface: str):
 
 
 def _defect_label(defect: CoilDefect) -> str:
-    defect_name = str(getattr(defect, "defectName", "") or "2D")
-    try:
-        defect_name = CONFIG.defectClassesProperty.format_name(defect_name)
-    except Exception:
-        pass
+    defect_name = format_defect_name(getattr(defect, "defectName", "") or "2D")
     confidence = _get_defect_number(defect, "defectSource", None)
     if confidence is not None and 0 <= confidence <= 1:
         return f"{defect_name} {confidence * 100:.1f}%"
@@ -670,8 +708,10 @@ def export_3d_defect_image(coil_id_list,
                            workbook,
                            export_config: ExportConfig = None,
                            format_=None):
-    logger.info("[Export] export_3d_defect_image called with %s coils", len(coil_id_list))
-    logger.debug("[Export] show_name_list: %s", CONFIG.defectClassesProperty.show_name_list)
+    logger.info("[Export] export_3d_defect_image called with %s coils",
+                len(coil_id_list))
+    logger.debug("[Export] show_name_list: %s",
+                 CONFIG.defectClassesProperty.show_name_list)
 
     if not export_config.defect_show_info and not export_config.defect_un_show_info:
         return
@@ -681,8 +721,7 @@ def export_3d_defect_image(coil_id_list,
             _defect_3d_sheet_name(export_config.worksheet_defect_image_name))
         export_defect_image_by_names(coil_id_list,
                                      worksheet,
-                                     export_config,
-                                     [],
+                                     export_config, [],
                                      False,
                                      format_=format_,
                                      defect_filter=_is_3d_show_defect)
@@ -693,8 +732,7 @@ def export_3d_defect_image(coil_id_list,
                 export_config.worksheet_defect_image_name))
         export_defect_image_by_names(coil_id_list,
                                      worksheet,
-                                     export_config,
-                                     [],
+                                     export_config, [],
                                      False,
                                      format_=format_,
                                      defect_filter=_is_3d_un_show_defect)
@@ -706,32 +744,34 @@ def export_area_2d_defect_image(coil_id_list,
                                 format_=None):
     worksheet = workbook.add_worksheet(
         _area_sheet_name(export_config.worksheet_defect_image_name))
-    export_defect_image_by_names(coil_id_list,
-                                 worksheet,
-                                 export_config,
-                                 [],
-                                 False,
-                                 format_=format_,
-                                 defect_filter=_is_2d_defect)
+    export_defect_image_by_names(
+        coil_id_list,
+        worksheet,
+        export_config, [],
+        False,
+        format_=format_,
+        defect_filter=lambda defect: _is_2d_export_selected_defect(
+            defect, export_config))
     return
-
 
 
 def export_defect_show_image(coil_id_list,
                              workbook,
                              export_config: ExportConfig = None,
                              format_=None):
-    logger.info("[Export] export_defect_show_image called with %s coils", len(coil_id_list))
-    logger.debug("[Export] show_name_list: %s", CONFIG.defectClassesProperty.show_name_list)
+    logger.info("[Export] export_defect_show_image called with %s coils",
+                len(coil_id_list))
+    logger.debug("[Export] show_name_list: %s",
+                 CONFIG.defectClassesProperty.show_name_list)
 
     worksheet = workbook.add_worksheet(
         _sheet_name(export_config.worksheet_defect_image_name, "_显示"))
     export_defect_image_by_names(coil_id_list,
                                  worksheet,
-                                 export_config,
-                                 CONFIG.defectClassesProperty.show_name_list,
+                                 export_config, [],
+                                 False,
                                  format_=format_,
-                                 defect_filter=_is_3d_defect)
+                                 defect_filter=_is_3d_show_defect)
 
 
 def export_defect_un_show_image(coil_id_list,
@@ -742,11 +782,10 @@ def export_defect_un_show_image(coil_id_list,
         _sheet_name(export_config.worksheet_defect_image_name, "_屏蔽"))
     export_defect_image_by_names(coil_id_list,
                                  worksheet,
-                                 export_config,
-                                 CONFIG.defectClassesProperty.show_name_list,
+                                 export_config, [],
                                  False,
                                  format_=format_,
-                                 defect_filter=_is_3d_defect)
+                                 defect_filter=_is_3d_un_show_defect)
 
 
 def insert_image_and_name(worksheet, row_num, index, text, image,

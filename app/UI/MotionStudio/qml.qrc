@@ -532,6 +532,7 @@
         <file>qml/PopupView/Export/ExportStatus.qml</file>
         <file>qml/PopupView/Export/ExportView.qml</file>
         <file>qml/PopupView/GlobalAlarm/GlobalAlarmView.qml</file>
+        <file>qml/PopupView/HardwareMonitor/HardwareMonitorView.qml</file>
         <file>qml/PopupView/HelpPop/HelpPopView.qml</file>
         <file>qml/PopupView/ListValueChange/ListValueChangeView.qml</file>
         <file>qml/PopupView/ListValueChange/ViewChangeInput.qml</file>

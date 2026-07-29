@@ -1,8 +1,8 @@
 import QtQuick 2.15
 import "../"
 Item {
-    width: 1980
-    height: 1080
+    implicitWidth: adaptive.designWidth
+    implicitHeight: adaptive.designHeight
     Rectangle {
         anchors.fill: parent
         color: coreStyle.panelBackgroundColor

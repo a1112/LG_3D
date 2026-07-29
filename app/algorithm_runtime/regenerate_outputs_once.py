@@ -24,22 +24,27 @@ logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Regenerate 3D output files for one SecondaryCoil.")
+    parser = argparse.ArgumentParser(
+        description="Regenerate 3D output files for one SecondaryCoil.")
     parser.add_argument("coil_id", type=int)
     parser.add_argument("--surface", choices=["S", "L"], action="append")
     return parser.parse_args()
 
 
-def wait_until_ready(mosaic: ImageMosaic, expected_folders: int, timeout_s: float = 60.0) -> None:
+def wait_until_ready(mosaic: ImageMosaic,
+                     expected_folders: int,
+                     timeout_s: float = 60.0) -> None:
     deadline = time.time() + timeout_s
     while time.time() < deadline:
-        if mosaic.imageSaver is not None and mosaic.d3Saver is not None and len(mosaic.dataFolderList) == expected_folders:
+        if mosaic.imageSaver is not None and mosaic.d3Saver is not None and len(
+                mosaic.dataFolderList) == expected_folders:
             return
         time.sleep(0.2)
     raise TimeoutError(f"ImageMosaic {mosaic.key} is not ready")
 
 
-def regenerate_surface(surface_config: dict, coil: SecondaryCoil, logger_process: LoggerProcess) -> dict:
+def regenerate_surface(surface_config: dict, coil: SecondaryCoil,
+                       logger_process: LoggerProcess) -> dict:
     queue: multiprocessing.Queue = multiprocessing.Queue(maxsize=100)
     logger.info("[%s] create ImageMosaic", surface_config["key"])
     mosaic = ImageMosaic(surface_config, queue, logger_process)
@@ -57,6 +62,7 @@ def regenerate_surface(surface_config: dict, coil: SecondaryCoil, logger_process
         )
         data_integration.currentSecondaryCoil = coil
         mosaic.__getAllData__(data_integration)
+        data_integration.set_original_data(data_integration.datas)
         logger.info("[%s] stitching", mosaic.key)
         mosaic.__stitching__(data_integration)
         logger.info("[%s] save files", mosaic.key)
@@ -76,12 +82,17 @@ def regenerate_surface(surface_config: dict, coil: SecondaryCoil, logger_process
         logger.info("[%s] stop ImageMosaic", surface_config["key"])
         mosaic.stop()
         mosaic.join(timeout=5)
+        queue.close()
+        queue.cancel_join_thread()
 
 
 def main() -> int:
     args = parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
-    logger.info("regenerate_outputs_once coil_id=%s surface=%s", args.coil_id, args.surface)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    logger.info("regenerate_outputs_once coil_id=%s surface=%s", args.coil_id,
+                args.surface)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
@@ -90,7 +101,8 @@ def main() -> int:
     logger_process.start()
     try:
         with Session() as session:
-            coil = session.query(SecondaryCoil).filter(SecondaryCoil.Id == args.coil_id).first()
+            coil = session.query(SecondaryCoil).filter(
+                SecondaryCoil.Id == args.coil_id).first()
             if coil is None:
                 logger.error("SecondaryCoil %s not found", args.coil_id)
                 return 2
@@ -101,7 +113,8 @@ def main() -> int:
         for surface_config in serverConfigProperty.surface:
             if surface_config["key"] not in selected:
                 continue
-            results.append(regenerate_surface(surface_config, coil, logger_process))
+            results.append(
+                regenerate_surface(surface_config, coil, logger_process))
 
         for result in results:
             logger.info("%s", result)

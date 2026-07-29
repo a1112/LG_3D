@@ -4,10 +4,10 @@ import "../../DataShow/Foot"
 
 RowBase {
     visible:auth.isAdmin
-    spacing: 15
+    spacing: adaptive.headerSpacing
     Row{
         ItemDelegateItem {
-            height: 35
+            height: adaptive.headerTabHeight
             text: "2D视图"
             onClicked: {
                 coreModel.surfaceL.rootViewIndex = 0
@@ -15,7 +15,7 @@ RowBase {
             }
         }
         ItemDelegateItem {
-            height: 35
+            height: adaptive.headerTabHeight
             text: "3D视图"
             onClicked: {
                 coreModel.surfaceL.rootViewIndex = 1
@@ -25,7 +25,7 @@ RowBase {
     }
 
     CheckRec{
-        implicitWidth: 35
+        implicitWidth: adaptive.scaleMetric(35, 30, 46)
         typeIndex:1
         checkColor: "#FFCB3D"
         text: "MASK"
@@ -34,7 +34,7 @@ RowBase {
     }
     CheckRec{
         visible: !coreModel.imageMaskChecked
-        implicitWidth: 35
+        implicitWidth: adaptive.scaleMetric(35, 30, 46)
         typeIndex:1
         checkColor: "#CB3DFF"
         text: "QUICK"
@@ -47,7 +47,7 @@ RowBase {
     }
 
     CheckRec{
-        implicitWidth: 35
+        implicitWidth: adaptive.scaleMetric(35, 30, 46)
         text: "S端"
         checked:  coreModel.surfaceS.show_visible
         onCheckedChanged: coreModel.surfaceS.show_visible = checked
@@ -55,7 +55,7 @@ RowBase {
 
 
     CheckRec{
-        implicitWidth: 35
+        implicitWidth: adaptive.scaleMetric(35, 30, 46)
         text: "L端"
         checked:  coreModel.surfaceL.show_visible
         onCheckedChanged: coreModel.surfaceL.show_visible = checked

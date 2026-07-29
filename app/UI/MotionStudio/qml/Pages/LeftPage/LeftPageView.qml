@@ -28,7 +28,7 @@ Item {
 
     SplitView {
         anchors.fill: parent
-        spacing:8
+        spacing: adaptive.mainSpacing
         orientation: Qt.Vertical
         CurrentInfo{ // 卷信息
             SplitView.fillWidth: true
@@ -59,7 +59,7 @@ Item {
 
         FootView{
             SplitView.fillWidth: true
-            SplitView.preferredHeight: 25
+            SplitView.preferredHeight: adaptive.scaleMetric(25, 22, 34)
         }
 
     }

@@ -56,6 +56,38 @@ def test_capture_watchdog_accepts_only_capall_health(monkeypatch):
     assert module.capture_service_healthy(timeout=0.1) is False
 
 
+def test_capture_watchdog_rejects_health_from_old_process(monkeypatch):
+    module = _load_watchdog()
+    monkeypatch.setattr(
+        module,
+        "urlopen",
+        lambda url, timeout: FakeResponse({
+            "ok": True,
+            "service": "CapAll",
+            "processId": 100,
+            "watchdogToken": "old",
+        }),
+    )
+
+    assert module.capture_service_healthy(
+        timeout=0.1, expected_pid=200, expected_token="new") is False
+    assert module.capture_service_healthy(
+        timeout=0.1, expected_pid=100, expected_token="old") is True
+
+
+def test_capture_watchdog_invalid_environment_values_use_safe_bounds(
+        monkeypatch):
+    monkeypatch.setenv("LG3D_CAPTURE_WATCHDOG_INTERVAL", "invalid")
+    monkeypatch.setenv("LG3D_CAPTURE_STARTUP_GRACE", "-1")
+    monkeypatch.setenv("LG3D_CAPTURE_FAILURE_THRESHOLD", "0")
+
+    module = _load_watchdog()
+
+    assert module.CHECK_INTERVAL == 5.0
+    assert module.STARTUP_GRACE == 0.1
+    assert module.FAILURE_THRESHOLD == 1
+
+
 def test_capture_watchdog_treats_connection_failure_as_unhealthy(monkeypatch):
     module = _load_watchdog()
 
@@ -65,6 +97,17 @@ def test_capture_watchdog_treats_connection_failure_as_unhealthy(monkeypatch):
     monkeypatch.setattr(module, "urlopen", connection_failed)
 
     assert module.capture_service_healthy(timeout=0.1) is False
+
+
+def test_capture_watchdog_exponential_backoff_is_capped(monkeypatch):
+    module = _load_watchdog()
+    monkeypatch.setattr(module, "RESTART_DELAY", 5.0)
+    monkeypatch.setattr(module, "RESTART_MAX_DELAY", 20.0)
+
+    assert module.restart_backoff_seconds(1) == 5.0
+    assert module.restart_backoff_seconds(2) == 10.0
+    assert module.restart_backoff_seconds(3) == 20.0
+    assert module.restart_backoff_seconds(20) == 20.0
 
 
 def test_capture_watchdog_restarts_exited_child(monkeypatch):

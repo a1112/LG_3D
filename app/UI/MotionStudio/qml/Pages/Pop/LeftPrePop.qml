@@ -14,11 +14,11 @@ Menu {
     }
     visible: isHoved
     id:root
-    x: left.width+20
-    y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
-    width:620 //col.width+20
-    height:col.height+30
-    property int body_width:width-20
+    x: left.width + adaptive.headerSideGap
+    y: Math.max(adaptive.headerSideGap, Math.min(leftCore.hoverPoint.y, leftCore.hoverPoint.y - height - adaptive.headerSideGap))
+    width: adaptive.boundedWidth(620, 460, 760)
+    height: col.height + adaptive.mainSpacing * 3
+    property int body_width: width - adaptive.mainSpacing * 2
     property CoilModel coilModel:leftCore.hovedCoilModel
 
     // onClosed:{
@@ -41,7 +41,7 @@ Menu {
             color:Material.color(Material.Blue)
             Layout.alignment:Qt.AlignHCenter
             anchors.horizontalCenter:parent.horizontalCenter
-            font.pointSize: 20
+            font.pointSize: adaptive.fontMetric(20, 16, 24)
         }
         ImageRow{
             width:parent.width
@@ -54,7 +54,7 @@ Menu {
         CoilInfo{
             width:parent.width
             Layout.fillWidth:true
-            height: 100
+            height: adaptive.scaleMetric(100, 80, 130)
             coilModel: root.coilModel
         }
         AlarmInfo{
@@ -65,7 +65,7 @@ Menu {
         TaperShapeTable{
             width:parent.width
             Layout.fillWidth:true
-            height: 120
+            height: adaptive.scaleMetric(120, 95, 155)
             coilModel: root.coilModel
         }
         // TextArea{
@@ -76,7 +76,7 @@ Menu {
             Layout.fillWidth:true
             coilModel: root.coilModel
             respectFilter: false
-            thumbnailSize: 96
+            thumbnailSize: adaptive.scaleMetric(96, 72, 120)
         }
 
     }

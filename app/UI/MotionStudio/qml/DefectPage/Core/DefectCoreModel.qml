@@ -53,7 +53,7 @@ Item {
         })
 
         tool.for_list_model(defectsModelAll, (item) => {
-            let name = item["defectName"]
+            let name = global.defectClassProperty.shared_defect_name(item["defectName"])
             if (name && counts[name] !== undefined) {
                 counts[name]++
             }
@@ -89,6 +89,7 @@ Item {
                 if (global.defectClassProperty.is_area_defect_name(value.defectName)) {
                     global.defectClassProperty.ensure_defect_class_item(value.defectName)
                 }
+                value.configDefectName = global.defectClassProperty.shared_defect_name(value.defectName)
                 root.defectsModelAll.append(value)
             }
         })

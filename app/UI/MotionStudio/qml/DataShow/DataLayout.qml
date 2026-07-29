@@ -25,14 +25,14 @@ ColumnLayout{
 
         ShowViewListView{
             visible: dataShowCore.viewRendererListView
-            implicitHeight: 100
+            implicitHeight: adaptive.scaleMetric(100, 80, 130)
             SplitView.fillWidth: true
         }
 
         MaxMinValueShow{
             id:showViewListView
             visible: dataShowCore.viewRendererMaxMinValue
-            implicitHeight: 40
+            implicitHeight: adaptive.scaleMetric(40, 34, 54)
             SplitView.fillWidth: true
         }
 

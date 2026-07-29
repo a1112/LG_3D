@@ -50,12 +50,13 @@ Item {
         property alias fliterShowBgDefect:root.fliterShowBgDefect
     }
     function nameIsShow(name){
-        return filterDict[name]
+        let sharedName = global.defectClassProperty.shared_defect_name(name)
+        return filterDict[sharedName]
     }
 
     function itemIsShow(item){
         // console.log(JSON.stringify(filterDict))
-        return nameIsShow(item["defectName"])
+        return nameIsShow(item["configDefectName"] || item["defectName"])
     }
 
 }

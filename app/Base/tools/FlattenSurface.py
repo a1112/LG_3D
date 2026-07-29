@@ -8,6 +8,24 @@ from scipy.spatial.transform import Rotation as R
 DEFAULT_MAX_PLANE_FIT_POINTS = 200_000
 
 
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _finish_debug_plot(plt, fig, name):
+    output_dir = os.getenv("LG3D_DEBUG_PLOT_DIR")
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        fig.savefig(os.path.join(output_dir, f"{name}.png"))
+    if _env_bool("LG3D_DEBUG_PLOT_SHOW", False):
+        plt.show(block=False)
+        plt.pause(0.001)
+    plt.close(fig)
+
+
 def _get_max_plane_fit_points():
     raw_value = os.getenv("ALGORITHM_3D_FLATTEN_SAMPLE_POINTS", str(DEFAULT_MAX_PLANE_FIT_POINTS))
     try:
@@ -181,6 +199,8 @@ def plot_surface(data, title="Surface"):
     """
     可视化表面
     """
+    from matplotlib import pyplot as plt
+
     x = np.arange(0, data.shape[1])
     y = np.arange(0, data.shape[0])
     X, Y = np.meshgrid(x, y)
@@ -190,7 +210,7 @@ def plot_surface(data, title="Surface"):
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(X, Y, Z, cmap='viridis')
     ax.set_title(title)
-    plt.show()
+    _finish_debug_plot(plt, fig, title)
 
 
 def flatten_surface_by_rotation(data, mask, media_z):
@@ -208,8 +228,16 @@ def flatten_surface_by_rotation(data, mask, media_z):
         total_nz = int(np.count_nonzero(data))
         mask_nz = int(np.count_nonzero(mask))
         logger.debug(
-            f"flatten_surface_by_rotation stats: shape={data.shape}, total_nz={total_nz}, mask_nz={mask_nz}, "
-            f"filtered_count={filtered_count}, range=({min_value}, {max_value}), median={media_z}")
+            "flatten_surface_by_rotation stats: shape=%s, total_nz=%s, mask_nz=%s, "
+            "filtered_count=%s, range=(%s, %s), median=%s",
+            data.shape,
+            total_nz,
+            mask_nz,
+            filtered_count,
+            min_value,
+            max_value,
+            media_z,
+        )
     if z.size == 0:
         raise ValueError("平面拟合失败：筛选后无有效点")
 
@@ -242,6 +270,8 @@ def extract_normal_distribution_z_values(data):
     提取旋转后的平面中心部分的 Z 值，并检查其是否遵循正态分布
     """
     # 获取中心区域
+    from matplotlib import pyplot as plt
+
     center_region = data[data.shape[0] // 4:data.shape[0] // 2 + data.shape[0] // 4,
                     data.shape[1] // 4:data.shape[1] // 2 + data.shape[1] // 4]
 
@@ -249,6 +279,7 @@ def extract_normal_distribution_z_values(data):
     z_values = center_region[center_region != 0]
 
     # 可视化该区域的 Z 值的直方图
+    fig = plt.figure()
     plt.hist(z_values, bins=50, density=True, alpha=0.6, color='g')
 
     # 拟合正态分布
@@ -259,6 +290,6 @@ def extract_normal_distribution_z_values(data):
     plt.plot(x, p, 'k', linewidth=2)
     title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
     plt.title(title)
-    plt.show()
+    _finish_debug_plot(plt, fig, "normal_distribution_z_values")
 
     return mu, std

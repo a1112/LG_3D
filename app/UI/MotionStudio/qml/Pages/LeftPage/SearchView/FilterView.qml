@@ -5,11 +5,11 @@ import QtQuick.Layouts
 import "../../../Labels"
 Popup {
         id: popup
-        width:350
-        height:400
+        width: adaptive.boundedWidth(350, 300, 460)
+        height: adaptive.boundedHeight(400, 320, 520)
         ColumnLayout{
                 anchors.fill:parent
-                spacing:5
+                spacing: adaptive.headerButtonGap
             TitleLabel{
                 Layout.alignment:Qt.AlignHCenter
                 text: qsTr("查询条件")
@@ -24,19 +24,19 @@ Popup {
             }
             RowLayout{
                 Layout.fillWidth:true
-                implicitHeight:40
+                implicitHeight: adaptive.scaleMetric(40, 34, 54)
 
                 Item{
                     Layout.fillWidth:true
-                     implicitHeight:40
+                     implicitHeight: adaptive.scaleMetric(40, 34, 54)
                 }
                 Button{
                     text: "   重置   "
                     Material.background: Material.color(Material.Green)
                 }
                 Item{
-                    implicitWidth:50
-                     implicitHeight:10
+                    implicitWidth: adaptive.headerLargeGap
+                     implicitHeight: adaptive.mainSpacing
                 }
                 Button{
                     text: "   确认   "

@@ -140,6 +140,17 @@ export async function hydrateConnectionSettingsFromNative(
 ): Promise<boolean> {
   const settings = await readNativeConnectionSettings(deps)
   if (settings == null) {
+    const state = useUiSettingsStore.getState()
+    applyRuntimeConnectionSettings({
+      serverIp: state.apiServerIp,
+      serverPort: state.apiServerPort,
+      databasPort: state.databasPort,
+      dataPort: state.dataPort,
+      plcPort: state.plcPort,
+      alg2dPort: state.alg2dPort,
+      useRustImageServer: state.useRustImageServer,
+      rustImageServerPort: state.rustImageServerPort,
+    })
     return false
   }
   const {

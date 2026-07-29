@@ -163,9 +163,9 @@ describe('OperationSidebar re-detection websocket parity', () => {
   })
 
   it('guards history-search selection from the realtime refresh effect while local mode catches up', () => {
-    const refreshEffectStart = operationSidebarSource.indexOf('useEffect(() => {\n    const nextList = data?.data ?? []')
-    const keepLatestEffectStart = operationSidebarSource.indexOf('useEffect(() => {\n    if (keepLatest) {')
-    const refreshEffectSource = operationSidebarSource.slice(refreshEffectStart, keepLatestEffectStart)
+    const refreshEffectStart = operationSidebarSource.indexOf('const nextList = data?.data ?? []')
+    const refreshEffectEnd = operationSidebarSource.indexOf('const remoteCoilCheck =', refreshEffectStart)
+    const refreshEffectSource = operationSidebarSource.slice(refreshEffectStart, refreshEffectEnd)
 
     expect(operationSidebarSource).toContain('const pendingHistorySelectionRef = useRef(false)')
     expect(refreshEffectSource).toContain('pendingHistorySelectionRef.current')
@@ -491,8 +491,8 @@ describe('OperationSidebar re-detection websocket parity', () => {
     expect(qmlSearchViewSource).toContain('tipText:qsTr("筛选")')
     expect(qmlSearchViewSource).toContain('fliterView.open()')
     expect(qmlFilterViewSource).toContain('Popup {')
-    expect(qmlFilterViewSource).toContain('width:350')
-    expect(qmlFilterViewSource).toContain('height:400')
+    expect(qmlFilterViewSource).toContain('width: adaptive.boundedWidth(350, 300, 460)')
+    expect(qmlFilterViewSource).toContain('height: adaptive.boundedHeight(400, 320, 520)')
     expect(qmlFilterViewSource).toContain('text: qsTr("查询条件")')
     expect(qmlFilterViewSource).toContain('Item{')
     expect(qmlFilterViewSource).toContain('Layout.fillHeight:true')
@@ -777,9 +777,9 @@ describe('OperationSidebar re-detection websocket parity', () => {
   })
 
   it('renders the QML left FootView API url, delay, and keepLatest footer', () => {
-    expect(operationSidebarSource).toContain("queryKey: ['operationSidebar', 'apiDelay']")
-    expect(operationSidebarSource).toContain('await systemApi.getDelay()')
-    expect(operationSidebarSource).toContain('const sidebarApiDelayView = buildApiDelayView(')
+    expect(operationSidebarSource).toContain('apiDelayView: ApiDelayView')
+    expect(operationSidebarSource).toContain('const sidebarApiDelayView = apiDelayView')
+    expect(operationSidebarSource).not.toContain("queryKey: ['operationSidebar', 'apiDelay']")
     expect(operationSidebarSource).toContain(
       "const sidebarApiDelayText = sidebarApiDelayView.label.startsWith('API ')",
     )
@@ -805,7 +805,9 @@ describe('OperationSidebar re-detection websocket parity', () => {
     expect(qmlFootViewSource).toContain('popManage.popupConnectDialog()')
     expect(operationSidebarSource).toContain('interface OperationSidebarProps')
     expect(operationSidebarSource).toContain('onOpenConnectSettings: () => void')
-    expect(operationSidebarSource).toContain('export default function OperationSidebar({ onOpenConnectSettings }')
+    expect(operationSidebarSource).toContain(
+      'export default function OperationSidebar({ onOpenConnectSettings, apiDelayView }',
+    )
     expect(footerSource).toContain('data-qml-footer-connect-server-url')
     expect(footerSource).toContain('type="button"')
     expect(footerSource).toContain('onClick={onOpenConnectSettings}')

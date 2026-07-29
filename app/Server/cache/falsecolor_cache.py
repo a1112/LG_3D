@@ -1,25 +1,44 @@
 import logging
+import math
+import os
 import threading
 from pathlib import Path
 from typing import Optional, Tuple
 
 import cv2
 import numpy as np
-from cachetools import TTLCache
 
 from Base.CONFIG import serverConfigProperty
 from .base import _resolve_image_path
 from .memory_cache import MemoryImageCache
 
 
+def _positive_float_env(name: str, default: float) -> float:
+    try:
+        value = float(os.getenv(name, str(default)))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return value if math.isfinite(value) and value > 0 else default
+
+
 class FalseColorCache(MemoryImageCache):
     """伪彩色图像缓存 (GRAY/JET) - 缓存缩略图加速加载"""
 
-    def __init__(self, cache_size: int = 64, ttl: int = 600,
-                 thumbnail_size: int = 1024) -> None:
-        super().__init__(cache_size=cache_size, ttl=ttl)
+    def __init__(self,
+                 cache_size: int = 64,
+                 ttl: int = 600,
+                 thumbnail_size: int = 1024,
+                 max_memory_mb: Optional[int] = None,
+                 lock_timeout: Optional[float] = None) -> None:
+        super().__init__(cache_size=cache_size,
+                         ttl=ttl,
+                         max_memory_mb=max_memory_mb)
         self.thumbnail_size = thumbnail_size
         self._lock = threading.Lock()
+        self.lock_timeout = (
+            _positive_float_env("FALSECOLOR_CACHE_LOCK_TIMEOUT", 2.0)
+            if lock_timeout is None else max(float(lock_timeout), 0.001)
+        )
 
     def _cache_dir(self, path: str, colormap: str = "JET") -> Path:
         """获取缓存目录"""
@@ -156,7 +175,18 @@ class FalseColorCache(MemoryImageCache):
         logging.debug("Cache MISS for %s, generating...", colormap_name)
 
         # 生成新的缩略图
-        with self._lock:
+        # Avoid letting one stalled cache write monopolise every render worker.
+        # A lock timeout is treated as a cache miss so the caller can render
+        # without waiting for the shared cache path.
+        if not self._lock.acquire(timeout=self.lock_timeout):
+            logging.warning(
+                "Falsecolor cache lock busy for %.3fs; skip cache generation for %s",
+                self.lock_timeout,
+                path,
+            )
+            return None, False
+
+        try:
             # 双检查，避免重复生成
             cached = self.get_thumbnail(path, colormap_name)
             if cached:
@@ -177,5 +207,7 @@ class FalseColorCache(MemoryImageCache):
                 return thumbnail, False
             else:
                 logging.warning("Failed to generate %s thumbnail for %s", colormap_name, path)
+        finally:
+            self._lock.release()
 
         return None, False

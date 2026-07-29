@@ -3,8 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 Menu {
     id:menu
-    width: 700
-    height: 500
+    width: adaptive.boundedWidth(700, 520, 900)
+    height: adaptive.boundedHeight(500, 380, 680)
     ListModel{
         id:coreCoilModel
         dynamicRoles: true
@@ -310,7 +310,7 @@ Menu {
             text: "详细信息"
             Layout.alignment: Qt.AlignHCenter
             font.bold: true
-            font.pointSize:24
+            font.pointSize: adaptive.fontMetric(24, 18, 30)
             color:Material.color(Material.Blue)
             }
 

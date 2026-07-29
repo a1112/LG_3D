@@ -1,34 +1,51 @@
 import QtQuick
-
 import QtQuick.Layouts
 
 import "Pages/Header"
 import "Pages/Pop"
+
 Item {
-    width: 1980
-    height: 1080
+    id: root
+    implicitWidth: adaptive.designWidth
+    implicitHeight: adaptive.designHeight
     anchors.fill: parent
-    id:root
+
     Rectangle {
         anchors.fill: parent
         color: coreStyle.appBackgroundColor
     }
-    ColumnLayout{
-        spacing: 10
+
+    ColumnLayout {
+        spacing: adaptive.mainSpacing
         anchors.fill: parent
-        TopHeader{      // 标题界面
+
+        TopHeader {
         }
 
-        StackLayout{
-            currentIndex : app_core.appIndex
+        StackLayout {
+            currentIndex: app_core.appIndex
             Layout.fillWidth: true
             Layout.fillHeight: true
-            DataShowRoot{}  // 主 界面
-            DefectShowRoot{} // 缺陷 界面
+
+            Loader {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                asynchronous: true
+                active: true
+                source: "DataShowRoot.qml"
+            }
+
+            Loader {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                asynchronous: true
+                active: StackLayout.isCurrentItem || status === Loader.Ready
+                source: "DefectShowRoot.qml"
+            }
         }
     }
 
-    LeftPrePop{     //   弹出 窗口
-        id:lp
+    LeftPrePop {
+        id: lp
     }
 }

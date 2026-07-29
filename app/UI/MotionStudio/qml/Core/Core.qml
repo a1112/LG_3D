@@ -35,12 +35,29 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
     }
 
     function flushListItem(){
-        let c_data = app.coreModel.currentCoilListModel.get(coilIndex)
+        let model = app.coreModel.currentCoilListModel
+        if (!model || model.count <= 0) {
+            return
+        }
+
+        let safeIndex = Math.max(0, Math.min(coilIndex, model.count - 1))
+        if (safeIndex !== coilIndex) {
+            coilIndex = safeIndex
+            return
+        }
+
+        let c_data = model.get(safeIndex)
 
         if (!c_data) {
             return
         }
-        if (c_data.SecondaryCoilId === currentCoilModel.coilId) {
+        // Coil list rows use `Id`; checking only `SecondaryCoilId` made every
+        // periodic /flush look like a coil switch.  That restarted data_has,
+        // coilInfo, point-data and heightData loads for both surfaces.
+        let nextCoilId = Number(c_data.Id !== undefined
+                                ? c_data.Id : c_data.SecondaryCoilId)
+        if (isFinite(nextCoilId) && nextCoilId > 0
+                && nextCoilId === Number(currentCoilModel.coilId)) {
             return
         }
         currentCoilModel.init(c_data)
@@ -64,11 +81,17 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
     }
 
     function setCoilIndex(index) {
-        if (coilIndex === index) {
+        let model = app.coreModel.currentCoilListModel
+        if (!model || model.count <= 0) {
+            return
+        }
+
+        let safeIndex = Math.max(0, Math.min(index, model.count - 1))
+        if (coilIndex === safeIndex) {
             flushListItem()
             return
         }
-        coilIndex = index
+        coilIndex = safeIndex
     }
 
     property var allKey:["S","L"]

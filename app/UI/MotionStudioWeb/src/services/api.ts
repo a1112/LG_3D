@@ -218,7 +218,19 @@ export function resolveImageRuntimeBaseUrl(
     return bases.apiBaseUrl
   }
 
-  return `http://${hostname}:${normalizeRuntimePort(settings.rustImageServerPort)}`
+  let configuredHostname = ''
+  for (const baseUrl of [bases.imageBaseUrl, bases.apiBaseUrl]) {
+    if (!/^https?:\/\//i.test(baseUrl)) continue
+    try {
+      configuredHostname = new URL(baseUrl).hostname
+      if (configuredHostname) break
+    } catch {
+      // Fall back to the page host for relative or malformed build-time URLs.
+    }
+  }
+
+  const runtimeHostname = normalizeRuntimeHost(configuredHostname || hostname)
+  return `http://${runtimeHostname}:${normalizeRuntimePort(settings.rustImageServerPort)}`
 }
 
 function normalizeSharedFolderBaseName(value: string | undefined): string {
@@ -1170,7 +1182,7 @@ export const heightDataApi = {
     }),
 
   getErrorImageUrl: (surfaceKey: string, coilId: number, thresholds?: Pick<CoilDataErrorParams, 'minValue' | 'maxValue'>) =>
-    joinBaseUrl(serviceBaseUrls.apiBaseUrl, buildDefaultCoilDataErrorPath(surfaceKey, coilId, thresholds)),
+    joinBaseUrl(serviceBaseUrls.imageBaseUrl, buildDefaultCoilDataErrorPath(surfaceKey, coilId, thresholds)),
 }
 
 // 点线测量数据 API
@@ -1192,7 +1204,7 @@ export const imageToolApi = {
     y: number,
     w: number,
     h: number
-  ) => joinBaseUrl(serviceBaseUrls.apiBaseUrl, buildClassifierImagePath(coilId, surfaceKey, defectName, x, y, w, h)),
+  ) => joinBaseUrl(serviceBaseUrls.imageBaseUrl, buildClassifierImagePath(coilId, surfaceKey, defectName, x, y, w, h)),
 
   clipMaxImage: (coilId: number, surfaceKey: string, saveUrl?: string) =>
     apiClient.get<unknown, unknown>(buildClipMaxImagePath(coilId, surfaceKey, saveUrl)),
@@ -1563,9 +1575,13 @@ export const exportApi = {
     joinBaseUrl(serviceBaseUrls.apiBaseUrl, buildExportXlsxByDateTimePath(start, end, exportType)),
 
   // 按配置导出
+  exportXlsxUrl: () =>
+    joinBaseUrl(serviceBaseUrls.apiBaseUrl, buildExportXlsxPath()),
+
   exportXlsx: (config: ExportXlsxConfig) =>
     apiClient.post<ArrayBuffer, ArrayBuffer>(buildExportXlsxPath(), config, {
       responseType: 'arraybuffer',
+      timeout: 10 * 60 * 1000,
     }),
 
   // 触发浏览器下载

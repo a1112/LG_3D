@@ -4,8 +4,8 @@ use std::sync::Arc;
 use anyhow::Context;
 use clap::Parser;
 use rust_api_service::{
-    ApiState, DataRuntimeConfig, MySqlCoilRepository, TestModeConfig, build_app,
-    database_url_from_env,
+    ApiState, CoilRepository, DataRuntimeConfig, DatabaseCoilRepository, InMemoryCoilRepository,
+    TestModeConfig, build_app, database_url_from_env,
 };
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -26,10 +26,17 @@ struct Cli {
     /// When no --port argument is provided, try this legacy port if primary bind fails.
     #[arg(long, default_value_t = false)]
     fallback_legacy_port: bool,
+
+    /// Start with an empty in-memory repository for local HTTP/debug checks.
+    #[arg(long, default_value_t = false)]
+    in_memory: bool,
 }
 
 fn env_flag(name: &str, fallback: bool) -> bool {
-    match std::env::var(name).ok().map(|raw| raw.trim().to_lowercase()) {
+    match std::env::var(name)
+        .ok()
+        .map(|raw| raw.trim().to_lowercase())
+    {
         Some(raw) => match raw.as_str() {
             "1" | "true" | "t" | "yes" | "y" | "on" | "enabled" | "enable" => true,
             "0" | "false" | "f" | "no" | "n" | "off" | "disabled" | "disable" => false,
@@ -40,7 +47,9 @@ fn env_flag(name: &str, fallback: bool) -> bool {
 }
 
 fn env_u16(name: &str) -> Option<u16> {
-    std::env::var(name).ok().and_then(|raw| raw.parse::<u16>().ok())
+    std::env::var(name)
+        .ok()
+        .and_then(|raw| raw.parse::<u16>().ok())
 }
 
 fn resolve_api_host(cli_host: Option<String>) -> String {
@@ -70,6 +79,15 @@ fn build_bind_ports(requested_ports: Vec<u16>, fallback_enabled: bool) -> Vec<u1
     ports
 }
 
+fn resolve_in_memory_repository(cli_in_memory: bool) -> bool {
+    cli_in_memory
+        || env_flag("RUST_API_IN_MEMORY_REPOSITORY", false)
+        || std::env::var("RUST_API_REPOSITORY")
+            .ok()
+            .map(|value| value.trim().eq_ignore_ascii_case("memory"))
+            .unwrap_or(false)
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -81,8 +99,13 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cli = Cli::parse();
-    let database_url = database_url_from_env()?;
-    let repository = Arc::new(MySqlCoilRepository::connect(&database_url).await?);
+    let repository: Arc<dyn CoilRepository> = if resolve_in_memory_repository(cli.in_memory) {
+        info!("rust api service using in-memory repository for local debug");
+        Arc::new(InMemoryCoilRepository::new())
+    } else {
+        let database_url = database_url_from_env()?;
+        Arc::new(DatabaseCoilRepository::connect(&database_url).await?)
+    };
     let mut state = ApiState::new(repository).with_test_mode(TestModeConfig::from_env());
     if let Some(data_config) = DataRuntimeConfig::load_default() {
         state = state.with_data_config(data_config);
@@ -186,9 +209,12 @@ mod tests {
         with_env_vars(&[("RUST_API_FALLBACK_LEGACY_PORT", Some("off"))], || {
             assert!(!env_flag("RUST_API_FALLBACK_LEGACY_PORT", true));
         });
-        with_env_vars(&[("RUST_API_FALLBACK_LEGACY_PORT", Some("nonsense"))], || {
-            assert!(!env_flag("RUST_API_FALLBACK_LEGACY_PORT", false));
-        });
+        with_env_vars(
+            &[("RUST_API_FALLBACK_LEGACY_PORT", Some("nonsense"))],
+            || {
+                assert!(!env_flag("RUST_API_FALLBACK_LEGACY_PORT", false));
+            },
+        );
         with_env_vars(&[("RUST_API_FALLBACK_LEGACY_PORT", None)], || {
             assert!(env_flag("RUST_API_FALLBACK_LEGACY_PORT", true));
             assert!(!env_flag("RUST_API_FALLBACK_LEGACY_PORT", false));
@@ -203,14 +229,8 @@ mod tests {
                 ("API_SERVICE_HOST", Some("legacy-host")),
             ],
             || {
-                assert_eq!(
-                    resolve_api_host(Some("cli-host".to_string())),
-                    "cli-host"
-                );
-                assert_eq!(
-                    resolve_api_host(None),
-                    "env-api-host"
-                );
+                assert_eq!(resolve_api_host(Some("cli-host".to_string())), "cli-host");
+                assert_eq!(resolve_api_host(None), "env-api-host");
             },
         );
 
@@ -228,10 +248,7 @@ mod tests {
     #[test]
     fn build_bind_ports_respects_fallback_and_duplicates() {
         with_env_vars(&[("RUST_API_LEGACY_PORT", Some("6010"))], || {
-            assert_eq!(
-                build_bind_ports(vec![5011], false),
-                vec![5011]
-            );
+            assert_eq!(build_bind_ports(vec![5011], false), vec![5011]);
             assert_eq!(build_bind_ports(vec![5011], true), vec![5011, 6010]);
             assert_eq!(build_bind_ports(vec![6010], true), vec![6010]);
             assert_eq!(
@@ -243,5 +260,39 @@ mod tests {
         with_env_vars(&[("RUST_API_LEGACY_PORT", None)], || {
             assert_eq!(build_bind_ports(vec![5011], true), vec![5011, 5010]);
         });
+    }
+
+    #[test]
+    fn resolve_in_memory_repository_prefers_cli_and_env_flags() {
+        with_env_vars(
+            &[
+                ("RUST_API_IN_MEMORY_REPOSITORY", None),
+                ("RUST_API_REPOSITORY", None),
+            ],
+            || {
+                assert!(resolve_in_memory_repository(true));
+                assert!(!resolve_in_memory_repository(false));
+            },
+        );
+
+        with_env_vars(
+            &[
+                ("RUST_API_IN_MEMORY_REPOSITORY", Some("1")),
+                ("RUST_API_REPOSITORY", None),
+            ],
+            || {
+                assert!(resolve_in_memory_repository(false));
+            },
+        );
+
+        with_env_vars(
+            &[
+                ("RUST_API_IN_MEMORY_REPOSITORY", None),
+                ("RUST_API_REPOSITORY", Some("memory")),
+            ],
+            || {
+                assert!(resolve_in_memory_repository(false));
+            },
+        );
     }
 }

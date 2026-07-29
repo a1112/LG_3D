@@ -3,8 +3,8 @@ import "../Base"
 
 import QtQuick.Layouts
 PopupBase {
-    width:600
-    height:400
+    width: adaptive.boundedWidth(600, 420, 760)
+    height: adaptive.boundedHeight(400, 300, 560)
     anchors.centerIn:parent
     Item{
         anchors.fill:parent

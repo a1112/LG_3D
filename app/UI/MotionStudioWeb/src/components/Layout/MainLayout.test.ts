@@ -13,6 +13,17 @@ beforeAll(async () => {
   mainLayoutCss = readFileSync(new URL('./MainLayout.css', import.meta.url), 'utf8')
 })
 
+describe('MainLayout request sharing', () => {
+  it('shares delay and alarm queries with child views instead of polling duplicate keys', () => {
+    expect(mainLayoutSource).toContain('apiDelayView={apiDelayView}')
+    expect(mainLayoutSource).toContain("queryKey: ['globalAlarm', 'cameraAlarm']")
+    expect(mainLayoutSource).toContain("queryKey: ['globalAlarm', 'hardware']")
+    expect(mainLayoutSource).toContain('refetchInterval: globalAlarmOpen ? false : 10_000')
+    expect(mainLayoutSource).not.toContain("['globalAlarm', 'cameraAlarm', 'summary']")
+    expect(mainLayoutSource).not.toContain("['globalAlarm', 'hardware', 'summary']")
+  })
+})
+
 describe('MainLayout QML chrome parity', () => {
   it('mirrors QML mainMenuButton before TopIcon and TopTabBar', () => {
     const mainMenuButtonStart = mainLayoutSource.indexOf('data-qml-main-menu-button')
@@ -312,7 +323,8 @@ describe('MainLayout QML chrome parity', () => {
 
     expect(mainLayoutSource).toContain("import ConnectSettingsModal from '@/components/ConnectSettingsModal'")
     expect(mainLayoutSource).toContain('const [connectSettingsOpen, setConnectSettingsOpen] = useState(false)')
-    expect(mainLayoutSource).toContain('<OperationSidebar onOpenConnectSettings={() => setConnectSettingsOpen(true)} />')
+    expect(mainLayoutSource).toContain('apiDelayView={apiDelayView}')
+    expect(mainLayoutSource).toContain('onOpenConnectSettings={() => setConnectSettingsOpen(true)}')
     expect(statusbarSource).toContain('data-qml-foot-view')
     expect(statusbarSource).toContain('data-qml-connect-server-url')
     expect(statusbarSource).toContain('onClick={() => setConnectSettingsOpen(true)}')

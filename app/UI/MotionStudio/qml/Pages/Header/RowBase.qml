@@ -1,5 +1,5 @@
 import QtQuick
 
 Row {
-    height:30
+    height: coreStyle.topHeight
 }
