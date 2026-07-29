@@ -7,6 +7,11 @@ CardBase {
     id:root
     required property var alarmInfo
     required property var apiClient
+    required property var style
+    required property var authManager
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
     property string global_key: ""
     property bool showMore: false
     height: coll.height

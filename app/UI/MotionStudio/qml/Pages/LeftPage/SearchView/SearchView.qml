@@ -12,6 +12,10 @@ CardBase{
     required property var adaptiveMetrics
     required property var style
     required property var leftController
+    required property var authManager
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
 
     title: qsTr("     查询      ")
     max_height: 95

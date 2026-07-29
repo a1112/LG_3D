@@ -29,7 +29,12 @@ Loader{
             apiClient: root.apiClient
         }    // 2D 显示
 
-        MaskToolView{}// 功能菜单
+        MaskToolView{
+            controller: root.dataShowCore
+            modelStore: root.modelStore
+            surfaceData: root.surfaceData
+            style: root.style
+        }// 功能菜单
     }
 
 }

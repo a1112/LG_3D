@@ -365,6 +365,9 @@ DataShowItemBase{
     ChartHead{
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
+        controller: root.controller
+        chartController: root.coreCharts
+        style: root.style
     }
     Item{
 

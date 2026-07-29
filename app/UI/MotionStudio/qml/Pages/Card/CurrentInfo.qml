@@ -2,14 +2,25 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtGraphs
 import "../../Base"
 import "../../Comp/Card"
 CardBase {
-    id:root
+    id: root
+
+    required property var coreController
+    required property var popupManager
+    required property var toolService
+    required property var style
+    required property var authManager
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
+
+    readonly property var currentCoil: root.coreController.currentCoilModel
+
     Layout.fillWidth: true
     max_height:165//col.height+10
-    title:  core.currentCoilModel.coilNo        //"当前卷信息"
+    title: root.currentCoil.coilNo
     // content_head_tool:ColorImageButton{
     //     source: "../icons/defectInfo.png"
     //     width: 30
@@ -35,44 +46,44 @@ CardBase {
             Layout.fillHeight: true
             FlowRowItem{
                 title:qsTr("流水号")
-                value:core.currentCoilModel["coilId"]
+                value: root.currentCoil.coilId
                 valueColor:Material.color(Material.Green)
             }
             FlowRowItem{
                 title:qsTr("去向")
-                value:core.currentCoilModel.nextInfo
+                value: root.currentCoil.nextInfo
             }
             FlowRowItem{
                 title:qsTr("卷号 ")
-                value:core.currentCoilModel.coilNo
+                value: root.currentCoil.coilNo
             }
             FlowRowItem{
                 title:qsTr("钢种 ")
-                value:core.currentCoilModel.coilType
+                value: root.currentCoil.coilType
             }
             FlowRowItem{
                 title:qsTr("外径 ")
-                value:core.currentCoilModel.coilDia
+                value: root.currentCoil.coilDia
             }
             FlowRowItem{
                 title:qsTr("内径 ")
-                value:core.currentCoilModel.coilInside
+                value: root.currentCoil.coilInside
             }
             FlowRowItem{
                 title:qsTr("卷宽 ")
-                value:core.currentCoilModel.coilWidth
+                value: root.currentCoil.coilWidth
             }
             FlowRowItem{
                 title:qsTr("卷厚 ")
-                value:core.currentCoilModel.coilThickness
+                value: root.currentCoil.coilThickness
             }
             FlowRowItem{
                 title:qsTr("日期 ")
-                value:core.currentCoilModel.coilDetectionTime.dataString
+                value: root.currentCoil.coilDetectionTime.dataString
             }
             FlowRowItem{
                 title:qsTr("时间 ")
-                value:core.currentCoilModel.coilDetectionTime.timeString
+                value: root.currentCoil.coilDetectionTime.timeString
             }
         }
     }
@@ -87,7 +98,7 @@ CardBase {
         id:menu
         MenuItem{
             text:qsTr("更多信息...")
-            onClicked:{popManage.popupMsgPopView()}
+            onClicked: root.popupManager.popupMsgPopView()
         }
     }
 
@@ -97,7 +108,9 @@ CardBase {
         font.pointSize:11
         anchors.right:parent.right
         anchors.top:parent.top
-        text:tool.getDelTimeStr(core.nowTime,core.currentCoilModel.coilCreateTime.dateTime)
+        text: root.toolService.getDelTimeStr(
+                  root.coreController.nowTime,
+                  root.currentCoil.coilCreateTime.dateTime)
     }
 
 }

@@ -10,17 +10,17 @@ Item {
     id:root
     width:root.width
     property var coilModel
-    visible: coilModel !== undefined && coilModel.coilId !== undefined
+    visible: root.coilModel !== undefined && root.coilModel.coilId !== undefined
         Flow{
             anchors.fill: parent
             FlowRowItem{
                 title:"流水号"
-                value:coilModel ? coilModel.coilId || "" : ""
+                value: root.coilModel ? root.coilModel.coilId || "" : ""
                 valueColor:Material.color(Material.Green)
             }
             FlowRowItem{
                 title:"去向"
-                value:coilModel ? coilModel.nextInfo || "" : ""
+                value: root.coilModel ? root.coilModel.nextInfo || "" : ""
             }
             // FlowRowItem{
             //     title:"卷号 "
@@ -28,31 +28,33 @@ Item {
             // }
             FlowRowItem{
                 title:"钢种 "
-                value:coilModel ? coilModel.coilType || "" : ""
+                value: root.coilModel ? root.coilModel.coilType || "" : ""
             }
             FlowRowItem{
                 title:"外径 "
-                value:coilModel ? coilModel.coilDia || "" : ""
+                value: root.coilModel ? root.coilModel.coilDia || "" : ""
             }
             FlowRowItem{
                 title:"内径 "
-                value:coilModel ? coilModel.coilInside || "" : ""
+                value: root.coilModel ? root.coilModel.coilInside || "" : ""
             }
             FlowRowItem{
                 title:"卷宽 "
-                value:coilModel ? coilModel.coilWidth || "" : ""
+                value: root.coilModel ? root.coilModel.coilWidth || "" : ""
             }
             FlowRowItem{
                 title:"卷厚 "
-                value:coilModel ? coilModel.coilThickness || "" : ""
+                value: root.coilModel ? root.coilModel.coilThickness || "" : ""
             }
             FlowRowItem{
                 title:"日期 "
-                value:coilModel && coilModel.coilCreateTime ? coilModel.coilCreateTime.dataString || "" : ""
+                value: root.coilModel && root.coilModel.coilCreateTime
+                       ? root.coilModel.coilCreateTime.dataString || "" : ""
             }
             FlowRowItem{
                 title:"时间 "
-                value:coilModel && coilModel.coilCreateTime ? coilModel.coilCreateTime.timeString || "" : ""
+                value: root.coilModel && root.coilModel.coilCreateTime
+                       ? root.coilModel.coilCreateTime.timeString || "" : ""
             }
         }
     }

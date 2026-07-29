@@ -5,6 +5,9 @@ import "../Comps"
 import "ViewTool"
 Item {
     id:root
+
+    required property var dataAreaShowCore
+
     anchors.fill: parent
 
 
@@ -12,10 +15,10 @@ Item {
         id:flick
         clip: true
         anchors.fill: parent
-        contentWidth: dataAreaShowCore.canvasContentWidth
-        contentHeight: dataAreaShowCore.canvasContentHeight
+        contentWidth: root.dataAreaShowCore.canvasContentWidth
+        contentHeight: root.dataAreaShowCore.canvasContentHeight
         Component.onCompleted: {
-            dataAreaShowCore.flick = this
+            root.dataAreaShowCore.flick = this
         }
         ScrollBar.vertical: ScrollBar {
             id:scrollBarV
@@ -25,8 +28,8 @@ Item {
         }
         Item{
             id:canvas
-            width: dataAreaShowCore.canvasContentWidth
-            height: dataAreaShowCore.canvasContentHeight
+            width: root.dataAreaShowCore.canvasContentWidth
+            height: root.dataAreaShowCore.canvasContentHeight
 
             ImageView{}
 
@@ -40,7 +43,7 @@ Item {
     }
 
     AerialView{// 鸟亏图
-        source: dataAreaShowCore.pre_source  // 缩略图像
+        source: root.dataAreaShowCore.pre_source  // 缩略图像
         y:root.height - height-scrollBarH.height
     }
 

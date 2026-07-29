@@ -10,6 +10,8 @@ Menu {
     required property var adaptiveMetrics
     required property var style
     required property var hoverController
+    required property var modelStore
+    required property var toolService
 
     property bool isHoved: root.hoverController.isHoved
     onIsHovedChanged: {
@@ -57,10 +59,15 @@ Menu {
         ImageRow{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
+            style: root.style
         }
         AreaRow{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
+            modelStore: root.modelStore
+            style: root.style
         }
         CoilInfo{
             width:parent.width
@@ -71,6 +78,7 @@ Menu {
         AlarmInfo{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
         }
         // 塔形数据表格（显示所有数据）
         TaperShapeTable{
@@ -89,6 +97,8 @@ Menu {
             coilModel: root.coilModel
             respectFilter: false
             thumbnailSize: root.adaptiveMetrics.scaleMetric(96, 72, 120)
+            toolService: root.toolService
+            filterController: root.hoverController
         }
 
     }

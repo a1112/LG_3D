@@ -1,77 +1,53 @@
 import QtQuick.Controls
 import "../../../Controls/Menu"
 Menu {
-    title: "显示"
+    id: root
 
+    required property var controller
+    required property var surfaceData
+    required property var defectClassController
 
-    Menu{
-        title:"塔形标注"
-        Menu{
-            title:"显示类型"
-            MenuItem{
-                text:"外塔 + 溢出"
-            }
-            MenuItem{
-                text:"外塔 - 溢出"
-            }
-            MenuItem{
-                text:"内塔 + 溢出"
-            }
-            MenuItem{
-                text:"内塔 - 溢出"
-            }
-        }
-        Menu{
-            title:"显示密度"
-            MenuItem{
-                text:"自动"
-            }
-            MenuItem{
-                text:"低密度 12 点"
-            }
-
-            MenuItem{
-                text:"高密度 72 点"
-            }
-
-        }
-
-
-    }
+    title: qsTr("显示")
 
     Menu{
         title: "缺陷显示"
         Menu{
-            title : "缺陷标签"
+            title : qsTr("缺陷标签")
                 SelectMenuItem{
-                    text: "显示"
-                    selectd:global.defectClassProperty.defeftDrawShowLasbel
-                    onClicked:global.defectClassProperty.defeftDrawShowLasbel=true
+                    text: qsTr("显示")
+                    selectd: root.defectClassController.defeftDrawShowLasbel
+                    onClicked: root.defectClassController.defeftDrawShowLasbel = true
                 }
                 SelectMenuItem{
-                    text: "隐藏"
-                     selectd:!global.defectClassProperty.defeftDrawShowLasbel
-                    onClicked:global.defectClassProperty.defeftDrawShowLasbel=false
+                    text: qsTr("隐藏")
+                    selectd: !root.defectClassController.defeftDrawShowLasbel
+                    onClicked: root.defectClassController.defeftDrawShowLasbel = false
                 }
         }
     }
 
     Menu{
-        title:"深度显示"
+        title: qsTr("深度显示")
         SelectMenuItem{
-            text:"mm 相对值"
-            selectd:surfaceData.currentPointValueShowType== surfaceData.mm_pointValueShowType
-            onClicked:surfaceData.currentPointValueShowType= surfaceData.mm_pointValueShowType
+            text: qsTr("mm 相对值")
+            selectd: root.surfaceData.currentPointValueShowType
+                     === root.surfaceData.mm_pointValueShowType
+            onClicked: root.surfaceData.currentPointValueShowType =
+                       root.surfaceData.mm_pointValueShowType
         }
         SelectMenuItem{
-            text:"mm 绝对值"
-             selectd:surfaceData.currentPointValueShowType== surfaceData.mm_int_pointValueShowType
-             onClicked:surfaceData.currentPointValueShowType= surfaceData.mm_int_pointValueShowType
+            text: qsTr("mm 绝对值")
+            selectd: root.surfaceData.currentPointValueShowType
+                     === root.surfaceData.mm_int_pointValueShowType
+            onClicked: root.surfaceData.currentPointValueShowType =
+                       root.surfaceData.mm_int_pointValueShowType
         }
         SelectMenuItem{
-            text:"int 原始值"
-             selectd:surfaceData.currentPointValueShowType== surfaceData.int_pointValueShowType
-             onClicked:surfaceData.currentPointValueShowType= surfaceData.int_pointValueShowType
+            text: qsTr("int 原始值")
+            selectd: root.surfaceData.currentPointValueShowType
+                     === root.surfaceData.int_pointValueShowType
+            onClicked: root.surfaceData.currentPointValueShowType =
+                       root.surfaceData.int_pointValueShowType
         }
     }
 

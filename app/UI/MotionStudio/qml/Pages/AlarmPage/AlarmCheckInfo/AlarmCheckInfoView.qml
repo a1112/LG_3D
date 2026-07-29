@@ -7,23 +7,54 @@ import "../../../Pages/Header"
 import "../../../Core/JsonUtils.js" as JsonUtils
 CardBase {
     id: root
+
+    required property var style
+    required property var authManager
+    required property var apiClient
+    required property var coreController
+    required property var leftController
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
+
+    readonly property var currentCoil: root.coreController.currentCoilModel
+
     height: 70
-    title: "判级"
+    title: qsTr("判级")
     max_height: 70 + ta.implicitHeight
     property int currentPortInt: 0
     property int statusRequestGeneration: 0
+    property int statusWriteGeneration: 0
 
-    function setCurrentPortInt(currentPortInt_){
-        currentPortInt = currentPortInt_
-        coreControl.setCoilStatus(core.currentCoilModel.coilId, currentPortInt_, ta.text,
-                                  (text)=>{
+    function setCurrentPortInt(nextStatus) {
+        const requestedCoilId = root.coilId
+        if (requestedCoilId <= 0) {
+            return
+        }
+        const previousStatus = root.currentPortInt
+        const previousMessage = root.currentCoil.coilCheck.msg
+        const nextMessage = ta.text
+        const generation = ++root.statusWriteGeneration
 
-                                       },(err)=>{
-                                  }
-                                  )
-        core.currentCoilModel.coilCheck.status = currentPortInt_
-        core.currentCoilModel.coilCheck.msg = ta.text
-
+        root.currentPortInt = nextStatus
+        root.currentCoil.coilCheck.status = nextStatus
+        root.currentCoil.coilCheck.msg = nextMessage
+        root.apiClient.setCoilStatus(
+            requestedCoilId,
+            nextStatus,
+            nextMessage,
+            function() {},
+            function(error) {
+                if (generation !== root.statusWriteGeneration
+                        || requestedCoilId !== root.coilId) {
+                    return
+                }
+                root.currentPortInt = previousStatus
+                root.currentCoil.coilCheck.status = previousStatus
+                root.currentCoil.coilCheck.msg = previousMessage
+                ta.text = previousMessage
+                console.warn("coil status update failed:", error)
+            })
     }
     // Timer{
     //     interval:120
@@ -33,10 +64,11 @@ CardBase {
     //     ta.text = core.currentCoilModel.coilCheck.msg
     // }
     // }
-    readonly property int coilId: core.currentCoilModel
-                                  ? Number(core.currentCoilModel.coilId || 0) : 0
+    readonly property int coilId: root.currentCoil
+                                  ? Number(root.currentCoil.coilId || 0) : 0
     onCoilIdChanged: {
         root.statusRequestGeneration += 1
+        root.statusWriteGeneration += 1
         let generation = root.statusRequestGeneration
         let requestedCoilId = root.coilId
         if (requestedCoilId <= 0) {
@@ -44,7 +76,7 @@ CardBase {
             ta.text = ""
             return
         }
-        api.getCoilStatus(requestedCoilId,
+        root.apiClient.getCoilStatus(requestedCoilId,
                           (text)=>{
                               if (generation !== root.statusRequestGeneration
                                       || requestedCoilId !== root.coilId) {
@@ -57,8 +89,8 @@ CardBase {
                                 ta.text =  data["msg"]
                                 root.currentPortInt = data["status"]
 
-                              core.currentCoilModel.coilCheck.status = currentPortInt
-                              core.currentCoilModel.coilCheck.msg = ta.text
+                              root.currentCoil.coilCheck.status = root.currentPortInt
+                              root.currentCoil.coilCheck.msg = ta.text
 
                           }
 
@@ -87,7 +119,7 @@ CardBase {
                     fillWidth: true
                     text : "返修"
                     color: root.currentPortInt == 2
-                           ? coreStyle.statusErrorColor : coreStyle.textColor
+                           ? root.style.statusErrorColor : root.style.textColor
                     checkColor: root.currentPortInt == 2?color:"#00000000"
                     onClicked:{
                         root.setCurrentPortInt(2)
@@ -102,7 +134,7 @@ CardBase {
                     fillWidth: true
                     text : "未确认"
                     color: root.currentPortInt == 0
-                           ? coreStyle.statusWarningColor : coreStyle.textColor
+                           ? root.style.statusWarningColor : root.style.textColor
                     checkColor: root.currentPortInt == 0?color:"#00000000"
                     onClicked:{
                         root.setCurrentPortInt(0)
@@ -117,7 +149,7 @@ CardBase {
                     fillWidth: true
                     text : "通过"
                     color: root.currentPortInt == 1
-                           ? coreStyle.statusSuccessColor : coreStyle.textColor
+                           ? root.style.statusSuccessColor : root.style.textColor
                     checkColor: root.currentPortInt == 1?color:"#00000000"
                     onClicked:{
                          root.setCurrentPortInt(1)
@@ -141,6 +173,6 @@ CardBase {
 
     CheckLabel{
         anchors.right:parent.right
-
+        statsController: root.leftController
     }
 }

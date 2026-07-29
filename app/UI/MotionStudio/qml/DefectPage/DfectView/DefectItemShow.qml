@@ -7,6 +7,8 @@ Item {
 
     required property int index
     required property var model
+    required property var style
+    required property var menuController
 
     property DefectItemModel defectItem: DefectItemModel {}
     readonly property bool hovered: hoverHandler.hovered
@@ -29,10 +31,10 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 6
-        radius: coreStyle.controlRadius
-        color: coreStyle.panelElevatedColor
+        radius: root.style.controlRadius
+        color: root.style.panelElevatedColor
         border.width: root.hovered ? 2 : 1
-        border.color: root.hovered ? coreStyle.accentColor : coreStyle.headerBorderColor
+        border.color: root.hovered ? root.style.accentColor : root.style.headerBorderColor
 
         Image {
             id: defectImage
@@ -49,7 +51,7 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: defectCaption.implicitHeight + 12
-            color: coreStyle.headerBackgroundColor
+            color: root.style.headerBackgroundColor
             opacity: 0.94
 
             Row {
@@ -68,7 +70,7 @@ Item {
                 }
                 Label {
                     text: root.defectItem.surface + " · ID " + root.defectItem.coilId
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     font.pixelSize: 11
                 }
             }
@@ -100,8 +102,8 @@ Item {
     TapHandler {
         acceptedButtons: Qt.RightButton
         onTapped: {
-            defectDataViewMenu.defectItem = root.defectItem
-            defectDataViewMenu.popup()
+            root.menuController.defectItem = root.defectItem
+            root.menuController.popup()
         }
     }
 }

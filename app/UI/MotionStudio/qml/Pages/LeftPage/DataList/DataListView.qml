@@ -14,6 +14,7 @@ Item{
     required property var modelController
     required property var leftController
     required property var popupManager
+    required property var apiClient
 
     SplitView.fillWidth: true
     SplitView.fillHeight: true
@@ -25,6 +26,13 @@ Item{
         anchors.fill: parent
 
         HeadView{
+            style: root.style
+            coreController: root.coreController
+            modelController: root.modelController
+            leftController: root.leftController
+            popupManager: root.popupManager
+            apiClient: root.apiClient
+            showFilterIcon: root.showFilterIcon
         }
 
         ListTitleView{}  // 列表头

@@ -20,7 +20,6 @@
         <file>qml/AppCore.qml</file>
         <file>qml/Base/BackSvg.qml</file>
         <file>qml/Base/BaseImage.qml</file>
-        <file>qml/Base/BorderToolItem.qml</file>
         <file>qml/Base/ButtonBase.qml</file>
         <file>qml/Base/CheckBoxBase.qml</file>
         <file>qml/Base/CheckRec.qml</file>
@@ -36,7 +35,6 @@
         <file>qml/Base/LabelBase.qml</file>
         <file>qml/Base/MenuItemBase.qml</file>
         <file>qml/Base/MsgBgBase.qml</file>
-        <file>qml/Base/MsgView.qml</file>
         <file>qml/Base/PaneBase.qml</file>
         <file>qml/Base/RadioButtonBase.qml</file>
         <file>qml/Base/RadioDelegateBase.qml</file>
@@ -79,16 +77,11 @@
         <file>qml/btns/ToolsButton.qml</file>
         <file>qml/btns/WindowModelChangeButton.qml</file>
         <file>qml/Comp/Card/CardBase.qml</file>
-        <file>qml/Comp/CrossView/CrossView.qml</file>
-        <file>qml/Comp/CrossView/DashHLine.qml</file>
-        <file>qml/Comp/CrossView/DashVLine.qml</file>
         <file>qml/Comp/DefecShowItemItem.qml</file>
-        <file>qml/Comp/DefectItemList/DefectItemListView.qml</file>
         <file>qml/Comp/DefectRecView.qml</file>
         <file>qml/Comp/Images/AnimAlarm2.qml</file>
         <file>qml/Comp/LabelFootInfoKey.qml</file>
         <file>qml/Comp/MaxImageComp.qml</file>
-        <file>qml/Comp/SimpleList/HeadView.qml</file>
         <file>qml/Comp/SimpleList/HistoryBaseTextItem.qml</file>
         <file>qml/Comp/SimpleList/HistoryHeadItem.qml</file>
         <file>qml/Comp/SimpleList/HistoryTextItem.qml</file>
@@ -194,9 +187,6 @@
         <file>qml/DataShow/DataHeader/DataShowItem/ShowCharts/CoreCharts.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDataInfo/EllipseDraw.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDataInfo/EllipseShow.qml</file>
-        <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/CheckButton.qml</file>
-        <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/CheckButtonNo.qml</file>
-        <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/CheckButtonOk.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/CropDefectShow.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/DefectInfos.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/DefectLabelShowItem.qml</file>
@@ -206,39 +196,14 @@
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/DefectShowHead.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/RowItemView.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/ShowDefectList.qml</file>
-        <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/ShowDefectNames.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/ShowDefectNamesRow.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/ShowDefectView.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItem/ShowDefects/ShowTools.qml</file>
         <file>qml/DataShow/DataHeader/DataShowItemSelectView.qml</file>
         <file>qml/DataShow/DataLayout.qml</file>
         <file>qml/DataShow/DataShowLabels/Base/KeyLabel.qml</file>
-        <file>qml/DataShow/DataShowLabels/Base/RowInputItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/Base/RowLabelShow.qml</file>
-        <file>qml/DataShow/DataShowLabels/Base/RowSpinBoxItem.qml</file>
         <file>qml/DataShow/DataShowLabels/Base/TitleLabel.qml</file>
         <file>qml/DataShow/DataShowLabels/Base/ValueLabel.qml</file>
-        <file>qml/DataShow/DataShowLabels/BdConfigItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/CoilCetItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/CoilMourceItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/CoilSizeItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/DataShowLabelsView.qml</file>
-        <file>qml/DataShow/DataShowLabels/Defect/DataShowDefectItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/Defect/FlowRec.qml</file>
-        <file>qml/DataShow/DataShowLabels/Defect/FlowRowItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/DefectClassFlow/DefectClassFlow.qml</file>
-        <file>qml/DataShow/DataShowLabels/FlatRollLabel.qml</file>
-        <file>qml/DataShow/DataShowLabels/HeadItem.qml</file>
-        <file>qml/DataShow/DataShowLabels/Page__Adjust.qml</file>
-        <file>qml/DataShow/DataShowLabels/Page__Defects.qml</file>
-        <file>qml/DataShow/DataShowLabels/PedalView.qml</file>
-        <file>qml/DataShow/DataShowLabels/RenderSetting.qml</file>
-        <file>qml/DataShow/DataShowLabels/ValueLabel.qml</file>
-        <file>qml/DataShow/DataShowLabels/W_bj.qml</file>
-        <file>qml/DataShow/DataShowLabels/WarningInfo.qml</file>
-        <file>qml/DataShow/DataShowLabels/WarningLine.qml</file>
-        <file>qml/DataShow/DataShowLabels/XYZ_List.qml</file>
-        <file>qml/DataShow/DataShowLabels/XYZShow.qml</file>
         <file>qml/DataShow/DataShowLayout.qml</file>
         <file>qml/DataShow/DataShowRootLayout.qml</file>
         <file>qml/DataShow/DataShowRootView.qml</file>
@@ -316,7 +281,6 @@
         <file>qml/DefectPage/DfectView/DfectView.qml</file>
         <file>qml/DefectPage/DfectView/ToolBox.qml</file>
         <file>qml/DefectPage/Head/HeadToolBox.qml</file>
-        <file>qml/DefectPage/Head/HeadView.qml</file>
         <file>qml/DefectPage/Head/TitleText.qml</file>
         <file>qml/DefectPage/HistoryView/ListTabelView.qml</file>
         <file>qml/DefectPage/LeftDataView.qml</file>
@@ -388,8 +352,6 @@
         <file>qml/Pages/AlarmPage/AlarmCore/CoreLooseCoilItem.qml</file>
         <file>qml/Pages/AlarmPage/AlarmCore/CoreTaperShape.qml</file>
         <file>qml/Pages/AlarmPage/AlarmCore/CoreTaperShapeItem.qml</file>
-        <file>qml/Pages/AlarmPage/AlarmInfo.qml</file>
-        <file>qml/Pages/AlarmPage/AlarmInfoGlob.qml</file>
         <file>qml/Pages/AlarmPage/AlarmItem/AlarmHardware.qml</file>
         <file>qml/Pages/AlarmPage/AlarmItem/AlarmItemCameras.qml</file>
         <file>qml/Pages/AlarmPage/AlarmItem/AlarmItemCamerasItem.qml</file>
@@ -411,7 +373,6 @@
         <file>qml/Pages/AlarmPage/AlarmSimple/SimpleValueAlarm.qml</file>
         <file>qml/Pages/AlarmPage/AlarmSimple/SimpleValueRow.qml</file>
         <file>qml/Pages/AlarmPage/AlarmTextListView.qml</file>
-        <file>qml/Pages/AlarmPage/AlarmView.qml</file>
         <file>qml/Pages/AlarmPage/CoreAlarmInfo.qml</file>
         <file>qml/Pages/AlarmPage/SelectItemDelegate.qml</file>
         <file>qml/Pages/Card/CurrentInfo.qml</file>

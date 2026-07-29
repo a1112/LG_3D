@@ -23,9 +23,13 @@ HeaderBase {
         spacing: 20
         Row{
             spacing: 5
-            ScaleBtn{}
+            ScaleBtn{
+                controller: root.areaController
+                menuController: menu_scale
+            }
             GammaBtn{
-             visible: root.surfaceData.is2DrootView
+                visible: root.surfaceData.is2DrootView
+                controller: root.controller
             }
         }
             ToolBtns{

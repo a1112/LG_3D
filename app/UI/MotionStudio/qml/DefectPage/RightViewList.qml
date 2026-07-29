@@ -23,15 +23,20 @@ SplitView{
       required property var modelController
       required property var popupManager
       required property var coreController
+      required property var authManager
 
       SplitView.preferredWidth: root.adaptiveMetrics.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
        orientation: Qt.Vertical
        DefectInfoView{
+           viewController: root.defectController
+           style: root.style
+           authManager: root.authManager
        }
        DefectClassInfoView{
            viewController: root.defectController
            style: root.style
+           authManager: root.authManager
        }
 
        SearchView{ // 查询界面
@@ -39,6 +44,7 @@ SplitView{
            adaptiveMetrics: root.adaptiveMetrics
            style: root.style
            leftController: root.leftController
+           authManager: root.authManager
            Layout.fillWidth: true
            SplitView.fillWidth: true
        }
@@ -59,6 +65,7 @@ SplitView{
            modelController: root.modelController
            leftController: root.leftController
            popupManager: root.popupManager
+           apiClient: root.apiClient
        }
 
        FootView{

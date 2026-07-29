@@ -9,6 +9,10 @@ CardBase {
     id:root
     required property var viewController
     required property var style
+    required property var authManager
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
     Layout.fillWidth : true
     max_height : 200
     title :  qsTr("缺陷总计")       //"当前卷信息"

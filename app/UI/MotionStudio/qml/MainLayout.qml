@@ -22,6 +22,7 @@ Item {
     required property var authManager
     required property var globalContext
     required property var coreController
+    required property var toolService
 
     implicitWidth: root.adaptiveMetrics.designWidth
     implicitHeight: root.adaptiveMetrics.designHeight
@@ -69,6 +70,9 @@ Item {
                     popupManager: root.popupManager
                     leftController: root.leftController
                     coreController: root.coreController
+                    toolService: root.toolService
+                    authManager: root.authManager
+                    globalContext: root.globalContext
                 }
             }
 
@@ -77,7 +81,20 @@ Item {
                 Layout.fillHeight: true
                 asynchronous: true
                 active: StackLayout.isCurrentItem || status === Loader.Ready
-                source: "DefectShowRoot.qml"
+                sourceComponent: DefectShowRoot {
+                    adaptiveMetrics: root.adaptiveMetrics
+                    style: root.style
+                    modelStore: root.model
+                    settings: root.settings
+                    appController: root.appController
+                    leftController: root.leftController
+                    apiClient: root.apiClient
+                    popupManager: root.popupManager
+                    globalContext: root.globalContext
+                    coreController: root.coreController
+                    toolService: root.toolService
+                    authManager: root.authManager
+                }
             }
         }
     }
@@ -87,5 +104,7 @@ Item {
         adaptiveMetrics: root.adaptiveMetrics
         style: root.style
         hoverController: root.leftController
+        modelStore: root.model
+        toolService: root.toolService
     }
 }

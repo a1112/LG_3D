@@ -1,11 +1,19 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 Menu{
-    id: defectMenu
+    id: root
+
+    required property var defect
+    required property var defectClassController
+
     Repeater{
-        model : global.defectClassProperty.defectDictModel
+        model: root.defectClassController.defectDictModel
 
         DefectSelectMenuItem{
+            defect: root.defect
+            defectClassController: root.defectClassController
         }
     }
 }

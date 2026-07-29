@@ -5,35 +5,38 @@ import "../../Base"
 Item {
     id:root
 
-    readonly property ListModel defectDictModel:defectCoreModel.defectDictModel // 对于缺陷列表的显示
+    required property var defectModel
+    required property var globalContext
+    required property var toolService
 
+    readonly property ListModel defectDictModel: root.defectModel.defectDictModel
 
 
     property bool fliterShowBgDefect:false  // 显示缺陷
     function setFliterShowBgDefect(new_checked){
-        fliterShowBgDefect = new_checked
-        filterCore.resetFilterDict()
+        root.fliterShowBgDefect = new_checked
+        root.resetFilterDict()
     }
 
     function  reset(){
-        defectCoreModel.initDefectDictModel()
+        root.defectModel.initDefectDictModel()
     }
 
     property var filterDict:{1:1}
 
     function resetFilterDict(){
-        tool.for_list_model(defectDictModel, (item)=>{
-                                filterDict[item["name"] ] = item["filter"]
+        root.toolService.for_list_model(root.defectDictModel, (item)=>{
+                                root.filterDict[item["name"] ] = item["filter"]
                             })
-        let temp= filterDict
-        filterDict={}
-        filterDict = temp
-        defectCoreModel.flushModel()
+        let temp = root.filterDict
+        root.filterDict = {}
+        root.filterDict = temp
+        root.defectModel.flushModel()
     }
 
     function showAll(is_show){
-        tool.for_list_model(defectDictModel, (item)=>{
-                                if  (!item["show"] && !fliterShowBgDefect)
+        root.toolService.for_list_model(root.defectDictModel, (item)=>{
+                                if  (!item["show"] && !root.fliterShowBgDefect)
                                 {
                                     item["filter"] =  false
                                 }
@@ -42,7 +45,7 @@ Item {
                                     item["filter"] =  is_show
                                 }
                             })
-        resetFilterDict()
+        root.resetFilterDict()
     }
 
     SettingsBase{
@@ -50,8 +53,8 @@ Item {
         property alias fliterShowBgDefect:root.fliterShowBgDefect
     }
     function nameIsShow(name){
-        let sharedName = global.defectClassProperty.shared_defect_name(name)
-        return filterDict[sharedName]
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(name)
+        return root.filterDict[sharedName]
     }
 
     function itemIsShow(item){

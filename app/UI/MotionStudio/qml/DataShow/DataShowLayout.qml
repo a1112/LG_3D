@@ -12,6 +12,7 @@ DataShowBackground {
     required property var viewControl
     required property var alarmInfo
     required property var apiClient
+    required property var globalContext
 
     property Binds binds_base:binds_s
     property Binds binds_s : Binds{
@@ -32,6 +33,7 @@ DataShowBackground {
             adaptiveMetrics: root.adaptiveMetrics
             alarmInfo: root.alarmInfo
             apiClient: root.apiClient
+            globalContext: root.globalContext
             dataShowCore : DataShowCore{
                 surfaceData: root.model.surfaceS
                 binds: root.viewControl.lockControl
@@ -48,6 +50,7 @@ DataShowBackground {
             adaptiveMetrics: root.adaptiveMetrics
             alarmInfo: root.alarmInfo
             apiClient: root.apiClient
+            globalContext: root.globalContext
             dataShowCore : DataShowCore{
                 surfaceData: root.model.surfaceL
                 binds: root.viewControl.lockControl

@@ -2,18 +2,22 @@ import QtQuick
 import QtQuick.Controls
 
 ItemDelegate {
+    id: root
+
+    required property string image_source
+    required property string key
+    required property var style
+
     height: parent.height
     width: height
     property bool hasImage: false
-    property string image_source: ""
-    property string key: ""
 
     Image {
         id: err
         scale: 0.7
         anchors.centerIn: parent
         asynchronous: true
-        source: coreStyle.getIcon("imageError")
+        source: root.style.getIcon("imageError")
         width: parent.width
         height: parent.height
         fillMode: Image.PreserveAspectFit
@@ -22,29 +26,29 @@ ItemDelegate {
         Label {
             anchors.centerIn: parent
             text: "No image"
-            visible: !hasImage
+            visible: !root.hasImage
         }
     }
     Image {
         id: image
         asynchronous: true
-        source: hasImage ? image_source : ""
+        source: root.hasImage ? root.image_source : ""
         width: parent.width
         height: parent.height
         fillMode: Image.PreserveAspectFit
         sourceSize.width: parent.width
         sourceSize.height: parent.height
         onStatusChanged: {
-            if (!hasImage || !source || status === Image.Error) {
+            if (!root.hasImage || !source || status === Image.Error) {
                 err.visible = true
             } else {
-                err.visible = status !== Image.Loaded
+                err.visible = status !== Image.Ready
             }
         }
     }
     Label {
         anchors.centerIn: parent
-        text: key
+        text: root.key
         background: Rectangle {
             color: "#2f2f2f"
             radius: 5

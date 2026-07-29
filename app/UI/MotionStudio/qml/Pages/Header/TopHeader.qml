@@ -58,7 +58,9 @@ Item {
           source: root.style.getIcon("Menu")
         }
 
-        TopIcon{}
+        TopIcon{
+            style: root.style
+        }
         TopTabBar{
             adaptiveMetrics: root.adaptiveMetrics
             style: root.style
@@ -69,7 +71,10 @@ Item {
             adaptiveMetrics: root.adaptiveMetrics
             popupManager: root.popupManager
         }
-        TopSettingButton{}
+        TopSettingButton{
+            style: root.style
+            popupManager: root.popupManager
+        }
 
         Item{
             implicitWidth: root.adaptiveMetrics.headerLargeGap
@@ -84,6 +89,9 @@ Item {
         FillLayout{
             GlobalErrorView{    // 全局报警
                 anchors.centerIn: parent
+                adaptiveMetrics: root.adaptiveMetrics
+                style: root.style
+                modelStore: root.modelStore
             }
         }
         WindowTitleLabel{
@@ -96,6 +104,9 @@ Item {
         TimeText{
             visible: !root.authManager.isAdmin
                      || !root.globalContext.screenConfig.isMinScreen
+            coreController: root.coreController
+            adaptiveMetrics: root.adaptiveMetrics
+            style: root.style
         }
         FillLayout{}
         TopCoilTools{
@@ -116,9 +127,13 @@ Item {
             HelpButton{
                 Layout.alignment: Qt.AlignVCenter
                 visible: !root.authManager.isAdmin
+                style: root.style
+                popupManager: root.popupManager
             }
             TopToolsButton{
                 Layout.alignment: Qt.AlignVCenter
+                style: root.style
+                popupManager: root.popupManager
             }
             RowLayout {
                 id: windowControls
@@ -139,6 +154,7 @@ Item {
                     }
                 }
                 TopWindowModelChangeButton {
+                    viewControl: root.viewControl
                 }
                 WindowCaptionButton {
                     buttonType: "close"

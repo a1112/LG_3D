@@ -5,22 +5,30 @@ import "../../Model/server"
 ItemDelegate{
     id:root
 
-    // 直接使用 model 数据，而不是通过 defectClassItem
-    property string defectName: model.name || ""
-    property int defectLevel: model.level || 0
-    property bool defectShow: model.show !== undefined ? model.show : true
-    property string defectColor: model.color || "#FFFFFF"
+    required property var model
+    required property int index
+    required property var defectClassController
+    required property var dialogManager
+
+    readonly property string defectName: root.model.name || ""
+    readonly property int defectLevel: root.model.level || 0
+    readonly property bool defectShow:
+        root.model.show !== undefined ? root.model.show : true
+    readonly property string defectColor: root.model.color || "#FFFFFF"
 
     function setColor(color_){
-        set_defect_dict_property(index, "color", color_)
+        root.defectClassController.updateDefectClass(
+                    root.defectName, "color", color_)
     }
 
     function setLevel(level_){
-        set_defect_dict_property(index, "level", level_)
+        root.defectClassController.updateDefectClass(
+                    root.defectName, "level", level_)
     }
 
     function setShow(show_){
-        set_defect_dict_property(index, "show", show_)
+        root.defectClassController.updateDefectClass(
+                    root.defectName, "show", show_)
     }
 
     Frame{
@@ -38,7 +46,7 @@ ItemDelegate{
             }
 
             Label{
-                text: defectName
+                text: root.defectName
                 font.pointSize:12
                 font.bold:true
             }
@@ -54,10 +62,10 @@ ItemDelegate{
                 height:30
                 scale:0.9
                 width:75
-                currentIndex:defectLevel
+                currentIndex: root.defectLevel
                 model:["0", "1", "2", "3", "4", "5"]
                 onActivated: {
-                    setLevel(currentIndex)
+                    root.setLevel(currentIndex)
                 }
             }
         }
@@ -67,9 +75,9 @@ ItemDelegate{
             CheckDelegate{
                 text: qsTr("屏蔽: ")
                 height:20
-                checked:!defectShow
+                checked: !root.defectShow
                 onToggled: {
-                    setShow(!checked)
+                    root.setShow(!checked)
                 }
             }
         }
@@ -80,18 +88,18 @@ ItemDelegate{
 
 
         Label{
-            text: defectColor
+            text: root.defectColor
             font.pointSize:15
-            color:defectColor
+            color: root.defectColor
         }
         Rectangle{
             height:20
             width:height
-            color:defectColor
+            color: root.defectColor
             ItemDelegate{
                 anchors.fill:parent
                 onClicked:{
-                    dialogs.selectColor(setColor)
+                    root.dialogManager.selectColor(root.setColor)
                 }
             }
         }

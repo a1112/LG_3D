@@ -13,6 +13,7 @@ Item {
     required property var style
     required property var adaptiveMetrics
     required property var apiClient
+    required property var globalContext
 
     DataShowItemHead{
         id:dsh
@@ -31,6 +32,7 @@ Item {
         controller: root.controller
         style: root.style
         apiClient: root.apiClient
+        globalContext: root.globalContext
     }
 
     ColumnLayout{

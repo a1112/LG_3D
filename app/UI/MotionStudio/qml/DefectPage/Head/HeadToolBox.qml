@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -8,6 +10,12 @@ import QtQuick.Dialogs
 
 Item{
     id:root
+
+    required property var defectController
+    required property var style
+    required property var apiClient
+    required property var coreController
+
     height: 45
     Layout.fillWidth: true
     Pane{
@@ -28,10 +36,13 @@ Item{
                         }
                     }
                     TabButton{
+                        required property string label
+                        required property int index
+
                         text: label
                         font.bold: true
                         onClicked: {
-                            core.globalViewIndex = index
+                            root.coreController.globalViewIndex = index
                         }
                     }
                 }
@@ -58,19 +69,20 @@ Item{
 
         }
         Button{
-            icon.source: coreStyle.getIcon("uploading")
+            icon.source: root.style.getIcon("uploading")
             text: qsTr("导出")
             implicitHeight: root.height-5
-            enabled: defectViewCore.defectCoreModel.defectsModelAll.count > 0
+            enabled: root.defectController.defectCoreModel.defectsModelAll.count > 0
             onClicked: {
                 exportFolderDialog.open()
             }
         }
 
         Button{
-            icon.source: coreStyle.getIcon("Flush_Dark")
+            icon.source: root.style.getIcon("Flush_Dark")
             text: qsTr("刷新")
             implicitHeight: root.height-5
+            onClicked: root.defectController.controlCore.forceRefresh()
         }
         Item{
             width: 5
@@ -90,7 +102,7 @@ Item{
             if (folderPath.startsWith("file:///")) {
                 folderPath = folderPath.substring(8)
             }
-            exportDefects(folderPath)
+            root.exportDefects(folderPath)
         }
     }
 
@@ -98,7 +110,7 @@ Item{
     function exportDefects(folderPath) {
         // 收集当前显示的所有缺陷数据
         let defectsList = []
-        let defectsModel = defectViewCore.defectCoreModel.defectsModelAll
+        let defectsModel = root.defectController.defectCoreModel.defectsModelAll
 
         console.log("defectsModelAll count:", defectsModel.count)
 
@@ -126,8 +138,8 @@ Item{
         console.log("开始导出缺陷，共", defectsList.length, "个")
 
         // 调用导出 API
-        api.ajax.post(
-            api.apiConfig.serverUrlDaaBase + "/export_defects",
+        root.apiClient.ajax.post(
+            root.apiClient.apiConfig.serverUrlDaaBase + "/export_defects",
             {
                 folder_path: folderPath,
                 defects: defectsList

@@ -1,7 +1,13 @@
 
 import "../../btns"
 SettingButton{
-    height: coreStyle.topHeight
+    id: root
+
+    required property var style
+    required property var popupManager
+
+    height: root.style.topHeight
     width: height
-    onClicked: {popManage.openSettingPageView()}
+    source: root.style.getIcon("setting")
+    onClicked: root.popupManager.openSettingPageView()
 }

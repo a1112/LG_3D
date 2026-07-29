@@ -24,6 +24,9 @@ Item {
     required property var apiClient
     required property var alarmInfo
     required property var coreController
+    required property var toolService
+    required property var authManager
+    required property var globalContext
 
     Pane{
         width: parent.width
@@ -42,6 +45,11 @@ Item {
         orientation: Qt.Vertical
         CurrentInfo{ // 卷信息
             SplitView.fillWidth: true
+            coreController: root.coreController
+            popupManager: root.popupManager
+            toolService: root.toolService
+            style: root.style
+            authManager: root.authManager
         }
         // AlarmInfoGlob{// 全局报警信息
         //     SplitView.fillWidth: true
@@ -49,11 +57,18 @@ Item {
         // }
         AlarmCheckInfoView{  // 判级
             width: parent.width
+            style: root.style
+            authManager: root.authManager
+            apiClient: root.apiClient
+            coreController: root.coreController
+            leftController: root.leftController
         }
         AlarmItemSimple{    // 报警
             width: parent.width
             alarmInfo: root.alarmInfo
             apiClient: root.apiClient
+            style: root.style
+            authManager: root.authManager
         }
 
         SearchView{ // 查询界面
@@ -61,11 +76,15 @@ Item {
             adaptiveMetrics: root.adaptiveMetrics
             style: root.style
             leftController: root.leftController
+            authManager: root.authManager
             Layout.fillWidth: true
             SplitView.fillWidth: true
         }
 
         FliterSelectView{ // 过滤界面
+            leftController: root.leftController
+            globalContext: root.globalContext
+            style: root.style
         }
 
         DataListView{   // 左侧列表
@@ -75,6 +94,7 @@ Item {
             modelController: root.modelStore
             leftController: root.leftController
             popupManager: root.popupManager
+            apiClient: root.apiClient
         }
 
         FootView{

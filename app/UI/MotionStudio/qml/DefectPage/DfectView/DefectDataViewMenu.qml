@@ -4,6 +4,12 @@ import QtQuick.Controls
 Menu{
     id: root
 
+    required property var modelStore
+    required property var settings
+    required property var appController
+    required property var apiClient
+    required property var coreController
+
     // 引用当前的缺陷项
     property var defectItem: null
 
@@ -29,9 +35,9 @@ Menu{
             let targetCoil = null
 
             // 先在当前列表中查找
-            for (let i = 0; i < coreModel.currentCoilListModel.count; i++) {
-                let coil = coreModel.currentCoilListModel.get(i)
-                if (coil && coil.Id === coilId) {
+            for (let i = 0; i < root.modelStore.currentCoilListModel.count; i++) {
+                let coil = root.modelStore.currentCoilListModel.get(i)
+                if (coil && Number(coil.Id) === Number(coilId)) {
                     targetCoil = coil
                     found = true
                     break
@@ -40,9 +46,9 @@ Menu{
 
             // 如果当前列表中没有，在完整列表中查找
             if (!found) {
-                for (let i = 0; i < coreModel.realCoilListModel.count; i++) {
-                    let coil = coreModel.realCoilListModel.get(i)
-                    if (coil && coil.Id === coilId) {
+                for (let i = 0; i < root.modelStore.realCoilListModel.count; i++) {
+                    let coil = root.modelStore.realCoilListModel.get(i)
+                    if (coil && Number(coil.Id) === Number(coilId)) {
                         targetCoil = coil
                         found = true
                         break
@@ -56,19 +62,19 @@ Menu{
             }
 
             // 设置当前卷材
-            core.currentCoilModel.init(targetCoil)
+            root.coreController.currentCoilModel.init(targetCoil)
 
             // 切换到数据显示页面
-            app_core.appIndex = 0  // 切换到数据显示页面
+            root.appController.appIndex = 0  // 切换到数据显示页面
 
             // 设置对应的表面
-            let surfaceData = surface === "S" ? coreModel.surfaceS : coreModel.surfaceL
+            let surfaceData = surface === "S" ? root.modelStore.surfaceS : root.modelStore.surfaceL
             surfaceData.rootViewto2D()  // 切换到2D视图
 
             // 保存缺陷位置信息到 CoreModel，供 DataShowCore 使用
             // 延迟设置，确保页面切换完成
             Qt.callLater(function() {
-                coreModel.pendingDefect = {
+                root.modelStore.pendingDefect = {
                     defect_x: defectItem.defectX,
                     defect_y: defectItem.defectY,
                     defect_w: defectItem.defectW,
@@ -84,21 +90,22 @@ Menu{
     MenuItem{
         text: qsTr("打开图像位置")
         onClicked: {
-            if (!defectItem) return
+            if (!root.defectItem) return
 
-            let coilId = defectItem.coilId
-            let surface = defectItem.surface  // "S" 或 "L"
+            let coilId = root.defectItem.coilId
+            let surface = root.defectItem.surface  // "S" 或 "L"
 
             // 获取文件夹路径
             let folderPath = ""
-            let targetSurfaceData = surface === "S" ? coreModel.surfaceS : coreModel.surfaceL
+            let targetSurfaceData = surface === "S" ? root.modelStore.surfaceS : root.modelStore.surfaceL
 
             if (targetSurfaceData.serverIsLocal) {
                 // 本地服务器：使用本地路径
                 folderPath = targetSurfaceData.getBaseUrl(coilId)
             } else {
                 // 远程服务器：使用共享文件夹路径
-                let sharedFolderBase = "\\\\\\\\" + api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName
+                let sharedFolderBase = "\\\\\\\\" + root.apiClient.apiConfig.hostname
+                                     + "/" + root.settings.sharedFolderBaseName
                 folderPath = sharedFolderBase + surface + "/" + coilId
             }
 

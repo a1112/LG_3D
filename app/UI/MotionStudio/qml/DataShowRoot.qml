@@ -20,6 +20,9 @@ SplitView{
     required property var popupManager
     required property var leftController
     required property var coreController
+    required property var toolService
+    required property var authManager
+    required property var globalContext
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -33,6 +36,9 @@ SplitView{
         apiClient: root.apiClient
         alarmInfo: root.alarmInfo
         coreController: root.coreController
+        toolService: root.toolService
+        authManager: root.authManager
+        globalContext: root.globalContext
         SplitView.fillHeight: true
         SplitView.preferredWidth: root.style.leftWidth
         SplitView.minimumWidth: root.style.leftMinimumWidth
@@ -48,5 +54,6 @@ SplitView{
         viewControl: root.viewControl
         alarmInfo: root.alarmInfo
         apiClient: root.apiClient
+        globalContext: root.globalContext
     }
 }

@@ -2,6 +2,13 @@ import QtQuick
 import "../Model"
 
 Item {
+    id: root
+
+    required property var modelStore
+    required property var coreController
+    required property var globalContext
+    required property var toolService
+    required property var apiClient
 
     // 数据统计
     property int userErrCoilCount:0
@@ -17,7 +24,7 @@ Item {
 
     property bool fliterEnable: false    // 对 list 界面 进行 筛选
     onFliterEnableChanged: {
-        flushFliter()
+        root.flushFliter()
     }
 
     property ListModel fliterListModel: ListModel{}
@@ -27,14 +34,14 @@ Item {
         interval: 120
         repeat: false
         onTriggered: {
-            if (fliterEnable) {
-                flushModel()
+            if (root.fliterEnable) {
+                root.flushModel()
             }
         }
     }
 
     Connections {
-        target: coreModel.currentCoilListModel
+        target: root.modelStore.currentCoilListModel
         function onCountChanged() {
             filterRefreshTimer.restart()
         }
@@ -46,12 +53,19 @@ Item {
     property var fliterDict:{return {}}
     property var tempCoilModel :  CoilModel{}
     function flushModel(){
-        fliterListModel.clear()
-        tool.for_list_model(coreModel.currentCoilListModel,(item_data)=>{
+        root.fliterListModel.clear()
+        root.toolService.for_list_model(root.modelStore.currentCoilListModel,(item_data)=>{
                                 let defects = item_data.childrenCoilDefect || item_data.defects || []
-                                tempCoilModel._getDefectNameList_(defects).some((name)=>{
-                                                                    if(isShowDefect(name)){
-                                                                            fliterListModel.append(item_data)
+                                let defectNames = root.tempCoilModel._getDefectNameList_(defects)
+                                if (defectNames.length === 0
+                                        && root.isShowDefect(
+                                            root.globalContext.defectClassProperty.unDefectClassItemName)) {
+                                    root.fliterListModel.append(item_data)
+                                    return
+                                }
+                                defectNames.some((name)=>{
+                                                                    if(root.isShowDefect(name)){
+                                                                            root.fliterListModel.append(item_data)
                                                                             return true//throw new Error('End Loop'); // 抛出异常终止循环
                                                                         }
                                                                     })
@@ -60,28 +74,36 @@ Item {
     }
 
     function flushFliter(){
-    flushFliterDict()
-    flushModel()
+        root.flushFliterDict()
+        root.flushModel()
     }
 
     function flushFliterDict(){
-        let temp = fliterDict
-        fliterDict={}
-        fliterDict=temp
+        let temp = root.fliterDict
+        root.fliterDict = {}
+        root.fliterDict = temp
     }
     function setLiewViewFilterClass(defectClass,show){
         // 设置 列表 筛选的显示类别
-        fliterDict[defectClass] = show
-        flushFliter()
+        root.fliterDict[defectClass] = show
+        root.flushFliter()
+    }
+
+    function setListViewFilterClasses(defectClasses, show) {
+        for (let index = 0; index < defectClasses.length; index++) {
+            root.fliterDict[defectClasses[index]] = show
+        }
+        root.flushFliter()
+    }
+
+    function filterClassEnabled(defectName) {
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(defectName)
+        return !(sharedName in root.fliterDict) || root.fliterDict[sharedName] === true
     }
 
     function isShowDefect(defectName){
         // 缺陷是否显示
-        let sharedName = global.defectClassProperty.shared_defect_name(defectName)
-        if (sharedName in fliterDict){
-            return fliterDict[sharedName]
-        }
-        return false
+        return root.filterClassEnabled(defectName)
     }
 
     function indexForCoilId(model, coilId) {
@@ -99,42 +121,52 @@ Item {
     }
 
     function visibleIndexForCoilId(coilId) {
-        let model = fliterEnable ? fliterListModel : coreModel.currentCoilListModel
-        return indexForCoilId(model, coilId)
+        let model = root.fliterEnable ? root.fliterListModel
+                                      : root.modelStore.currentCoilListModel
+        return root.indexForCoilId(model, coilId)
     }
 
     function selectVisibleIndex(index) {
-        let visibleModel = fliterEnable ? fliterListModel : coreModel.currentCoilListModel
+        let visibleModel = root.fliterEnable ? root.fliterListModel
+                                             : root.modelStore.currentCoilListModel
         if (!visibleModel || index < 0 || index >= visibleModel.count) {
             return false
         }
         let item = visibleModel.get(index)
         let coilId = item ? Number(item.Id || item.SecondaryCoilId) : 0
-        let sourceIndex = fliterEnable
-                ? indexForCoilId(coreModel.currentCoilListModel, coilId)
+        let sourceIndex = root.fliterEnable
+                ? root.indexForCoilId(root.modelStore.currentCoilListModel, coilId)
                 : index
         if (sourceIndex < 0) {
             return false
         }
-        core.setCoilIndex(sourceIndex)
+        root.coreController.setCoilIndex(sourceIndex)
         return true
     }
 
 
     onSearchViewShowChanged: {
         // 显示隐藏 查询界面
-        if (! searchViewShow){
-            coreModel.currentCoilListIndex = 0
+        if (!root.searchViewShow){
+            root.modelStore.currentCoilListIndex = 0
         }
     }
     property var hovelCoilData:{return {}}
     property int searchPageIndex   : 0
     onHovedCoilIdChanged: {
 
-        preSourceModelS.setProperty(0,"image_source",coreModel.surfaceS.getSource(hovedCoilId,"GRAY",true))
-        preSourceModelS.setProperty(1,"image_source",coreModel.surfaceS.getSource(hovedCoilId,"JET",true))
-        preSourceModelL.setProperty(0,"image_source",coreModel.surfaceL.getSource(hovedCoilId,"GRAY",true))
-        preSourceModelL.setProperty(1,"image_source",coreModel.surfaceL.getSource(hovedCoilId,"JET",true))
+        root.preSourceModelS.setProperty(
+                    0, "image_source",
+                    root.modelStore.surfaceS.getSource(root.hovedCoilId, "GRAY", true))
+        root.preSourceModelS.setProperty(
+                    1, "image_source",
+                    root.modelStore.surfaceS.getSource(root.hovedCoilId, "JET", true))
+        root.preSourceModelL.setProperty(
+                    0, "image_source",
+                    root.modelStore.surfaceL.getSource(root.hovedCoilId, "GRAY", true))
+        root.preSourceModelL.setProperty(
+                    1, "image_source",
+                    root.modelStore.surfaceL.getSource(root.hovedCoilId, "JET", true))
     }
 
     property int hovedIndex:-1
@@ -149,62 +181,63 @@ Item {
 
     function cachedDetail(coilId) {
         let key = String(coilId)
-        let cached = detailCache[key]
+        let cached = root.detailCache[key]
         if (cached === undefined) {
             return null
         }
-        let order = detailCacheOrder
+        let order = root.detailCacheOrder
         let position = order.indexOf(key)
         if (position >= 0) {
             order.splice(position, 1)
         }
         order.push(key)
-        detailCacheOrder = order
+        root.detailCacheOrder = order
         return cached
     }
 
     onHovedIndexChanged: {
-        if (hovedIndex < 0) return
+        if (root.hovedIndex < 0) return
 
-        let sourceModel = fliterEnable ? fliterListModel : coreModel.currentCoilListModel
-        let p = sourceModel.get(hovedIndex)
+        let sourceModel = root.fliterEnable ? root.fliterListModel
+                                            : root.modelStore.currentCoilListModel
+        let p = sourceModel.get(root.hovedIndex)
         if (!p) return
 
         let coilId = p.Id || p.SecondaryCoilId
-        hovedCoilId = coilId
+        root.hovedCoilId = coilId
 
         // 检查缓存
-        let cached = cachedDetail(coilId)
+        let cached = root.cachedDetail(coilId)
         if (cached) {
             // 使用缓存数据
-            hovelCoilData = cached
-            hovedCoilModel.init(cached)
+            root.hovelCoilData = cached
+            root.hovedCoilModel.init(cached)
             return
         }
 
         // 先用摘要数据显示
-        hovelCoilData = p
-        hovedCoilModel.init(p)
+        root.hovelCoilData = p
+        root.hovedCoilModel.init(p)
 
         // 异步获取完整详情
-        fetchCoilDetail(coilId)
+        root.fetchCoilDetail(coilId)
     }
 
     // ========== 获取卷材详情 ==========
     function cacheDetail(coilId, data) {
         let key = String(coilId)
-        let cache = detailCache
-        let order = detailCacheOrder
+        let cache = root.detailCache
+        let order = root.detailCacheOrder
         if (cache[key] === undefined) {
             order.push(key)
         }
         cache[key] = data
-        while (order.length > detailCacheMax) {
+        while (order.length > root.detailCacheMax) {
             let expiredKey = order.shift()
             delete cache[expiredKey]
         }
-        detailCache = cache
-        detailCacheOrder = order
+        root.detailCache = cache
+        root.detailCacheOrder = order
     }
 
     function parseDetailResponse(data) {
@@ -221,27 +254,27 @@ Item {
 
     function fetchCoilDetail(coilId) {
         let requestKey = String(coilId)
-        if (!coilId || pendingDetailRequests[requestKey]) {
+        if (!coilId || root.pendingDetailRequests[requestKey]) {
             return
         }
 
-        pendingDetailRequests[requestKey] = app.api.getCoilDetail(coilId,
+        root.pendingDetailRequests[requestKey] = root.apiClient.getCoilDetail(coilId,
             function success(data) {
-                delete pendingDetailRequests[requestKey]
-                let parsed = parseDetailResponse(data)
+                delete root.pendingDetailRequests[requestKey]
+                let parsed = root.parseDetailResponse(data)
                 if (parsed && (parsed.Id || parsed.SecondaryCoilId)) {
                     let cached = JSON.parse(JSON.stringify(parsed))
-                    cacheDetail(coilId, cached)
+                    root.cacheDetail(coilId, cached)
 
                     // 如果当前还是悬停在这个卷材上，更新显示
-                    if (Number(hovedCoilId) === Number(coilId)) {
-                        hovelCoilData = cached
-                        hovedCoilModel.init(cached)
+                    if (Number(root.hovedCoilId) === Number(coilId)) {
+                        root.hovelCoilData = cached
+                        root.hovedCoilModel.init(cached)
                     }
                 }
             },
             function error(err) {
-                delete pendingDetailRequests[requestKey]
+                delete root.pendingDetailRequests[requestKey]
                 console.warn("coil detail request failed:", err)
             }
         )

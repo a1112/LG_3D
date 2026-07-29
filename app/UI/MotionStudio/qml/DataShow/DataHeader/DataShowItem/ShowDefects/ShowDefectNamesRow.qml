@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 
 // import QtQuick.Controls.Material
@@ -5,6 +7,9 @@ import QtQuick
 // import "../../../../Pages/Header"
 Item {
     id:root
+    required property var controller
+    required property var defectClassController
+
     property alias model:list.model
     ListView{
         id:list
@@ -14,6 +19,8 @@ Item {
         delegate:
             DefectLabelShowItem{
                 height:25
+                controller: root.controller
+                defectClassController: root.defectClassController
         }
 
 

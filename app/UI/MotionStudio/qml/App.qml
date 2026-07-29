@@ -24,6 +24,8 @@ AppBase {
     modelStore: app.coreModel
     clipboardService: app.cpp.clipboard
     toolService: app.tool
+    globalContext: app.global
+    dialogManager: app.dialogs
     visible: true
     visibility:control.visibility
     onVisibilityChanged: function(visibility) {
@@ -64,6 +66,7 @@ AppBase {
         authManager: app.auth
         globalContext: app.global
         coreController: app.core
+        toolService: app.tool
     }
 
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息
@@ -74,7 +77,9 @@ AppBase {
         statusWarningColor: app.coreStyle.statusWarningColor
         statusErrorColor: app.coreStyle.statusErrorColor
     }     //    服务器 接口访问
-    property Global global:Global{}  // 全局功能
+    property Global global: Global {
+        style: app.coreStyle
+    }  // 全局功能
     property Dialogs dialogs: Dialogs{} // 全局 弹窗
     property Core core: Core{}          // 核心
     property Tool tool: Tool{}          // 功能
@@ -103,7 +108,13 @@ AppBase {
     property ImageCache imageCache: ImageCache {
         settings: app.coreSetting
     } // 缓冲
-    property LefeCore leftCore: LefeCore{}  //列表全局
+    property LefeCore leftCore: LefeCore {
+        modelStore: app.coreModel
+        coreController: app.core
+        globalContext: app.global
+        toolService: app.tool
+        apiClient: app.api
+    }  //列表全局
     property Control control: Control{}
     property Auth auth: Auth{}
     property CoreSignal coreSignal: CoreSignal {

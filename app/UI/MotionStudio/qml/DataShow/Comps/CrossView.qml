@@ -2,26 +2,38 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 // 十字架
 Item {
+    id: root
+
+    required property var dataShowCore
+    required property var surfaceData
+    required property var style
+
     anchors.fill: parent
     visible: true
     property real crossY: 0
     property real crossX: 0
+    readonly property real hoveredZ: Number(root.dataShowCore.hoverdZmm)
+    readonly property bool zOutOfRange:
+        isFinite(root.hoveredZ)
+        && (root.hoveredZ < root.surfaceData.tower_warning_threshold_down
+            || root.hoveredZ > root.surfaceData.tower_warning_threshold_up)
+
     DashHLine{
-        visible: dataShowCore.imageShowHovered
+        visible: root.dataShowCore.imageShowHovered
         lineWidth:1
         width: 20
-        x:crossX-10
-        y:crossY
+        x: root.crossX - 10
+        y: root.crossY
 
     }
     Label{
-    color: "red"
-    text: dataShowCore.hoverdYmm+ " mm"
+    color: root.style.statusErrorColor
+    text: root.dataShowCore.hoverdYmm + " mm"
         anchors.left: parent.left
     z:-height
-    y:crossY
+    y: root.crossY
     background: Rectangle{
-        color: "black"
+        color: root.style.headerBackgroundColor
         radius: 5
     }
     }
@@ -29,28 +41,29 @@ Item {
         lineWidth:1
         height: 20
         z:-height
-        x:crossX
-        y:crossY-10
+        x: root.crossX
+        y: root.crossY - 10
     }
     Label{
         anchors.bottom: parent.bottom
-        color: "red"
-        text:   dataShowCore.hoverdXmm+ "  mm"
-        x:crossX
+        color: root.style.statusErrorColor
+        text: root.dataShowCore.hoverdXmm + " mm"
+        x: root.crossX
         background: Rectangle{
-            color: "black"
+            color: root.style.headerBackgroundColor
             radius: 5
         }
     }
 
     Label{
-        color:parseInt( dataShowCore.hoverdZmm)<surfaceData.tower_warning_threshold_down || parseInt( dataShowCore.hoverdZmm)>surfaceData.tower_warning_threshold_up?"red":"green" //三角测距
-        text: dataShowCore.hoverdZmm
-        y:crossY-30
-        x:crossX-30
+        color: root.zOutOfRange ? root.style.statusErrorColor
+                                : root.style.statusSuccessColor
+        text: root.dataShowCore.hoverdZmm
+        y: root.crossY - 30
+        x: root.crossX - 30
         scale:1
         background: Rectangle{
-            color: "black"
+            color: root.style.headerBackgroundColor
             radius: 5
         }
     }

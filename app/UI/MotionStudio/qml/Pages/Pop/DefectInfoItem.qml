@@ -3,13 +3,18 @@ import QtQuick.Controls
 import "../../Model/server"
 Item {
     id:root
+
+    required property int index
+    required property var filterController
+
     property DefectItemModel defectItem:DefectItemModel{}
     property var defectData
     property bool respectFilter: false
     property int thumbnailSize: 96
     height: thumbnailSize
     width: height
-    visible: !respectFilter || leftCore.isShowDefect(defectItem.defectName)
+    visible: !root.respectFilter
+             || root.filterController.isShowDefect(root.defectItem.defectName)
     Image {
         width:parent.width
         height:parent.height

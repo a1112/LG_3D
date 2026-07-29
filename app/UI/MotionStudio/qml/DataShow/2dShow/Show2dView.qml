@@ -60,6 +60,9 @@ Item {
     CrossView{
         visible: root.dataShowCore.chartHovered
                  || root.dataShowCore.imageShowHovered
+        dataShowCore: root.dataShowCore
+        surfaceData: root.surfaceData
+        style: root.style
         crossX: root.dataShowCore.hoverPoint.x
         crossY: root.dataShowCore.hoverPoint.y
     }

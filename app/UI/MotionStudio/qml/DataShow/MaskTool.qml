@@ -6,6 +6,8 @@ Item {
     id:root
     required property var controller
     required property var style
+    required property var surfaceData
+    required property var globalContext
     width:parent.width
     height:parent.height
 
@@ -33,6 +35,9 @@ Item {
 
     MainShowMenu{
         id: mainShowMenu
+        controller: root.controller
+        surfaceData: root.surfaceData
+        globalContext: root.globalContext
     }
 
 }

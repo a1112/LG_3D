@@ -5,10 +5,12 @@ import QtQuick.Layouts
 import "../../Base"
 import "../../btns"
 Item{
+    id: root
+
     Frame{
         anchors.fill: parent
     }
-    width:root.width/2-5
+    width: parent ? parent.width / 2 - 5 : 0
     height:25
     property string title:"卷号"
     property string value:"qwewrqtsad"
@@ -17,13 +19,13 @@ Item{
         anchors.fill: parent
         LabelBase{
             opacity:0.7
-            text:title+":"
+            text: root.title + ":"
             Layout.alignment:Qt.AlignVCenter
         }
         LabelBase{
             id:value_id
             Layout.fillWidth: true
-            text:value
+            text: root.value
             font.pixelSize: 17
             font.bold:true
         }

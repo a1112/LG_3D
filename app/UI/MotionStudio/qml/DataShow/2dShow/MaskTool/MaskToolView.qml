@@ -4,10 +4,17 @@ import QtQuick.Layouts
 import "../../Foot"
 
 Item {
- anchors.fill: parent
+    id: root
+
+    required property var controller
+    required property var modelStore
+    required property var surfaceData
+    required property var style
+
+    anchors.fill: parent
 
     Rectangle{
-        color: coreStyle.itemDbackColor
+        color: root.style.itemDbackColor
         width: rowr.width
         height: rowr.height
         id:rect_id
@@ -22,18 +29,20 @@ Item {
                     selected: false
                     font.bold:true
                     onClicked: {
-                        dataShowCore_.resetView()
+                        root.controller.resetView()
                         // dataShowCore.telescopedJointView =! dataShowCore.telescopedJointView
                     }
                 }
                 ItemDelegateItem {
                     height: 20
-                    text: coreModel.imageMaskChecked ? qsTr("AREA") : qsTr("AREA_MASK")
-                    selected: coreModel.imageMaskChecked
+                    text: root.modelStore.imageMaskChecked
+                          ? qsTr("AREA") : qsTr("AREA_MASK")
+                    selected: root.modelStore.imageMaskChecked
                     font.bold:true
-                    visible: surfaceData.isAreaRootView
+                    visible: root.surfaceData.isAreaRootView
                     onClicked: {
-                        coreModel.imageMaskChecked = !coreModel.imageMaskChecked
+                        root.modelStore.imageMaskChecked =
+                                !root.modelStore.imageMaskChecked
                     }
                 }
             }

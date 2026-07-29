@@ -93,7 +93,10 @@ def test_main_layout_lazy_loads_non_initial_pages():
 
     assert "Loader {" in main_layout
     assert "sourceComponent: DataShowRoot {" in main_layout
-    assert 'source: "DefectShowRoot.qml"' in main_layout
+    assert "sourceComponent: DefectShowRoot {" in main_layout
+    assert "modelStore: root.model" in main_layout
+    assert "globalContext: root.globalContext" in main_layout
+    assert "toolService: root.toolService" in main_layout
     assert "active: StackLayout.isCurrentItem || status === Loader.Ready" in main_layout
 
 
@@ -140,9 +143,6 @@ def test_common_dark_theme_text_uses_theme_colors():
     checked_files = [
         Path("DataShow") / "2dShow" / "ShowInfos.qml",
         Path("DataShow") / "ViewArea" / "ShowInfos.qml",
-        Path("DataShow") / "DataShowLabels" / "Base" / "RowInputItem.qml",
-        Path("DataShow") / "DataShowLabels" / "Base" / "RowSpinBoxItem.qml",
-        Path("DataShow") / "DataShowLabels" / "Base" / "RowLabelShow.qml",
         Path("SettingPage") / "OtherSetting" / "OtherSetting.qml",
         Path("SettingPage") / "InfoSetting" / "InfoSetting.qml",
     ]
@@ -265,10 +265,10 @@ def test_caption_button_icons_are_centered_inside_button_frame():
     assert "height: parent.height" in caption_button_text
     assert "height: root.style.topHeight" in top_header_text
     assert "height: 35" not in top_header_text
-    assert "height: coreStyle.topHeight" in help_button_text
-    assert "width: coreStyle.windowButtonWidth" in help_button_text
-    assert "height: coreStyle.topHeight" in tools_button_text
-    assert "width: coreStyle.windowButtonWidth" in tools_button_text
+    assert "height: root.style.topHeight" in help_button_text
+    assert "width: root.style.windowButtonWidth" in help_button_text
+    assert "height: root.style.topHeight" in tools_button_text
+    assert "width: root.style.windowButtonWidth" in tools_button_text
 
 
 def test_data_view_tools_use_icon_popups():
@@ -367,7 +367,6 @@ def test_api_list_delegate_width_does_not_depend_on_null_parent():
 
 
 def test_high_confidence_qml_member_and_dialog_errors_are_fixed():
-    manual_defect_text = read_qml(Path("Base") / "ManualDefectItem.qml")
     foot_item_text = read_qml(Path("DataShow") / "Foot" / "ItemDelegateItem.qml")
     watermark_text = read_qml(Path("DataShow") / "_base_" / "Watermark.qml")
     global_alarm_text = read_qml(
@@ -378,8 +377,7 @@ def test_high_confidence_qml_member_and_dialog_errors_are_fixed():
     )
     alg_test_text = read_qml(Path("PopupView") / "AlgTest" / "AlgTestDialog.qml")
 
-    assert "buttons: Row" not in manual_defect_text
-    assert "footer: DialogButtonBox" in manual_defect_text
+    assert not (QML_ROOT / "Base" / "ManualDefectItem.qml").exists()
     assert "Material.text" not in foot_item_text
     assert "signal particleTriggerRequested()" in watermark_text
     assert "function onParticleTriggerRequested()" in watermark_text
@@ -830,7 +828,7 @@ def test_header_time_text_is_readable_on_dark_theme():
     time_text = read_qml(Path("Base") / "TimeText.qml")
 
     assert 'color: "#333"' not in time_text
-    assert 'coreStyle.isDark ? "#DDEBFF"' in time_text
+    assert 'root.style.isDark ? "#DDEBFF"' in time_text
 
 
 def test_height_point_websocket_reconnects_after_close():
@@ -962,8 +960,8 @@ def test_2d_area_context_menu_can_rebuild_tile_cache():
     assert "areaCacheVersion += 1" in area_core_text
     assert "function recacheAreaTiles()" in area_core_text
     assert "canRecacheAreaTiles" in menu_text
-    assert "dataShowCore_.recacheAreaTiles()" in menu_text
-    assert "\\u91cd\\u65b0\\u7f13\\u5b582D\\u56fe\\u50cf" in menu_text
+    assert "root.controller.recacheAreaTiles()" in menu_text
+    assert "重新缓存 2D 图像" in menu_text
 
 
 def test_2d_defects_share_defect_class_visibility_list():
@@ -976,7 +974,10 @@ def test_2d_defects_share_defect_class_visibility_list():
     assert "function normalize_defect_dict_data(data)" in defect_class_text
     assert 'if (sharedName in normalized)' in defect_class_text
     assert "let sharedName = global.defectClassProperty.shared_defect_name(defectName)" in data_show_core_text
-    assert "let sharedName = global.defectClassProperty.shared_defect_name(name)" in filter_core_text
+    assert (
+        "let sharedName = root.globalContext.defectClassProperty.shared_defect_name(name)"
+        in filter_core_text
+    )
 
 
 def test_pending_defect_is_consumed_only_by_the_matching_view():
@@ -1067,7 +1068,10 @@ def test_coil_list_reuses_delegates_and_maps_filtered_selection_by_id():
     assert "listItemCoil." not in status_text
     assert "function indexForCoilId(model, coilId)" in left_core_text
     assert "function selectVisibleIndex(index)" in left_core_text
-    assert "indexForCoilId(coreModel.currentCoilListModel, coilId)" in left_core_text
+    assert (
+        "root.indexForCoilId(root.modelStore.currentCoilListModel, coilId)"
+        in left_core_text
+    )
     assert "item_data.childrenCoilDefect || item_data.defects || []" in left_core_text
 
 
@@ -1115,10 +1119,11 @@ def test_defect_range_refresh_queues_changes_and_rejects_stale_responses():
 
     assert "property bool refreshQueued: false" in control_text
     assert "property int requestGeneration: 0" in control_text
-    assert "if (loading) {" in control_text
-    assert "refreshQueued = true" in control_text
-    assert "if (generation !== requestGeneration)" in control_text
-    assert "Qt.callLater(flush_defects)" in control_text
+    assert "if (root.loading) {" in control_text
+    assert "root.refreshQueued = true" in control_text
+    assert "if (generation !== root.requestGeneration)" in control_text
+    assert "Qt.callLater(root.flushDefects)" in control_text
+    assert "function forceRefresh()" in control_text
     assert "defect response parse failed" in control_text
 
 
@@ -1129,11 +1134,14 @@ def test_hovered_coil_details_parse_json_and_use_bounded_request_cache():
     assert "property var pendingDetailRequests: ({})" in left_core_text
     assert "function cachedDetail(coilId)" in left_core_text
     assert "function cacheDetail(coilId, data)" in left_core_text
-    assert "while (order.length > detailCacheMax)" in left_core_text
+    assert "while (order.length > root.detailCacheMax)" in left_core_text
     assert 'if (typeof data !== "string")' in left_core_text
     assert "return JSON.parse(data)" in left_core_text
-    assert "pendingDetailRequests[requestKey] = app.api.getCoilDetail" in left_core_text
-    assert "delete pendingDetailRequests[requestKey]" in left_core_text
+    assert (
+        "root.pendingDetailRequests[requestKey] = root.apiClient.getCoilDetail"
+        in left_core_text
+    )
+    assert "delete root.pendingDetailRequests[requestKey]" in left_core_text
     assert "pendingDetailCoilId" not in left_core_text
 
 
@@ -1143,8 +1151,9 @@ def test_clock_is_shared_and_unused_duplicate_datetime_components_are_removed():
     qrc_text = (MOTION_STUDIO_ROOT / "qml.qrc").read_text(encoding="utf-8")
 
     assert "Timer {" not in time_text
-    assert "core.nowTime" in time_text
-    assert 'Qt.formatDateTime(currentDate, "yyyy-MM-dd HH:mm:ss")' in time_text
+    assert "required property var coreController" in time_text
+    assert "root.coreController.nowTime" in time_text
+    assert 'Qt.formatDateTime(root.currentDate, "yyyy-MM-dd HH:mm:ss")' in time_text
     assert "triggeredOnStart: true" in core_text
     assert "app.visibility !== Window.Minimized" in core_text
     for removed_path in (
@@ -1364,7 +1373,10 @@ def test_capture_alarm_polling_uses_explicit_dependencies_and_stops_offline():
     camera_text = read_qml(
         Path("Pages") / "AlarmPage" / "AlarmItem" / "AlarmItemCameras.qml"
     )
-    alarm_page_text = read_qml(Path("Pages") / "AlarmPage" / "AlarmInfoGlob.qml")
+    global_alarm_text = read_qml(
+        Path("PopupView") / "GlobalAlarm" / "GlobalAlarmView.qml"
+    )
+    qrc_text = (MOTION_STUDIO_ROOT / "qml.qrc").read_text(encoding="utf-8")
 
     for dependency in ("apiClient", "errorController", "connectionState"):
         assert f"required property var {dependency}" in watcher_text
@@ -1379,7 +1391,8 @@ def test_capture_alarm_polling_uses_explicit_dependencies_and_stops_offline():
     assert "getCameraAlarm" not in camera_text
     assert "onStatusPayloadChanged" in camera_text
     assert "reuseItems: true" in camera_text
-    assert "watcher: app.captureAlarmWatcher" in alarm_page_text
+    assert "watcher: app.captureAlarmWatcher" in global_alarm_text
+    assert "AlarmInfoGlob.qml" not in qrc_text
 
 
 def test_alarm_grid_delegates_use_required_roles_and_semantic_status_colors():

@@ -25,6 +25,8 @@ ApplicationWindow {
     property var modelStore
     property var clipboardService
     property var toolService
+    property var globalContext
+    property var dialogManager
 
     Loader{
         anchors.fill:parent
@@ -44,6 +46,8 @@ ApplicationWindow {
             modelStore: appBase.modelStore
             clipboardService: appBase.clipboardService
             toolService: appBase.toolService
+            globalContext: appBase.globalContext
+            dialogManager: appBase.dialogManager
         }
         onLoaded: appBase.popManage = item
     }

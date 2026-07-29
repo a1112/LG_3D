@@ -5,6 +5,8 @@ import "../Base"
 Item {
     id: root
 
+    required property var style
+
     property var defectDictData: { return {} }
     property ListModel defectDictModel: ListModel {
         dynamicRoles: true
@@ -17,7 +19,7 @@ Item {
     property DefectClassItemModel unDefectClassItemModel: DefectClassItemModel {
         defectName: root.unDefectClassItemName
         defectLevel: 0
-        defectColor: coreStyle.labelColor
+        defectColor: root.style.labelColor
     }
 
     property var defectDictAll: { return {} }
@@ -136,6 +138,17 @@ Item {
         defaultDefectClass.init(defectData["default"])
     }
 
+    function updateDefectClass(name, key, value) {
+        if (!name || !(name in root.defectDictData)) {
+            return false
+        }
+        let item = Object.assign({}, root.defectDictData[name])
+        item[key] = String(value)
+        root.defectDictData[name] = item
+        root.upDefectDictModelByDefectDictData()
+        return true
+    }
+
     function ensure_defect_class_item(defectName) {
         let sharedName = shared_defect_name(defectName)
         if (!sharedName || (sharedName in defectDictData)) {
@@ -198,7 +211,7 @@ Item {
                 defectDictAll[value["name"]] = true
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function un_selecct_all_un_defect_show() {
@@ -208,7 +221,7 @@ Item {
                 defectDictAll[value["name"]] = false
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function select_area_defect() {
@@ -218,7 +231,7 @@ Item {
                 defectDictAll[value["name"]] = true
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function un_select_area_defect() {
@@ -228,6 +241,6 @@ Item {
                 defectDictAll[value["name"]] = false
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 }

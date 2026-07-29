@@ -32,6 +32,8 @@ Item {
     required property var modelStore
     required property var clipboardService
     required property var toolService
+    required property var globalContext
+    required property var dialogManager
 
     ConnectDialog{ id:connectDialog }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
@@ -39,7 +41,13 @@ Item {
     function popupExportView(){exportView.openDialog()}
     ToolsMenuView{id:toolsMenu} // 右侧功能菜单
     function popupToolsMenuView(){toolsMenu.popup()}
-    DefectClassPop{id:defectClassPop}// 缺陷列表
+    DefectClassPop{
+        id:defectClassPop
+        adaptiveMetrics: root.adaptiveMetrics
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+        dialogManager: root.dialogManager
+    }// 缺陷列表
     function popupDefectClassPop(){defectClassPop.popup()}
     ApiListPopView{id:apiListPop} // API 调用记录表
     function popupApiList(){apiListPop.popup()}
