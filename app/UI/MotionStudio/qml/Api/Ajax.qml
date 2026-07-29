@@ -70,7 +70,7 @@ Item {
             }
             return null
         }
-        if (method === "POST") {
+        if (method === "POST" || method === "PUT" || method === "PATCH") {
             xhr.withCredentials = true
             xhr.setRequestHeader("Content-Type", "application/json")
         }
@@ -127,6 +127,22 @@ Item {
 //            handleResponse(xhr, success, failure)
 //        }
 //        xhr.send(data)
+    }
+
+    function put(url, arg, success, failure)
+    {
+        if (requestLogger && typeof requestLogger.appendUrl === "function") {
+            requestLogger.appendUrl(url, "put")
+        }
+        return sendRequest("PUT", url, JSON.stringify(arg), success, failure)
+    }
+
+    function delete_(url, success, failure)
+    {
+        if (requestLogger && typeof requestLogger.appendUrl === "function") {
+            requestLogger.appendUrl(url, "delete")
+        }
+        return sendRequest("DELETE", url, null, success, failure)
     }
 
 

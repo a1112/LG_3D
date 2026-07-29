@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls.Material
 import "_base_"
 import "Surface"
+import "JsonUtils.js" as JsonUtils
 CoreModel_ {
     id: root
 
@@ -193,7 +194,7 @@ CoreModel_ {
     function searchByCoilNo(coilNo){
         api.searchByCoilNo(coilNo,
                            (result)=>{
-                                setSearch(JSON.parse(result))
+                                setSearch(JsonUtils.parse(result, [], "search by coil number"))
                            },
                            (error)=>{}
                            )
@@ -201,7 +202,7 @@ CoreModel_ {
     function searchByCoilId(coilId){
         api.searchByCoilId(coilId,
                            (result)=>{
-                               setSearch(JSON.parse(result))
+                               setSearch(JsonUtils.parse(result, [], "search by coil id"))
 
                            },
                            (error)=>{}
@@ -213,7 +214,7 @@ CoreModel_ {
         api.searchByTime(start,end,
                            (result)=>{
                                      // console.log(result)
-                                     setSearch(JSON.parse(result))
+                                     setSearch(JsonUtils.parse(result, [], "search by time"))
                                  },
                            (error)=>{}
         )

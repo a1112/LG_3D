@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "../../../Core/JsonUtils.js" as JsonUtils
 
 Item {
     property var coilStateData: []
@@ -56,7 +57,7 @@ Item {
                              //      "jsonData":"{'coilId': '1868', 'direction': 'L', 'startTime': datetime.datetime(2024, 8, 16, 17, 28, 54, 608487), 'scan3dCoordinateScaleX': 0.33943653106689453, 'scan3dCoordinateScaleY': 1.0, 'scan3dCoordinateScaleZ': 0.016115527600049973, 'crossPoints': [(2236, 188), (2068, 377)], 'rotate': 90, 'crop_box': (4164, 1401, 7024, 5336), 'x_rotate': 17, 'median_3d': 55453.21641044834, 'median_3d_mm': 893.6578395741243, 'colorFromValue_mm': -20, 'colorToValue_mm': 20, 'start': 54211.21641044834, 'step': 2483.0, 'upperLimit': 6205.19554070882, 'lowerLimit': -3102.59777035441, 'lowerArea': 208955, 'upperArea': 4219, 'lowerArea_percent': 0.00812552683904815, 'upperArea_percent': 0.00016406210779327678, 'mask_area': 25715871, 'width': 7024, 'height': 5336, 'circleConfig': {'inner_circle': {'circlex': [3557, 2940, 1386], 'ellipse': ((3520.43310546875, 2854.49365234375), (2177.34033203125, 2689.84375), 83.79122924804688), 'inner_circle': [(3568.13720703125, 2891.76513671875), 1122.9912109375]}}}",
                              //      "surface":"L","median_3d_mm":null,"lowerArea":208955,"startTime":{"year":2024,"month":8,
                              //      "weekday":4,"day":16,"hour":17,"minute":28,"second":55},"upperArea":4219}]
-                            coilStateData=JSON.parse(result)
+                            coilStateData = JsonUtils.parse(result, [], "coil state")
                              load()
                          },
                          (error)=>{

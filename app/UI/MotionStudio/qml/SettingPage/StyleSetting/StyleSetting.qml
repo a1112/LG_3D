@@ -1,9 +1,12 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
 ScrollView {
     id: root
+    required property var style
     clip: true
 
     readonly property var themeKeys: ["dark", "light", "blue"]
@@ -32,7 +35,6 @@ ScrollView {
                     model: root.themeKeys
 
                     ThemeTile {
-                        themeKey: modelData
                         Layout.fillWidth: true
                         Layout.preferredHeight: 112
                     }
@@ -53,7 +55,6 @@ ScrollView {
                     model: root.displayStyleKeys
 
                     DisplayStyleTile {
-                        styleKey: modelData
                         Layout.fillWidth: true
                         Layout.preferredHeight: 104
                     }
@@ -72,33 +73,33 @@ ScrollView {
 
                 TokenPreview {
                     title: qsTr("应用背景")
-                    value: coreStyle.appBackgroundColor
-                    colorValue: coreStyle.appBackgroundColor
+                    value: root.style.appBackgroundColor
+                    colorValue: root.style.appBackgroundColor
                 }
                 TokenPreview {
                     title: qsTr("面板背景")
-                    value: coreStyle.panelBackgroundColor
-                    colorValue: coreStyle.panelBackgroundColor
+                    value: root.style.panelBackgroundColor
+                    colorValue: root.style.panelBackgroundColor
                 }
                 TokenPreview {
                     title: qsTr("标题高亮")
-                    value: coreStyle.titleColor
-                    colorValue: coreStyle.titleColor
+                    value: root.style.titleColor
+                    colorValue: root.style.titleColor
                 }
                 TokenPreview {
                     title: qsTr("选中状态")
-                    value: coreStyle.selectionColor
-                    colorValue: coreStyle.selectionColor
+                    value: root.style.selectionColor
+                    colorValue: root.style.selectionColor
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 78
-                color: coreStyle.panelBackgroundColor
-                border.color: coreStyle.headerBorderColor
+                color: root.style.panelBackgroundColor
+                border.color: root.style.headerBorderColor
                 border.width: 1
-                radius: coreStyle.controlRadius
+                radius: root.style.controlRadius
 
                 RowLayout {
                     anchors.fill: parent
@@ -108,10 +109,10 @@ ScrollView {
                     Rectangle {
                         Layout.preferredWidth: 96
                         Layout.fillHeight: true
-                        color: coreStyle.headerBackgroundColor
-                        border.color: coreStyle.titleColor
+                        color: root.style.headerBackgroundColor
+                        border.color: root.style.titleColor
                         border.width: 1
-                        radius: coreStyle.controlRadius
+                        radius: root.style.controlRadius
                     }
 
                     ColumnLayout {
@@ -119,8 +120,11 @@ ScrollView {
                         spacing: 6
 
                         Label {
-                            text: coreStyle.themes[coreStyle.themeName].name + " / " + coreStyle.displayStyles[coreStyle.displayStyleName].name
-                            color: coreStyle.titleColor
+                            text: root.style.themes[root.style.themeName].name
+                                  + " / "
+                                  + root.style.displayStyles[
+                                      root.style.displayStyleName].name
+                            color: root.style.titleColor
                             font.pixelSize: 16
                             font.bold: true
                             Layout.fillWidth: true
@@ -128,10 +132,10 @@ ScrollView {
 
                         Label {
                             text: qsTr("顶部高度 %1，窗口按钮宽度 %2，圆角 %3")
-                                  .arg(coreStyle.topHeight)
-                                  .arg(coreStyle.windowButtonWidth)
-                                  .arg(coreStyle.controlRadius)
-                            color: coreStyle.labelColor
+                                  .arg(root.style.topHeight)
+                                  .arg(root.style.windowButtonWidth)
+                                  .arg(root.style.controlRadius)
+                            color: root.style.labelColor
                             font.pixelSize: 13
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -154,10 +158,10 @@ ScrollView {
 
         Layout.fillWidth: true
         implicitHeight: sectionLayout.implicitHeight + 28
-        color: coreStyle.panelElevatedColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelElevatedColor
+        border.color: root.style.headerBorderColor
         border.width: 1
-        radius: coreStyle.controlRadius
+        radius: root.style.controlRadius
 
         ColumnLayout {
             id: sectionLayout
@@ -167,7 +171,7 @@ ScrollView {
 
             Label {
                 text: section.title
-                color: coreStyle.titleColor
+                color: root.style.titleColor
                 font.pixelSize: 16
                 font.bold: true
                 Layout.fillWidth: true
@@ -176,7 +180,7 @@ ScrollView {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: coreStyle.headerBorderColor
+                color: root.style.headerBorderColor
             }
 
             ColumnLayout {
@@ -189,9 +193,10 @@ ScrollView {
 
     component ThemeTile: Button {
         id: themeTile
-        property string themeKey: ""
-        readonly property var themeInfo: coreStyle.themes[themeKey]
-        readonly property bool selected: coreStyle.themeName === themeKey
+        required property string modelData
+        readonly property string themeKey: modelData
+        readonly property var themeInfo: root.style.themes[themeKey]
+        readonly property bool selected: root.style.themeName === themeKey
 
         checkable: true
         checked: selected
@@ -199,10 +204,12 @@ ScrollView {
         padding: 0
 
         background: Rectangle {
-            color: themeTile.selected ? coreStyle.selectionColor : coreStyle.panelBackgroundColor
-            border.color: themeTile.selected ? coreStyle.titleColor : coreStyle.headerBorderColor
+            color: themeTile.selected
+                   ? root.style.selectionColor : root.style.panelBackgroundColor
+            border.color: themeTile.selected
+                          ? root.style.titleColor : root.style.headerBorderColor
             border.width: themeTile.selected ? 2 : 1
-            radius: coreStyle.controlRadius
+            radius: root.style.controlRadius
         }
 
         contentItem: ColumnLayout {
@@ -217,7 +224,7 @@ ScrollView {
 
                 Label {
                     text: themeTile.themeInfo.name
-                    color: coreStyle.textColor
+                    color: root.style.textColor
                     font.pixelSize: 14
                     font.bold: true
                     elide: Text.ElideRight
@@ -226,7 +233,8 @@ ScrollView {
 
                 Label {
                     text: themeTile.selected ? qsTr("当前") : qsTr("切换")
-                    color: themeTile.selected ? coreStyle.titleColor : coreStyle.labelColor
+                    color: themeTile.selected
+                           ? root.style.titleColor : root.style.labelColor
                     font.pixelSize: 12
                 }
             }
@@ -249,9 +257,11 @@ ScrollView {
                 Layout.rightMargin: 12
                 Layout.preferredHeight: 26
                 color: themeTile.themeInfo.headerColor || themeTile.themeInfo.backgroundColor
-                border.color: themeTile.selected ? coreStyle.titleColor : coreStyle.headerBorderColor
+                border.color: themeTile.selected
+                              ? root.style.titleColor
+                              : root.style.headerBorderColor
                 border.width: 1
-                radius: coreStyle.controlRadius
+                radius: root.style.controlRadius
 
                 Label {
                     anchors.centerIn: parent
@@ -266,16 +276,19 @@ ScrollView {
             }
         }
 
-        onClicked: coreStyle.applyTheme(themeKey)
+        onClicked: root.style.applyTheme(themeTile.themeKey)
         ToolTip.visible: hovered
         ToolTip.text: qsTr("切换到 %1").arg(themeInfo.name)
     }
 
     component DisplayStyleTile: Button {
         id: styleTile
-        property string styleKey: ""
-        readonly property var styleInfo: coreStyle.displayStyles[styleKey]
-        readonly property bool selected: coreStyle.displayStyleName === styleKey
+        required property string modelData
+        readonly property string styleKey: modelData
+        readonly property var styleInfo:
+            root.style.displayStyles[styleKey]
+        readonly property bool selected:
+            root.style.displayStyleName === styleKey
 
         checkable: true
         checked: selected
@@ -283,10 +296,12 @@ ScrollView {
         padding: 0
 
         background: Rectangle {
-            color: styleTile.selected ? coreStyle.selectionColor : coreStyle.panelBackgroundColor
-            border.color: styleTile.selected ? coreStyle.titleColor : coreStyle.headerBorderColor
+            color: styleTile.selected
+                   ? root.style.selectionColor : root.style.panelBackgroundColor
+            border.color: styleTile.selected
+                          ? root.style.titleColor : root.style.headerBorderColor
             border.width: styleTile.selected ? 2 : 1
-            radius: coreStyle.controlRadius
+            radius: root.style.controlRadius
         }
 
         contentItem: ColumnLayout {
@@ -294,7 +309,7 @@ ScrollView {
 
             Label {
                 text: styleTile.styleInfo.name
-                color: coreStyle.textColor
+                color: root.style.textColor
                 font.pixelSize: 15
                 font.bold: true
                 Layout.leftMargin: 12
@@ -324,32 +339,33 @@ ScrollView {
             }
         }
 
-        onClicked: coreStyle.applyDisplayStyle(styleKey)
+        onClicked: root.style.applyDisplayStyle(styleTile.styleKey)
         ToolTip.visible: hovered
         ToolTip.text: qsTr("切换到 %1显示").arg(styleInfo.name)
     }
 
     component Swatch: Rectangle {
-        property color swatchColor: coreStyle.panelBackgroundColor
+        property color swatchColor: root.style.panelBackgroundColor
         Layout.preferredWidth: 38
         Layout.preferredHeight: 18
         color: swatchColor
-        border.color: coreStyle.headerBorderColor
+        border.color: root.style.headerBorderColor
         border.width: 1
         radius: 2
     }
 
     component TokenPreview: Rectangle {
+        id: tokenPreview
         property string title: ""
         property string value: ""
-        property color colorValue: coreStyle.panelBackgroundColor
+        property color colorValue: root.style.panelBackgroundColor
 
         Layout.fillWidth: true
         Layout.preferredHeight: 48
-        color: coreStyle.panelBackgroundColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelBackgroundColor
+        border.color: root.style.headerBorderColor
         border.width: 1
-        radius: coreStyle.controlRadius
+        radius: root.style.controlRadius
 
         RowLayout {
             anchors.fill: parent
@@ -359,22 +375,22 @@ ScrollView {
             Rectangle {
                 Layout.preferredWidth: 34
                 Layout.preferredHeight: 24
-                color: colorValue
-                border.color: coreStyle.headerBorderColor
+                color: tokenPreview.colorValue
+                border.color: root.style.headerBorderColor
                 border.width: 1
                 radius: 2
             }
 
             Label {
-                text: title
-                color: coreStyle.labelColor
+                text: tokenPreview.title
+                color: root.style.labelColor
                 font.pixelSize: 13
                 Layout.preferredWidth: 84
             }
 
             Label {
-                text: value
-                color: coreStyle.textColor
+                text: tokenPreview.value
+                color: root.style.textColor
                 font.pixelSize: 13
                 elide: Text.ElideRight
                 Layout.fillWidth: true
@@ -383,12 +399,12 @@ ScrollView {
     }
 
     component MetricLabel: Label {
-        color: coreStyle.labelColor
+        color: root.style.labelColor
         font.pixelSize: 12
     }
 
     component MetricValue: Label {
-        color: coreStyle.textColor
+        color: root.style.textColor
         font.pixelSize: 12
         font.bold: true
     }

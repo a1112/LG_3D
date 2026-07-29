@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import "../Aerial"
-import "Draw"
 import "../Comps"
 import "ViewTool"
 Item {
@@ -33,9 +32,6 @@ Item {
 
             ShowDefects{ // 缺陷绘制
             }
-            // DrawView{
-            //     // 绘制
-            // }
             ControlView{
             // 控制系统
             }

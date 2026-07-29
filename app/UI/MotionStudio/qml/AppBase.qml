@@ -1,15 +1,27 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import "PopupView"
 import "fonts"
 ApplicationWindow {
+    id: appBase
 
     x:50
     y:50
     color: "#0B1117"
     flags: Qt.Window | Qt.FramelessWindowHint
-   property PopManagement popManage
+    property PopManagement popManage
+    property var apiClient
+    property var adaptiveMetrics
+    property var appStyle
+    property var settingsStore
+    property var appInfo
+    property var downloadClient
+    property var authManager
+    property var graphsManager
+    property var deviceCurveManager
 
     Loader{
         anchors.fill:parent
@@ -17,10 +29,17 @@ ApplicationWindow {
         sourceComponent:
         PopManagement{
             anchors.fill:parent
-            // id:popManage
-
+            apiClient: appBase.apiClient
+            adaptiveMetrics: appBase.adaptiveMetrics
+            appStyle: appBase.appStyle
+            settingsStore: appBase.settingsStore
+            appInfo: appBase.appInfo
+            downloadClient: appBase.downloadClient
+            authManager: appBase.authManager
+            graphsManager: appBase.graphsManager
+            deviceCurveManager: appBase.deviceCurveManager
         }
-        onLoaded:popManage = this.item
+        onLoaded: appBase.popManage = item
     }
     property LoadFont fonts :LoadFont{}
 }

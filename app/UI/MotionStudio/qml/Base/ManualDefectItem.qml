@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import "../../Model/server"
-import "../../Dialogs"
+import "../Model/server"
+import "../Dialogs"
 
 /**
  * 手动标注缺陷显示项
@@ -151,46 +151,33 @@ Rectangle {
         modal: true
         anchors.centerIn: parent
 
+        function deleteDefect() {
+            api.deleteManualDefect(defect.Id,
+                function() {
+                    console.log("删除缺陷成功")
+                    deleteConfirmDialog.close()
+                    if (surfaceData) {
+                        surfaceData.refreshDefects()
+                    }
+                },
+                function(error) {
+                    console.error("删除缺陷失败:", error)
+                }
+            )
+        }
+
         Label {
             text: "确定要删除此缺陷标注吗？"
         }
 
-        buttons: Row {
-            spacing: 10
-            layoutDirection: Qt.RightToLeft
+        footer: DialogButtonBox {
+            standardButtons: DialogButtonBox.Cancel | DialogButtonBox.Ok
+            onAccepted: deleteConfirmDialog.deleteDefect()
+            onRejected: deleteConfirmDialog.close()
 
-            Button {
-                text: "取消"
-                onClicked: deleteConfirmDialog.close()
-            }
-
-            Button {
-                text: "删除"
-                highlighted: true
-                background: Rectangle {
-                    color: pressed ? "#D32F2F" : "#F44336"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: "删除"
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                onClicked: {
-                    api.deleteManualDefect(defect.Id,
-                        function(result) {
-                            console.log("删除缺陷成功")
-                            deleteConfirmDialog.close()
-                            if (surfaceData) {
-                                surfaceData.refreshDefects()
-                            }
-                        },
-                        function(error) {
-                            console.error("删除缺陷失败:", error)
-                        }
-                    )
-                }
+            Component.onCompleted: {
+                standardButton(DialogButtonBox.Cancel).text = qsTr("取消")
+                standardButton(DialogButtonBox.Ok).text = qsTr("删除")
             }
         }
     }

@@ -158,6 +158,11 @@ Item {
     property color statusSuccessColor: isDark ? "#4ADE80" : "#16803A"
     property color statusWarningColor: isDark ? "#FBBF24" : "#A16207"
     property color statusErrorColor: isDark ? "#FB7185" : "#C62828"
+    property color statusInactiveColor: isDark ? "#8CA0AF" : "#66727D"
+    property color secondaryTextColor: isDark ? "#9FB1BF" : "#5B6772"
+    property color infoOverlayColor: isDark ? "#D9162029" : "#E6FFFFFF"
+    property color infoOverlayBorderColor: isDark ? "#5A7890" : "#A8B5C1"
+    property color viewportBackgroundColor: isDark ? "#070B0F" : "#111820"
 
     // ========== 自适应视图 ==========
     property AdaptiveView adaptive_base: AdaptiveView {

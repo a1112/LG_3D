@@ -1,19 +1,28 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import "../Rectange"
-MenuItem{
-    text:"前景色"
+
+MenuItem {
+    id: root
+
     property color selectedColor
-    onTriggered:{
-        colorDialog.selectedColor = selectedColor
-        colorFunc=function(color){
-            selectedColor=color
-        }
+
+    text: qsTr("前景色")
+
+    onTriggered: {
+        colorDialog.selectedColor = root.selectedColor
         colorDialog.open()
     }
-    ColorRec{
+
+    ColorDialog {
+        id: colorDialog
+        onAccepted: root.selectedColor = selectedColor
+    }
+
+    ColorRec {
         anchors.right: parent.right
-        height:parent.height
-        recColor:selectedColor
+        height: parent.height
+        recColor: root.selectedColor
     }
 }

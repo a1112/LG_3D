@@ -5,7 +5,7 @@ import QtQuick.Controls.Material
 ItemDelegate {
     id:root
     property bool selected: false
-    Material.foreground:selected? Material.accentColor: Material.text
+    Material.foreground: selected ? Material.accentColor : coreStyle.textColor
     Rectangle {
         width: parent.width-10
         anchors.horizontalCenter: parent.horizontalCenter

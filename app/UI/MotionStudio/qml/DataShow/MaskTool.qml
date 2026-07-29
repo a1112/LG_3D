@@ -1,10 +1,11 @@
 import QtQuick
-import QtQuick.Controls
 import "ViewChang"
 import "2dShow"
 import "Menu/MainShow"
 Item {
     id:root
+    required property var controller
+    required property var style
     width:parent.width
     height:parent.height
 
@@ -18,6 +19,8 @@ Item {
 
 
     ShowInfos{
+        controller: root.controller
+        style: root.style
         width: root.width
         height: root.height
     }

@@ -3,14 +3,14 @@ import QtQuick.Controls
 Row {
     Label{
         text: "No:"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: dataShowCore.currentCoilModel.coilNo
     }
     Label{
         text: "钢种:"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: dataShowCore.currentCoilModel.coilType
@@ -18,7 +18,7 @@ Row {
 
     Label{
         text: "外径:"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: dataShowCore.currentCoilModel.coilDia
@@ -26,14 +26,14 @@ Row {
 
     Label{
         text: "厚:"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: dataShowCore.currentCoilModel.coilThickness
     }
     Label{
         text: "宽:"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: core.currentCoilModel.coilWidth

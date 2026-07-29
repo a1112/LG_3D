@@ -1,133 +1,100 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+
 Item {
-    Column{
+    id: root
+    required property var dataController
+    required property var areaController
+    required property var surface
+    required property var style
 
-        Row{
-                spacing:10
-        Row{
-            Label{
-                text: "X: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataShowCore.hoverPoint.x.toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+    component CaptionLabel: Label {
+        color: root.style.secondaryTextColor
+        font.pixelSize: 12
+    }
+
+    component ValueLabel: Label {
+        color: root.style.textColor
+        font.family: "Consolas"
+        font.pixelSize: 12
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.margins: 10
+        width: infoColumn.implicitWidth + 20
+        height: infoColumn.implicitHeight + 16
+        radius: root.style.controlRadius + 2
+        color: root.style.infoOverlayColor
+        border.color: root.style.infoOverlayBorderColor
+        border.width: 1
+
+        Column {
+            id: infoColumn
+            anchors.centerIn: parent
+            spacing: 4
+
+            Row {
+                spacing: 14
+
+                Row {
+                    spacing: 4
+                    CaptionLabel { text: "X" }
+                    ValueLabel { text: root.dataController.hoverPoint.x.toFixed(0) }
+                }
+
+                Row {
+                    spacing: 4
+                    CaptionLabel { text: "Y" }
+                    ValueLabel { text: root.dataController.hoverPoint.y.toFixed(0) }
                 }
             }
 
-        }
-        Row{
-            Label{
-                text: "Y: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataShowCore.hoverPoint.y.toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+            Row {
+                spacing: 4
+                CaptionLabel { text: qsTr("尺寸") }
+                ValueLabel {
+                    text: (root.dataController.sourceWidth * root.surface.scan3dScaleX).toFixed(0)
+                          + " × "
+                          + (root.dataController.sourceHeight * root.surface.scan3dScaleY).toFixed(0)
                 }
+                CaptionLabel { text: "mm" }
             }
 
-        }
-        }
-
-        Row{
-            Label{
-                text: "宽: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: (dataShowCore.sourceWidth*surfaceData.scan3dScaleX).toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+            Row {
+                spacing: 4
+                CaptionLabel { text: qsTr("分辨率") }
+                ValueLabel {
+                    text: root.areaController.sourceWidth + " × " + root.areaController.sourceHeight
                 }
+                CaptionLabel { text: "px" }
             }
-            Label{
-                text: "mm "
-                color: coreStyle.labelColor
+
+            Row {
+                spacing: 4
+                visible: root.areaController.sourceWidth > 0 && root.areaController.sourceHeight > 0
+                CaptionLabel { text: qsTr("瓦片") }
+                ValueLabel {
+                    text: Math.floor(root.areaController.sourceWidth / 3)
+                          + " × "
+                          + Math.floor(root.areaController.sourceHeight / 3)
+                }
+                CaptionLabel { text: "px" }
+            }
+
+            Row {
+                spacing: 4
+                visible: root.areaController.flick !== null
+                CaptionLabel { text: qsTr("视口") }
+                ValueLabel {
+                    text: Math.round(root.areaController.flick.width)
+                          + " × "
+                          + Math.round(root.areaController.flick.height)
+                }
+                CaptionLabel { text: "px" }
             }
         }
-        Row{
-
-            Label{
-
-                text: "高: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: (dataShowCore.sourceHeight*surfaceData.scan3dScaleY).toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "mm "
-                color: coreStyle.labelColor
-            }
-        }
-
-
-        Row{
-            Label{
-                text: dataAreaShowCore.sourceWidth
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "x"
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataAreaShowCore.sourceHeight
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "px "
-                color: coreStyle.labelColor
-            }
-        }
-
-        // 瓦片信息
-        Row{
-            visible: dataAreaShowCore.sourceWidth > 0 && dataAreaShowCore.sourceHeight > 0
-            Label{
-                text: "瓦片: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: parseInt(dataAreaShowCore.sourceWidth / 3) + "x" + parseInt(dataAreaShowCore.sourceHeight / 3)
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "px "
-                color: coreStyle.labelColor
-            }
-        }
-
-        // 显示区域像素
-        Row{
-            visible: dataAreaShowCore.flick !== null
-            Label{
-                text: "显示: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataAreaShowCore.flick.width + "x" + dataAreaShowCore.flick.height
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "px "
-                color: coreStyle.labelColor
-            }
-        }
-}
+    }
 }

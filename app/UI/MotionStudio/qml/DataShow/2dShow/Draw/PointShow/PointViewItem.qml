@@ -26,7 +26,7 @@ Rectangle{
     border.color: "green"
     Label{
         background: Rectangle{
-            color: "#772e2e2e"
+            color: coreStyle.infoOverlayColor
         }
         color:"yellow"
         anchors.right: parent.left

@@ -4,6 +4,7 @@ Item {
     id: root
 
     required property var settings
+    required property var style
 
     property int row_: 0
     property int col_: 0
@@ -20,6 +21,7 @@ Item {
 
     property real currentScale: 1.0
     property int currentLevel: 0
+    property int refreshGeneration: 0
     property int loadedLevel: -1
     property int targetLevel: 0
     property url targetSource: ""
@@ -107,7 +109,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#070B0F"
+        color: root.style.viewportBackgroundColor
     }
 
     Image {
@@ -176,6 +178,18 @@ Item {
     }
 
     onCurrentLevelChanged: updateLevel(currentLevel)
+    onRefreshGenerationChanged: updateLevel(currentLevel)
+
+    onImageUrlChanged: {
+        lastLoadedUrl = ""
+        resetSources()
+        updateLevel(currentLevel)
+    }
+
+    onPreviewUrlChanged: {
+        previewSource = ""
+        loadPreview()
+    }
 
     onShouldLoadChanged: {
         if (shouldLoad) {
@@ -185,16 +199,4 @@ Item {
         }
     }
 
-    onImageUrlChanged: {
-        lastLoadedUrl = ""
-        resetSources()
-        loadPreview()
-        updateLevel(currentLevel)
-    }
-
-    onPreviewUrlChanged: {
-        if (settings && settings.enable1024CacheMode) {
-            loadPreview()
-        }
-    }
 }

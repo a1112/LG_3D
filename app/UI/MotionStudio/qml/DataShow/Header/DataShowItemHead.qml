@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -9,6 +11,11 @@ import "../Core"
 HeaderBase {
     // 数据显示标签
     id:root
+    required property var surfaceData
+    required property var controller
+    required property var areaController
+    required property var style
+
     height: 27
 
     RowLayout{
@@ -18,11 +25,13 @@ HeaderBase {
             spacing: 5
             ScaleBtn{}
             GammaBtn{
-             visible: surfaceData.is2DrootView
+             visible: root.surfaceData.is2DrootView
             }
         }
             ToolBtns{
-                visible: ! surfaceData.is3DrootView
+                visible: !root.surfaceData.is3DrootView
+                controller: root.controller
+                style: root.style
             }
         Item{
             Layout.fillWidth: true
@@ -37,7 +46,7 @@ HeaderBase {
         }
         Row{
             spacing: 10
-            visible: surfaceData.is3DrootView
+            visible: root.surfaceData.is3DrootView
             View3DZScaleBtn{
                 anchors.verticalCenter:parent.verticalCenter
             }
@@ -62,20 +71,20 @@ HeaderBase {
             text: qsTr("2D")
             key:qsTr("2D")
             has_data: true
-            selected:surfaceData.rootViewIndex  == 2
+            selected: root.surfaceData.rootViewIndex === 2
             onClicked: {
-                surfaceData.rootViewtoArea()  // 2
+                root.surfaceData.rootViewtoArea()
             }
         }
 
         ItemDelegateItemLabel {
-            key:surfaceData.currentViewKey
+            key: root.surfaceData.currentViewKey
             has_data: true
             height: 20
-            text: surfaceData.currentViewKey
-            selected:surfaceData.rootViewIndex==0
+            text: root.surfaceData.currentViewKey
+            selected: root.surfaceData.rootViewIndex === 0
             onClicked: {
-                surfaceData.rootViewto2D()
+                root.surfaceData.rootViewto2D()
             }
 
             HoverHandler{
@@ -86,8 +95,8 @@ HeaderBase {
             height: 20
             key:"MESH"
             text: qsTr("3D")
-            selected:surfaceData.rootViewIndex==1
-            onClicked: surfaceData.rootViewto3D()
+            selected: root.surfaceData.rootViewIndex === 1
+            onClicked: root.surfaceData.rootViewto3D()
         }
         }
 
@@ -96,9 +105,9 @@ HeaderBase {
             WindowModelChangeButton {
                 height:25
                 width: 25
-                shouMaxIcon:surfaceData.showMax
+                shouMaxIcon: root.surfaceData.showMax
                 onClicked: {
-                    surfaceData.showMax = !surfaceData.showMax
+                    root.surfaceData.showMax = !root.surfaceData.showMax
                 }
             }
         }
@@ -108,9 +117,15 @@ HeaderBase {
         Repeater{
             model: 6
             MenuItem{
-                text: ((dataShowCore_.minScale+((1-dataShowCore_.minScale)/5 * (modelData)))*100).toFixed(0) + "%"
+                required property int modelData
+                text: ((root.areaController.minScale
+                        + ((1 - root.areaController.minScale) / 5
+                           * modelData)) * 100).toFixed(0) + "%"
                 onClicked: {
-                    dataShowCore_.canvasScale = dataShowCore_.minScale+((1-dataShowCore_.minScale)/5 * (modelData))
+                    root.areaController.canvasScale =
+                        root.areaController.minScale
+                        + ((1 - root.areaController.minScale) / 5
+                           * modelData)
                 }
             }
         }

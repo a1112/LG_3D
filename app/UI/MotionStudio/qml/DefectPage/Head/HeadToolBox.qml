@@ -2,10 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import "../../Core/JsonUtils.js" as JsonUtils
 import Qt.labs.platform
 import QtQuick.Dialogs
-
-import "../../Core"
 
 Item{
     id:root
@@ -134,8 +133,8 @@ Item{
                 defects: defectsList
             },
             function(resp) {
-                let result = typeof resp === "string" ? JSON.parse(resp) : resp
-                console.log("导出成功:", result.message)
+                let result = JsonUtils.parse(resp, {}, "defect export")
+                console.log("导出成功:", result.message || "")
             },
             function(err) {
                 console.log("导出失败:", err)

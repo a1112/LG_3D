@@ -6,5 +6,6 @@ TiledImageView{
     apiClient: api
     settings: coreSetting
     surface: surfaceData
+    style: coreStyle
     imageUrl: dataAreaShowCore.source
 }

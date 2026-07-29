@@ -17,7 +17,7 @@ Row{
 
 AnimLabel{
     id:lab
-    color:"red"
+    color: coreStyle.statusErrorColor
     font.bold:true
     font.pointSize: 16
     font.family: "Microsoft YaHei"

@@ -1,167 +1,196 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes
+
 Item {
-    id:root
+    id: root
+
+    required property var surfaceData
+    required property var dataShowCore
+    required property var style
+
     anchors.fill: parent
-    property var inner_circle_centre: surfaceData.inner_circle_centre || [0,0,0,0,0]
-    property var circle: [
-        parseInt((inner_circle_centre[0] || 0)*dataShowCore.canvasScale),
-        parseInt((inner_circle_centre[1] || 0)*dataShowCore.canvasScale),
-        parseInt((inner_circle_centre[3] || 0)*dataShowCore.canvasScale),
-        parseInt((inner_circle_centre[4] || 0)*dataShowCore.canvasScale)
-    ]
-    property var inner_ellipse: surfaceData.inner_ellipse || [[0,0],[0,0],0]
 
-
-    property var ellipse: {
-        "center": {"x": ((inner_ellipse[0] && inner_ellipse[0][0]) || 0)*dataShowCore.canvasScale-((inner_ellipse[1] && inner_ellipse[1][1]) || 0)*dataShowCore.canvasScale/2
-            ,
-            "y": ((inner_ellipse[0] && inner_ellipse[0][1]) || 0)*dataShowCore.canvasScale
-        },
-        "axes": {"major_axis": ((inner_ellipse[1] && inner_ellipse[1][1]) || 0)*dataShowCore.canvasScale,
-            "minor_axis": ((inner_ellipse[1] && inner_ellipse[1][0]) || 0)*dataShowCore.canvasScale},
-        "angle": inner_ellipse[2] || 0
+    readonly property var innerEllipse:
+        surfaceData.inner_ellipse || [[0, 0], [0, 0], 0]
+    readonly property var ellipse: {
+        let center = innerEllipse[0] || [0, 0]
+        let axes = innerEllipse[1] || [0, 0]
+        let scale = Number(dataShowCore.canvasScale) || 0
+        let major = (Number(axes[1]) || 0) * scale
+        let minor = (Number(axes[0]) || 0) * scale
+        return {
+            center: {
+                x: (Number(center[0]) || 0) * scale - major / 2,
+                y: (Number(center[1]) || 0) * scale
+            },
+            axes: {
+                major: major,
+                minor: minor
+            },
+            angle: Number(innerEllipse[2]) || 0
+        }
     }
-    property var lineData: surfaceData.lineData || []
+    readonly property var lineData: surfaceData.lineData || []
+    readonly property var perpendicularPoint:
+        dataShowCore.perpendicularPoint
 
-    onLineDataChanged: {
-        canva.requestPaint()
+    function requestCanvasPaint() {
+        lineCanvas.requestPaint()
+        transactionCanvas.requestPaint()
     }
 
-    Canvas{
-        id:canva
+    onLineDataChanged: lineCanvas.requestPaint()
+    onSurfaceDataChanged: requestCanvasPaint()
+    onDataShowCoreChanged: requestCanvasPaint()
+    Component.onCompleted: requestCanvasPaint()
+
+    Connections {
+        target: root.dataShowCore
+        function onCanvasScaleChanged() {
+            root.requestCanvasPaint()
+        }
+    }
+
+    Connections {
+        target: root.surfaceData.txModel
+        ignoreUnknownSignals: true
+        function onCountChanged() {
+            transactionCanvas.requestPaint()
+        }
+        function onDataChanged() {
+            transactionCanvas.requestPaint()
+        }
+    }
+
+    Canvas {
+        id: lineCanvas
         anchors.fill: parent
+        antialiasing: true
+
         onPaint: {
-            var context = getContext("2d")
-            context.clearRect(0, 0, canva.width, canva.height)
+            let context = getContext("2d")
+            context.clearRect(0, 0, width, height)
             context.lineWidth = 1
-            context.strokeStyle = "blue"
+            context.strokeStyle = root.style.selectionColor
             context.setLineDash([10, 5])
-            // 遍历线段列表进行绘制
-            for (var i = 0; i < lineData.length; i++) {
-                var line = lineData[i] || {}
-                if (!line.pointL || !line.pointR) {
+            let scale = Number(root.dataShowCore.canvasScale) || 0
+            for (let index = 0; index < root.lineData.length; ++index) {
+                let line = root.lineData[index] || {}
+                if (!line.pointL || !line.pointR)
                     continue
-                }
                 context.beginPath()
-                context.moveTo(line.pointL[0]*dataShowCore.canvasScale, line.pointL[1]*dataShowCore.canvasScale)
-                context.lineTo(line.pointR[0]*dataShowCore.canvasScale, line.pointR[1]*dataShowCore.canvasScale)
+                context.moveTo(line.pointL[0] * scale,
+                               line.pointL[1] * scale)
+                context.lineTo(line.pointR[0] * scale,
+                               line.pointR[1] * scale)
                 context.stroke()
             }
         }
     }
 
-    Canvas{
-        id:canva2
+    Canvas {
+        id: transactionCanvas
         anchors.fill: parent
+        antialiasing: true
+
         onPaint: {
-            var context = getContext("2d")
-            context.clearRect(0, 0, canva.width, canva.height)
+            let context = getContext("2d")
+            context.clearRect(0, 0, width, height)
             context.lineWidth = 2
-            context.strokeStyle = "red"
-            for (var i = 0; i < surfaceData.txModel.count; i++) {
-                var line = surfaceData.txModel.get(i)
+            context.strokeStyle = root.style.statusErrorColor
+            let scale = Number(root.dataShowCore.canvasScale) || 0
+            let model = root.surfaceData.txModel
+            for (let index = 0; index < model.count; ++index) {
+                let line = model.get(index)
                 context.beginPath()
-                context.moveTo(line.startX*dataShowCore.canvasScale, line.startY*dataShowCore.canvasScale)
-                context.lineTo(line.endX*dataShowCore.canvasScale, line.endY*dataShowCore.canvasScale)
+                context.moveTo(line.startX * scale, line.startY * scale)
+                context.lineTo(line.endX * scale, line.endY * scale)
                 context.stroke()
             }
         }
     }
-    Repeater{
-
-        model:surfaceData.txModel
-        // {"startX":4799,"startY":2405,"startZ":1777,"endX":4809,"endY":2404,"endZ":47266,"start_z_mm":-764.16,"end_z_mm":-25.899999999999977,"reverse":-1}
-
-    }
-
-    // Rectangle{
-    //    anchors.fill: parent
-    //    transform:Rotation{
-    //        // origin.x: ellipse.center.x;
-    //        // origin.y: ellipse.center.y;
-    //        angle:ellipse.angle
-    //    }
-    // }
 
     Shape {
-        id: ellipseShape
-
         ShapePath {
             strokeWidth: 2
-            strokeColor: "green"
-            fillColor: "#12222222"
-            // 计算旋转后的路径
-            PathSvg {
-                path: "M " +  ellipse.center.x + "," + ellipse.center.y + " " +
-                      "a " + (ellipse.axes.major_axis / 2) + "," + (ellipse.axes.minor_axis / 2) + " 0 1,0 " +
-                      ellipse.axes.major_axis + ",0 " +
-                      "a " + (ellipse.axes.major_axis / 2) + "," + (ellipse.axes.minor_axis / 2) + " 0 1,0 -" +
-                      ellipse.axes.major_axis + ",0"
-            }
+            strokeColor: root.style.statusSuccessColor
+            fillColor: root.style.infoOverlayColor
 
+            PathSvg {
+                path: "M " + root.ellipse.center.x + ","
+                      + root.ellipse.center.y + " a "
+                      + root.ellipse.axes.major / 2 + ","
+                      + root.ellipse.axes.minor / 2 + " 0 1,0 "
+                      + root.ellipse.axes.major + ",0 a "
+                      + root.ellipse.axes.major / 2 + ","
+                      + root.ellipse.axes.minor / 2 + " 0 1,0 -"
+                      + root.ellipse.axes.major + ",0"
+            }
         }
     }
+
     Shape {
         ShapePath {
-            strokeColor: "blue"
+            strokeColor: root.style.selectionColor
             strokeWidth: 1
             fillColor: "transparent"
-
-            dashPattern: [ 2, 2 ]
-
-            property int joinStyleIndex: 0
-            startX: ellipse.center.x
-            startY: ellipse.center.y
-            PathLine {
-                x: ellipse.axes.major_axis + ellipse.center.x
-                y:ellipse.center.y
-
-            }
-            PathMove{
-                x:ellipse.center.x + ellipse.axes.major_axis/2
-                y:ellipse.center.y  - ellipse.axes.minor_axis/2
-            }
+            dashPattern: [2, 2]
+            startX: root.ellipse.center.x
+            startY: root.ellipse.center.y
 
             PathLine {
-                x: ellipse.center.x + ellipse.axes.major_axis/2;
-                y: ellipse.axes.minor_axis +ellipse.center.y  - ellipse.axes.minor_axis/2
-
+                x: root.ellipse.axes.major + root.ellipse.center.x
+                y: root.ellipse.center.y
+            }
+            PathMove {
+                x: root.ellipse.center.x + root.ellipse.axes.major / 2
+                y: root.ellipse.center.y - root.ellipse.axes.minor / 2
+            }
+            PathLine {
+                x: root.ellipse.center.x + root.ellipse.axes.major / 2
+                y: root.ellipse.center.y + root.ellipse.axes.minor / 2
             }
         }
     }
-    Label{
-        x:ellipse.center.x+ellipse.axes.major_axis/2+5
-        y:ellipse.center.y - ellipse.axes.minor_axis * (1/3)
-        text:surfaceData.ix_to_mm((inner_ellipse[1] && inner_ellipse[1][1]) || 0)
-        color: "green"
+
+    Label {
+        x: root.ellipse.center.x + root.ellipse.axes.major / 2 + 5
+        y: root.ellipse.center.y - root.ellipse.axes.minor / 3
+        text: root.surfaceData.ix_to_mm(
+                  Number(root.innerEllipse[1][1]) || 0)
+        color: root.style.statusSuccessColor
         font.bold: true
         font.pointSize: 14
     }
 
-    Label{
-        x:ellipse["center"].x+ellipse.axes.major_axis*(2/3)
-        y:ellipse["center"].y+5
-        text:surfaceData.ix_to_mm((inner_ellipse[1] && inner_ellipse[1][0]) || 0)
-        color: "green"
+    Label {
+        x: root.ellipse.center.x + root.ellipse.axes.major * 2 / 3
+        y: root.ellipse.center.y + 5
+        text: root.surfaceData.ix_to_mm(
+                  Number(root.innerEllipse[1][0]) || 0)
+        color: root.style.statusSuccessColor
         font.bold: true
         font.pointSize: 14
     }
-    Rectangle{
-        width: 4
-        height: 4
-        radius: 2
-        color:"#00000000"
+
+    Rectangle {
+        width: 6
+        height: 6
+        radius: 3
+        color: "transparent"
         border.width: 2
-        border.color: "orange"
-        visible: dataShowCore.perpendicularPoint !== undefined
-        x:dataShowCore.perpendicularPoint.x*dataShowCore.canvasScale-2
-        y:dataShowCore.perpendicularPoint.y*dataShowCore.canvasScale-2
+        border.color: root.style.statusWarningColor
+        visible: root.perpendicularPoint !== undefined
+                 && root.perpendicularPoint !== null
+                 && isFinite(root.perpendicularPoint.x)
+                 && isFinite(root.perpendicularPoint.y)
+        x: visible
+           ? root.perpendicularPoint.x * root.dataShowCore.canvasScale - 3 : 0
+        y: visible
+           ? root.perpendicularPoint.y * root.dataShowCore.canvasScale - 3 : 0
     }
 
-    // DrawEllipse{}// 绘制 拟合椭圆
-    DrawSurvey{}// 绘制 测量
-
-    DrawPoint{} // 绘制 标记点
+    DrawSurvey {}
+    DrawPoint {}
 }

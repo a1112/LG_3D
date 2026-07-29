@@ -36,7 +36,7 @@ RowLayout {
     }
     Label{
     text: "w/h"
-    color: "#747474"
+    color: coreStyle.secondaryTextColor
     }
 
 }

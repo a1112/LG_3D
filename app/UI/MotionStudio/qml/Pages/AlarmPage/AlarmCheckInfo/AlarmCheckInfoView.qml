@@ -4,12 +4,14 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../../Comp/Card"
 import "../../../Pages/Header"
+import "../../../Core/JsonUtils.js" as JsonUtils
 CardBase {
     id: root
     height: 70
     title: "判级"
     max_height: 70 + ta.implicitHeight
     property int currentPortInt: 0
+    property int statusRequestGeneration: 0
 
     function setCurrentPortInt(currentPortInt_){
         currentPortInt = currentPortInt_
@@ -31,15 +33,27 @@ CardBase {
     //     ta.text = core.currentCoilModel.coilCheck.msg
     // }
     // }
-    property var coilId: core.currentCoilModel
-    onCoilIdChanged:{
-        if (core.currentCoilModel.coilId<=0){
+    readonly property int coilId: core.currentCoilModel
+                                  ? Number(core.currentCoilModel.coilId || 0) : 0
+    onCoilIdChanged: {
+        root.statusRequestGeneration += 1
+        let generation = root.statusRequestGeneration
+        let requestedCoilId = root.coilId
+        if (requestedCoilId <= 0) {
+            root.currentPortInt = 0
+            ta.text = ""
             return
         }
-        api.getCoilStatus(core.currentCoilModel.coilId,
+        api.getCoilStatus(requestedCoilId,
                           (text)=>{
-                              let data = JSON.parse(text)
-                                console.log("getCoilStatus ",core.currentCoilModel.coilId,"  ",typeof(text),"  ", text)
+                              if (generation !== root.statusRequestGeneration
+                                      || requestedCoilId !== root.coilId) {
+                                  return
+                              }
+                              let data = JsonUtils.parse(text, null, "coil status")
+                              if (!data || typeof data !== "object") {
+                                  return
+                              }
                                 ta.text =  data["msg"]
                                 root.currentPortInt = data["status"]
 
@@ -72,7 +86,8 @@ CardBase {
                 CheckRec{
                     fillWidth: true
                     text : "返修"
-                    color: root.currentPortInt == 2? "red": coreStyle.textColor
+                    color: root.currentPortInt == 2
+                           ? coreStyle.statusErrorColor : coreStyle.textColor
                     checkColor: root.currentPortInt == 2?color:"#00000000"
                     onClicked:{
                         root.setCurrentPortInt(2)
@@ -86,7 +101,8 @@ CardBase {
                 CheckRec{
                     fillWidth: true
                     text : "未确认"
-                    color: root.currentPortInt == 0? "yellow": coreStyle.textColor
+                    color: root.currentPortInt == 0
+                           ? coreStyle.statusWarningColor : coreStyle.textColor
                     checkColor: root.currentPortInt == 0?color:"#00000000"
                     onClicked:{
                         root.setCurrentPortInt(0)
@@ -100,7 +116,8 @@ CardBase {
                 CheckRec{
                     fillWidth: true
                     text : "通过"
-                    color: root.currentPortInt == 1? "green": coreStyle.textColor
+                    color: root.currentPortInt == 1
+                           ? coreStyle.statusSuccessColor : coreStyle.textColor
                     checkColor: root.currentPortInt == 1?color:"#00000000"
                     onClicked:{
                          root.setCurrentPortInt(1)

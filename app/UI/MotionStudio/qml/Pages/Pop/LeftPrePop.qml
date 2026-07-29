@@ -5,7 +5,13 @@ import QtQuick.Layouts
 import "../../Labels"
 import "../../Model"
 Menu {
-    property  bool isHoved: leftCore.isHoved
+    id: root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var hoverController
+
+    property bool isHoved: root.hoverController.isHoved
     onIsHovedChanged: {
             if  (isHoved){
                  popup()
@@ -13,13 +19,18 @@ Menu {
             }
     }
     visible: isHoved
-    id:root
-    x: left.width + adaptive.headerSideGap
-    y: Math.max(adaptive.headerSideGap, Math.min(leftCore.hoverPoint.y, leftCore.hoverPoint.y - height - adaptive.headerSideGap))
-    width: adaptive.boundedWidth(620, 460, 760)
-    height: col.height + adaptive.mainSpacing * 3
-    property int body_width: width - adaptive.mainSpacing * 2
-    property CoilModel coilModel:leftCore.hovedCoilModel
+    x: root.style.leftWidth + root.adaptiveMetrics.headerSideGap
+    y: Math.max(
+           root.adaptiveMetrics.headerSideGap,
+           Math.min(
+               root.hoverController.hoverPoint.y,
+               root.hoverController.hoverPoint.y - height
+               - root.adaptiveMetrics.headerSideGap))
+    width: root.adaptiveMetrics.boundedWidth(620, 460, 760)
+    height: col.height + root.adaptiveMetrics.mainSpacing * 3
+    property int body_width:
+        width - root.adaptiveMetrics.mainSpacing * 2
+    property CoilModel coilModel: root.hoverController.hovedCoilModel
 
     // onClosed:{
     //     leftCore.isHoved = false
@@ -41,7 +52,7 @@ Menu {
             color:Material.color(Material.Blue)
             Layout.alignment:Qt.AlignHCenter
             anchors.horizontalCenter:parent.horizontalCenter
-            font.pointSize: adaptive.fontMetric(20, 16, 24)
+            font.pointSize: root.adaptiveMetrics.fontMetric(20, 16, 24)
         }
         ImageRow{
             width:parent.width
@@ -54,7 +65,7 @@ Menu {
         CoilInfo{
             width:parent.width
             Layout.fillWidth:true
-            height: adaptive.scaleMetric(100, 80, 130)
+            height: root.adaptiveMetrics.scaleMetric(100, 80, 130)
             coilModel: root.coilModel
         }
         AlarmInfo{
@@ -65,8 +76,9 @@ Menu {
         TaperShapeTable{
             width:parent.width
             Layout.fillWidth:true
-            height: adaptive.scaleMetric(120, 95, 155)
+            height: root.adaptiveMetrics.scaleMetric(120, 95, 155)
             coilModel: root.coilModel
+            style: root.style
         }
         // TextArea{
         //     text:leftCore.leftMsg
@@ -76,7 +88,7 @@ Menu {
             Layout.fillWidth:true
             coilModel: root.coilModel
             respectFilter: false
-            thumbnailSize: adaptive.scaleMetric(96, 72, 120)
+            thumbnailSize: root.adaptiveMetrics.scaleMetric(96, 72, 120)
         }
 
     }

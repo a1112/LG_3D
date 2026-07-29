@@ -5,8 +5,10 @@ Label{
 Layout.fillWidth: true
 
     background: Rectangle {
-        color: coreStyle.isDark?"black":"#eee"
-        radius: 5
+        color: coreStyle.panelAlternateColor
+        border.color: coreStyle.headerBorderColor
+        border.width: 1
+        radius: coreStyle.controlRadius
     }
 
 }

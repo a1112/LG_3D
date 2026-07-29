@@ -1,5 +1,6 @@
 import QtQuick
 import "../../Model"
+import "../JsonUtils.js" as JsonUtils
 Item {
     id:root
     property int rootViewIndex: 0
@@ -485,7 +486,10 @@ Item {
                                     return
                                 }
                                 coilInfoRequest = null
-                                setCoilInfo(JSON.parse(result))
+                                let payload = JsonUtils.parse(result, null, "coil surface info")
+                                if (payload !== null) {
+                                    setCoilInfo(payload)
+                                }
                             },
                             (error)=>{
                                 if (requestId === surfaceLoadRequestId) {
@@ -504,7 +508,7 @@ Item {
                                 return
                             }
                             pointDataRequest = null
-                            pointTool.setDatas(JSON.parse(result))
+                            pointTool.setDatas(JsonUtils.parse(result, [], "coil point data"))
                         },
                         (error)=>{
                             if (requestId === surfaceLoadRequestId) {

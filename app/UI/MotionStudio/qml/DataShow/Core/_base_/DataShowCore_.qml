@@ -2,6 +2,7 @@ import QtQuick
 import "../"
 import "../../../Core/Surface"
 import "../../../DataShow/2dShow/ViewTool"
+import "../../../Core/JsonUtils.js" as JsonUtils
 Item {
     id: root
 
@@ -176,7 +177,7 @@ Item {
         defectClear()
         api.getDefects(surfaceData.coilId,surfaceData.key,
                        (result)=>{
-                           defectsData = JSON.parse(result)
+                           defectsData = JsonUtils.parse(result, [], "surface defects")
                        },
                        (err)=>{
                        }

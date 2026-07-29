@@ -1,7 +1,15 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import "DataShowItem"
 Loader{
+    id: root
+
+    required property var surfaceData
+    required property var controller
+    required property var style
+
     // 头部信息显示
     asynchronous: true
     sourceComponent:RowLayout{
@@ -12,7 +20,7 @@ Loader{
         StackLayout{
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: dataShowCore.topDataManage.currentShowModel
+            currentIndex: root.controller.topDataManage.currentShowModel
             DataShowItemDefects{  // 缺陷显示 界面
             }
 
@@ -20,6 +28,9 @@ Loader{
             }
 
             DataShowItemCharts{  //  charts
+                surfaceData: root.surfaceData
+                controller: root.controller
+                style: root.style
             }
 
         }

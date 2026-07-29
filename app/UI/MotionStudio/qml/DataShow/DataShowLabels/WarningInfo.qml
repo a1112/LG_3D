@@ -41,7 +41,7 @@ ColumnLayout {
         }
         Label{
             text: "圈"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
         }
         ValueLabel{
             text: "30"
@@ -49,7 +49,7 @@ ColumnLayout {
         }
         Label{
             text: "mm"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
         }
     }
 
@@ -63,7 +63,7 @@ ColumnLayout {
         }
         Label{
             text: "圈"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
         }
         ValueLabel{
             text: "30"
@@ -71,7 +71,7 @@ ColumnLayout {
         }
         Label{
             text: "mm"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
         }
     }
 }

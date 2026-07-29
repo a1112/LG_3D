@@ -8,17 +8,30 @@ import "DataShow"
 
 */
 SplitView{
+    id: root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var model
+    required property var settings
+    required property var viewControl
+
     Layout.fillWidth: true
     Layout.fillHeight: true
     LeftPageView{  // 左侧列表
         id:left
         SplitView.fillHeight: true
-        SplitView.preferredWidth:coreStyle.leftWidth
-        SplitView.minimumWidth: coreStyle.leftMinimumWidth
-        SplitView.maximumWidth: coreStyle.leftMaximumWidth
+        SplitView.preferredWidth: root.style.leftWidth
+        SplitView.minimumWidth: root.style.leftMinimumWidth
+        SplitView.maximumWidth: root.style.leftMaximumWidth
     }
     DataShowLayout{    // 数据显示
         Layout.fillWidth: true
         Layout.fillHeight: true
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.style
+        model: root.model
+        settings: root.settings
+        viewControl: root.viewControl
     }
 }

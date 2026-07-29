@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 
@@ -6,24 +8,33 @@ import "Pages/Pop"
 
 Item {
     id: root
-    implicitWidth: adaptive.designWidth
-    implicitHeight: adaptive.designHeight
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var model
+    required property var settings
+    required property var viewControl
+    required property var appController
+    required property var leftController
+
+    implicitWidth: root.adaptiveMetrics.designWidth
+    implicitHeight: root.adaptiveMetrics.designHeight
     anchors.fill: parent
 
     Rectangle {
         anchors.fill: parent
-        color: coreStyle.appBackgroundColor
+        color: root.style.appBackgroundColor
     }
 
     ColumnLayout {
-        spacing: adaptive.mainSpacing
+        spacing: root.adaptiveMetrics.mainSpacing
         anchors.fill: parent
 
         TopHeader {
         }
 
         StackLayout {
-            currentIndex: app_core.appIndex
+            currentIndex: root.appController.appIndex
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -32,7 +43,13 @@ Item {
                 Layout.fillHeight: true
                 asynchronous: true
                 active: true
-                source: "DataShowRoot.qml"
+                sourceComponent: DataShowRoot {
+                    adaptiveMetrics: root.adaptiveMetrics
+                    style: root.style
+                    model: root.model
+                    settings: root.settings
+                    viewControl: root.viewControl
+                }
             }
 
             Loader {
@@ -47,5 +64,8 @@ Item {
 
     LeftPrePop {
         id: lp
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.style
+        hoverController: root.leftController
     }
 }

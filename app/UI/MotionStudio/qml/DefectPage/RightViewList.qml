@@ -9,28 +9,32 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "Alarm"
-import "HistoryView"
 import "DefectInfo"
-import "../Pages/Card"
-import "../Pages/AlarmPage"
-import "../Pages/AlarmPage/AlarmItemSimple"
-import "../Pages/AlarmPage/AlarmCheckInfo"
 import "../Pages/LeftPage/DataList"
 import "../Pages/LeftPage/SearchView"
-import "../Pages/LeftPage/FliterSelect"
 import "../Pages/LeftPage"
 SplitView{
-      SplitView.preferredWidth: adaptive.scaleMetric(400, 320, 520)
+      id: root
+      required property var adaptiveMetrics
+      required property var defectController
+      required property var style
+      required property var leftController
+      required property var apiClient
+      required property var modelController
+      required property var popupManager
+
+      SplitView.preferredWidth: root.adaptiveMetrics.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
        orientation: Qt.Vertical
        DefectInfoView{
        }
        DefectClassInfoView{
+           viewController: root.defectController
+           style: root.style
        }
 
        SearchView{ // 查询界面
-           visible: leftCore.searchViewShow
+           visible: root.leftController.searchViewShow
            Layout.fillWidth: true
            SplitView.fillWidth: true
        }
@@ -49,12 +53,12 @@ SplitView{
        }
 
        FootView{
-           apiClient: api
-           style: coreStyle
-           model: coreModel
-           popupManager: popManage
+           apiClient: root.apiClient
+           style: root.style
+           model: root.modelController
+           popupManager: root.popupManager
            SplitView.fillWidth: true
-           SplitView.preferredHeight: adaptive.scaleMetric(25, 22, 34)
+           SplitView.preferredHeight: root.adaptiveMetrics.scaleMetric(25, 22, 34)
        }
 
       // Item{

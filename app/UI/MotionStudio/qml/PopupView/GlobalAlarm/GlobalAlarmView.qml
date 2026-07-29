@@ -1,5 +1,4 @@
 import QtQuick
-import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItem"
 import "../Base"
 PopupBase {
@@ -11,7 +10,8 @@ PopupBase {
         width: parent.width - adaptive.mainSpacing
         anchors.centerIn:parent
         AlarmItemCameras{
-                    width: parent.width
+            watcher: app.captureAlarmWatcher
+            width: parent.width
             alarmLevel:coreModel.coreGlobalError.errorLevelDict["相机"]
             height: adaptive.scaleMetric(100, 82, 130)
         }

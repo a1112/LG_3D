@@ -1,4 +1,5 @@
 import QtQuick
+import "JsonUtils.js" as JsonUtils
 // 负责进行设置，反馈等级
 Item {
 
@@ -12,7 +13,10 @@ Item {
         if (requestId !== dataHasRequestId || core.currentCoilModel.coilId !== requestedCoilId) {
             return false
         }
-        let data = JSON.parse(text)
+        let data = JsonUtils.parse(text, null, "coil data availability")
+        if (data === null) {
+            return false
+        }
         coreModel.setHasDataCache(requestedCoilId, data)
         coreModel.has_data = data
         coreModel.hasDataCoilId = requestedCoilId

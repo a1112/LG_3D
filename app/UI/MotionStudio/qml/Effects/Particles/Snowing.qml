@@ -12,7 +12,7 @@ Item{
         sliderEmitRate_sliderValue+=20
         na.restart()
     }
-    property int sliderEmitRate_sliderValue:0
+    property int sliderEmitRate_sliderValue
     NumberAnimation on sliderEmitRate_sliderValue {
         id:na
         to: 0

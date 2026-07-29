@@ -25,9 +25,7 @@
         <file>qml/Base/CheckBoxBase.qml</file>
         <file>qml/Base/CheckRec.qml</file>
         <file>qml/Base/CoreAction.qml</file>
-        <file>qml/Base/DefectDraw.qml</file>
         <file>qml/Base/DefectInfoItem.qml</file>
-        <file>qml/Base/DefectView.qml</file>
         <file>qml/Base/DropShadowBase.qml</file>
         <file>qml/Base/DropShadowLabel.qml</file>
         <file>qml/Base/DropShadowRec.qml</file>
@@ -43,10 +41,7 @@
         <file>qml/Base/RadioButtonBase.qml</file>
         <file>qml/Base/RadioDelegateBase.qml</file>
         <file>qml/Base/ScrollBarBase.qml</file>
-        <file>qml/Base/ScrollBarBase2.qml</file>
-        <file>qml/Base/SelectCursor.qml</file>
         <file>qml/Base/SelectItem.qml</file>
-        <file>qml/Base/SelectItemInfoView.qml</file>
         <file>qml/Base/SelectRectangle.qml</file>
         <file>qml/Base/SettingsBase.qml</file>
         <file>qml/Base/SplitViewBase.qml</file>
@@ -72,7 +67,6 @@
         <file>qml/btns/ItemDelegateButtonBase.qml</file>
         <file>qml/btns/LabelButton.qml</file>
         <file>qml/btns/MoreBtn.qml</file>
-        <file>qml/btns/MoreSet.qml</file>
         <file>qml/btns/NextBtn.qml</file>
         <file>qml/btns/PingButton.qml</file>
         <file>qml/btns/PlayButton.qml</file>
@@ -91,7 +85,6 @@
         <file>qml/Comp/DefecShowItemItem.qml</file>
         <file>qml/Comp/DefectItemList/DefectItemListView.qml</file>
         <file>qml/Comp/DefectRecView.qml</file>
-        <file>qml/Comp/Images/AlarmColorImage.qml</file>
         <file>qml/Comp/Images/AnimAlarm2.qml</file>
         <file>qml/Comp/LabelFootInfoKey.qml</file>
         <file>qml/Comp/MaxImageComp.qml</file>
@@ -141,6 +134,7 @@
         <file>qml/Core/Global.qml</file>
         <file>qml/Core/ImageCache.qml</file>
         <file>qml/Core/Init.qml</file>
+        <file>qml/Core/JsonUtils.js</file>
         <file>qml/Core/LefeCore.qml</file>
         <file>qml/Core/Script.qml</file>
         <file>qml/Core/Script/LeftListScript.qml</file>
@@ -286,18 +280,6 @@
         <file>qml/DataShow/ViewArea/CentreView.qml</file>
         <file>qml/DataShow/ViewArea/ControlView.qml</file>
         <file>qml/DataShow/ViewArea/DefectShowItem.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/DrawEllipse.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/DrawPoint.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/DrawSelectItem.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/DrawSurvey.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/DrawView.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/DbPointShow.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/PointItem.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/PointItemLabelShow.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/PointItemPointShow.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/PointViewItem.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/TaperShapePointShowView.qml</file>
-        <file>qml/DataShow/ViewArea/Draw/PointShow/UserPointShow.qml</file>
         <file>qml/DataShow/ViewArea/ImageView.qml</file>
         <file>qml/DataShow/ViewArea/MaskTool/MaskToolView.qml</file>
         <file>qml/DataShow/ViewArea/ShowDefects.qml</file>
@@ -316,8 +298,6 @@
         <file>qml/DataShow/ViewChang/ViewChangView.qml</file>
         <file>qml/DataShowRoot.qml</file>
         <file>qml/DefectPage/Alarm/AlarmButtons.qml</file>
-        <file>qml/DefectPage/CardView/AlarmSetting/AlarmSettingView.qml</file>
-        <file>qml/DefectPage/CardView/AlarmSetting/AlarmSettingViewButtons.qml</file>
         <file>qml/DefectPage/CardView/AlarmSetting/ErrorBtn.qml</file>
         <file>qml/DefectPage/CardView/ChartView/LineCard.qml</file>
         <file>qml/DefectPage/CardVire/ChartView/LineCard.qml</file>
@@ -368,10 +348,10 @@
         <file>qml/Graphs/GraphsManage.qml</file>
         <file>qml/Graphs/DeviceCurveManage.qml</file>
         <file>qml/Graphs/DeviceCurveView/DeviceCurveViewMain.qml</file>
+        <file>qml/Graphs/DeviceCurveView/DeviceCurveTableRow.qml</file>
         <file>qml/Graphs/GraphsValueView/CoilTextInput.qml</file>
         <file>qml/Graphs/GraphsValueView/GraphsValueViewMain.qml</file>
         <file>qml/Graphs/GraphsValueView/HeaderView.qml</file>
-        <file>qml/Graphs/Test/GraphsTest.qml</file>
         <file>qml/Input/SimpleFileInput.qml</file>
         <file>qml/Input/SimpleFolderInput.qml</file>
         <file>qml/Input/SimpleTextInput.qml</file>
@@ -508,7 +488,8 @@
         <file>qml/Pages/Pop/ImageRow.qml</file>
         <file>qml/Pages/Pop/LeftPrePop.qml</file>
         <file>qml/Pages/Pop/TaperShapeTable.qml</file>
-        <file>qml/Pages/States/StatesView.qml</file>
+        <file>qml/Pages/Pop/TaperPointCell.qml</file>
+        <file>qml/Pages/Pop/TaperShapeRow.qml</file>
         <file>qml/Pages/TabTool/TabToolItem.qml</file>
         <file>qml/Pages/TabTool/TabToolView.qml</file>
         <file>qml/PopupView/ApiListPop/ApiListItem.qml</file>
@@ -518,6 +499,7 @@
         <file>qml/PopupView/Base/PopupBase.qml</file>
         <file>qml/PopupView/Base/TitleLabel.qml</file>
         <file>qml/PopupView/ClipSetting/ClipSettingView.qml</file>
+        <file>qml/PopupView/ClipSetting/SurfaceClipSettings.qml</file>
         <file>qml/PopupView/Connect/ConnectDialog.qml</file>
         <file>qml/PopupView/Connect/ShowItemDelegate.qml</file>
         <file>qml/PopupView/Connect/TextFieldItem.qml</file>
@@ -529,7 +511,19 @@
         <file>qml/PopupView/Export/ExportStatus.qml</file>
         <file>qml/PopupView/Export/ExportView.qml</file>
         <file>qml/PopupView/GlobalAlarm/GlobalAlarmView.qml</file>
+        <file>qml/PopupView/HardwareMonitor/HardwareMonitorFormat.js</file>
         <file>qml/PopupView/HardwareMonitor/HardwareMonitorView.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorCamera2DCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorCamera3DCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorCompactSummary.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorKpiCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorNetworkCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorOverviewCameraCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorOverviewNetworkRow.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorOverviewServiceRow.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorPanel.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorServiceCard.qml</file>
+        <file>qml/PopupView/HardwareMonitor/MonitorStatusDot.qml</file>
         <file>qml/PopupView/HelpPop/HelpPopView.qml</file>
         <file>qml/PopupView/ListValueChange/ListValueChangeView.qml</file>
         <file>qml/PopupView/ListValueChange/ViewChangeInput.qml</file>
@@ -544,10 +538,10 @@
         <file>qml/PopupView/ToolsMenu/ToolsMenuView.qml</file>
         <file>qml/Property/DefectClassProperty.qml</file>
         <file>qml/qmldir</file>
-        <file>qml/ScreenView.qml</file>
         <file>qml/SettingPage/AlarmSetting/AlarmSetting.qml</file>
         <file>qml/SettingPage/BaseSetting/BaseSetting.qml</file>
         <file>qml/SettingPage/CameraSetting/CameraSetting.qml</file>
+        <file>qml/SettingPage/CameraSetting/CameraAdjustmentRow.qml</file>
         <file>qml/SettingPage/D3Setting/D3Setting.qml</file>
         <file>qml/SettingPage/GeneralSetting/GeneralSetting.qml</file>
         <file>qml/SettingPage/OtherSetting/OtherSetting.qml</file>

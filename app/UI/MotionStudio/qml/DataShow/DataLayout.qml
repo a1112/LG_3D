@@ -6,6 +6,16 @@ import "Foot"
 import "MaxMinValue"
 import "DataHeader"
 ColumnLayout{
+    id: root
+
+    required property var surfaceData
+    required property var modelStore
+    required property var controller
+    required property var areaController
+    required property var style
+    required property var settings
+    required property var adaptiveMetrics
+
     anchors.fill:parent
     SplitView{
         Layout.fillWidth: true
@@ -14,25 +24,34 @@ ColumnLayout{
 
         DataHeaderView{
             SplitView.fillWidth: true
-            SplitView.preferredHeight: coreSetting.dataHeaderHeight//260
+            SplitView.preferredHeight: root.settings.dataHeaderHeight
+            surfaceData: root.surfaceData
+            controller: root.controller
+            style: root.style
         }
 
         DataShowRootLayout{
+            surfaceData: root.surfaceData
+            modelStore: root.modelStore
+            controller: root.areaController
+            primaryController: root.controller
+            style: root.style
+            adaptiveMetrics: root.adaptiveMetrics
         // <----------
         // SplitView.fillWidth: true
         // SplitView.fillHeight:true
         }
 
         ShowViewListView{
-            visible: dataShowCore.viewRendererListView
-            implicitHeight: adaptive.scaleMetric(100, 80, 130)
+            visible: root.controller.viewRendererListView
+            implicitHeight: root.adaptiveMetrics.scaleMetric(100, 80, 130)
             SplitView.fillWidth: true
         }
 
         MaxMinValueShow{
             id:showViewListView
-            visible: dataShowCore.viewRendererMaxMinValue
-            implicitHeight: adaptive.scaleMetric(40, 34, 54)
+            visible: root.controller.viewRendererMaxMinValue
+            implicitHeight: root.adaptiveMetrics.scaleMetric(40, 34, 54)
             SplitView.fillWidth: true
         }
 

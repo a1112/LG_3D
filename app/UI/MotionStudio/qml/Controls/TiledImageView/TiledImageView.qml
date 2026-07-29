@@ -10,6 +10,7 @@ Rectangle {
     required property var apiClient
     required property var settings
     required property var surface
+    required property var style
 
     property int tileSize: 5460              // 单个瓦片的目标尺寸
     property int fixedTileCount: 3           // 3x3 瓦片布局
@@ -32,6 +33,7 @@ Rectangle {
     property int _requestToken: 0
     property var _imageInfoRequest: null
     property bool debugLog: settings ? settings.showTileDebugBorders : false
+    property int tileRefreshGeneration: 0
 
     function debugLogMessage(message) {
         if (debugLog) {
@@ -134,23 +136,12 @@ Rectangle {
             var scale = controller ? controller.canvasScale : 1.0
             currentScale = scale
             levelChanged(newLevel)
-
-            // 通知所有瓦片更新
-            updateAllTiles()
+            if (forceUpdate) {
+                tileRefreshGeneration += 1
+            }
         }
 
         isEvaluating = false
-    }
-
-    // ========== 新增：更新所有瓦片 ==========
-    function updateAllTiles() {
-        debugLogMessage("[TiledView] updateAllTiles: level=" + currentLevel + ", count=" + tiledImage.count)
-        for (var i = 0; i < tiledImage.count; i++) {
-            var item = tiledImage.itemAt(i)
-            if (item && item.updateLevel && item.shouldLoad) {
-                item.updateLevel(currentLevel)
-            }
-        }
     }
 
     // ========== 新增：检查瓦片是否在视口内 ==========
@@ -262,6 +253,7 @@ Rectangle {
             required property int index
 
             settings: root.settings
+            style: root.style
             // 瓦片位置和大小
             x: parseInt(index % root.count_) * width
             y: parseInt(index / root.count_) * height
@@ -283,6 +275,7 @@ Rectangle {
             // 多级加载相关属性
             currentScale: root.currentScale
             currentLevel: root.currentLevel
+            refreshGeneration: root.tileRefreshGeneration
 
             // 钢卷编号
             coilNo: root.surface && root.surface.currentCoilModel ? root.surface.currentCoilModel.coilNo : ""

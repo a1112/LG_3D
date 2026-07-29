@@ -1,104 +1,96 @@
-import QtQuick 2.15
+pragma ComponentBehavior: Bound
+import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
+
 Item {
-    id:root
-    property string global_key: ""
+    id: root
+
+    required property var watcher
+    property string globalKey: ""
     property int alarmLevel: 0
-    property bool requestRunning: false
-    property ListModel cameraModel: ListModel{
-    }
-    Timer{
-        interval: 10000
-        running: root.visible
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (root.requestRunning) {
-                return
-            }
-            root.requestRunning = true
-            api.getCameraAlarm(
-                        (result)=>{
-                            root.requestRunning = false
-                            console.log(result)
-                            cameraModel.clear()
-                            let data = JSON.parse(result)
-                            for(let key in data){
-                                data[key]["Key"]=key
-                                cameraModel.append(data[key])
-                            }
-                        },
-                        (error)=>{
-                            root.requestRunning = false
-                            // console.log(error)
-                        }
-                        )
+    property ListModel cameraModel: ListModel {}
+
+    function syncStatus(payload) {
+        if (!payload || typeof payload !== "object") {
+            return
         }
-
+        cameraModel.clear()
+        for (let key in payload) {
+            let item = payload[key] || {}
+            cameraModel.append({
+                "cameraKey": key,
+                "level": Number(item.level || 0),
+                "msg": item.msg || ""
+            })
+        }
     }
 
+    Connections {
+        target: root.watcher
+        function onStatusPayloadChanged() {
+            root.syncStatus(root.watcher.statusPayload)
+        }
+    }
 
-    ColumnLayout{
+    Component.onCompleted: syncStatus(watcher.statusPayload)
+
+    ColumnLayout {
         anchors.fill: parent
-        Label{
-            text:"相机状态"
+
+        Label {
+            text: qsTr("相机状态")
             font.pointSize: 18
             font.bold: true
-            color: Material.color(Material.Blue)
+            color: coreStyle.titleColor
             font.family: "Microsoft YaHei"
             Layout.alignment: Qt.AlignHCenter
-
         }
-        Item{
-            id:body
+
+        GridView {
+            id: cameraGrid
             Layout.fillWidth: true
             Layout.fillHeight: true
-            GridView{
-                anchors.fill: parent
-                model: cameraModel
-                cellWidth: parent.width / 3-1
-                cellHeight: parent.height/2
-                delegate: AlarmItemCamerasItem {
-                    width: body.width / 3-1
-                    height:body.height/2
-                    onClicked:{
-                    }
+            model: root.cameraModel
+            cellWidth: width / 3
+            cellHeight: Math.max(36, height / 2)
+            reuseItems: true
 
-                    MouseArea{
-                        anchors.fill: parent
-                        acceptedButtons: Qt.RightButton
-                        onClicked:{
-                            global_key=Key
-                            cameraIdMenu.popup()
-                        }
+            delegate: AlarmItemCamerasItem {
+                id: cameraDelegate
+                style: coreStyle
+                width: cameraGrid.cellWidth
+                height: cameraGrid.cellHeight
+
+                TapHandler {
+                    acceptedButtons: Qt.RightButton
+                    onTapped: {
+                        root.globalKey = cameraDelegate.cameraKey
+                        cameraIdMenu.popup()
                     }
                 }
             }
-
-
         }
     }
 
-    Menu{
-        id:cameraIdMenu
-        MenuItem{
-            text:"打开当前卷相机数据"
-            onTriggered:{
-                Qt.openUrlExternally(api.getCameraDataUrl(core.coilIndex,global_key))
-            }
+    Menu {
+        id: cameraIdMenu
+
+        MenuItem {
+            text: qsTr("打开当前卷相机数据")
+            enabled: root.globalKey !== ""
+            onTriggered: Qt.openUrlExternally(
+                             api.getCameraDataUrl(core.coilIndex, root.globalKey))
         }
-        MenuItem{
-            text:"打开原始数据保存路径"
-            onTriggered:{
-            }
+
+        MenuItem {
+            text: qsTr("打开原始数据保存路径")
+            enabled: false
         }
-        MenuItem{
-            text:"重启相机"
-            onTriggered:{
-            }
+
+        MenuItem {
+            text: qsTr("重启相机")
+            enabled: false
         }
     }
-
 }

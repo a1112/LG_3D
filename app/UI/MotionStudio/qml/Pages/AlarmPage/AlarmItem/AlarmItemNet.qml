@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick 2.15
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -14,34 +15,27 @@ Item {
     function init() {
         netModel.clear()
         netModel.append({
-                            titleText: "采集服务",
+                            titleText: "核心 API",
                             valueText: 0,
                             level: 1,
-                            msg: "api服务:采集务器（6相机）",
-                            port:api.apiConfig.databasPort,
+                            msg: "卷材、报警与配置接口",
+                            port: api.apiConfig.activeApiPort
                         }
                     )
         netModel.append({
-                            titleText: "数据服务",
+                            titleText: "图像服务",
                             valueText: 0,
                             level: 1,
-                            port:api.apiConfig.databasPort,
-                            msg: "api服务:数据服务器"
+                            port: api.apiConfig.activeImageServerPort,
+                            msg: "二维图像与渲染接口"
                         }
                         )
         netModel.append(            {
-                            titleText: "3D服务",
+                            titleText: "2D 算法",
                             valueText: 0,
                             level: 1,
-                            port:api.apiConfig.dataPort,
-                            msg: "api服务:PLC 交互"
-                        })
-        netModel.append({
-                            titleText: "PLC服务",
-                            valueText: 0,
-                            level: 1,
-                            port:api.apiConfig.dataPort,
-                            msg: "api服务:PLC 交互"
+                            port: api.apiConfig.alg2dPort,
+                            msg: "二维检测接口"
                         })
     }
 
@@ -152,23 +146,22 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             GridView{
+                id: netGrid
                 anchors.fill: parent
-                model: netModel
+                model: root.netModel
                 cellWidth: parent.width / 2-1
                 cellHeight: 25
+                reuseItems: true
                 delegate: AlarmItemNetItem {
-                    title: titleText
-                    valueText: model.valueText
-                    level: model.level
-                    width: body.width / 2-1
+                    id: netDelegate
+                    style: coreStyle
+                    width: netGrid.cellWidth
                     height:25
-                    onClicked:{
-                    }
-                    MouseArea{
-                        anchors.fill: parent
+
+                    TapHandler {
                         acceptedButtons: Qt.RightButton
-                        onClicked:{
-                            glob_port=port
+                        onTapped: {
+                            root.glob_port = netDelegate.port
                             netMenu.popup()
                         }
                     }

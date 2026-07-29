@@ -18,6 +18,18 @@ import "AlgTest"
 import "ClipSetting"
 import "../Pages/LeftPage/DataList/DataListMenu"
 Item {
+    id: root
+
+    required property var apiClient
+    required property var adaptiveMetrics
+    required property var appStyle
+    required property var settingsStore
+    required property var appInfo
+    required property var downloadClient
+    required property var authManager
+    required property var graphsManager
+    required property var deviceCurveManager
+
     ConnectDialog{ id:connectDialog }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
     ExportView{id:exportView}   //导出菜单
@@ -30,11 +42,31 @@ Item {
     function popupApiList(){apiListPop.popup()}
     MsgPopView{id:msg_popup}    // 詳細信息
     function popupMsgPopView(){msg_popup.popup()}
-    SettingPageView{id:coreSetting_view}    // 设置界面
+    SettingPageView{
+        id:coreSetting_view
+        apiClient: root.apiClient
+        style: root.appStyle
+        settings: root.settingsStore
+        appInfo: root.appInfo
+        downloadClient: root.downloadClient
+    }    // 设置界面
     function openSettingPageView(){coreSetting_view.open()}
-    StyleMenu{id:menuStyle} // 主题菜单
+    StyleMenu{
+        id:menuStyle
+        style: root.appStyle
+        settings: root.settingsStore
+        popupManager: root
+        authManager: root.authManager
+        graphsManager: root.graphsManager
+        deviceCurveManager: root.deviceCurveManager
+    } // 主题菜单
     function popupStyleMenu(){menuStyle.popup()}
-    ClipSettingView{id:clipSettingView}
+    ClipSettingView{
+        id:clipSettingView
+        apiClient: root.apiClient
+        settings: root.settingsStore
+        style: root.appStyle
+    }
     function popupClipSettingView(){clipSettingView.openDialog()}
     BackupDataView{id:backupDataView}   // 数据备份
     function popupBackupDataView(){backupDataView.popup()}
@@ -49,7 +81,12 @@ Item {
     }
     GlobalAlarmView{id:globalAlarmView} // 设备报警
     function popupGlobalAlarmView(){globalAlarmView.popup()}
-    HardwareMonitorView{id:hardwareMonitorView}
+    HardwareMonitorView{
+        id:hardwareMonitorView
+        apiClient: root.apiClient
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.appStyle
+    }
     function popupHardwareMonitorView(){hardwareMonitorView.popup()}
     ServerMangeView{id:serverMangeView}
     function popupServerMangeView(){serverMangeView.popup()}
@@ -61,6 +98,11 @@ Item {
         lefeListMemu.popup()}
     HelpPopView{id:helpMenu}
     function popupHelpView(){helpMenu.popup()}
-    AlgTestDialog{id:algTestDialog}
+    AlgTestDialog{
+        id:algTestDialog
+        apiClient: root.apiClient
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.appStyle
+    }
     function popupAlgTestDialog(){algTestDialog.openDialog()}
 }

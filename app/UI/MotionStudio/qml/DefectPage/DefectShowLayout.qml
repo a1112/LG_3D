@@ -23,7 +23,13 @@ Item {
 
                 }
                 RightViewList{
-
+                    adaptiveMetrics: adaptive
+                    defectController: page_defect_view.defectViewCore
+                    style: coreStyle
+                    leftController: leftCore
+                    apiClient: api
+                    modelController: coreModel
+                    popupManager: popManage
                 }
             }
 

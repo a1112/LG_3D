@@ -63,15 +63,23 @@ def test_qml_http_requests_timeout_and_pollers_do_not_overlap() -> None:
     expected_guards = {
         "Api/Api_Base.qml": "delayRequestRunning",
         "Pages/AlarmPage/AlarmItem/AlarmHardware.qml": "requestRunning",
-        "Pages/AlarmPage/AlarmItem/AlarmItemCameras.qml": "requestRunning",
+        "Core/CaptureAlarmWatcher.qml": "requestRunning",
     }
     for relative_path, guard_name in expected_guards.items():
         source = _read(relative_path)
         assert guard_name in source
         assert (
             f"if ({guard_name})" in source
+            or f"if ({guard_name} ||" in source
             or f"if (root.{guard_name})" in source
         )
+
+    # The camera status view subscribes to the guarded global watcher instead
+    # of starting a second poller for the same endpoint.
+    camera_view = _read("Pages/AlarmPage/AlarmItem/AlarmItemCameras.qml")
+    assert "getCameraAlarm" not in camera_view
+    assert "Timer {" not in camera_view
+    assert "onStatusPayloadChanged" in camera_view
 
 
 def test_quick_exports_use_get_download_overload() -> None:

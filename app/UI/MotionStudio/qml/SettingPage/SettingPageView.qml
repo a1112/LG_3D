@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -12,6 +14,11 @@ import "CameraSetting"
 
 Popup {
     id: root
+    required property var apiClient
+    required property var style
+    required property var settings
+    required property var appInfo
+    required property var downloadClient
     anchors.centerIn: parent
     width: Math.min(parent ? parent.width * 0.72 : 1040, 1120)
     height: Math.min(parent ? parent.height * 0.78 : 720, 760)
@@ -22,8 +29,8 @@ Popup {
     Material.elevation: 12
 
     background: Rectangle {
-        color: coreStyle.panelBackgroundColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelBackgroundColor
+        border.color: root.style.headerBorderColor
         border.width: 1
         radius: 6
     }
@@ -35,7 +42,7 @@ Popup {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 62
-            color: coreStyle.headerBackgroundColor
+            color: root.style.headerBackgroundColor
             radius: 6
 
             Rectangle {
@@ -43,7 +50,7 @@ Popup {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: 1
-                color: coreStyle.headerBorderColor
+                color: root.style.headerBorderColor
             }
 
             RowLayout {
@@ -54,7 +61,7 @@ Popup {
 
                 Label {
                     text: qsTr("设置")
-                    color: coreStyle.titleColor
+                    color: root.style.titleColor
                     font.pixelSize: 24
                     font.bold: true
                     Layout.alignment: Qt.AlignVCenter
@@ -62,7 +69,7 @@ Popup {
 
                 Label {
                     text: qsTr("系统参数与显示配置")
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     opacity: 0.78
                     font.pixelSize: 13
                     Layout.alignment: Qt.AlignVCenter
@@ -84,13 +91,16 @@ Popup {
                     onClicked: root.close()
 
                     background: Rectangle {
-                        color: closeButton.hovered ? "#C42B1C" : coreStyle.panelElevatedColor
-                        radius: coreStyle.controlRadius
+                        color: closeButton.hovered
+                               ? root.style.statusErrorColor
+                               : root.style.panelElevatedColor
+                        radius: root.style.controlRadius
                     }
 
                     contentItem: Text {
                         text: closeButton.text
-                        color: closeButton.hovered ? "#FFFFFF" : coreStyle.labelColor
+                        color: closeButton.hovered
+                               ? "#FFFFFF" : root.style.labelColor
                         font: closeButton.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -104,7 +114,7 @@ Popup {
             Layout.fillWidth: true
             Layout.preferredHeight: 48
             background: Rectangle {
-                color: coreStyle.panelBackgroundColor
+                color: root.style.panelBackgroundColor
             }
 
             Repeater {
@@ -120,20 +130,26 @@ Popup {
 
                 TabButton {
                     id: tabButton
+                    required property string modelData
                     text: modelData
                     font.pixelSize: 14
                     contentItem: Text {
                         text: tabButton.text
-                        color: tabButton.checked ? coreStyle.titleColor : coreStyle.labelColor
+                        color: tabButton.checked
+                               ? root.style.titleColor : root.style.labelColor
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font: tabButton.font
                     }
                     background: Rectangle {
-                        color: tabButton.checked ? coreStyle.panelElevatedColor : coreStyle.panelBackgroundColor
-                        border.color: tabButton.checked ? coreStyle.titleColor : coreStyle.headerBorderColor
+                        color: tabButton.checked
+                               ? root.style.panelElevatedColor
+                               : root.style.panelBackgroundColor
+                        border.color: tabButton.checked
+                                      ? root.style.titleColor
+                                      : root.style.headerBorderColor
                         border.width: tabButton.checked ? 1 : 0
-                        radius: coreStyle.controlRadius
+                        radius: root.style.controlRadius
                     }
                 }
             }
@@ -142,7 +158,7 @@ Popup {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: coreStyle.headerBorderColor
+            color: root.style.headerBorderColor
         }
 
         StackLayout {
@@ -152,12 +168,23 @@ Popup {
             clip: true
 
             GeneralSetting {}
-            StyleSetting {}
+            StyleSetting {
+                style: root.style
+            }
             AlarmSetting {}
             D3Setting {}
-            CameraSetting {}
+            CameraSetting {
+                apiClient: root.apiClient
+                style: root.style
+            }
             InfoSetting {}
-            OtherSetting {}
+            OtherSetting {
+                apiClient: root.apiClient
+                style: root.style
+                settings: root.settings
+                appInfo: root.appInfo
+                downloadClient: root.downloadClient
+            }
         }
     }
 }

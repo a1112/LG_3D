@@ -1,114 +1,90 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+
 Item {
-    Column{
-        Row{
-                spacing:10
-        Label{
-            text:dataShowCore_.coilId
-            color:"green"
-            background: Rectangle{
-                color: "#772e2e2e"
-            }
-        }
-        Label{
-            text:dataShowCore_.coilId
-            color:"green"
-            background: Rectangle{
-                color: "#772e2e2e"
-            }
-        }
+    id: root
+    required property var controller
+    required property var style
 
-        }
-        Row{
-                spacing:10
-        Row{
-            Label{
-                text: "X: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataShowCore_.hoverPoint.x.toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+    component CaptionLabel: Label {
+        color: root.style.secondaryTextColor
+        font.pixelSize: 12
+    }
+
+    component ValueLabel: Label {
+        color: root.style.textColor
+        font.family: "Consolas"
+        font.pixelSize: 12
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.margins: 10
+        width: infoColumn.implicitWidth + 20
+        height: infoColumn.implicitHeight + 16
+        radius: root.style.controlRadius + 2
+        color: root.style.infoOverlayColor
+        border.color: root.style.infoOverlayBorderColor
+        border.width: 1
+
+        Column {
+            id: infoColumn
+            anchors.centerIn: parent
+            spacing: 4
+
+            Row {
+                spacing: 6
+
+                CaptionLabel {
+                    text: qsTr("卷号")
+                }
+
+                ValueLabel {
+                    text: root.controller.currentCoilModel && root.controller.currentCoilModel.coilNo
+                          ? root.controller.currentCoilModel.coilNo
+                          : root.controller.coilId
+                    color: root.style.statusSuccessColor
+                    font.bold: true
                 }
             }
 
-        }
-        Row{
-            Label{
-                text: "Y: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataShowCore_.hoverPoint.y.toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+            Row {
+                spacing: 14
+
+                Row {
+                    spacing: 4
+                    CaptionLabel { text: "X" }
+                    ValueLabel { text: root.controller.hoverPoint.x.toFixed(0) }
+                }
+
+                Row {
+                    spacing: 4
+                    CaptionLabel { text: "Y" }
+                    ValueLabel { text: root.controller.hoverPoint.y.toFixed(0) }
                 }
             }
 
-        }
-        }
-
-        Row{
-            Label{
-                text: "宽: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: (dataShowCore_.sourceWidth*dataShowCore_.scan3dScaleX).toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
+            Row {
+                spacing: 4
+                CaptionLabel { text: qsTr("尺寸") }
+                ValueLabel {
+                    text: (root.controller.sourceWidth * root.controller.scan3dScaleX).toFixed(0)
+                          + " × "
+                          + (root.controller.sourceHeight * root.controller.scan3dScaleY).toFixed(0)
                 }
+                CaptionLabel { text: "mm" }
             }
-            Label{
-                text: "mm "
-                color: coreStyle.labelColor
+
+            Row {
+                spacing: 4
+                CaptionLabel { text: qsTr("分辨率") }
+                ValueLabel {
+                    text: root.controller.sourceWidth + " × " + root.controller.sourceHeight
+                }
+                CaptionLabel { text: "px" }
             }
         }
-        Row{
-
-            Label{
-
-                text: "高: "
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: (dataShowCore_.sourceHeight*dataShowCore_.scan3dScaleY).toFixed(0)
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "mm "
-                color: coreStyle.labelColor
-            }
-        }
-
-
-        Row{
-            Label{
-                text: dataShowCore_.sourceWidth
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "x"
-                color: coreStyle.labelColor
-            }
-            Label{
-                text: dataShowCore_.sourceHeight
-                background: Rectangle{
-                    color: "#772e2e2e"
-                }
-            }
-            Label{
-                text: "px "
-                color: coreStyle.labelColor
-            }
-        }
-
-
-}
+    }
 }

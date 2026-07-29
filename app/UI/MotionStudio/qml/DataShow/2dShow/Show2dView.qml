@@ -5,9 +5,14 @@ import "Draw"
 import "../Comps"
 Item {
     id:root
+    required property var surfaceData
+    required property var dataShowCore
+    required property var modelStore
+    required property var style
+
     anchors.fill: parent
     Rectangle{
-    color: "black"
+    color: root.style.viewportBackgroundColor
     anchors.fill: parent
     }
 
@@ -15,10 +20,10 @@ Item {
         id:flick
         clip: true
         anchors.fill: parent
-        contentWidth: dataShowCore.canvasContentWidth
-        contentHeight: dataShowCore.canvasContentHeight
+        contentWidth: root.dataShowCore.canvasContentWidth
+        contentHeight: root.dataShowCore.canvasContentHeight
         Component.onCompleted: {
-            dataShowCore.flick = this
+            root.dataShowCore.flick = this
         }
         ScrollBar.vertical: ScrollBar {
             id:scrollBarV
@@ -29,15 +34,17 @@ Item {
         Item{
 
             id:canvas
-            width: dataShowCore.canvasContentWidth
-            height: dataShowCore.canvasContentHeight
+            width: root.dataShowCore.canvasContentWidth
+            height: root.dataShowCore.canvasContentHeight
 
             ImageView{
             }
             ShowDefects{ // 缺陷绘制
             }
             DrawView{
-                // 绘制
+                surfaceData: root.surfaceData
+                dataShowCore: root.dataShowCore
+                style: root.style
             }
             ControlView{
             // 控制系统
@@ -49,28 +56,31 @@ Item {
 
     }
     CrossView{
-        visible: dataShowCore.chartHovered || dataShowCore.imageShowHovered
-        crossX:dataShowCore.hoverPoint.x
-        crossY:dataShowCore.hoverPoint.y
+        visible: root.dataShowCore.chartHovered
+                 || root.dataShowCore.imageShowHovered
+        crossX: root.dataShowCore.hoverPoint.x
+        crossY: root.dataShowCore.hoverPoint.y
     }
 
     AerialView{// 鸟亏图
-        source: dataShowCore.source
+        source: root.dataShowCore.source
         y:root.height - height-scrollBarH.height
     }
     HoverHandler{
         id:hoverHandler
-        onHoveredChanged: dataShowCore.imageShowHovered=hovered
+        onHoveredChanged: root.dataShowCore.imageShowHovered = hovered
         onPointChanged: {
-            var deltaX = Math.abs(dataShowCore.hoverPoint.x - point.position.x)
-            var deltaY = Math.abs(dataShowCore.hoverPoint.y - point.position.y)
+            var deltaX = Math.abs(
+                        root.dataShowCore.hoverPoint.x - point.position.x)
+            var deltaY = Math.abs(
+                        root.dataShowCore.hoverPoint.y - point.position.y)
             if (deltaX < 2 && deltaY < 2) {
                 return
             }
             if (deltaX > 5 || deltaY > 5) {
-                coreModel.setKeepLatest(false)
+                root.modelStore.setKeepLatest(false)
             }
-            dataShowCore.hoverPoint = point.position
+            root.dataShowCore.hoverPoint = point.position
         }
     }
 }

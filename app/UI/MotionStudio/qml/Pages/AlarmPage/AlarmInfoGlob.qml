@@ -59,6 +59,7 @@ CardBase{
                 id:bodyV
                 width: parent.width
                 AlarmItemCameras{
+                    watcher: app.captureAlarmWatcher
                     visible:coreModel.alarmGlobVis["相机"]
                     width: visible?root.width:0
                     alarmLevel:coreModel.coreGlobalError.errorLevelDict["相机"]

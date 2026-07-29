@@ -1,17 +1,18 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 ItemDelegate {
     id: root
 
-    property string title: "数据"
-    property string valueText: ""
-    property int level: 0
+    required property string titleText
+    required property string valueText
+    required property int level
+    required property int port
+    required property var style
     readonly property color valueColor: level > 1
-                                           ? Material.color(Material.Red)
-                                           : Material.color(Material.Green)
+                                           ? style.statusErrorColor
+                                           : style.statusSuccessColor
 
     Frame {
         anchors.fill: parent
@@ -21,7 +22,7 @@ ItemDelegate {
         anchors.fill: parent
 
         Label {
-            text: root.title
+            text: root.titleText
         }
 
         Label {

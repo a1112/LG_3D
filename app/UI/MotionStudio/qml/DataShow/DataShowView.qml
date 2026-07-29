@@ -6,8 +6,12 @@ import "../GlobalView"
 import "View3D"
 Item{
     id:root
-    property SurfaceData surfaceData
-    property DataShowCore dataShowCore
+    required property SurfaceData surfaceData
+    required property DataShowCore dataShowCore
+    required property var modelStore
+    required property var style
+    required property var settings
+    required property var adaptiveMetrics
     property var dataShowCore_: surfaceData.isAreaRootView ? dataShowCore.dataShowAreaCore:dataShowCore
 
     readonly property DataShowControl controls:dataShowCore.controls
@@ -18,7 +22,15 @@ Item{
 
     property Core3D core3D: Core3D{}
 
-    DataLayout{}
+    DataLayout{
+        surfaceData: root.surfaceData
+        modelStore: root.modelStore
+        controller: root.dataShowCore
+        areaController: root.dataShowCore_
+        style: root.style
+        settings: root.settings
+        adaptiveMetrics: root.adaptiveMetrics
+    }
 
     GlobItemErrorView{}
 

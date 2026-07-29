@@ -6,13 +6,13 @@ import QtWebSockets
 import "../../Input"
 import "../../Labels"
 import "../../Pages/Header"
-import QtCore
 
 Menu{
 
     property ReDetectionStatus reDetectionStatus: ReDetectionStatus{}
     // 是否在打开时根据当前列表自动填充起止流水号
     property bool useAutoRange: true
+    property string outputUrl: ""
     dim:true
 
     x:parent.width

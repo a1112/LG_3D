@@ -1,12 +1,14 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 //  类别信息
-import "../../Base"
 import "../../Comp/Card"
 CardBase {
     clip: true
     id:root
+    required property var viewController
+    required property var style
     Layout.fillWidth : true
     max_height : 200
     title :  qsTr("缺陷总计")       //"当前卷信息"
@@ -22,8 +24,10 @@ CardBase {
             id: flow
             width: parent.width
             Repeater{
-                model:defectViewCore.defectCoreModel.defectDictModel   // global.defectClassProperty.defectDictModel
+                model: root.viewController.defectCoreModel.defectDictModel
                 DefectFlowRowItem{
+                    style: root.style
+                    viewController: root.viewController
                 }
             }
 
@@ -31,9 +35,9 @@ CardBase {
             width:flow.width
             spacing:5
             CheckDelegate{
-                checked: defectViewCore.filterCore.fliterShowBgDefect
+                checked: root.viewController.filterCore.fliterShowBgDefect
                 onCheckedChanged: {
-                defectViewCore.filterCore.setFliterShowBgDefect(checked)
+                root.viewController.filterCore.setFliterShowBgDefect(checked)
                 }
                 text: qsTr("包括背景")
             }
@@ -45,19 +49,19 @@ CardBase {
             SelectButtonBase{
                 text:qsTr("重置")
                 onClicked: {
-                    defectViewCore.filterCore.reset()
+                    root.viewController.filterCore.reset()
                 }
             }
             SelectButtonBase{
                 text:qsTr("全选")
                 onClicked: {
-                    defectViewCore.filterCore.showAll(true)
+                    root.viewController.filterCore.showAll(true)
                 }
             }
             SelectButtonBase{
                 text:qsTr("取消")
                 onClicked: {
-                    defectViewCore.filterCore.showAll(false)
+                    root.viewController.filterCore.showAll(false)
                 }
             }
             }

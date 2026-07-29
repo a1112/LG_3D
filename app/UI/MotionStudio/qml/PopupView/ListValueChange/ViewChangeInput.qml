@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../../Labels"
 import "../../Input"
+import "../../Core/JsonUtils.js" as JsonUtils
 Item {
     Layout.fillWidth:true
     height:35
@@ -14,7 +15,7 @@ Item {
         start_input_id.text=r
         end_input_id.text=l
         api.getCoilListValueChangeKeys((result)=>{
-                                       let data_json = JSON.parse(result)
+                                       let data_json = JsonUtils.parse(result, [], "coil curve keys")
                                        cb.model = data_json
 
                                        },(err)=>{

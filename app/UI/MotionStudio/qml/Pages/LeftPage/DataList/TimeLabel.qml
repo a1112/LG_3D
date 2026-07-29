@@ -4,7 +4,7 @@ Row {
     spacing: 10
     Label{
         text: CreateTime["year"]+"年"+CreateTime["month"]+"月"+CreateTime["day"]+"日"
-        color: "#747474"
+        color: coreStyle.secondaryTextColor
     }
     Label{
         text: CreateTime["hour"]+"点"+CreateTime["minute"]+"分"+CreateTime["second"]

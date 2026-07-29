@@ -12,6 +12,15 @@ import "./Style/Adaptive"
 import "Graphs"
 AppBase {
     id: app
+    apiClient: app.api
+    adaptiveMetrics: app.adaptive
+    appStyle: app.coreStyle
+    settingsStore: app.coreSetting
+    appInfo: app.coreInfo
+    downloadClient: fileDownloader
+    authManager: app.auth
+    graphsManager: app.graphs_manage
+    deviceCurveManager: app.device_curve_manage
     visible: true
     visibility:control.visibility
     onVisibilityChanged: function(visibility) {
@@ -39,6 +48,13 @@ AppBase {
 
     MainLayout{ //    入口,界面构成 <-
         anchors.fill: parent
+        adaptiveMetrics: app.adaptive
+        style: app.coreStyle
+        model: app.coreModel
+        settings: app.coreSetting
+        viewControl: app.control
+        appController: app.app_core
+        leftController: app.leftCore
     }
 
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息
@@ -75,7 +91,9 @@ AppBase {
         connectionState: app.coreState
     }     // 定时器
     property CoreSetting coreSetting: CoreSetting{}// 设置
-    property ImageCache imageCache: ImageCache{} // 缓冲
+    property ImageCache imageCache: ImageCache {
+        settings: app.coreSetting
+    } // 缓冲
     property LefeCore leftCore: LefeCore{}  //列表全局
     property Control control: Control{}
     property Auth auth: Auth{}
@@ -96,7 +114,9 @@ AppBase {
     }
 
     property DeviceCurveManage device_curve_manage: DeviceCurveManage{
-
+        apiClient: app.api
+        modelStore: app.coreModel
+        style: app.coreStyle
     }
 
     // 全局运行环境与路径信息

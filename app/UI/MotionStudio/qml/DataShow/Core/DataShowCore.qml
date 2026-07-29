@@ -306,7 +306,7 @@ DataShowCore_ {
     // ========== 新增：图像类型状态 ==========
     property string currentImageType: "none"  // "gray", "jet", "none"
     property string imageTypeText: "未加载"
-    property color imageTypeColor: "#999999"
+    property color imageTypeColor: coreStyle.statusInactiveColor
 
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
@@ -340,7 +340,7 @@ DataShowCore_ {
             surfaceData.currentViewKey = "GRAY"
             currentImageType = "gray"
             imageTypeText = "灰度预览"
-            imageTypeColor = "#999999"
+            imageTypeColor = coreStyle.statusInactiveColor
 
             // 第二阶段：延迟加载 JET 图像（更高质量）
             renderTimer.restart()
@@ -358,7 +358,7 @@ DataShowCore_ {
             surfaceData.currentViewKey = "JET"
             currentImageType = "jet"
             imageTypeText = "彩色显示"
-            imageTypeColor = "#52c41a"
+            imageTypeColor = coreStyle.statusSuccessColor
         }
     }
 
@@ -381,7 +381,7 @@ DataShowCore_ {
             surfaceData.currentViewKey = "JET"
             currentImageType = "jet"
             imageTypeText = "彩色显示"
-            imageTypeColor = "#52c41a"
+            imageTypeColor = coreStyle.statusSuccessColor
         }
     }
     property int tower_warning_threshold_upValue: surfaceData.tower_warning_threshold_up/surfaceData.scan3dScaleZ

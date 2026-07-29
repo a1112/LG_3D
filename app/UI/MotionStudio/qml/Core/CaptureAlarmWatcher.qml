@@ -1,4 +1,5 @@
 import QtQuick
+import "JsonUtils.js" as JsonUtils
 
 Item {
     id: root
@@ -10,6 +11,7 @@ Item {
     property int intervalMs: 10000
     property int alarmCode: 3001
     property bool requestRunning: false
+    property var statusPayload: ({})
 
     Timer {
         interval: root.intervalMs
@@ -30,13 +32,12 @@ Item {
         requestRunning = true
         apiClient.getCameraAlarm(function(data) {
             requestRunning = false
-            let payload
-            try {
-                payload = JSON.parse(data)
-            } catch (error) {
+            let payload = JsonUtils.parse(data, null, "capture alarm")
+            if (!payload || typeof payload !== "object") {
                 setCaptureAlarm(true, qsTr("采集报警数据解析失败"))
                 return
             }
+            statusPayload = Object.assign({}, payload)
 
             let alarms = []
             for (let key in payload) {

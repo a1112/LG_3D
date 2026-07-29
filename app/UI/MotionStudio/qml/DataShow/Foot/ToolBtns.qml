@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -5,6 +7,9 @@ import "../../Labels"
 
 RowLayout {
     id: root
+    required property var controller
+    required property var style
+
     height: parent.height
     spacing: 8
 
@@ -17,9 +22,10 @@ RowLayout {
         iconName: "MourceArray"
         popupTitle: qsTr("自由查看")
         popupDescription: qsTr("用于查看图像、定位曲线采样点。双击图像可把当前点设为曲线贯穿方向。")
-        selected: dataShowCore.controls.isMoveModel
+        selected: root.controller.controls.isMoveModel
         onActivateRequested: {
-            dataShowCore.controls.currentMouseModel = dataShowCore.controls.mouseMoveModel
+            root.controller.controls.currentMouseModel =
+                root.controller.controls.mouseMoveModel
         }
     }
 
@@ -27,9 +33,10 @@ RowLayout {
         iconName: "survey"
         popupTitle: qsTr("测量工具")
         popupDescription: qsTr("用于在图像上选择起点和终点，显示两点距离和水平/垂直偏移。")
-        selected: dataShowCore.controls.isShowSurveyModel
+        selected: root.controller.controls.isShowSurveyModel
         onActivateRequested: {
-            dataShowCore.controls.currentMouseModel = dataShowCore.controls.mouseSurveyModel
+            root.controller.controls.currentMouseModel =
+                root.controller.controls.mouseSurveyModel
         }
     }
 
@@ -62,14 +69,18 @@ RowLayout {
             }
 
             background: Rectangle {
-                color: iconButton.checked ? coreStyle.selectionColor : coreStyle.panelElevatedColor
-                border.color: iconButton.checked ? coreStyle.titleColor : coreStyle.headerBorderColor
+                color: iconButton.checked
+                       ? root.style.selectionColor
+                       : root.style.panelElevatedColor
+                border.color: iconButton.checked
+                              ? root.style.titleColor
+                              : root.style.headerBorderColor
                 border.width: iconButton.checked ? 2 : 1
-                radius: coreStyle.controlRadius
+                radius: root.style.controlRadius
             }
 
             contentItem: Image {
-                source: coreStyle.getIcon(toolItem.iconName)
+                source: root.style.getIcon(toolItem.iconName)
                 fillMode: Image.PreserveAspectFit
                 mipmap: true
                 anchors.margins: 3
@@ -90,10 +101,10 @@ RowLayout {
             y: Math.max(54, toolItem.mapToItem(parent, 0, 0).y + toolItem.height + 8)
 
             background: Rectangle {
-                color: coreStyle.panelBackgroundColor
-                border.color: coreStyle.headerBorderColor
+                color: root.style.panelBackgroundColor
+                border.color: root.style.headerBorderColor
                 border.width: 1
-                radius: coreStyle.controlRadius
+                radius: root.style.controlRadius
             }
 
             ColumnLayout {
@@ -109,15 +120,19 @@ RowLayout {
                     Rectangle {
                         Layout.preferredWidth: 34
                         Layout.preferredHeight: 34
-                        color: toolItem.selected ? coreStyle.selectionColor : coreStyle.panelElevatedColor
-                        border.color: toolItem.selected ? coreStyle.titleColor : coreStyle.headerBorderColor
+                        color: toolItem.selected
+                               ? root.style.selectionColor
+                               : root.style.panelElevatedColor
+                        border.color: toolItem.selected
+                                      ? root.style.titleColor
+                                      : root.style.headerBorderColor
                         border.width: 1
-                        radius: coreStyle.controlRadius
+                        radius: root.style.controlRadius
 
                         Image {
                             anchors.fill: parent
                             anchors.margins: 6
-                            source: coreStyle.getIcon(toolItem.iconName)
+                            source: root.style.getIcon(toolItem.iconName)
                             fillMode: Image.PreserveAspectFit
                             mipmap: true
                         }
@@ -129,7 +144,7 @@ RowLayout {
 
                         Label {
                             text: toolItem.popupTitle
-                            color: coreStyle.titleColor
+                            color: root.style.titleColor
                             font.pixelSize: 15
                             font.bold: true
                             Layout.fillWidth: true
@@ -137,7 +152,9 @@ RowLayout {
 
                         Label {
                             text: toolItem.selected ? qsTr("当前已启用") : qsTr("当前未启用")
-                            color: toolItem.selected ? coreStyle.titleColor : coreStyle.labelColor
+                            color: toolItem.selected
+                                   ? root.style.titleColor
+                                   : root.style.labelColor
                             font.pixelSize: 12
                             Layout.fillWidth: true
                         }
@@ -147,12 +164,12 @@ RowLayout {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: coreStyle.headerBorderColor
+                    color: root.style.headerBorderColor
                 }
 
                 Label {
                     text: toolItem.popupDescription
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     font.pixelSize: 13
                     lineHeight: 1.2
                     wrapMode: Text.WordWrap
@@ -174,15 +191,17 @@ RowLayout {
                         }
 
                         background: Rectangle {
-                            color: toolItem.selected ? coreStyle.selectionColor : coreStyle.panelElevatedColor
-                            border.color: coreStyle.titleColor
+                            color: toolItem.selected
+                                   ? root.style.selectionColor
+                                   : root.style.panelElevatedColor
+                            border.color: root.style.titleColor
                             border.width: 1
-                            radius: coreStyle.controlRadius
+                            radius: root.style.controlRadius
                         }
 
                         contentItem: Text {
                             text: activateButton.text
-                            color: coreStyle.textColor
+                            color: root.style.textColor
                             font.pixelSize: 13
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -198,15 +217,15 @@ RowLayout {
                         onClicked: toolPopup.close()
 
                         background: Rectangle {
-                            color: coreStyle.panelElevatedColor
-                            border.color: coreStyle.headerBorderColor
+                            color: root.style.panelElevatedColor
+                            border.color: root.style.headerBorderColor
                             border.width: 1
-                            radius: coreStyle.controlRadius
+                            radius: root.style.controlRadius
                         }
 
                         contentItem: Text {
                             text: closeButton.text
-                            color: coreStyle.labelColor
+                            color: root.style.labelColor
                             font.pixelSize: 13
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter

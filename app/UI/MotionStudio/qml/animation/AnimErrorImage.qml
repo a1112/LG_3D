@@ -1,20 +1,27 @@
 import QtQuick
 
 Image {
-    id:root
+    id: root
     property bool running: true
 
-    ScaleAnimator{
-        target: parent
-        from: 0.8
-        to: 1.5
-        duration: 1000
-        running: root.running
-        onFinished: {
-            let temp=from
-            from=to
-            to=temp
-            restart()
+    SequentialAnimation {
+        running: root.running && root.visible
+        loops: Animation.Infinite
+
+        ScaleAnimator {
+            target: root
+            from: 0.8
+            to: 1.2
+            duration: 700
+            easing.type: Easing.InOutQuad
+        }
+
+        ScaleAnimator {
+            target: root
+            from: 1.2
+            to: 0.8
+            duration: 700
+            easing.type: Easing.InOutQuad
         }
     }
 }
