@@ -94,8 +94,6 @@
         <file>qml/Comp/SimpleList/HistoryTextItem.qml</file>
         <file>qml/Comp/SimpleList/ListItemDelegate.qml</file>
         <file>qml/Comp/SimpleList/SimpleListView.qml</file>
-        <file>qml/Comp/SimpleList/SimpleListView2250/ListItemDelegate2250.qml</file>
-        <file>qml/Comp/SimpleList/SimpleListView2250/SimpleListView2250.qml</file>
         <file>qml/Comp/SimpleList/StateRec.qml</file>
         <file>qml/Comp/TimeNumberLab.qml</file>
         <file>qml/Comp/UserDefecShowItemItem.qml</file>
@@ -242,7 +240,6 @@
         <file>qml/DataShow/DataShowLabels/XYZ_List.qml</file>
         <file>qml/DataShow/DataShowLabels/XYZShow.qml</file>
         <file>qml/DataShow/DataShowLayout.qml</file>
-        <file>qml/DataShow/DataShowMsg/DataShowLabelsViewAll.qml</file>
         <file>qml/DataShow/DataShowRootLayout.qml</file>
         <file>qml/DataShow/DataShowRootView.qml</file>
         <file>qml/DataShow/DataShowView.qml</file>
@@ -429,6 +426,7 @@
         <file>qml/Pages/Header/RowBase.qml</file>
         <file>qml/Pages/Header/SeparatorLine.qml</file>
         <file>qml/Pages/Header/TitleLabel.qml</file>
+        <file>qml/Pages/Header/WindowTitleLabel.qml</file>
         <file>qml/Pages/Header/ToolsButton.qml</file>
         <file>qml/Pages/Header/TopCoilTools.qml</file>
         <file>qml/Pages/Header/TopHeader.qml</file>

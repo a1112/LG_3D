@@ -10,6 +10,8 @@ DataShowBackground {
     required property var model
     required property var settings
     required property var viewControl
+    required property var alarmInfo
+    required property var apiClient
 
     property Binds binds_base:binds_s
     property Binds binds_s : Binds{
@@ -28,6 +30,8 @@ DataShowBackground {
             style: root.style
             settings: root.settings
             adaptiveMetrics: root.adaptiveMetrics
+            alarmInfo: root.alarmInfo
+            apiClient: root.apiClient
             dataShowCore : DataShowCore{
                 surfaceData: root.model.surfaceS
                 binds: root.viewControl.lockControl
@@ -42,6 +46,8 @@ DataShowBackground {
             style: root.style
             settings: root.settings
             adaptiveMetrics: root.adaptiveMetrics
+            alarmInfo: root.alarmInfo
+            apiClient: root.apiClient
             dataShowCore : DataShowCore{
                 surfaceData: root.model.surfaceL
                 binds: root.viewControl.lockControl

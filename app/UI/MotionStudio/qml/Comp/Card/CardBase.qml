@@ -57,8 +57,11 @@ Item {
                 text: ""
                 running: root.showError
                 baseColor: app.coreStyle.titleColor
-                font.pixelSize: 22
-                font.bold:true
+                font: Qt.font({
+                    family: "Microsoft YaHei",
+                    pixelSize: 22,
+                    bold: true
+                })
             }
             Item{
                 width:20

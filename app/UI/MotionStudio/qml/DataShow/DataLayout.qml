@@ -15,6 +15,8 @@ ColumnLayout{
     required property var style
     required property var settings
     required property var adaptiveMetrics
+    required property var alarmInfo
+    required property var apiClient
 
     anchors.fill:parent
     SplitView{
@@ -28,6 +30,7 @@ ColumnLayout{
             surfaceData: root.surfaceData
             controller: root.controller
             style: root.style
+            alarmInfo: root.alarmInfo
         }
 
         DataShowRootLayout{
@@ -37,6 +40,7 @@ ColumnLayout{
             primaryController: root.controller
             style: root.style
             adaptiveMetrics: root.adaptiveMetrics
+            apiClient: root.apiClient
         // <----------
         // SplitView.fillWidth: true
         // SplitView.fillHeight:true

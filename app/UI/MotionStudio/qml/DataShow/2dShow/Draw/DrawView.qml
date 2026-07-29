@@ -8,11 +8,19 @@ Item {
     required property var surfaceData
     required property var dataShowCore
     required property var style
+    required property var apiClient
 
     anchors.fill: parent
 
-    readonly property var innerEllipse:
-        surfaceData.inner_ellipse || [[0, 0], [0, 0], 0]
+    readonly property var innerEllipse: {
+        const source = root.surfaceData.inner_ellipse
+        const center = source && source.length > 0 && source[0]
+                       ? source[0] : [0, 0]
+        const axes = source && source.length > 1 && source[1]
+                     ? source[1] : [0, 0]
+        const angle = source && source.length > 2 ? source[2] : 0
+        return [center, axes, angle]
+    }
     readonly property var ellipse: {
         let center = innerEllipse[0] || [0, 0]
         let axes = innerEllipse[1] || [0, 0]
@@ -161,7 +169,6 @@ Item {
                   Number(root.innerEllipse[1][1]) || 0)
         color: root.style.statusSuccessColor
         font.bold: true
-        font.pointSize: 14
     }
 
     Label {
@@ -171,7 +178,6 @@ Item {
                   Number(root.innerEllipse[1][0]) || 0)
         color: root.style.statusSuccessColor
         font.bold: true
-        font.pointSize: 14
     }
 
     Rectangle {
@@ -192,5 +198,11 @@ Item {
     }
 
     DrawSurvey {}
-    DrawPoint {}
+    DrawPoint {
+        surfaceData: root.surfaceData
+        dataShowCore: root.dataShowCore
+        style: root.style
+        apiClient: root.apiClient
+        innerEllipse: root.innerEllipse
+    }
 }

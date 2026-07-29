@@ -7,6 +7,7 @@ Item{
     required property var modelStore
     required property var controller
     required property var style
+    required property var apiClient
 
     StackLayout{
         anchors.fill: parent
@@ -16,6 +17,7 @@ Item{
             dataShowCore: root.controller
             modelStore: root.modelStore
             style: root.style
+            apiClient: root.apiClient
         }
 
         Data3DLayout{

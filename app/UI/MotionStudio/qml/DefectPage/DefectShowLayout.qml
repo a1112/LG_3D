@@ -30,6 +30,7 @@ Item {
                     apiClient: api
                     modelController: coreModel
                     popupManager: popManage
+                    coreController: core
                 }
             }
 

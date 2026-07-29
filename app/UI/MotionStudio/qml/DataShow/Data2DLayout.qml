@@ -11,6 +11,7 @@ Loader{
     required property var dataShowCore
     required property var modelStore
     required property var style
+    required property var apiClient
 
     active: root.surfaceData.is2DrootView
     Layout.fillWidth: true
@@ -25,6 +26,7 @@ Loader{
             dataShowCore: root.dataShowCore
             modelStore: root.modelStore
             style: root.style
+            apiClient: root.apiClient
         }    // 2D 显示
 
         MaskToolView{}// 功能菜单

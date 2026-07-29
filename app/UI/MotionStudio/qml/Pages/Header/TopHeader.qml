@@ -10,34 +10,44 @@ import "../../btns"
 import "../../GlobalView"
 import "../../Base"
 Item {
-    Layout.fillWidth: true
-    implicitHeight: coreStyle.topHeight
-
     id:root
-    implicitWidth: adaptive.designWidth
-    height: coreStyle.topHeight
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var modelStore
+    required property var authManager
+    required property var globalContext
+    required property var coreController
+    required property var appController
+    required property var viewControl
+    required property var popupManager
+
+    Layout.fillWidth: true
+    implicitHeight: root.style.topHeight
+    implicitWidth: root.adaptiveMetrics.designWidth
+    height: root.style.topHeight
     clip: false
     readonly property var appWindow: Window.window
     Pane{
         anchors.fill: parent
         Material.elevation: 5
-        Material.background: coreStyle.headerBackgroundColor
+        Material.background: root.style.headerBackgroundColor
     }
     Rectangle{
         anchors.fill: parent
-        color: coreStyle.headerBackgroundColor
+        color: root.style.headerBackgroundColor
     }
     Rectangle{
         width: parent.width
         height: 1
-        color: coreStyle.headerBorderColor
+        color: root.style.headerBorderColor
         anchors.bottom: parent.bottom
     }
     RowLayout{
         anchors.fill: parent
-        spacing: adaptive.headerSpacing
+        spacing: root.adaptiveMetrics.headerSpacing
         Item{
-            Layout.preferredWidth: adaptive.headerSideGap
+            Layout.preferredWidth: root.adaptiveMetrics.headerSideGap
             Layout.preferredHeight: 1
         }
         ItemDelegateButtonBase {
@@ -45,35 +55,56 @@ Item {
           Layout.preferredHeight: parent.height
           Layout.preferredWidth: parent.height
           tipText: qsTr("主菜单")
-          source:  coreStyle.getIcon("Menu")
+          source: root.style.getIcon("Menu")
         }
 
         TopIcon{}
-        TopTabBar{}
+        TopTabBar{
+            adaptiveMetrics: root.adaptiveMetrics
+            style: root.style
+            appController: root.appController
+        }
         SeparatorLine{}
-        TopTools{}
+        TopTools{
+            adaptiveMetrics: root.adaptiveMetrics
+            popupManager: root.popupManager
+        }
         TopSettingButton{}
 
         Item{
-            implicitWidth: adaptive.headerLargeGap
+            implicitWidth: root.adaptiveMetrics.headerLargeGap
             Layout.fillHeight: true
         }
-        TopMsg{}
+        TopMsg{
+            authManager: root.authManager
+            modelStore: root.modelStore
+            coreController: root.coreController
+            globalContext: root.globalContext
+        }
         FillLayout{
             GlobalErrorView{    // 全局报警
                 anchors.centerIn: parent
             }
         }
-        TitleLabel{}
+        WindowTitleLabel{
+            coreController: root.coreController
+            style: root.style
+            viewControl: root.viewControl
+        }
         FillLayout{}
         GlobalServerMsg{}
         TimeText{
-            visible: !auth.isAdmin || !global.screenConfig.isMinScreen
+            visible: !root.authManager.isAdmin
+                     || !root.globalContext.screenConfig.isMinScreen
         }
         FillLayout{}
-        TopCoilTools{}
+        TopCoilTools{
+            adaptiveMetrics: root.adaptiveMetrics
+            modelStore: root.modelStore
+            authManager: root.authManager
+        }
         Item{
-            implicitWidth: adaptive.headerSideGap
+            implicitWidth: root.adaptiveMetrics.headerSideGap
             Layout.fillHeight: true
         }
         RowLayout{
@@ -81,18 +112,18 @@ Item {
             Layout.preferredHeight: parent.height
             Layout.fillHeight: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: coreStyle.headerButtonGap
+            spacing: root.style.headerButtonGap
             HelpButton{
                 Layout.alignment: Qt.AlignVCenter
-                visible: !auth.isAdmin
+                visible: !root.authManager.isAdmin
             }
             TopToolsButton{
                 Layout.alignment: Qt.AlignVCenter
             }
             RowLayout {
                 id: windowControls
-                Layout.preferredWidth: coreStyle.windowButtonWidth * 3
-                Layout.preferredHeight: coreStyle.topHeight
+                Layout.preferredWidth: root.style.windowButtonWidth * 3
+                Layout.preferredHeight: root.style.topHeight
                 Layout.alignment: Qt.AlignVCenter
                 spacing: 0
 

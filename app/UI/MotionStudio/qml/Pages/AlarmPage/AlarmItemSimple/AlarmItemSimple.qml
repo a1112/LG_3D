@@ -5,6 +5,8 @@ import QtQuick.Layouts
 import "../../../Comp/Card"
 CardBase {
     id:root
+    required property var alarmInfo
+    required property var apiClient
     property string global_key: ""
     property bool showMore: false
     height: coll.height
@@ -15,6 +17,7 @@ CardBase {
         Layout.fillWidth: true
         width:parent.width
         AlarmItemSimpleView{
+            alarmInfo: root.alarmInfo
         }
 
         }
@@ -31,7 +34,7 @@ CardBase {
         MenuItem{
             text:"查看原始数据"
             onClicked:{
-               Qt.openUrlExternally(api.getLastUrlByKey("coilAlarm"))
+               Qt.openUrlExternally(root.apiClient.getLastUrlByKey("coilAlarm"))
             }
         }
     }

@@ -12,6 +12,7 @@ Item {
     required property var primaryController
     required property var style
     required property var adaptiveMetrics
+    required property var apiClient
 
     DataShowItemHead{
         id:dsh
@@ -29,6 +30,7 @@ Item {
         modelStore: root.modelStore
         controller: root.controller
         style: root.style
+        apiClient: root.apiClient
     }
 
     ColumnLayout{

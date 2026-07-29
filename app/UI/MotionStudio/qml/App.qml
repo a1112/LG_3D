@@ -21,6 +21,9 @@ AppBase {
     authManager: app.auth
     graphsManager: app.graphs_manage
     deviceCurveManager: app.device_curve_manage
+    modelStore: app.coreModel
+    clipboardService: app.cpp.clipboard
+    toolService: app.tool
     visible: true
     visibility:control.visibility
     onVisibilityChanged: function(visibility) {
@@ -55,6 +58,12 @@ AppBase {
         viewControl: app.control
         appController: app.app_core
         leftController: app.leftCore
+        alarmInfo: app.coreAlarmInfo
+        apiClient: app.api
+        popupManager: app.popManage
+        authManager: app.auth
+        globalContext: app.global
+        coreController: app.core
     }
 
     property CoreAlarmInfo coreAlarmInfo : CoreAlarmInfo{}  // 全局的报警信息

@@ -20,7 +20,7 @@ Column {
     }
 
     Label {
-        width: parent.width
+        width: root.width
         text: "x: " + root.format(root.data[root.xKey])
         color: root.style.secondaryTextColor
         font.pixelSize: 9
@@ -28,7 +28,7 @@ Column {
     }
 
     Label {
-        width: parent.width
+        width: root.width
         text: "y: " + root.format(root.data[root.yKey])
         color: root.style.secondaryTextColor
         font.pixelSize: 9
@@ -36,7 +36,7 @@ Column {
     }
 
     Label {
-        width: parent.width
+        width: root.width
         text: root.format(root.data[root.valueKey])
         font.pixelSize: 9
         font.bold: root.emphasizePositive

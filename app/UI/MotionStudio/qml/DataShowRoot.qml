@@ -15,11 +15,24 @@ SplitView{
     required property var model
     required property var settings
     required property var viewControl
+    required property var alarmInfo
+    required property var apiClient
+    required property var popupManager
+    required property var leftController
+    required property var coreController
 
     Layout.fillWidth: true
     Layout.fillHeight: true
     LeftPageView{  // 左侧列表
         id:left
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.style
+        modelStore: root.model
+        popupManager: root.popupManager
+        leftController: root.leftController
+        apiClient: root.apiClient
+        alarmInfo: root.alarmInfo
+        coreController: root.coreController
         SplitView.fillHeight: true
         SplitView.preferredWidth: root.style.leftWidth
         SplitView.minimumWidth: root.style.leftMinimumWidth
@@ -33,5 +46,7 @@ SplitView{
         model: root.model
         settings: root.settings
         viewControl: root.viewControl
+        alarmInfo: root.alarmInfo
+        apiClient: root.apiClient
     }
 }

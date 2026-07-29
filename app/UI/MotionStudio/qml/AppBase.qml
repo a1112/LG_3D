@@ -22,6 +22,9 @@ ApplicationWindow {
     property var authManager
     property var graphsManager
     property var deviceCurveManager
+    property var modelStore
+    property var clipboardService
+    property var toolService
 
     Loader{
         anchors.fill:parent
@@ -38,6 +41,9 @@ ApplicationWindow {
             authManager: appBase.authManager
             graphsManager: appBase.graphsManager
             deviceCurveManager: appBase.deviceCurveManager
+            modelStore: appBase.modelStore
+            clipboardService: appBase.clipboardService
+            toolService: appBase.toolService
         }
         onLoaded: appBase.popManage = item
     }

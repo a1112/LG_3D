@@ -12,6 +12,8 @@ Item{
     required property var style
     required property var settings
     required property var adaptiveMetrics
+    required property var alarmInfo
+    required property var apiClient
     property var dataShowCore_: surfaceData.isAreaRootView ? dataShowCore.dataShowAreaCore:dataShowCore
 
     readonly property DataShowControl controls:dataShowCore.controls
@@ -30,6 +32,8 @@ Item{
         style: root.style
         settings: root.settings
         adaptiveMetrics: root.adaptiveMetrics
+        alarmInfo: root.alarmInfo
+        apiClient: root.apiClient
     }
 
     GlobItemErrorView{}

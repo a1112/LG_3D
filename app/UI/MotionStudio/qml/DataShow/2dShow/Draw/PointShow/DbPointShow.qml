@@ -1,55 +1,56 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 
 Item {
-    anchors.fill: parent
-    property real centreX:(inner_ellipse && inner_ellipse[0]) ? inner_ellipse[0][0] || 0 : 0
-    property real centreY:(inner_ellipse && inner_ellipse[0]) ? inner_ellipse[0][1] || 0 : 0
-    property real ellipseWidth:(inner_ellipse && inner_ellipse[1]) ? Math.min(inner_ellipse[1][0] || 0, inner_ellipse[1][1] || 0) : 0
+    id: root
 
-    function findPoint(px, py, point_type) {
-        // 计算方向向量
-        let cx = centreX
-        let cy = centreY
+    required property var dataShowCore
+    required property var innerEllipse
+
+    anchors.fill: parent
+
+    readonly property real centreX: root.innerEllipse[0]
+        ? Number(root.innerEllipse[0][0]) || 0 : 0
+    readonly property real centreY: root.innerEllipse[0]
+        ? Number(root.innerEllipse[0][1]) || 0 : 0
+    readonly property real ellipseWidth: root.innerEllipse[1]
+        ? Math.min(Number(root.innerEllipse[1][0]) || 0,
+                   Number(root.innerEllipse[1][1]) || 0) : 0
+
+    function findPoint(px, py, pointType) {
+        const cx = root.centreX
+        const cy = root.centreY
         const dx = px - cx
         const dy = py - cy
-        var r=ellipseWidth/2-100
-        if (point_type === "max_inner"){
-             r = ellipseWidth/2-100}
-        else if (point_type === "min_inner"){
-             r = ellipseWidth/2-200}
-        else if (point_type==="max_outer"){
-            r = Math.sqrt(dx ** 2 + dy ** 2)-100
-        }
-        else if (point_type==="min_outer"){
-            r = Math.sqrt(dx ** 2 + dy ** 2)-200
-        }
-        else{
-            return Qt.point(px,py);
-        }
+        const distance = Math.sqrt(dx ** 2 + dy ** 2)
+        let radius
 
-
-
-        // 计算 (cx, cy) 到 (px, py) 的距离
-        const d = Math.sqrt(dx ** 2 + dy ** 2)
-
-        // 如果距离为 0，则无法计算方向向量
-        if (d === 0) {
-            throw new Error("Points cx, cy and px, py cannot be the same.");
+        if (pointType === "max_inner") {
+            radius = Math.max(root.ellipseWidth / 2 - 100, 0)
+        } else if (pointType === "min_inner") {
+            radius = Math.max(root.ellipseWidth / 2 - 200, 0)
+        } else if (pointType === "max_outer") {
+            radius = Math.max(distance - 100, 0)
+        } else if (pointType === "min_outer") {
+            radius = Math.max(distance - 200, 0)
+        } else {
+            return Qt.point(px, py)
         }
 
-        // 归一化方向向量
-        const udx = dx / d;
-        const udy = dy / d;
+        if (distance === 0) {
+            return Qt.point(px, py)
+        }
 
-        // 计算新点的坐标
-        const nx = cx + udx * r;
-        const ny = cy + udy * r;
-
-        return Qt.point(nx,ny);
+        return Qt.point(cx + dx / distance * radius,
+                        cy + dy / distance * radius)
     }
-        Repeater{
-            model: dataShowCore.pointDbData
-            delegate:PointItem{
-            }
+
+    Repeater {
+        model: root.dataShowCore.pointDbData
+        delegate: PointItem {
+            dataShowCore: root.dataShowCore
+            pointProjector: root
         }
+    }
 }

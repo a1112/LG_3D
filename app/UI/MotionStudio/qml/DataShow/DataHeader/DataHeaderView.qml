@@ -9,6 +9,7 @@ Loader{
     required property var surfaceData
     required property var controller
     required property var style
+    required property var alarmInfo
 
     // 头部信息显示
     asynchronous: true
@@ -25,6 +26,7 @@ Loader{
             }
 
             DataShowItemInfos{      // 数据信息
+                alarmInfo: root.alarmInfo
             }
 
             DataShowItemCharts{  //  charts

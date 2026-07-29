@@ -2,15 +2,18 @@ import QtQuick
 import QtQuick.Controls.Material
 RowBase{
     id: root
-    y: adaptive.headerOffset
+
+    required property var adaptiveMetrics
+    required property var popupManager
+
+    y: root.adaptiveMetrics.headerOffset
     ItemDelegate{
         anchors.verticalCenter: parent.verticalCenter
         text: "缺陷"
         font.bold: true
         height: root.height
-        font.pixelSize: adaptive.fontMetric(15, 13, 18)
         onClicked:{
-            popManage.popupDefectClassPop()
+            root.popupManager.popupDefectClassPop()
         }
     }
     ItemDelegate{
@@ -18,9 +21,8 @@ RowBase{
         text: "诊断"
         font.bold: true
         height: root.height
-        font.pixelSize: adaptive.fontMetric(15, 13, 18)
         onClicked:{
-            popManage.popupGlobalAlarmView()
+            root.popupManager.popupGlobalAlarmView()
         }
     }
     ItemDelegate{
@@ -28,9 +30,8 @@ RowBase{
         text: "报表"
         font.bold: true
         height: root.height
-        font.pixelSize: adaptive.fontMetric(15, 13, 18)
         onClicked: {
-           popManage.popupExportView()
+           root.popupManager.popupExportView()
         }
     }
     ItemDelegate{
@@ -38,9 +39,8 @@ RowBase{
         text: "设备"
         font.bold: true
         height: root.height
-        font.pixelSize: adaptive.fontMetric(15, 13, 18)
         onClicked: {
-            popManage.popupHardwareMonitorView()
+            root.popupManager.popupHardwareMonitorView()
         }
     }
 

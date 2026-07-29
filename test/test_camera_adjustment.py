@@ -377,20 +377,32 @@ def test_camera_adjustment_settings_ui_is_wired():
     camera_qml = (
         MOTION_STUDIO_ROOT / "qml" / "SettingPage" / "CameraSetting" / "CameraSetting.qml"
     ).read_text(encoding="utf-8")
+    camera_row_qml = (
+        MOTION_STUDIO_ROOT
+        / "qml"
+        / "SettingPage"
+        / "CameraSetting"
+        / "CameraAdjustmentRow.qml"
+    ).read_text(encoding="utf-8")
     qrc = (MOTION_STUDIO_ROOT / "qml.qrc").read_text(encoding="utf-8")
 
     assert 'import "CameraSetting"' in setting_view
     assert 'qsTr("相机调整")' in setting_view
-    assert "CameraSetting {}" in setting_view
+    assert "CameraSetting {" in setting_view
+    assert "apiClient: root.apiClient" in setting_view
+    assert "style: root.style" in setting_view
     assert "qml/SettingPage/CameraSetting/CameraSetting.qml" in qrc
     assert "function getCameraAdjustments" in api_qml
     assert "function setCameraAdjustment" in api_qml
     assert "function reconnectCameraAdjustment" in api_qml
-    assert "app.api.getCameraAdjustments" in camera_qml
-    assert "app.api.setCameraAdjustment" in camera_qml
+    assert "required property var apiClient" in camera_qml
+    assert "app.api." not in camera_qml
+    assert "root.apiClient.getCameraAdjustments" in camera_qml
+    assert "root.apiClient.setCameraAdjustment" in camera_qml
     assert "exposureTime: paramValue" in camera_qml
     assert "gain: paramValue" in camera_qml
-    assert 'qsTr("曝光时间")' in camera_qml
-    assert 'qsTr("增益")' in camera_qml
-    assert 'qsTr("在线")' in camera_qml
-    assert 'qsTr("离线")' in camera_qml
+    assert "delegate: CameraAdjustmentRow {" in camera_qml
+    assert 'qsTr("曝光时间")' in camera_row_qml
+    assert 'qsTr("增益")' in camera_row_qml
+    assert 'qsTr("在线")' in camera_row_qml
+    assert 'qsTr("离线")' in camera_row_qml

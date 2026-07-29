@@ -167,7 +167,10 @@ Popup {
             currentIndex: tabBar.currentIndex
             clip: true
 
-            GeneralSetting {}
+            GeneralSetting {
+                settings: root.settings
+                style: root.style
+            }
             StyleSetting {
                 style: root.style
             }

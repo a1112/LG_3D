@@ -55,7 +55,6 @@ Item {
     ItemDelegate{
         height: parent.height
         font.bold: true
-        font.pixelSize: 15
         id:itemDelegate
         anchors.fill:parent
         background: Rectangle {
@@ -70,7 +69,6 @@ Item {
     Label{
         id:cetLabel
         font.bold: true
-        font.pointSize: 14
         anchors.centerIn:parent
     }
 

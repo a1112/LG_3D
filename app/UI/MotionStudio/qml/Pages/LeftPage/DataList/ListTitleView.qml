@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
@@ -25,8 +24,6 @@ Item {
             implicitHeight: 30
             RowLayout{
                 Label{
-                    font.pointSize: 13
-                    font.family: "Microsoft YaHei"
                     font.bold: true
                     text: "  Id "
                 }
@@ -36,29 +33,23 @@ Item {
                 }
                 Label{
                     text:"   卷号"
-                    font.pointSize: 13
                     font.bold: true
-                    font.family: "Microsoft YaHei"
                 }
                 Item {
                     Layout.fillWidth: true
                     implicitHeight: 1
                 }
                 Label{
-                    font.pointSize: 13
                     font.bold: true
 
                     text: "   钢种"
-                    font.family: "Microsoft YaHei"
                 }
                 Item {
                     Layout.fillWidth: true
                     implicitHeight: 1
                 }
                 Label{
-                    font.pointSize: 13
                     font.bold: true
-                    font.family: "Microsoft YaHei"
                     text: " 缺陷/最严重"
                 }
             }

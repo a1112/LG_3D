@@ -22,6 +22,7 @@ SplitView{
       required property var apiClient
       required property var modelController
       required property var popupManager
+      required property var coreController
 
       SplitView.preferredWidth: root.adaptiveMetrics.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
@@ -35,6 +36,9 @@ SplitView{
 
        SearchView{ // 查询界面
            visible: root.leftController.searchViewShow
+           adaptiveMetrics: root.adaptiveMetrics
+           style: root.style
+           leftController: root.leftController
            Layout.fillWidth: true
            SplitView.fillWidth: true
        }
@@ -50,6 +54,11 @@ SplitView{
            id : dataList
            Layout.fillWidth : true
            Layout.fillHeight : true
+           style: root.style
+           coreController: root.coreController
+           modelController: root.modelController
+           leftController: root.leftController
+           popupManager: root.popupManager
        }
 
        FootView{

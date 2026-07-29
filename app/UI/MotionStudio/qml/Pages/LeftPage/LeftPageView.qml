@@ -15,20 +15,30 @@ import "FliterSelect"
 */
 Item {
     id:root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var modelStore
+    required property var popupManager
+    required property var leftController
+    required property var apiClient
+    required property var alarmInfo
+    required property var coreController
+
     Pane{
         width: parent.width
         Material.elevation: 5
-        Material.background: coreStyle.panelBackgroundColor
+        Material.background: root.style.panelBackgroundColor
         // height:ustb.height+5
     }
     Rectangle {
         anchors.fill: parent
-        color: coreStyle.panelBackgroundColor
+        color: root.style.panelBackgroundColor
     }
 
     SplitView {
         anchors.fill: parent
-        spacing: adaptive.mainSpacing
+        spacing: root.adaptiveMetrics.mainSpacing
         orientation: Qt.Vertical
         CurrentInfo{ // 卷信息
             SplitView.fillWidth: true
@@ -42,10 +52,15 @@ Item {
         }
         AlarmItemSimple{    // 报警
             width: parent.width
+            alarmInfo: root.alarmInfo
+            apiClient: root.apiClient
         }
 
         SearchView{ // 查询界面
-            visible: leftCore.searchViewShow
+            visible: root.leftController.searchViewShow
+            adaptiveMetrics: root.adaptiveMetrics
+            style: root.style
+            leftController: root.leftController
             Layout.fillWidth: true
             SplitView.fillWidth: true
         }
@@ -55,15 +70,20 @@ Item {
 
         DataListView{   // 左侧列表
             id:dataList
+            style: root.style
+            coreController: root.coreController
+            modelController: root.modelStore
+            leftController: root.leftController
+            popupManager: root.popupManager
         }
 
         FootView{
-            apiClient: api
-            style: coreStyle
-            model: coreModel
-            popupManager: popManage
+            apiClient: root.apiClient
+            style: root.style
+            model: root.modelStore
+            popupManager: root.popupManager
             SplitView.fillWidth: true
-            SplitView.preferredHeight: adaptive.scaleMetric(25, 22, 34)
+            SplitView.preferredHeight: root.adaptiveMetrics.scaleMetric(25, 22, 34)
         }
 
     }

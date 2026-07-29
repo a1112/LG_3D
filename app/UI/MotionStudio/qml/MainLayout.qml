@@ -16,6 +16,12 @@ Item {
     required property var viewControl
     required property var appController
     required property var leftController
+    required property var alarmInfo
+    required property var apiClient
+    required property var popupManager
+    required property var authManager
+    required property var globalContext
+    required property var coreController
 
     implicitWidth: root.adaptiveMetrics.designWidth
     implicitHeight: root.adaptiveMetrics.designHeight
@@ -30,7 +36,16 @@ Item {
         spacing: root.adaptiveMetrics.mainSpacing
         anchors.fill: parent
 
-        TopHeader {
+            TopHeader {
+                adaptiveMetrics: root.adaptiveMetrics
+                style: root.style
+                modelStore: root.model
+                authManager: root.authManager
+                globalContext: root.globalContext
+                coreController: root.coreController
+                appController: root.appController
+                viewControl: root.viewControl
+                popupManager: root.popupManager
         }
 
         StackLayout {
@@ -49,6 +64,11 @@ Item {
                     model: root.model
                     settings: root.settings
                     viewControl: root.viewControl
+                    alarmInfo: root.alarmInfo
+                    apiClient: root.apiClient
+                    popupManager: root.popupManager
+                    leftController: root.leftController
+                    coreController: root.coreController
                 }
             }
 

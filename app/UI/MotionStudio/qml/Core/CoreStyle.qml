@@ -6,6 +6,7 @@ import "../Style/Adaptive"
 
 Item {
     id: root
+    objectName: "coreStyle"
 
     // ========== 主题预设 ==========
     property string themeName: "dark"  // 当前主题名称

@@ -1,9 +1,13 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
 ScrollView {
     id: root
+    required property var settings
+    required property var style
     clip: true
 
     ColumnLayout {
@@ -29,12 +33,13 @@ ScrollView {
                 ComboBox {
                     id: imageBackendBox
                     model: [qsTr("Python"), qsTr("Rust")]
-                    currentIndex: coreSetting.useRustImageServer ? 1 : 0
+                    currentIndex: root.settings.useRustImageServer ? 1 : 0
                     Layout.preferredWidth: 140
-                    onActivated: coreSetting.useRustImageServer = currentIndex === 1
+                    onActivated: root.settings.useRustImageServer
+                                 = imageBackendBox.currentIndex === 1
                 }
                 HintLabel {
-                    text: coreSetting.useRustImageServer
+                    text: root.settings.useRustImageServer
                           ? qsTr("当前使用 Rust 图像服务")
                           : qsTr("当前使用 Python 图像服务")
                 }
@@ -54,11 +59,12 @@ ScrollView {
                 CheckBox {
                     id: rustTestServerCheckBox
                     text: qsTr("启用测试服务")
-                    checked: coreSetting.useRustTestServer
-                    onToggled: coreSetting.useRustTestServer = checked
+                    checked: root.settings.useRustTestServer
+                    onToggled: root.settings.useRustTestServer
+                               = rustTestServerCheckBox.checked
                 }
                 HintLabel {
-                    text: coreSetting.useRustTestServer
+                    text: root.settings.useRustTestServer
                           ? qsTr("已切换到 Rust API，用于联调测试")
                           : qsTr("默认使用 Python API")
                 }
@@ -77,9 +83,10 @@ ScrollView {
                     id: tileCountBox
                     from: 1
                     to: 10
-                    value: coreSetting.defaultAreaTileCount
+                    value: root.settings.defaultAreaTileCount
                     Layout.preferredWidth: 120
-                    onValueChanged: coreSetting.defaultAreaTileCount = value
+                    onValueModified: root.settings.defaultAreaTileCount
+                                     = tileCountBox.value
                 }
                 HintLabel {
                     text: qsTr("每边块数，默认 3；加载完成后按尺寸自动调整")
@@ -98,15 +105,17 @@ ScrollView {
                 CheckBox {
                     id: enable1024CacheCheckBox
                     text: qsTr("启用 1024 缓存模式（falsecolor 缩略图）")
-                    checked: coreSetting.enable1024CacheMode
-                    onCheckedChanged: coreSetting.enable1024CacheMode = checked
+                    checked: root.settings.enable1024CacheMode
+                    onToggled: root.settings.enable1024CacheMode
+                               = enable1024CacheCheckBox.checked
                 }
 
                 CheckBox {
                     id: errorOverlayCheckBox
                     text: qsTr("显示叠加图层（塔形报警 Error 图层）")
-                    checked: coreSetting.showErrorOverlay
-                    onCheckedChanged: coreSetting.showErrorOverlay = checked
+                    checked: root.settings.showErrorOverlay
+                    onToggled: root.settings.showErrorOverlay
+                               = errorOverlayCheckBox.checked
                 }
             }
         }
@@ -124,10 +133,10 @@ ScrollView {
 
         Layout.fillWidth: true
         implicitHeight: sectionLayout.implicitHeight + 28
-        color: coreStyle.panelElevatedColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelElevatedColor
+        border.color: root.style.headerBorderColor
         border.width: 1
-        radius: coreStyle.controlRadius
+        radius: root.style.controlRadius
 
         ColumnLayout {
             id: sectionLayout
@@ -137,7 +146,7 @@ ScrollView {
 
             Label {
                 text: section.title
-                color: coreStyle.titleColor
+                color: root.style.titleColor
                 font.pixelSize: 16
                 font.bold: true
                 Layout.fillWidth: true
@@ -146,7 +155,7 @@ ScrollView {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: coreStyle.headerBorderColor
+                color: root.style.headerBorderColor
             }
 
             ColumnLayout {
@@ -158,14 +167,14 @@ ScrollView {
     }
 
     component FieldLabel: Label {
-        color: coreStyle.labelColor
+        color: root.style.labelColor
         font.pixelSize: 14
         Layout.alignment: Qt.AlignVCenter
         Layout.preferredWidth: 90
     }
 
     component HintLabel: Label {
-        color: coreStyle.labelColor
+        color: root.style.labelColor
         opacity: 0.76
         font.pixelSize: 13
         wrapMode: Text.WordWrap

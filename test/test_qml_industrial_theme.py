@@ -234,7 +234,9 @@ def test_display_style_system_is_available_from_settings():
 
 def test_frameless_window_uses_standard_caption_controls():
     app_text = read_qml(Path("App.qml"))
-    title_text = read_qml(Path("Pages") / "Header" / "TitleLabel.qml")
+    title_text = read_qml(
+        Path("Pages") / "Header" / "WindowTitleLabel.qml"
+    )
     fill_text = read_qml(Path("Pages") / "Header" / "FillLayout.qml")
     top_header_text = read_qml(Path("Pages") / "Header" / "TopHeader.qml")
     caption_button_text = read_qml(Path("Pages") / "Header" / "WindowCaptionButton.qml")
@@ -261,7 +263,7 @@ def test_caption_button_icons_are_centered_inside_button_frame():
     assert "anchors.centerIn: parent" in caption_button_text
     assert "width: parent.width" in caption_button_text
     assert "height: parent.height" in caption_button_text
-    assert "height: coreStyle.topHeight" in top_header_text
+    assert "height: root.style.topHeight" in top_header_text
     assert "height: 35" not in top_header_text
     assert "height: coreStyle.topHeight" in help_button_text
     assert "width: coreStyle.windowButtonWidth" in help_button_text
@@ -523,6 +525,12 @@ def test_primary_data_view_passes_chart_dependencies_from_app_boundary():
         / "DataShowItem"
         / "DataShowItemCharts.qml"
     )
+    info_panel = read_qml(
+        Path("DataShow")
+        / "DataHeader"
+        / "DataShowItem"
+        / "DataShowItemInfos.qml"
+    )
 
     for dependency in (
         "adaptiveMetrics",
@@ -540,6 +548,16 @@ def test_primary_data_view_passes_chart_dependencies_from_app_boundary():
     assert "model: app.coreModel" in app_text
     assert "settings: app.coreSetting" in app_text
     assert "viewControl: app.control" in app_text
+    assert "alarmInfo: app.coreAlarmInfo" in app_text
+    for boundary in (main_layout, data_root, data_layout, data_view, header):
+        assert "required property var alarmInfo" in boundary
+    assert "alarmInfo: root.alarmInfo" in main_layout
+    assert "alarmInfo: root.alarmInfo" in data_root
+    assert data_layout.count("alarmInfo: root.alarmInfo") == 2
+    assert "alarmInfo: root.alarmInfo" in data_view
+    assert "alarmInfo: root.alarmInfo" in header
+    assert "required property var alarmInfo" in info_panel
+    assert "coreAlarmInfo." not in info_panel
     for dependency in ("surfaceData", "controller", "style"):
         assert f"required property var {dependency}" in header
         assert f"required property var {dependency}" in chart
@@ -552,6 +570,96 @@ def test_primary_data_view_passes_chart_dependencies_from_app_boundary():
     assert "onReleased: function(mouse)" in chart
     assert "required property SurfaceData surfaceData" in data_view
     assert "required property DataShowCore dataShowCore" in data_view
+
+
+def test_left_alarm_summary_and_coil_menu_use_explicit_app_services():
+    app_base = read_qml(Path("AppBase.qml"))
+    pops = read_qml(Path("PopupView") / "Pops.qml")
+    left_page = read_qml(
+        Path("Pages") / "LeftPage" / "LeftPageView.qml"
+    )
+    alarm_card = read_qml(
+        Path("Pages")
+        / "AlarmPage"
+        / "AlarmItemSimple"
+        / "AlarmItemSimple.qml"
+    )
+    alarm_view = read_qml(
+        Path("Pages")
+        / "AlarmPage"
+        / "AlarmItemSimple"
+        / "AlarmItemSimpleView.qml"
+    )
+    coil_menu = read_qml(
+        Path("Pages")
+        / "LeftPage"
+        / "DataList"
+        / "DataListMenu"
+        / "DataListItemMenu.qml"
+    )
+
+    for dependency in ("modelStore", "clipboardService", "toolService"):
+        assert f"property var {dependency}" in app_base
+        assert f"required property var {dependency}" in pops
+    for dependency in (
+        "apiClient",
+        "modelStore",
+        "clipboardService",
+        "toolService",
+        "popupManager",
+    ):
+        assert f"required property var {dependency}" in coil_menu
+    assert "coreModel." not in coil_menu
+    assert "cpp." not in coil_menu
+    assert "tool." not in coil_menu
+    assert "popManage." not in coil_menu
+    assert "required property var alarmInfo" in left_page
+    assert "required property var alarmInfo" in alarm_card
+    assert "required property var alarmInfo" in alarm_view
+    assert "coreAlarmInfo." not in alarm_view
+    assert "api." not in alarm_card
+
+
+def test_top_header_and_coil_tools_use_explicit_runtime_dependencies():
+    main_layout = read_qml(Path("MainLayout.qml"))
+    top_header = read_qml(Path("Pages") / "Header" / "TopHeader.qml")
+    coil_tools = read_qml(
+        Path("Pages") / "Header" / "TopCoilTools.qml"
+    )
+    top_tools = read_qml(Path("Pages") / "Header" / "TopTools.qml")
+    top_tabs = read_qml(Path("Pages") / "Header" / "TopTabBar.qml")
+    top_status = read_qml(Path("Pages") / "Header" / "TopMsg.qml")
+    title = read_qml(
+        Path("Pages") / "Header" / "WindowTitleLabel.qml"
+    )
+
+    for dependency in ("authManager", "globalContext"):
+        assert f"required property var {dependency}" in main_layout
+        assert f"required property var {dependency}" in top_header
+    for dependency in ("adaptiveMetrics", "modelStore", "authManager"):
+        assert f"required property var {dependency}" in coil_tools
+    assert "coreStyle." not in top_header
+    assert "adaptive." not in top_header
+    assert "auth." not in top_header
+    assert "global." not in top_header
+    assert "coreModel." not in coil_tools
+    assert "adaptive." not in coil_tools
+    assert "auth." not in coil_tools
+    assert "root.modelStore.quickLyImage = quickToggle.checked" in coil_tools
+    assert "= quickLyImage" not in coil_tools
+    for component in (top_tools, top_tabs, top_status, title):
+        assert "required property var" in component
+    assert "popManage." not in top_tools
+    assert "app_core." not in top_tabs
+    assert "coreModel." not in top_status
+    assert "core." not in top_status
+    assert "core." not in title
+    assert "control." not in title
+    generic_title = read_qml(
+        Path("Pages") / "Header" / "TitleLabel.qml"
+    )
+    assert "DragHandler" not in generic_title
+    assert "TapHandler" not in generic_title
 
 
 def test_style_menu_and_color_picker_are_explicit_and_self_contained():
@@ -663,6 +771,8 @@ def test_taper_summary_reuses_surface_rows_and_avoids_cross_component_ids():
     assert "required property var data" in row_text
     assert row_text.count("TaperPointCell {") == 4
     assert "required property string valueKey" in cell_text
+    assert cell_text.count("width: root.width") == 3
+    assert "width: parent.width" not in cell_text
     assert "style.statusErrorColor" in cell_text
     assert "style.statusSuccessColor" in cell_text
     assert "x: left.width" not in left_popup
@@ -686,6 +796,12 @@ def test_rust_services_use_fixed_ports_and_test_api_defaults_to_python():
     assert "readonly property int rustApiPort: 5011" in api_config_text
     assert "activeApiPort: coreSetting.useRustTestServer ? rustApiPort : pythonApiPort" in api_config_text
     assert "activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : pythonImageServerPort" in api_config_text
+    for dependency in ("settings", "style"):
+        assert f"required property var {dependency}" in general_setting_text
+    assert "coreSetting." not in general_setting_text
+    assert "coreStyle." not in general_setting_text
+    assert "onValueModified: root.settings.defaultAreaTileCount" in general_setting_text
+    assert "onValueChanged: coreSetting.defaultAreaTileCount" not in general_setting_text
     assert "active: coreSetting.useRustTestServer" in api_database_text
     assert "if (!coreSetting.useRustTestServer)" in api_database_text
     assert "server_port" not in connect_dialog_text
@@ -921,6 +1037,9 @@ def test_coil_list_reuses_delegates_and_maps_filtered_selection_by_id():
     delegate_text = read_qml(Path("Pages") / "LeftPage" / "DataList" / "DataListViewItenBase.qml")
     animation_text = read_qml(Path("animation") / "AnimListView.qml")
     left_core_text = read_qml(Path("Core") / "LefeCore.qml")
+    status_text = read_qml(
+        Path("Pages") / "LeftPage" / "DataList" / "StatusMsg.qml"
+    )
 
     assert "reuseItems: true" in animation_text
     assert "cacheBuffer: Math.max(240, height)" in animation_text
@@ -931,7 +1050,21 @@ def test_coil_list_reuses_delegates_and_maps_filtered_selection_by_id():
     assert "required property int index" in delegate_text
     assert "required property var model" in delegate_text
     assert "onCurrentIndexChanged" not in list_view_text
-    assert "leftCore.visibleIndexForCoilId(core.currentCoilModel.coilId)" in list_view_text
+    for dependency in (
+        "style",
+        "coreController",
+        "modelController",
+        "leftController",
+        "popupManager",
+    ):
+        assert f"required property var {dependency}" in list_view_text
+    assert "leftCore." not in list_view_text
+    assert "coreModel." not in list_view_text
+    assert "popManage." not in list_view_text
+    assert "root.leftController.visibleIndexForCoilId(" in list_view_text
+    assert "required property var coilModel" in status_text
+    assert "required property var summary" in status_text
+    assert "listItemCoil." not in status_text
     assert "function indexForCoilId(model, coilId)" in left_core_text
     assert "function selectVisibleIndex(index)" in left_core_text
     assert "indexForCoilId(coreModel.currentCoilListModel, coilId)" in left_core_text
@@ -1044,6 +1177,15 @@ def test_unreferenced_legacy_and_broken_demo_components_are_removed():
         Path("Base") / "DefectView.qml",
         Path("Base") / "SelectCursor.qml",
         Path("Base") / "SelectItemInfoView.qml",
+        Path("Comp")
+        / "SimpleList"
+        / "SimpleListView2250"
+        / "ListItemDelegate2250.qml",
+        Path("Comp")
+        / "SimpleList"
+        / "SimpleListView2250"
+        / "SimpleListView2250.qml",
+        Path("DataShow") / "DataShowMsg" / "DataShowLabelsViewAll.qml",
     )
 
     for removed_path in removed_paths:
@@ -1066,8 +1208,9 @@ def test_unused_area_draw_copy_is_removed_and_active_overlay_is_safe():
     assert not list(removed_draw_root.rglob("*.qml"))
     assert "qml/DataShow/ViewArea/Draw/" not in qrc_text
     assert 'import "Draw"' not in view_area_text
-    for dependency in ("surfaceData", "dataShowCore", "style"):
+    for dependency in ("surfaceData", "dataShowCore", "style", "apiClient"):
         assert f"required property var {dependency}" in active_draw
+    assert "source && source.length > 1 && source[1]" in active_draw
     assert "function requestCanvasPaint()" in active_draw
     assert "function onCanvasScaleChanged()" in active_draw
     assert "function onCountChanged()" in active_draw
@@ -1076,6 +1219,56 @@ def test_unused_area_draw_copy_is_removed_and_active_overlay_is_safe():
     assert "style.statusSuccessColor" in active_draw
     assert "style.statusErrorColor" in active_draw
     assert "Repeater" not in active_draw
+
+
+def test_point_overlay_has_explicit_dependencies_and_safe_empty_geometry():
+    draw_point = read_qml(
+        Path("DataShow") / "2dShow" / "Draw" / "DrawPoint.qml"
+    )
+    point_root = (
+        Path("DataShow") / "2dShow" / "Draw" / "PointShow"
+    )
+    db_points = read_qml(point_root / "DbPointShow.qml")
+    user_points = read_qml(point_root / "UserPointShow.qml")
+    point_item = read_qml(point_root / "PointItem.qml")
+    point_view = read_qml(point_root / "PointViewItem.qml")
+
+    for dependency in (
+        "surfaceData",
+        "dataShowCore",
+        "style",
+        "apiClient",
+        "innerEllipse",
+    ):
+        assert f"required property var {dependency}" in draw_point
+    assert "required property var innerEllipse" in db_points
+    assert "inner_ellipse" not in db_points
+    assert "if (distance === 0)" in db_points
+    assert "return Qt.point(px, py)" in db_points
+    assert "pragma ComponentBehavior: Bound" in db_points
+    assert "pragma ComponentBehavior: Bound" in user_points
+    assert "required property var pointProjector" in point_item
+    for dependency in ("apiClient", "surfaceData", "dataShowCore", "style"):
+        assert f"required property var {dependency}" in point_view
+    assert "api." not in point_view
+    assert "coreStyle." not in point_view
+
+
+def test_search_filter_uses_valid_explicit_spacing_metric():
+    search_view = read_qml(
+        Path("Pages") / "LeftPage" / "SearchView" / "SearchView.qml"
+    )
+    filter_view = read_qml(
+        Path("Pages") / "LeftPage" / "SearchView" / "FilterView.qml"
+    )
+
+    for dependency in ("adaptiveMetrics", "style"):
+        assert f"required property var {dependency}" in search_view
+        assert f"required property var {dependency}" in filter_view
+    assert "required property var leftController" in search_view
+    assert "spacing: root.style.headerButtonGap" in filter_view
+    assert "adaptive.headerButtonGap" not in filter_view
+    assert "app.coreStyle" not in filter_view
 
 
 def test_global_error_levels_are_event_driven_instead_of_polled():

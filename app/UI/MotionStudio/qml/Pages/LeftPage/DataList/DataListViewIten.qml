@@ -23,15 +23,15 @@ DataListViewItenBase {
                     Label{
                         font.pointSize: 11
                         font.bold: true
-                        text: " " + coilModel.coilId
-                        color: listItemCoil.detectionStatuColor
+                        text: " " + root.coilModel.coilId
+                        color: root.listItemCoil.detectionStatuColor
                     }
                     Item {
                         width: 20
                         implicitHeight: 1
                     }
                     Label{
-                        text:coilModel.coilNo
+                        text:root.coilModel.coilNo
 
                         font.bold: true
                         font.pointSize: 12
@@ -41,7 +41,7 @@ DataListViewItenBase {
                             anchors.horizontalCenter:parent.horizontalCenter
                             height:3
                             anchors.top:parent.bottom
-                            color:coilModel.coilCheck.statusColor
+                            color:root.coilModel.coilCheck.statusColor
                         }
 
                     }
@@ -56,7 +56,7 @@ DataListViewItenBase {
                     }
                     Label{
                         font.pointSize: 11
-                        text: coilModel.coilType
+                        text: root.coilModel.coilType
                     }
                     Item {
                         Layout.fillWidth: true
@@ -64,6 +64,8 @@ DataListViewItenBase {
                     }
 
                     StatusMsg{
+                        coilModel: root.coilModel
+                        summary: root.listItemCoil
                     }
                 }
             }

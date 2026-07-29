@@ -29,6 +29,9 @@ Item {
     required property var authManager
     required property var graphsManager
     required property var deviceCurveManager
+    required property var modelStore
+    required property var clipboardService
+    required property var toolService
 
     ConnectDialog{ id:connectDialog }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
@@ -92,7 +95,14 @@ Item {
     function popupServerMangeView(){serverMangeView.popup()}
     ListValueChangeView{id:listValueChangeView} // 列表数值变化取消
     function popupListValueChangeView(){listValueChangeView.popup()}
-    DataListItemMenu{id:lefeListMemu} // 左侧列表
+    DataListItemMenu{
+        id:lefeListMemu
+        apiClient: root.apiClient
+        modelStore: root.modelStore
+        clipboardService: root.clipboardService
+        toolService: root.toolService
+        popupManager: root
+    } // 左侧列表
     function popupDataListItemMenu(coilModel){
         lefeListMemu.coilModel = coilModel
         lefeListMemu.popup()}

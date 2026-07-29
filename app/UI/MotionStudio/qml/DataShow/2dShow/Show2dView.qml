@@ -9,6 +9,7 @@ Item {
     required property var dataShowCore
     required property var modelStore
     required property var style
+    required property var apiClient
 
     anchors.fill: parent
     Rectangle{
@@ -45,6 +46,7 @@ Item {
                 surfaceData: root.surfaceData
                 dataShowCore: root.dataShowCore
                 style: root.style
+                apiClient: root.apiClient
             }
             ControlView{
             // 控制系统
