@@ -14,6 +14,8 @@ Item {
     required property var adaptiveMetrics
     required property var apiClient
     required property var globalContext
+    required property var settings
+    required property var view3DController
 
     DataShowItemHead{
         id:dsh
@@ -33,6 +35,9 @@ Item {
         style: root.style
         apiClient: root.apiClient
         globalContext: root.globalContext
+        settings: root.settings
+        view3DController: root.view3DController
+        adaptiveMetrics: root.adaptiveMetrics
     }
 
     ColumnLayout{

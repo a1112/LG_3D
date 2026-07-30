@@ -3,6 +3,10 @@ import QtQuick.Controls
         import QtQuick.Layouts
 import "../GraphsBase"
 ApplicationWindow {
+        id: root
+
+        required property var graphController
+
         visible: false
         width: 800
         height: 600
@@ -11,7 +15,7 @@ ApplicationWindow {
         ColumnLayout{
 
         HeaderView{
-
+                graphController: root.graphController
         }
 
         GraphsBaseView{

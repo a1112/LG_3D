@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 
@@ -25,10 +26,16 @@ def test_same_coil_flush_returns_before_reload_fanout() -> None:
     guard = "nextCoilId === Number(currentCoilModel.coilId)"
     assert guard in flush_body
     assert flush_body.index(guard) < flush_body.index("currentCoilModel.init(c_data)")
-    assert flush_body.index("return", flush_body.index(guard)) < flush_body.index(
-        "coreModel.surfaceS.setCoilId"
+    surface_reload = re.search(
+        r"(?:root\.)?(?:coreModel|modelStore)\.surfaceS\.setCoilId",
+        flush_body,
     )
-    assert "coreControl.init_data_has()" in flush_body
+    assert surface_reload is not None
+    assert flush_body.index("return", flush_body.index(guard)) < surface_reload.start()
+    assert re.search(
+        r"(?:root\.)?(?:coreControl|dataController)\.init_data_has\(\)",
+        flush_body,
+    )
 
 
 def test_height_data_is_singleflight_and_backs_off_after_overload() -> None:
@@ -37,9 +44,12 @@ def test_height_data_is_singleflight_and_backs_off_after_overload() -> None:
 
     assert "if (heightDataRequest)" in request_body
     assert "heightDataPending = true" in request_body
-    assert request_body.index("if (heightDataRequest)") < request_body.index(
-        "heightDataRequest = api.getHeightData"
+    height_request = re.search(
+        r"heightDataRequest\s*=\s*(?:root\.)?(?:api|apiClient)\.getHeightData",
+        request_body,
     )
+    assert height_request is not None
+    assert request_body.index("if (heightDataRequest)") < height_request.start()
     assert "heightDataRequest.abort()" not in request_body
     assert "nowMs < heightDataRetryAfter" in request_body
     assert "heightDataDebounceTimer.interval = Math.max(" in request_body
@@ -59,6 +69,7 @@ def test_qml_http_requests_timeout_and_pollers_do_not_overlap() -> None:
     assert "xhr.abort()" in ajax
     assert 'failure("request timeout", 0)' in ajax
     assert "return xhr" in ajax
+    assert 'root.logRequest(url, "post")' in ajax
 
     expected_guards = {
         "Api/Api_Base.qml": "delayRequestRunning",
@@ -86,18 +97,22 @@ def test_quick_exports_use_get_download_overload() -> None:
     source = _read("PopupView/Export/ExportView.qml")
 
     for endpoint in ("Today", "1h", "24h"):
-        call = (
-            f"fileDownloader.downloadFile(api.getExport{endpoint}Url(),"
-            "root.exportUrl)"
+        call_pattern = (
+            rf"root\.downloadClient\.downloadFile\(\s*"
+            rf"root\.apiClient\.getExport{endpoint}Url\(\),\s*"
+            rf"root\.exportUrl\s*\)"
         )
-        assert call in source
-        assert call[:-1] + ',\"\")' not in source
+        assert re.search(call_pattern, source)
 
 
 def test_height_point_websocket_keeps_binding_and_limits_disconnect_fallback() -> None:
     source = _read("Api/Api_DataBase.qml")
 
-    assert "active: coreSetting.useRustTestServer && _heightPointConnectEnabled" in source
+    assert re.search(
+        r"active:\s*api_database\.settings\.useRustTestServer\s*"
+        r"&&\s*api_database\._heightPointConnectEnabled",
+        source,
+    )
     assert "heightPointSocket.active =" not in source
     assert "function onUseRustTestServerChanged()" in source
     assert "_heightPointReconnectMaxDelayMs: 30000" in source
@@ -111,7 +126,8 @@ def test_alarm_network_polling_is_centralized_and_unique_per_port() -> None:
     delegate = _read("Pages/AlarmPage/AlarmItem/AlarmItemNetItem.qml")
 
     assert "uniquePorts.indexOf(portNumber) < 0" in group
-    assert "if (requestRunning)" in group
+    assert "if (root.requestRunning || !root.pollingEnabled)" in group
+    assert "generation !== root.pollGeneration" in group
     assert "running: root.visible && root.pollingEnabled" in group
     assert "Timer" not in delegate
     assert "__getDelay__" not in delegate

@@ -9,8 +9,13 @@ Item {
     required property var model
     required property var style
     required property var menuController
+    required property var globalContext
+    required property var apiClient
 
-    property DefectItemModel defectItem: DefectItemModel {}
+    property DefectItemModel defectItem: DefectItemModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
     readonly property bool hovered: hoverHandler.hovered
 
     function syncModel() {

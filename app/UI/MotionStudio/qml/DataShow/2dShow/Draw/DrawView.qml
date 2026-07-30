@@ -197,7 +197,10 @@ Item {
            ? root.perpendicularPoint.y * root.dataShowCore.canvasScale - 3 : 0
     }
 
-    DrawSurvey {}
+    DrawSurvey {
+        dataShowCore: root.dataShowCore
+        style: root.style
+    }
     DrawPoint {
         surfaceData: root.surfaceData
         dataShowCore: root.dataShowCore

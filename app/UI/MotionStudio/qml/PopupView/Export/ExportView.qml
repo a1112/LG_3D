@@ -14,8 +14,16 @@ import "../Base"
 
 ApplicationWindow {
     id: root
-    width: adaptive.boundedWidth(650, 520, 820)
-    height: adaptive.boundedHeight(500, 380, 680)
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var modelStore
+    required property var toolService
+    required property var apiClient
+    required property var downloadClient
+
+    width: root.adaptiveMetrics.boundedWidth(650, 520, 820)
+    height: root.adaptiveMetrics.boundedHeight(500, 380, 680)
     visible: false
     title: qsTr("报表导出")
     modality: Qt.ApplicationModal
@@ -34,21 +42,21 @@ ApplicationWindow {
         requestActivate()
         // 初始化日期时间
         try {
-            let mmList = coreModel.getCurrentCoilListModelMinMaxId()
-            if (coreModel.currentCoilListModel.count > 0) {
-                let frist_item = coreModel.currentCoilListModel.get(0)
-                let end_item = coreModel.currentCoilListModel.get(coreModel.currentCoilListModel.count-1)
+            if (root.modelStore.currentCoilListModel.count > 0) {
+                let firstItem = root.modelStore.currentCoilListModel.get(0)
+                let endItem = root.modelStore.currentCoilListModel.get(
+                            root.modelStore.currentCoilListModel.count - 1)
                 // 安全地设置日期时间
-                if (end_item && end_item.CreateTime) {
-                    let startDate = tool.getDataByJson(end_item.CreateTime)
+                if (endItem && endItem.CreateTime) {
+                    let startDate = root.toolService.getDataByJson(endItem.CreateTime)
                     if (startDate && startDate instanceof Date && !isNaN(startDate)) {
-                        start_dt.dateTime = startDate
+                        start_dt.setDate(startDate)
                     }
                 }
-                if (frist_item && frist_item.CreateTime) {
-                    let endDate = tool.getDataByJson(frist_item.CreateTime)
+                if (firstItem && firstItem.CreateTime) {
+                    let endDate = root.toolService.getDataByJson(firstItem.CreateTime)
                     if (endDate && endDate instanceof Date && !isNaN(endDate)) {
-                        end_dt.dateTime = endDate
+                        end_dt.setDate(endDate)
                     }
                 }
             }
@@ -97,6 +105,7 @@ ApplicationWindow {
         DateTimeSelectItem{
             id:startDate
             title_:"起始导出日期:"
+            style: root.style
             dateTime_:DateTime{
                 id:start_dt
             }
@@ -111,6 +120,7 @@ ApplicationWindow {
         DateTimeSelectItem{
             id:endDate
             title_:"结束导出日期:"
+            style: root.style
             dateTime_:DateTime{
                 id:end_dt
             }
@@ -123,6 +133,8 @@ ApplicationWindow {
             acceptLabel:root.outputName
             placeholderText:"桌面/"+ root.outputName
             nameFilters:[".xlsx"]
+            style: root.style
+            toolService: root.toolService
             onValueChanged:{
                 root.exportStatus.setNone()
             }
@@ -145,6 +157,7 @@ ApplicationWindow {
             }
 
             CheckRec{
+                style: root.style
                 text:"今天"
                 font.pointSize: 12
                 checkColor:Material.color(Material.Green)
@@ -152,14 +165,16 @@ ApplicationWindow {
                 Layout.preferredWidth: 100
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
-                    root.exportStatus.stratExport()
+                    root.exportStatus.startExport()
                     let outputUrl = root.quickOutputUrl("_today")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExportTodayUrl(),root.exportUrl)
+                    root.downloadClient.downloadFile(
+                                root.apiClient.getExportTodayUrl(), root.exportUrl)
                 }
             }
 
             CheckRec{
+                style: root.style
                 text:"1小时"
                 font.pointSize: 12
                 checkColor:Material.color(Material.Cyan)
@@ -167,14 +182,16 @@ ApplicationWindow {
                 Layout.preferredWidth: 100
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
-                    root.exportStatus.stratExport()
+                    root.exportStatus.startExport()
                     let outputUrl = root.quickOutputUrl("_1h")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExport1hUrl(),root.exportUrl)
+                    root.downloadClient.downloadFile(
+                                root.apiClient.getExport1hUrl(), root.exportUrl)
                 }
             }
 
             CheckRec{
+                style: root.style
                 text:"24小时"
                 font.pointSize: 12
                 checkColor:Material.color(Material.Blue)
@@ -182,10 +199,11 @@ ApplicationWindow {
                 Layout.preferredWidth: 100
                 enabled:!root.exportStatus.isDownloading
                 onClicked:{
-                    root.exportStatus.stratExport()
+                    root.exportStatus.startExport()
                     let outputUrl = root.quickOutputUrl("_24h")
                     root.exportUrl = saveFileInput.value || outputUrl
-                    fileDownloader.downloadFile(api.getExport24hUrl(),root.exportUrl)
+                    root.downloadClient.downloadFile(
+                                root.apiClient.getExport24hUrl(), root.exportUrl)
                 }
             }
         }
@@ -203,6 +221,7 @@ ApplicationWindow {
             }
 
             CheckRec{
+                style: root.style
                 text:root.exportStatus.isDownloading?"导出中...":"导出"
                 font.pointSize: 16
                 fillWidth: true
@@ -211,7 +230,14 @@ ApplicationWindow {
                 enabled:!root.exportStatus.isDownloading
                 Material.elevation: 12
                 onClicked:{
-                    root.exportStatus.stratExport()
+                    const startValue = startDate.dateTime_.getCurrentDate()
+                    const endValue = endDate.dateTime_.getCurrentDate()
+                    if (startValue > endValue) {
+                        root.exportStatus.setError("起始时间不能晚于结束时间")
+                        return
+                    }
+
+                    root.exportStatus.startExport()
                     if (!saveFileInput.value){
                         root.refreshOutputName()
                         root.exportUrl = root.outputBaseUrl
@@ -224,11 +250,15 @@ ApplicationWindow {
                     export_data_config["endDate"] = endDate.dateTime_.dateTimeString
                     var jsonString = JSON.stringify(export_data_config)
 
-                    fileDownloader.downloadFile(api.getPostExportUrl(),root.exportUrl,jsonString)
+                    root.downloadClient.downloadFile(
+                                root.apiClient.getPostExportUrl(),
+                                root.exportUrl,
+                                jsonString)
                 }
             }
 
             CheckRec{
+                style: root.style
                 text:"关闭"
                 font.pointSize: 16
                 Layout.preferredWidth: 80
@@ -246,6 +276,8 @@ ApplicationWindow {
             Layout.fillWidth: true
 
             DownloadingRow{
+                style: root.style
+                toolService: root.toolService
                 finshed:root.exportStatus.isDownloadFinished
                 visible: root.exportStatus.isDownloadFinished || root.exportStatus.isDownloading
                 progress:root.exportStatus.progress
@@ -261,13 +293,15 @@ ApplicationWindow {
     }
 
     Connections {
-        target: fileDownloader
+        target: root.downloadClient
         function onDownloadProgress(bytesReceived,bytesTotal) {
             root.exportStatus.progress = bytesTotal > 0 ? bytesReceived / bytesTotal : 0
         }
         function onDownloadFinished(){
             root.exportStatus.setFinished()
-            Qt.openUrlExternally("file:///"+root.exportUrl)
+            if (root.exportUrl) {
+                Qt.openUrlExternally("file:///" + root.exportUrl)
+            }
         }
         function onDownloadError(errorString){
             root.exportStatus.setError(errorString)

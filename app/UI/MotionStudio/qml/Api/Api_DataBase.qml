@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtWebSockets
 Api_Base {
@@ -16,7 +18,7 @@ Api_Base {
         interval: 1000
         repeat: false
         onTriggered: {
-            if (!coreSetting.useRustTestServer) {
+            if (!api_database.settings.useRustTestServer) {
                 return
             }
             // Keep the WebSocket.active binding intact. Assigning active
@@ -26,7 +28,7 @@ Api_Base {
     }
 
     function _scheduleHeightPointReconnect(){
-        if (coreSetting.useRustTestServer && !heightPointReconnectTimer.running) {
+        if (api_database.settings.useRustTestServer && !heightPointReconnectTimer.running) {
             heightPointReconnectTimer.interval = _heightPointReconnectDelayMs
             heightPointReconnectTimer.restart()
             _heightPointReconnectDelayMs = Math.min(_heightPointReconnectMaxDelayMs,
@@ -35,11 +37,11 @@ Api_Base {
     }
 
     Connections {
-        target: coreSetting
+        target: api_database.settings
         function onUseRustTestServerChanged() {
             heightPointReconnectTimer.stop()
-            _heightPointReconnectDelayMs = 1000
-            if (coreSetting.useRustTestServer) {
+            api_database._heightPointReconnectDelayMs = 1000
+            if (api_database.settings.useRustTestServer) {
                 _heightPointConnectEnabled = true
                 return
             }
@@ -86,16 +88,18 @@ Api_Base {
 
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
-        url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
-        active: coreSetting.useRustTestServer && _heightPointConnectEnabled
+        url: api_database.apiConfig.url(
+                 api_database.apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
+        active: api_database.settings.useRustTestServer && api_database._heightPointConnectEnabled
         onStatusChanged: function(status) {
             if (status === WebSocket.Open) {
-                _heightPointReconnectDelayMs = 1000
-                while (_heightPointQueue.length > 0) {
-                    let payload = _heightPointQueue.shift()
+                api_database._heightPointReconnectDelayMs = 1000
+                while (api_database._heightPointQueue.length > 0) {
+                    let payload = api_database._heightPointQueue.shift()
                     sendTextMessage(payload)
                 }
-            } else if (coreSetting.useRustTestServer && (status === WebSocket.Error || status === WebSocket.Closed)) {
+            } else if (api_database.settings.useRustTestServer
+                       && (status === WebSocket.Error || status === WebSocket.Closed)) {
                 if (_heightPointFailureHandling) {
                     return
                 }
@@ -124,8 +128,8 @@ Api_Base {
             try{
                 let data = JSON.parse(message)
                 let reqId = data.id
-                let cb = _heightPointRequests[reqId]
-                delete _heightPointRequests[reqId]
+                let cb = api_database._heightPointRequests[reqId]
+                delete api_database._heightPointRequests[reqId]
                 _removeHeightPointPendingId(reqId)
                 if (!cb) return
                 if (data.error !== undefined){
@@ -151,7 +155,7 @@ Api_Base {
     property var _heightPointPendingOrder: []
 
     function _sendHeightPointWs(payload, success, failure){
-        if (!coreSetting.useRustTestServer){
+        if (!api_database.settings.useRustTestServer){
             let url = apiConfig.url(apiConfig.serverUrlData, "coilData", "heightPoint", payload.surface_key, payload.coil_id)
                     + `?x=${payload.x}&y=${payload.y}`
             return ajax.get(url, success, failure)
@@ -427,11 +431,6 @@ Api_Base {
     //      return ajax.get(apiConfig.url("defectClasses"),success,failure)
     // }
 
-    function getCoilListValueChangeKeys(success,failure){
-        // 获取变化曲线数值键
-        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coil_list_value_change_keys"),success,failure)
-    }
-
     function getCoilStatus(coil_id,success,failure){
         return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"check","get_coil_status",coil_id),success,failure)
     }
@@ -516,34 +515,6 @@ Api_Base {
     // 导出标记缺陷图像
     function exportManualDefects(data, success, failure){
         return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"export_defects"),data,success,failure)
-    }
-
-    // ==================== 一键导出功能 ====================
-
-    // 导出最近1小时的数据
-    function export1h(exportType, success, failure){
-        let args = exportType ? "?export_type=" + exportType : ""
-        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_1h") + args
-        // 直接下载，通过window.open或iframe
-        return url
-    }
-
-    // 导出最近24小时的数据
-    function export24h(exportType, success, failure){
-        let args = exportType ? "?export_type=" + exportType : ""
-        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_24h") + args
-        return url
-    }
-
-    // 执行浏览器下载
-    function downloadExport(url){
-        let iframe = document.createElement("iframe")
-        iframe.style.display = "none"
-        iframe.src = url
-        document.body.appendChild(iframe)
-        setTimeout(function(){
-            document.body.removeChild(iframe)
-        }, 1000)
     }
 
 }

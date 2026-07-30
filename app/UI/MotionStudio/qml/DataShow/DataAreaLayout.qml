@@ -13,6 +13,9 @@ Loader{
     required property var dataShowCore
     required property var modelStore
     required property var style
+    required property var globalContext
+    required property var apiClient
+    required property var settings
 
     active: root.surfaceData.isAreaRootView
     Layout.fillWidth: true
@@ -24,6 +27,11 @@ Loader{
     id: dataShow2DView
         ViewArea{
             dataAreaShowCore: root.dataAreaShowCore
+            style: root.style
+            globalContext: root.globalContext
+            apiClient: root.apiClient
+            settings: root.settings
+            surfaceData: root.surfaceData
         }  // 显示主菜单
         // Show2dView{}    // 2D 显示
         // MaskToolView{}// 功能菜单

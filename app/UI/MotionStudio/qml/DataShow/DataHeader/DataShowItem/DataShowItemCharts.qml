@@ -18,7 +18,11 @@ DataShowItemBase{
     property int drawWidth: width
     property int drawHeight: height-20
     property var lineData: root.surfaceData.lineData || []
-    property CoreCharts coreCharts : CoreCharts{
+    property CoreCharts coreCharts: CoreCharts {
+        controller: root.controller
+        surfaceData: root.surfaceData
+        drawWidth: root.drawWidth
+        drawHeight: root.drawHeight
     }
     function findZValue(arr, n) {
         if (arr===undefined) return
@@ -187,6 +191,7 @@ DataShowItemBase{
         width:parent.width
         height:parent.height
     ChartViewBase {
+        drawHeight: root.drawHeight
         y:-70
         height:parent.height+80
         ValueAxis {

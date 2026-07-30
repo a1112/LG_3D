@@ -5,6 +5,7 @@ import "../../../../Model/server"
 ItemDelegate {
 
     id:root
+    required property var model
     required property var controller
     required property var areaController
     required property var surfaceData
@@ -12,7 +13,11 @@ ItemDelegate {
     required property var apiClient
     required property var defectClassController
 
-    property ServerDefectModel defect: ServerDefectModel{}
+    readonly property ServerDefectModel defect: ServerDefectModel {
+        controller: root.controller
+        defectClassController: root.defectClassController
+        rawDefect: root.model
+    }
     readonly property int defectImageWidth: root.defect.isArea
                                             ? (root.controller.dataShowAreaCore.sourceWidth
                                                || root.controller.sourceWidth || 5000)

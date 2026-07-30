@@ -8,9 +8,12 @@ Item {
     required property var style
 
     property var defectDictData: { return {} }
+    property bool initialized: false
     property ListModel defectDictModel: ListModel {
         dynamicRoles: true
     }
+
+    signal defectConfigurationChanged()
 
     property string unDefectClassItemName: qsTr("无缺陷")
 
@@ -38,6 +41,14 @@ Item {
 
     function is_defect_show(value) {
         return value === true || value === "true"
+    }
+
+    function is_defect_enabled(defectName) {
+        let sharedName = shared_defect_name(defectName)
+        if (sharedName in defectDictData) {
+            return is_defect_show(defectDictData[sharedName]["show"])
+        }
+        return initialized ? defaultDefectClass.defectShow : true
     }
 
     function is_area_defect_name(defectName) {
@@ -136,6 +147,8 @@ Item {
         defectDictData = normalize_defect_dict_data(defectData["data"])
         upDefectDictModelByDefectDictData()
         defaultDefectClass.init(defectData["default"])
+        initialized = true
+        defectConfigurationChanged()
     }
 
     function updateDefectClass(name, key, value) {
@@ -146,6 +159,7 @@ Item {
         item[key] = String(value)
         root.defectDictData[name] = item
         root.upDefectDictModelByDefectDictData()
+        root.defectConfigurationChanged()
         return true
     }
 
@@ -172,6 +186,7 @@ Item {
         }
         upDefectDictModelByDefectDictData()
         flushDefectDictAll()
+        defectConfigurationChanged()
         return true
     }
 

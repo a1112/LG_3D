@@ -3,6 +3,10 @@ import QtQuick.Controls.Material
 import "../Model/server"
 
 QtObject {
+    id: root
+
+    required property var globalContext
+    required property var apiClient
 
     property var coilData
 
@@ -41,7 +45,20 @@ QtObject {
     property CoilCheck coilCheck: CoilCheck {}
 
     property var defectsData: []
-    property DefectItemModel maxDefect: DefectItemModel {}
+    property DefectItemModel maxDefect: DefectItemModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
+
+    property Connections defectClassConnections: Connections {
+        target: root.globalContext.defectClassProperty
+
+        function onDefectConfigurationChanged() {
+            if (root.coilData) {
+                root.initMaxLevelDefect()
+            }
+        }
+    }
 
     property int defectMaxErrorLevel: maxDefect.defectLevel
     property color defectErrorColor: {
@@ -87,9 +104,9 @@ QtObject {
         if (level > 0) {
             return level
         }
-        let defectName = _getDefectName(defect)
+        let defectName = _getDefectConfigName(defect)
         if (defectName) {
-            return global.defectClassProperty.getDefectLevelByDefectName(defectName)
+            return root.globalContext.defectClassProperty.getDefectLevelByDefectName(defectName)
         }
         return 0
     }
@@ -124,6 +141,17 @@ QtObject {
         ], "")
     }
 
+    function _getDefectConfigName(defect) {
+        return _firstValue(defect, [
+            "configDefectName",
+            "ConfigDefectName",
+            "defectName",
+            "DefectName",
+            "name",
+            "Name"
+        ], "")
+    }
+
     function _getDefectSurface(defect) {
         return _firstValue(defect, ["surface", "Surface"], "")
     }
@@ -132,7 +160,8 @@ QtObject {
         let items = _normalizeDefectsData(defectsData)
         for (let i = 0; i < items.length; i++) {
             let defect = items[i]
-            let defectName = global.defectClassProperty.shared_defect_name(_getDefectName(defect))
+            let defectName = root.globalContext.defectClassProperty.shared_defect_name(
+                        _getDefectName(defect))
             if (defectName && fliterDict[defectName]) {
                 return true
             }
@@ -185,16 +214,6 @@ QtObject {
         }
 
         defectsData = normalizedDefects
-        if (!maxDefectName && defectsData.length > 0) {
-            maxDefectName = _getDefectName(defectsData[0])
-        }
-        if (maxDefectLevel <= 0 && defectsData.length > 0) {
-            maxDefectLevel = _getDefectLevel(defectsData[0])
-        }
-        if (!maxDefectSurface && defectsData.length > 0) {
-            maxDefectSurface = _getDefectSurface(defectsData[0])
-        }
-
         coilCreateTime.initByDict(coil.CreateTime)
         coilDetectionTime.initByDict(coil.DetectionTime)
 
@@ -223,9 +242,19 @@ QtObject {
         let maxLevel = -1
         let items = _normalizeDefectsData(defectsData)
 
+        if (items.length === 0) {
+            maxDefect.init(null)
+            return maxDefectName
+        }
+
         for (let i = 0; i < items.length; i++) {
             let defect = items[i]
             if (!defect) {
+                continue
+            }
+
+            let configName = _getDefectConfigName(defect)
+            if (!root.globalContext.defectClassProperty.is_defect_enabled(configName)) {
                 continue
             }
 
@@ -238,11 +267,14 @@ QtObject {
 
         if (foundDefect) {
             maxDefect.init(foundDefect)
-            maxDefectName = _getDefectName(foundDefect) || maxDefectName
+            maxDefectName = _getDefectName(foundDefect)
             maxDefectLevel = _getDefectLevel(foundDefect)
-            maxDefectSurface = _getDefectSurface(foundDefect) || maxDefectSurface
+            maxDefectSurface = _getDefectSurface(foundDefect)
         } else {
             maxDefect.init(null)
+            maxDefectName = ""
+            maxDefectLevel = 0
+            maxDefectSurface = ""
         }
         return maxDefect.defectName
     }

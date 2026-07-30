@@ -22,7 +22,7 @@ Item {
 
         property string errorStr:""
 
-        function stratExport(){
+        function startExport(){
             currentStatus=downloading
             progress=0.0
         }

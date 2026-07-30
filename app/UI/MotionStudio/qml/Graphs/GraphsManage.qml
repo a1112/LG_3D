@@ -6,11 +6,19 @@ import QtQuick
 */
 import "GraphsValueView"
 GraphsValueViewMain{
-  property GraphsCore graphsCore: GraphsCore{}
+  id: root
+
+  required property var modelStore
+
+  graphController: graphsCore
+
+  property GraphsCore graphsCore: GraphsCore {
+    modelStore: root.modelStore
+  }
 
   function open(){
-    visible=true
-    graphsCore.init()
+    root.visible = true
+    root.graphsCore.init()
 
   }
 

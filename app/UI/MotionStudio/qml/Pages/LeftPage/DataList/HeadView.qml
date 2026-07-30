@@ -76,6 +76,7 @@ Item {
         }
 
         CheckRec{
+            style: root.style
             visible: root.modelController.isListHistoryModel
             id:its
             height: 26
@@ -110,6 +111,7 @@ Item {
                height: parent.height
                width: height
         FlushButton{
+            style: root.style
             tipText: qsTr("刷新")
             visible:true //! leftCore.searchViewShow
             anchors.fill: parent

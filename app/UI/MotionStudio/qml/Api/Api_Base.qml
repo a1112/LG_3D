@@ -6,6 +6,9 @@ Item {
 
     required property var connectionState
     required property var errorModel
+    required property var settings
+    required property var toolService
+    required property var downloadClient
 
     property int delay: -1
     readonly property bool connected: delay >= 0
@@ -38,7 +41,9 @@ Item {
         return reUrl
     }
 
-    property ApiConfig apiConfig: ApiConfig{}
+    property ApiConfig apiConfig: ApiConfig {
+        settings: api_base.settings
+    }
 
     function getLastUrlByKey(key){
         return apiConfig.getLastUrlByKey(key)

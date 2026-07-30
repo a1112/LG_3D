@@ -23,6 +23,7 @@ Item {
     required property var globalContext
     required property var coreController
     required property var toolService
+    required property var imageCacheService
 
     implicitWidth: root.adaptiveMetrics.designWidth
     implicitHeight: root.adaptiveMetrics.designHeight
@@ -71,6 +72,7 @@ Item {
                     leftController: root.leftController
                     coreController: root.coreController
                     toolService: root.toolService
+                    imageCacheService: root.imageCacheService
                     authManager: root.authManager
                     globalContext: root.globalContext
                 }
@@ -106,5 +108,7 @@ Item {
         hoverController: root.leftController
         modelStore: root.model
         toolService: root.toolService
+        globalContext: root.globalContext
+        apiClient: root.apiClient
     }
 }

@@ -76,6 +76,7 @@ Row {
             }
         }
         AlarmRectangleItem{
+            summary: root.summary
             anchors.verticalCenter:parent.verticalCenter
             level:Math.max(
                       root.summary.flatRollGrad,

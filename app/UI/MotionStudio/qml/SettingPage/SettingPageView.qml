@@ -5,9 +5,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "OtherSetting"
-import "D3Setting"
 import "GeneralSetting"
-import "AlarmSetting"
 import "InfoSetting"
 import "StyleSetting"
 import "CameraSetting"
@@ -17,6 +15,7 @@ Popup {
     required property var apiClient
     required property var style
     required property var settings
+    required property var coreController
     required property var appInfo
     required property var downloadClient
     anchors.centerIn: parent
@@ -121,8 +120,6 @@ Popup {
                 model: [
                     qsTr("常规"),
                     qsTr("风格"),
-                    qsTr("报警"),
-                    qsTr("3D 渲染"),
                     qsTr("相机调整"),
                     qsTr("信息"),
                     qsTr("其他")
@@ -174,13 +171,16 @@ Popup {
             StyleSetting {
                 style: root.style
             }
-            AlarmSetting {}
-            D3Setting {}
             CameraSetting {
                 apiClient: root.apiClient
                 style: root.style
             }
-            InfoSetting {}
+            InfoSetting {
+                apiClient: root.apiClient
+                settings: root.settings
+                style: root.style
+                coreController: root.coreController
+            }
             OtherSetting {
                 apiClient: root.apiClient
                 style: root.style

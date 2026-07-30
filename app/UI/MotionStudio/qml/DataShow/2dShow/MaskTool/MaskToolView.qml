@@ -24,6 +24,7 @@ Item {
             Column{
                 id:row
                 ItemDelegateItem {
+                    style: root.style
                     height: 20
                     text: qsTr("重置")
                     selected: false
@@ -34,6 +35,7 @@ Item {
                     }
                 }
                 ItemDelegateItem {
+                    style: root.style
                     height: 20
                     text: root.modelStore.imageMaskChecked
                           ? qsTr("AREA") : qsTr("AREA_MASK")

@@ -12,13 +12,18 @@ Item {
     required property var modelController
     required property var leftController
     required property var popupManager
+    required property var apiClient
+    required property var globalContext
 
     width: 300
     height: 30
     readonly property bool isCurrentIndex: coilModel.coilId > 0
                                                    && coilModel.coilId === coreController.currentCoilModel.coilId
 
-    property CoilModel coilModel: CoilModel {}
+    property CoilModel coilModel: CoilModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
     property ListItemCoil listItemCoil: ListItemCoil {
         style: root.style
         hasCoil: root.coilModel.hasCoil

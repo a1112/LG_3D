@@ -4,6 +4,11 @@ import QtQuick.Layouts
 import "../../../types"
 import "../../Header"
 ColumnLayout {
+    id: root
+
+    required property var modelStore
+    required property var style
+
     height: 35
     spacing: 5
     // DateTimeSelectItem{
@@ -18,6 +23,7 @@ ColumnLayout {
     DateTimeSelectLineItem{
         title_:"起始:"
         id:fromDateSelect
+        style: root.style
         dateTime_:DateTime{
             hour:0
             minute:0
@@ -32,6 +38,7 @@ ColumnLayout {
     DateTimeSelectLineItem{
         title_:"结束:"
         id:toDateSelect
+        style: root.style
         dateTime_:DateTime{
         }
     }
@@ -52,11 +59,14 @@ ColumnLayout {
             implicitHeight: 30
             implicitWidth: 60
             CheckRec {
+                style: root.style
                 fillWidth: true
                 height: 30
                 text: qsTr("查询")
                 onClicked: {
-                    coreModel.searchByCoilDateTime(fromDateSelect.dateTime_.dateTimeString, toDateSelect.dateTime_.dateTimeString)
+                    root.modelStore.searchByCoilDateTime(
+                                fromDateSelect.dateTime_.dateTimeString,
+                                toDateSelect.dateTime_.dateTimeString)
                 }
             }
         }

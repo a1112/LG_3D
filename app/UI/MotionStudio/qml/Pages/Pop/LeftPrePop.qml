@@ -12,6 +12,8 @@ Menu {
     required property var hoverController
     required property var modelStore
     required property var toolService
+    required property var globalContext
+    required property var apiClient
 
     property bool isHoved: root.hoverController.isHoved
     onIsHovedChanged: {
@@ -99,6 +101,8 @@ Menu {
             thumbnailSize: root.adaptiveMetrics.scaleMetric(96, 72, 120)
             toolService: root.toolService
             filterController: root.hoverController
+            globalContext: root.globalContext
+            apiClient: root.apiClient
         }
 
     }

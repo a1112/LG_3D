@@ -1,14 +1,15 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import "../../btns"
 import "../../Pages/Header"
 Row {
     id: root
 
     required property var controller
+    required property var style
 
     CheckRec{
+        style: root.style
         visible:false
         height: 20
         text: "亮度"

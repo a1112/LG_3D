@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -13,7 +15,7 @@ BaseImage{
         id:drapShadow
         horizontalOffset:root.horizontalOffset
         verticalOffset:root.verticalOffset
-        visible: effect
+        visible: root.effect
     }
     Behavior on scale {SmoothedAnimation{duration: 300}}
 }

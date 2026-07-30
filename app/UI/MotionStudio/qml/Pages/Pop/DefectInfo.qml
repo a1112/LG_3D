@@ -14,6 +14,8 @@ Item {
     property int thumbnailSize: 96
     required property var toolService
     required property var filterController
+    required property var globalContext
+    required property var apiClient
     property ListModel defectModel:ListModel{}
     property var defectsData:coilModel ? coilModel.defectsData : null
     onDefectsDataChanged:{
@@ -39,6 +41,8 @@ Item {
                 respectFilter: root.respectFilter
                 thumbnailSize: root.thumbnailSize
                 filterController: root.filterController
+                globalContext: root.globalContext
+                apiClient: root.apiClient
             }
 
         }

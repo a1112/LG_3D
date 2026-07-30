@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "Head"
-import "HistoryView"
 import "Core"
 Item {
     id: root
@@ -41,6 +40,7 @@ Item {
                     appController: root.appController
                     apiClient: root.apiClient
                     coreController: root.coreController
+                    globalContext: root.globalContext
                 }
                 RightViewList{
                     adaptiveMetrics: root.adaptiveMetrics
@@ -52,6 +52,7 @@ Item {
                     popupManager: root.popupManager
                     coreController: root.coreController
                     authManager: root.authManager
+                    globalContext: root.globalContext
                 }
             }
 

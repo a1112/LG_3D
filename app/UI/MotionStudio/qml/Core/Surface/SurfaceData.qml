@@ -2,7 +2,14 @@ import QtQuick
 import "../../Model"
 import "../JsonUtils.js" as JsonUtils
 Item {
-    id:root
+    id: root
+    required property var modelStore
+    required property var apiClient
+    required property var settings
+    required property var coreController
+    required property var imageCacheService
+    required property var scriptLauncher
+
     property int rootViewIndex: 0
     readonly property bool is2DrootView : rootViewIndex == 0
     readonly property bool is3DrootView : rootViewIndex == 1
@@ -108,7 +115,7 @@ Item {
     property bool quickImage: false
 
     onShowMaxChanged: {
-        coreModel.setShowMax(key,showMax)
+        root.modelStore.setShowMax(key, showMax)
     }
     property bool show_visible: true
     property bool hasData: true
@@ -200,7 +207,7 @@ Item {
         heightDataRequestId += 1
         let requestId = heightDataRequestId
         heightDataRequestKey = requestKey
-        heightDataRequest = api.getHeightData(key,coilId,x1,y1,x2,y2,
+        heightDataRequest = root.apiClient.getHeightData(key,coilId,x1,y1,x2,y2,
                            (result)=>{
                               if (requestId !== heightDataRequestId) {
                                   return
@@ -312,7 +319,7 @@ Item {
     property int coilId:0
 
 
-    readonly property bool imageMask: coreModel.imageMaskChecked
+    readonly property bool imageMask: root.modelStore.imageMaskChecked
     readonly property string requestedAreaViewKey: imageMask ? "AREA_MASK" : "AREA"
     readonly property string areaViewKey: requestedAreaViewKey === "AREA_MASK" && hasViewData("AREA_MASK") ? "AREA_MASK" : "AREA"
     onImageMaskChanged: {
@@ -332,9 +339,9 @@ Item {
     property int tower_warning_show_opacity: 50
     property var viewHasDataMap: ({})
     property int viewHasDataVersion: 0
-    property var dataAvailabilitySource: coreModel && coreModel.hasDataCoilId === coilId
-                                     && coreModel.has_data && key
-                                     ? coreModel.has_data[key] : null
+    property var dataAvailabilitySource: root.modelStore.hasDataCoilId === coilId
+                                     && root.modelStore.has_data && key
+                                     ? root.modelStore.has_data[key] : null
 
     onDataAvailabilitySourceChanged: rebuildViewHasData()
     onKeyChanged: {
@@ -376,7 +383,7 @@ Item {
     function rebuildViewHasData() {
         let surfaceHasData = dataAvailabilitySource
         let nextMap = {}
-        let viewKeys = coreModel && coreModel.allViewKeys ? coreModel.allViewKeys : []
+        let viewKeys = root.modelStore ? root.modelStore.allViewKeys || [] : []
         viewKeys.forEach(function(viewKey) {
             nextMap[viewKey] = resolveViewHasData(surfaceHasData, viewKey)
         })
@@ -451,7 +458,7 @@ Item {
         refreshAreaSource()
 
         viewDataModel.clear()
-        coreModel.allViewKeys.forEach(function(viewKey){
+        root.modelStore.allViewKeys.forEach(function(viewKey){
             viewDataModel.append({
                 "image_source": getSource(coilId, viewKey, true),
                 "key": viewKey,
@@ -472,14 +479,14 @@ Item {
             let requestedKey = key
             let requestId = surfaceLoadRequestId
             // 预缓存所有视图（延迟）
-            coreModel.allViewKeys.forEach(function(viewKey){
+            root.modelStore.allViewKeys.forEach(function(viewKey){
                 if (hasViewData(viewKey)) {
-                    imageCache.pushCache(getSource(coilId,viewKey,false))
+                    root.imageCacheService.pushCache(getSource(coilId,viewKey,false))
                 }
             })
 
             // 获取钢卷信息
-            coilInfoRequest = api.getCoilInfo(requestedCoilId,requestedKey,
+            coilInfoRequest = root.apiClient.getCoilInfo(requestedCoilId,requestedKey,
                             (result)=>{
                                 if (requestId !== surfaceLoadRequestId
                                         || requestedCoilId !== coilId || requestedKey !== key) {
@@ -501,7 +508,7 @@ Item {
 
             // 获取点数据
             pointTool.clear()
-            pointDataRequest = api.getPointDatas(
+            pointDataRequest = root.apiClient.getPointDatas(
                         requestedCoilId,requestedKey,(result)=>{
                             if (requestId !== surfaceLoadRequestId
                                     || requestedCoilId !== coilId || requestedKey !== key) {
@@ -542,26 +549,28 @@ Item {
     }
 
     function getSourceByNet(_key_,_coilId_,_viewKey_, preView=false){ // 从网络获取
-        return api.getFileSource(_key_,_coilId_,normalizeViewKey(_viewKey_),preView=preView,imageMask)
+        return root.apiClient.getFileSource(_key_, _coilId_, normalizeViewKey(_viewKey_), preView, imageMask)
     }
 
     function getSourceByLocal(_key_,_coilId_,_viewKey_,preView=false){ // 本机
         let baseFolder = "/jpg/"
-        let baseType= ".jpg"
-        if (!coreModel.quickLyImage){
-                let baseFolder = "/png/"
-                let baseType= ".png"
-            }
-        return locRootSource+"/"+coilId+baseFolder+_viewKey_+baseType
+        let baseType = ".jpg"
+        if (!root.modelStore.quickLyImage){
+            baseFolder = "/png/"
+            baseType = ".png"
+        }
+        return locRootSource + "/" + _coilId_ + baseFolder + _viewKey_ + baseType
     }
 
     // 共享文件夹根路径（UNC），用于远程服务器访问
     function getSharedFolderBase(__key__,_coilId_){
-        return "file:////" + api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + __key__ + "/" + _coilId_
+        return "file:////" + root.apiClient.apiConfig.hostname + "/" + root.settings.sharedFolderBaseName
+                + __key__ + "/" + _coilId_
     }
 
     // 当前服务器是否在本机（127.0.0.1 / localhost）
-    readonly property bool serverIsLocal: api.apiConfig.hostname === "127.0.0.1" || api.apiConfig.hostname === "localhost"
+    readonly property bool serverIsLocal: root.apiClient.apiConfig.hostname === "127.0.0.1"
+                                          || root.apiClient.apiConfig.hostname === "localhost"
 
     // 本机保存目录：基于服务端返回的 saveFolder 构造
     function getLocalFolderBase(__key__, _coilId_) {
@@ -592,11 +601,11 @@ Item {
             if (imageMask){
                 return baseFolder+"/mask/"+_viewKey_+".png"
             }
-            if (coreModel.quickLyImage){
-                let baseFolderName = "/jpg/"
-                let baseType= ".jpg"
-                }
-            return baseFolder+baseFolderName+_viewKey_+baseType
+            if (root.modelStore.quickLyImage){
+                baseFolderName = "/jpg/"
+                baseType = ".jpg"
+            }
+            return baseFolder + baseFolderName + _viewKey_ + baseType
 
         }
 
@@ -606,17 +615,17 @@ Item {
         _viewKey_ = normalizeViewKey(_viewKey_)
         let res_url=""
         if ("AREA"==_viewKey_ || "AREA_MASK"==_viewKey_){// 2D AREA 瓦片视图必须使用 HTTP
-            res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+            res_url = getSourceByNet(key, _coilId_, _viewKey_, preView)
         }
-        else if(coreSetting.useLoc){
-            res_url = getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
+        else if(root.settings.useLoc){
+            res_url = getSourceByLocal(key, _coilId_, _viewKey_, preView)
         }
         else{
-            if (coreSetting.useSharedFolder){
-                res_url = getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
+            if (root.settings.useSharedFolder){
+                res_url = getSourceBySharedFolder(key, _coilId_, _viewKey_, preView)
             }
             else
-                res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+                res_url = getSourceByNet(key, _coilId_, _viewKey_, preView)
         }
         return res_url
     }
@@ -744,15 +753,21 @@ Item {
     function openSaveFolderById(coilId){
         return Qt.openUrlExternally(getBaseUrl(coilId))
     }
-    readonly property string productionMeshPath: "\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + key + "/"+coilId + "/meshes/defaultobject_mesh.mesh"
-    readonly property string productionMeshUrl: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+key+"/"+coilId+"/meshes/defaultobject_mesh.mesh"
-    readonly property string testDataMeshPath: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshPath(key, coilId) : ""
-    readonly property string testDataMeshUrl: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshUrl(key, coilId) : ""
-    readonly property string meshUrl: core.developer_mode && testDataMeshUrl !== "" ? testDataMeshUrl : productionMeshUrl
+    readonly property string productionMeshPath: "\\\\" + root.apiClient.apiConfig.hostname + "/"
+                                                 + root.settings.sharedFolderBaseName + key + "/" + coilId
+                                                 + "/meshes/defaultobject_mesh.mesh"
+    readonly property string productionMeshUrl: getSharedFolderBase(key, coilId)
+                                                + "/meshes/defaultobject_mesh.mesh"
+    readonly property string testDataMeshPath: root.scriptLauncher && root.coreController.developer_mode
+                                               ? root.scriptLauncher.testDataMeshPath(key, coilId) : ""
+    readonly property string testDataMeshUrl: root.scriptLauncher && root.coreController.developer_mode
+                                              ? root.scriptLauncher.testDataMeshUrl(key, coilId) : ""
+    readonly property string meshUrl: root.coreController.developer_mode && testDataMeshUrl !== ""
+                                      ? testDataMeshUrl : productionMeshUrl
 
-    property bool meshExits: ScriptLauncher
-                            ? (core.developer_mode
-                               ? ScriptLauncher.testDataMeshExists(key, coilId)
-                               : ScriptLauncher.fileExists(productionMeshPath))
+    property bool meshExits: root.scriptLauncher
+                            ? (root.coreController.developer_mode
+                               ? root.scriptLauncher.testDataMeshExists(key, coilId)
+                               : root.scriptLauncher.fileExists(productionMeshPath))
                             : false
 }

@@ -3,12 +3,15 @@ import QtQuick.Controls.Material
 
 
 Item {
-    id:item
+    id: root
+
+    required property var style
+
     property alias font: cetLabel.font
     property alias text: cetLabel.text
     property bool checked: true
     width: cetLabel.width + 25
-    property color checkColor: Material.color(Material.Blue)
+    property color checkColor: root.style.accentColor
     property alias color:cetLabel.color
     property int typeIndex: 0
     property bool fillWidth: false
@@ -21,35 +24,35 @@ Item {
         width: parent.width
         height: parent.height
         Material.elevation: 4
-        Material.background: coreStyle.headerBackgroundColor
+        Material.background: root.style.headerBackgroundColor
     }
 
 
     Rectangle{
         anchors.horizontalCenter: parent.horizontalCenter
-        width: item.typeIndex?4:parent.width
+        width: root.typeIndex ? 4 : parent.width
         height: 2
         anchors.top: parent.top
-        color: item.checkColor
-        visible: item.checked && ! item.fillWidth
+        color: root.checkColor
+        visible: root.checked && !root.fillWidth
 
     }
     Rectangle{
         anchors.horizontalCenter: parent.horizontalCenter
-        width:  item.typeIndex?parent.width:4
+        width: root.typeIndex ? parent.width : 4
         height: 2
         anchors.bottom: parent.bottom
-        color: item.checkColor
+        color: root.checkColor
 
-        visible: item.checked && !item.fillWidth
+        visible: root.checked && !root.fillWidth
     }
 
     Rectangle{
-        visible: item.fillWidth
+        visible: root.fillWidth
         anchors.fill: parent
-        color: coreStyle.headerBackgroundColor
-        border.color: item.checkColor
-        border.width: item.fillWidthWidth
+        color: root.style.headerBackgroundColor
+        border.color: root.checkColor
+        border.width: root.fillWidthWidth
 
     }
     ItemDelegate{
@@ -58,11 +61,11 @@ Item {
         id:itemDelegate
         anchors.fill:parent
         background: Rectangle {
-            color: itemDelegate.hovered ? coreStyle.buttonHoverColor : coreStyle.headerBackgroundColor
+            color: itemDelegate.hovered ? root.style.buttonHoverColor : root.style.headerBackgroundColor
         }
         onClicked: {
-            item.checked = !item.checked
-            item.clicked()
+            root.checked = !root.checked
+            root.clicked()
         }
     }
 

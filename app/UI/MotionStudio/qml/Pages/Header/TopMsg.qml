@@ -8,6 +8,7 @@ Row{
     required property var modelStore
     required property var coreController
     required property var globalContext
+    required property var style
 
     visible: root.authManager.isAdmin
     spacing: 40
@@ -28,6 +29,7 @@ Base.DropShadowLabel{
     layer.enabled: true
 }
 CheckRec{
+    style: root.style
     Material.foreground: Material.color(Material.Yellow)
     visible: root.modelStore.currentCoilListIndex === 1
     implicitWidth: 35

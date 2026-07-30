@@ -1,15 +1,22 @@
 import QtQuick
 import QtQuick.Controls
-Item {
-    height:itemHeight
-    width:35
-    Rectangle{
-        width:3
-        height:1
 
+Item {
+    id: root
+
+    required property real rowHeight
+    required property string valueText
+
+    width: 35
+    height: root.rowHeight
+
+    Rectangle {
+        width: 3
+        height: 1
     }
-    Label{
-        text:getValueByModelIndex(index)
-        anchors.centerIn:parent
+
+    Label {
+        anchors.centerIn: parent
+        text: root.valueText
     }
 }

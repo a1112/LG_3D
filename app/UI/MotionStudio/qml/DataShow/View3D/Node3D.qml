@@ -4,9 +4,12 @@ import QtQuick3D.AssetUtils
 
 
 Node {
-    id: node
+    id: root
+
+    required property var surfaceData
+
     eulerRotation.z:-90
-    property string meshKey: surfaceData.key
+    property string meshKey: root.surfaceData.key
     property bool centerDepth: true
     property bool alignMinDepthToZero: false
     property real modelOffsetX: 0
@@ -42,9 +45,7 @@ Node {
         autoCenterOffset = Qt.vector3d(-centerX, -centerY, offsetZ)
     }
 
-    property string meshes_url: core.developer_mode && ScriptLauncher
-                                ? ScriptLauncher.testDataMeshUrl(meshKey, surfaceData.coilId)
-                                : surfaceData.meshUrl
+    property string meshes_url: root.surfaceData.meshUrl
     onMeshes_urlChanged: {
         reloadAttempt = 0
         autoCenterOffset = Qt.vector3d(0, 0, 0)
@@ -73,7 +74,7 @@ Node {
     Timer {
         id: modelLoadTimer
         repeat: false
-        onTriggered: node.loadModel()
+        onTriggered: root.loadModel()
     }
 
     Component.onCompleted: scheduleModelLoad(1)
@@ -81,26 +82,29 @@ Node {
     Node {
         id: node3D_obj
         objectName: "3D.obj"
-        x: node.autoCenterOffset.x + node.modelOffsetX
-        y: node.autoCenterOffset.y + node.modelOffsetY
-        z: node.autoCenterOffset.z + node.modelOffsetZ
-        eulerRotation.x: node.modelRotationX
-        eulerRotation.y: node.modelRotationY
-        eulerRotation.z: node.modelRotationZ
-        scale: node.modelScale
+        x: root.autoCenterOffset.x + root.modelOffsetX
+        y: root.autoCenterOffset.y + root.modelOffsetY
+        z: root.autoCenterOffset.z + root.modelOffsetZ
+        eulerRotation.x: root.modelRotationX
+        eulerRotation.y: root.modelRotationY
+        eulerRotation.z: root.modelRotationZ
+        scale: root.modelScale
         RuntimeLoader {
             id: runtimeModel
             objectName: "defaultobject"
             source: ""
             onStatusChanged: {
                 if (status === RuntimeLoader.Success) {
-                    node.reloadAttempt = 0
-                    node.updateModelCenter()
+                    root.reloadAttempt = 0
+                    root.updateModelCenter()
                 } else if (status === RuntimeLoader.Error) {
-                    if (node.reloadAttempt < node.maxReloadAttempts) {
-                        node.reloadAttempt += 1
-                        node.scheduleModelLoad(Math.min(3000,
-                                                        500 * Math.pow(2, node.reloadAttempt - 1)))
+                    if (root.reloadAttempt < root.maxReloadAttempts) {
+                        root.reloadAttempt += 1
+                        root.scheduleModelLoad(Math.min(
+                                                   3000,
+                                                   500 * Math.pow(
+                                                       2,
+                                                       root.reloadAttempt - 1)))
                     } else {
                         console.warn("3D model load failed:", errorString)
                     }
@@ -108,7 +112,7 @@ Node {
 
 
             }
-            onBoundsChanged: node.updateModelCenter()
+            onBoundsChanged: root.updateModelCenter()
         }
     }
 

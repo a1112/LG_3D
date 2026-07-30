@@ -1,7 +1,8 @@
 import QtQuick
 
 QtObject {
-    id:root
+    id: root
+    required property var controller
     readonly property int mouseMoveModel: 0
     readonly property int mouseSurveyModel:1
     property int currentMouseModel:mouseMoveModel
@@ -19,11 +20,13 @@ QtObject {
     property bool isSurveying: currentSurveyState==surveyStateRuning
     property bool isSurveyEnd: currentSurveyState==surveyStateEnd
 
-    property int surveyStartPointX:toPx(surveyStartPoint.x)
-    property int surveyStartPointY:toPx(surveyStartPoint.y)
+    property int surveyStartPointX: root.controller.toPx(surveyStartPoint.x)
+    property int surveyStartPointY: root.controller.toPx(surveyStartPoint.y)
 
-    property int surveyEndPointX: isSurveying? hoverPoint.x:toPx(surveyEndPoint.x)
-    property int surveyEndPointY: isSurveying? hoverPoint.y:toPx(surveyEndPoint.y)
+    property int surveyEndPointX: isSurveying ? hoverPoint.x
+                                              : root.controller.toPx(surveyEndPoint.x)
+    property int surveyEndPointY: isSurveying ? hoverPoint.y
+                                              : root.controller.toPx(surveyEndPoint.y)
 
     property bool surveyCanView:isShowSurveyModel && (isSurveying||isSurveyEnd)
 
@@ -32,18 +35,20 @@ QtObject {
 
     function setSurveyPoint(point){
         if (isSurveyNone){
-            surveyStartPoint = Qt.point(pxto_top(point.x),pxto_top(point.y))
-            surveyEndPoint = Qt.point(pxto_top(point.x),pxto_top(point.y))
+            surveyStartPoint = Qt.point(root.controller.pxto_top(point.x),
+                                        root.controller.pxto_top(point.y))
+            surveyEndPoint = surveyStartPoint
             currentSurveyState = surveyStateRuning
 
         }
         else if (isSurveying){
-            surveyEndPoint = Qt.point(pxto_top(point.x),pxto_top(point.y))
+            surveyEndPoint = Qt.point(root.controller.pxto_top(point.x),
+                                      root.controller.pxto_top(point.y))
             currentSurveyState = surveyStateEnd
 
         }
         else if (isSurveyEnd){
-            currentSurveyState = isSurveyNone
+            currentSurveyState = surveyStateNone
         }
 
     }

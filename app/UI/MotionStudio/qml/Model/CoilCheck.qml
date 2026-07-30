@@ -1,48 +1,40 @@
 import QtQuick
 
 Item {
-    // 不存储对原始数据的引用，只存储读取的值
-    property int coilId: 0  // 二级ID
-    property color statusColor:
-                status==0?"#00000000":status==2?"red":"green"
-    property int status:0
-            /*
-                0：   未标注
-                1：   通过
-                2：   回退
+    id: root
 
-            */
+    property int coilId: 0
+    property int status: 0
+    property string msg: ""
+    readonly property color statusColor:
+        root.status === 0 ? "#00000000"
+                          : root.status === 2 ? "red" : "green"
 
-    function setStatus(status_){
-        status = status_
-        // 不再修改原始数据，避免影响列表
-    }
-    function setMsg(msg_){
-        msg = msg_
-        // 不再修改原始数据，避免影响列表
+    function setStatus(nextStatus) {
+        root.status = nextStatus
     }
 
-    property string msg:""
-    function init(coilCheck_){
-        if (undefined == coilCheck_){
+    function setMsg(nextMessage) {
+        root.msg = nextMessage
+    }
+
+    function init(source) {
+        if (!source) {
             return
         }
-        tool.for_list_model(coilCheck_,(coilCheck__)=>{
-                                if (!coilCheck__) return
-                                coilId = coilCheck__.secondaryCoilId || 0
-                                status = coilCheck__.status || 0
-                                msg = coilCheck__.msg || ""
-                            })
 
-                // for (let i=0;i<coilCheck_.count;i++ ){
-                //     coilCheck = coilCheck_.get()
-                //         let coilCheck__ =  c[i]
-                //     console.log(c)
-                //         coilId = coilCheck__.secondaryCoilId
-                //         status = coilCheck__.status
-                //         msg = coilCheck__.msg
-                //             console.log("coilCheck",coilCheck__.secondaryCoilId)
-                // }
-
+        let count = typeof source.count === "number"
+                    ? source.count
+                    : typeof source.length === "number" ? source.length : 0
+        for (let index = 0; index < count; index++) {
+            let item = typeof source.get === "function"
+                       ? source.get(index) : source[index]
+            if (!item) {
+                continue
+            }
+            root.coilId = item.secondaryCoilId || 0
+            root.status = item.status || 0
+            root.msg = item.msg || ""
+        }
     }
 }

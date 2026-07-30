@@ -1,11 +1,19 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../Core/JsonUtils.js" as JsonUtils
 Menu {
-    id:menu
-    width: adaptive.boundedWidth(700, 520, 900)
-    height: adaptive.boundedHeight(500, 380, 680)
+    id: menu
+    required property var adaptiveMetrics
+    required property var coreController
+    required property var modelStore
+    required property var apiClient
+    required property var style
+
+    width: menu.adaptiveMetrics.boundedWidth(700, 520, 900)
+    height: menu.adaptiveMetrics.boundedHeight(500, 380, 680)
     ListModel{
         id:coreCoilModel
         dynamicRoles: true
@@ -25,61 +33,70 @@ Menu {
     }
     function initcoreCoil(){
         // 检查 currentCoilModel 是否存在
-        if (!core.currentCoilModel) {
+        if (!menu.coreController.currentCoilModel) {
             return
         }
+        let coil = menu.coreController.currentCoilModel
         coreCoilModel.clear()
         coreCoilModel.append({
                                  "key": "流水号",
-                                 "value": (core.currentCoilModel.coilId || "")+""
+                                 "value": (coil.coilId || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "卷号",
-                                 "value": (core.currentCoilModel.coilNo || "")+""
+                                 "value": (coil.coilNo || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "钢种",
-                                 "value": (core.currentCoilModel.coilType || "")+""
+                                 "value": (coil.coilType || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "内径",
-                                 "value": (core.currentCoilModel.coilInside || "")+""
+                                 "value": (coil.coilInside || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "外径",
-                                 "value": (core.currentCoilModel.coilDia || "")+""
+                                 "value": (coil.coilDia || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "厚度",
-                                 "value": (core.currentCoilModel.coilThickness || "")+""
+                                 "value": (coil.coilThickness || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "生产宽度",
-                                 "value": (core.currentCoilModel.coilWidth || "")+""
+                                 "value": (coil.coilWidth || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "实际宽度",
-                                 "value": (core.currentCoilModel.coilActWidth || "")+""
+                                 "value": (coil.coilActWidth || "")+""
                              }
                             )
         coreCoilModel.append({
                                  "key": "去向",
-                                 "value": (core.currentCoilModel.nextInfo || "")+""
+                                 "value": (coil.nextInfo || "")+""
                              }
                             )
     }
 
     property int detailsRequestGeneration: 0
-    readonly property int currentCoilId: core.currentCoilModel
-                                         ? Number(core.currentCoilModel.coilId || 0) : 0
+    readonly property int currentCoilId: menu.coreController.currentCoilModel
+                                         ? Number(menu.coreController.currentCoilModel.coilId || 0) : 0
     onCurrentCoilIdChanged: {
+        if (menu.visible) {
+            menu.refreshDetails()
+        }
+    }
+    onAboutToShow: menu.refreshDetails()
+    onAboutToHide: menu.detailsRequestGeneration += 1
+
+    function refreshDetails() {
         menu.detailsRequestGeneration += 1
         let generation = menu.detailsRequestGeneration
         let requestedCoilId = menu.currentCoilId
@@ -87,7 +104,7 @@ Menu {
         if (requestedCoilId <= 0) {
             return
         }
-        api.getPlcData(requestedCoilId,
+        menu.apiClient.getPlcData(requestedCoilId,
                        (result)=>{
                         if (generation !== menu.detailsRequestGeneration
                                 || requestedCoilId !== menu.currentCoilId) {
@@ -120,7 +137,7 @@ Menu {
                            console.log("getPlcData error:", error)
                        }
                        )
-        api.getCoilState(requestedCoilId,(result)=>{
+        menu.apiClient.getCoilState(requestedCoilId,(result)=>{
                             if (generation !== menu.detailsRequestGeneration
                                     || requestedCoilId !== menu.currentCoilId) {
                                 return
@@ -133,14 +150,14 @@ Menu {
                                  if (cData["surface"]==="S")
                                      {
                                         msg_item= msg_s
-                                     coreModel.surfaceS.medianZ=Number(cData["median_3d_mm"]) || 0
-                                     coreModel.surfaceS.medianZInt=Number(cData["median_3d"]) || 0
+                                     menu.modelStore.surfaceS.medianZ=Number(cData["median_3d_mm"]) || 0
+                                     menu.modelStore.surfaceS.medianZInt=Number(cData["median_3d"]) || 0
 
                                     }
                                     else
                                  {
-                                    coreModel.surfaceL.medianZ=Number(cData["median_3d_mm"]) || 0
-                                    coreModel.surfaceL.medianZInt=Number(cData["median_3d"]) || 0
+                                    menu.modelStore.surfaceL.medianZ=Number(cData["median_3d_mm"]) || 0
+                                    menu.modelStore.surfaceL.medianZInt=Number(cData["median_3d"]) || 0
                                  }
 
                                 let model=msg_item.model
@@ -285,8 +302,8 @@ Menu {
             text: "详细信息"
             Layout.alignment: Qt.AlignHCenter
             font.bold: true
-            font.pointSize: adaptive.fontMetric(24, 18, 30)
-            color: coreStyle.titleColor
+            font.pointSize: menu.adaptiveMetrics.fontMetric(24, 18, 30)
+            color: menu.style.titleColor
             }
 
             GridView{
@@ -297,18 +314,28 @@ Menu {
                 cellHeight: 25
                 model:coreCoilModel
                 delegate:
-                    RowItemView{}
+                    RowItemView {
+                        required property string key
+                        required property string value
+
+                        width: grid.cellWidth
+                        itemKey: key
+                        itemValue: value
+                        style: menu.style
+                    }
             }
             RowLayout{
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 MsgItem{
                     id:msg_s
+                    style: menu.style
                     title:"S端"
                     // surface:coreModel.surfaceS
                 }
                 MsgItem{
                     id:msg_l
+                    style: menu.style
                     title:"L端"
                      // surface:coreModel.surfaceL
                 }

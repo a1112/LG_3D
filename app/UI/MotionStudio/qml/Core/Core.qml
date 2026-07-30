@@ -2,11 +2,20 @@ import QtQuick
 import QtQuick.Window
 import "../Model"
 Item {
-    id:root
+    id: root
+    required property var appWindow
+    required property var settings
+    required property var apiClient
+    required property var modelStore
+    required property var initController
+    required property var dataController
+    required property var scriptLauncher
+    required property var globalContext
+
     property var nowTime: new Date()
     Timer{
         interval: 1000
-        running: app.visibility !== Window.Minimized
+        running: root.appWindow.visibility !== Window.Minimized
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -17,15 +26,15 @@ Item {
 property string appTitle: qsTr("热轧 1580 端面缺陷检测系统")
 
 function scriptDeveloperMode() {
-    if (!ScriptLauncher || typeof ScriptLauncher.developerMode !== "function") {
+    if (!root.scriptLauncher || typeof root.scriptLauncher.developerMode !== "function") {
         return false
     }
-    return ScriptLauncher.developerMode()
+    return root.scriptLauncher.developerMode()
 }
 
-property bool developer_mode: app.coreSetting.testMode || scriptDeveloperMode()
+property bool developer_mode: root.settings.testMode || root.scriptDeveloperMode()
 
-property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
+property bool isLocal: root.apiClient.apiConfig.hostname === "127.0.0.1"
 
     readonly property bool isLast:coilIndex==0
     property int coilIndex: 0
@@ -34,10 +43,12 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
     }
 
     property CoilModel currentCoilModel: CoilModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
     }
 
     function flushListItem(){
-        let model = app.coreModel.currentCoilListModel
+        let model = root.modelStore.currentCoilListModel
         if (!model || model.count <= 0) {
             return
         }
@@ -63,27 +74,27 @@ property bool isLocal:app.api.apiConfig.hostname=="127.0.0.1"
             return
         }
         currentCoilModel.init(c_data)
-        coreControl.init_data_has()
+        root.dataController.init_data_has()
         // 使用 hasCoil 字段判断是否有检测数据（摘要表中的 HasCoil）
         if (c_data.hasCoil) {
-            coreModel.surfaceL.hasData = true
-            coreModel.surfaceS.hasData = true
+            root.modelStore.surfaceL.hasData = true
+            root.modelStore.surfaceS.hasData = true
         }
         else {
-            coreModel.surfaceL.hasData = false
-            coreModel.surfaceS.hasData = false
+            root.modelStore.surfaceL.hasData = false
+            root.modelStore.surfaceS.hasData = false
         }
-        coreModel.surfaceS.setCoilId(currentCoilModel.coilId)
-        coreModel.surfaceL.setCoilId(currentCoilModel.coilId)
+        root.modelStore.surfaceS.setCoilId(currentCoilModel.coilId)
+        root.modelStore.surfaceL.setCoilId(currentCoilModel.coilId)
 
     }
 
     function flushList() {
-        init.flushList()
+        root.initController.flushList()
     }
 
     function setCoilIndex(index) {
-        let model = app.coreModel.currentCoilListModel
+        let model = root.modelStore.currentCoilListModel
         if (!model || model.count <= 0) {
             return
         }

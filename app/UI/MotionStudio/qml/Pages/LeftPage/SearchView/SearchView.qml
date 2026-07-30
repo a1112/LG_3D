@@ -13,6 +13,7 @@ CardBase{
     required property var style
     required property var leftController
     required property var authManager
+    required property var modelStore
 
     cardStyle: root.style
     cardAuthManager: root.authManager
@@ -50,11 +51,17 @@ CardBase{
 
         SearchByCoilNo {
             width: root.width
+            modelStore: root.modelStore
+            style: root.style
         }
         SearchByDataTime {
             id: secondPage
+            modelStore: root.modelStore
+            style: root.style
         }
         SearchByCoilId {
+            modelStore: root.modelStore
+            style: root.style
         }
     }
     Item{

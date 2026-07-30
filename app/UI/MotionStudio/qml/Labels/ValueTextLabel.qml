@@ -7,7 +7,7 @@ BaseLabel{
     horizontalAlignment: Text.AlignHCenter
     font.bold: true
     background: Rectangle {
-        color: coreStyle.isDark?"black":"#eee"
+        color: palette.alternateBase
         radius: 5
     }
 

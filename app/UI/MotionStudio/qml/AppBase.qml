@@ -27,6 +27,9 @@ ApplicationWindow {
     property var toolService
     property var globalContext
     property var dialogManager
+    property var captureAlarmWatcher
+    property var coreController
+    property var scriptLauncher
 
     Loader{
         anchors.fill:parent
@@ -48,6 +51,9 @@ ApplicationWindow {
             toolService: appBase.toolService
             globalContext: appBase.globalContext
             dialogManager: appBase.dialogManager
+            captureAlarmWatcher: appBase.captureAlarmWatcher
+            coreController: appBase.coreController
+            scriptLauncher: appBase.scriptLauncher
         }
         onLoaded: appBase.popManage = item
     }

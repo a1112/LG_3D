@@ -21,6 +21,7 @@ SplitView{
     required property var leftController
     required property var coreController
     required property var toolService
+    required property var imageCacheService
     required property var authManager
     required property var globalContext
 
@@ -55,5 +56,7 @@ SplitView{
         alarmInfo: root.alarmInfo
         apiClient: root.apiClient
         globalContext: root.globalContext
+        toolService: root.toolService
+        imageCacheService: root.imageCacheService
     }
 }

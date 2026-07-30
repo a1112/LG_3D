@@ -6,5 +6,5 @@ Label {
     font.pixelSize: 26
     font.bold: true
     font.family: "Inter"
-    color: coreStyle.rootTitleColor
+    color: palette.windowText
 }

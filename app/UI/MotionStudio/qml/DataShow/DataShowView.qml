@@ -23,7 +23,9 @@ Item{
     SplitView.fillHeight: true
     SplitView.fillWidth: true
 
-    property Core3D core3D: Core3D{}
+    property Core3D core3D: Core3D {
+        dataShowCore: root.dataShowCore
+    }
 
     DataLayout{
         surfaceData: root.surfaceData
@@ -36,6 +38,7 @@ Item{
         alarmInfo: root.alarmInfo
         apiClient: root.apiClient
         globalContext: root.globalContext
+        view3DController: root.core3D
     }
 
     GlobItemErrorView{}

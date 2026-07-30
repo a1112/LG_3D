@@ -1,14 +1,15 @@
 import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-Label{
-Layout.fillWidth: true
+Label {
+    id: root
+    Layout.fillWidth: true
 
     background: Rectangle {
-        color: coreStyle.panelAlternateColor
-        border.color: coreStyle.headerBorderColor
+        color: root.palette.alternateBase
+        border.color: root.palette.mid
         border.width: 1
-        radius: coreStyle.controlRadius
+        radius: 3
     }
 
 }

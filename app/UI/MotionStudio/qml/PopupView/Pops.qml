@@ -11,8 +11,6 @@ import "GlobalAlarm"
 import "HardwareMonitor"
 import "../SettingPage"
 import "../Style"
-import "ServerMange"
-import "ListValueChange"
 import "HelpPop"
 import "AlgTest"
 import "ClipSetting"
@@ -34,12 +32,34 @@ Item {
     required property var toolService
     required property var globalContext
     required property var dialogManager
+    required property var captureAlarmWatcher
+    required property var coreController
+    required property var scriptLauncher
 
-    ConnectDialog{ id:connectDialog }//连接 菜單
+    ConnectDialog {
+        id: connectDialog
+        adaptiveMetrics: root.adaptiveMetrics
+        settings: root.settingsStore
+        style: root.appStyle
+    }//连接 菜單
     function popupConnectDialog(){connectDialog.open()}
-    ExportView{id:exportView}   //导出菜单
+    ExportView{
+        id: exportView
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.appStyle
+        modelStore: root.modelStore
+        toolService: root.toolService
+        apiClient: root.apiClient
+        downloadClient: root.downloadClient
+    }   //导出菜单
     function popupExportView(){exportView.openDialog()}
-    ToolsMenuView{id:toolsMenu} // 右侧功能菜单
+    ToolsMenuView{
+        id: toolsMenu
+        apiClient: root.apiClient
+        scriptLauncher: root.scriptLauncher
+        popupManager: root
+        dialogManager: root.dialogManager
+    } // 右侧功能菜单
     function popupToolsMenuView(){toolsMenu.popup()}
     DefectClassPop{
         id:defectClassPop
@@ -49,16 +69,29 @@ Item {
         dialogManager: root.dialogManager
     }// 缺陷列表
     function popupDefectClassPop(){defectClassPop.popup()}
-    ApiListPopView{id:apiListPop} // API 调用记录表
-    function popupApiList(){apiListPop.popup()}
-    MsgPopView{id:msg_popup}    // 詳細信息
-    function popupMsgPopView(){msg_popup.popup()}
-    SettingPageView{
-        id:coreSetting_view
+    ApiListPopView {
+        id: apiListPop
+        adaptiveMetrics: root.adaptiveMetrics
         apiClient: root.apiClient
         style: root.appStyle
-        settings: root.settingsStore
-        appInfo: root.appInfo
+    } // API 调用记录表
+    function popupApiList(){apiListPop.popup()}
+    MsgPopView {
+        id: msg_popup
+        adaptiveMetrics: root.adaptiveMetrics
+        coreController: root.coreController
+        modelStore: root.modelStore
+        apiClient: root.apiClient
+        style: root.appStyle
+    }    // 詳細信息
+    function popupMsgPopView(){msg_popup.popup()}
+      SettingPageView{
+          id:coreSetting_view
+          apiClient: root.apiClient
+          style: root.appStyle
+          settings: root.settingsStore
+          coreController: root.coreController
+          appInfo: root.appInfo
         downloadClient: root.downloadClient
     }    // 设置界面
     function openSettingPageView(){coreSetting_view.open()}
@@ -79,9 +112,21 @@ Item {
         style: root.appStyle
     }
     function popupClipSettingView(){clipSettingView.openDialog()}
-    BackupDataView{id:backupDataView}   // 数据备份
+    BackupDataView{
+        id: backupDataView
+        adaptiveMetrics: root.adaptiveMetrics
+        modelStore: root.modelStore
+        apiClient: root.apiClient
+        style: root.appStyle
+        toolService: root.toolService
+    }   // 数据备份
     function popupBackupDataView(){backupDataView.popup()}
-    ReDetectionView{id:reDetectonView}  //重新识别
+    ReDetectionView{
+        id: reDetectonView
+        modelStore: root.modelStore
+        apiClient: root.apiClient
+        style: root.appStyle
+    }  //重新识别
     function popupReDetectionView(fromId, toId){
         if (fromId !== undefined && toId !== undefined){
             reDetectonView.setRange(fromId, toId)
@@ -90,7 +135,16 @@ Item {
         }
         reDetectonView.popup()
     }
-    GlobalAlarmView{id:globalAlarmView} // 设备报警
+    GlobalAlarmView{
+        id: globalAlarmView
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.appStyle
+        modelStore: root.modelStore
+        captureAlarmWatcher: root.captureAlarmWatcher
+        apiClient: root.apiClient
+        coreController: root.coreController
+        scriptLauncher: root.scriptLauncher
+    } // 设备报警
     function popupGlobalAlarmView(){globalAlarmView.popup()}
     HardwareMonitorView{
         id:hardwareMonitorView
@@ -99,10 +153,6 @@ Item {
         style: root.appStyle
     }
     function popupHardwareMonitorView(){hardwareMonitorView.popup()}
-    ServerMangeView{id:serverMangeView}
-    function popupServerMangeView(){serverMangeView.popup()}
-    ListValueChangeView{id:listValueChangeView} // 列表数值变化取消
-    function popupListValueChangeView(){listValueChangeView.popup()}
     DataListItemMenu{
         id:lefeListMemu
         apiClient: root.apiClient
@@ -114,7 +164,12 @@ Item {
     function popupDataListItemMenu(coilModel){
         lefeListMemu.coilModel = coilModel
         lefeListMemu.popup()}
-    HelpPopView{id:helpMenu}
+    HelpPopView{
+        id: helpMenu
+        adaptiveMetrics: root.adaptiveMetrics
+        appInfo: root.appInfo
+        style: root.appStyle
+    }
     function popupHelpView(){helpMenu.popup()}
     AlgTestDialog{
         id:algTestDialog

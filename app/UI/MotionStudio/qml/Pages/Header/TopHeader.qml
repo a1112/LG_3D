@@ -66,10 +66,13 @@ Item {
             style: root.style
             appController: root.appController
         }
-        SeparatorLine{}
+        SeparatorLine {
+            style: root.style
+        }
         TopTools{
             adaptiveMetrics: root.adaptiveMetrics
             popupManager: root.popupManager
+            style: root.style
         }
         TopSettingButton{
             style: root.style
@@ -85,8 +88,10 @@ Item {
             modelStore: root.modelStore
             coreController: root.coreController
             globalContext: root.globalContext
+            style: root.style
         }
         FillLayout{
+            viewControl: root.viewControl
             GlobalErrorView{    // 全局报警
                 anchors.centerIn: parent
                 adaptiveMetrics: root.adaptiveMetrics
@@ -99,7 +104,9 @@ Item {
             style: root.style
             viewControl: root.viewControl
         }
-        FillLayout{}
+        FillLayout {
+            viewControl: root.viewControl
+        }
         GlobalServerMsg{}
         TimeText{
             visible: !root.authManager.isAdmin
@@ -108,8 +115,11 @@ Item {
             adaptiveMetrics: root.adaptiveMetrics
             style: root.style
         }
-        FillLayout{}
+        FillLayout {
+            viewControl: root.viewControl
+        }
         TopCoilTools{
+            style: root.style
             adaptiveMetrics: root.adaptiveMetrics
             modelStore: root.modelStore
             authManager: root.authManager
@@ -144,6 +154,7 @@ Item {
 
                 WindowCaptionButton {
                     id: minimizeButton
+                    style: root.style
                     buttonType: "minimize"
                     tipText: qsTr("最小化")
                     onClicked: {
@@ -155,8 +166,10 @@ Item {
                 }
                 TopWindowModelChangeButton {
                     viewControl: root.viewControl
+                    style: root.style
                 }
                 WindowCaptionButton {
+                    style: root.style
                     buttonType: "close"
                     tipText: qsTr("关闭")
                     onClicked: {

@@ -15,6 +15,7 @@ Item{
     required property var leftController
     required property var popupManager
     required property var apiClient
+    required property var globalContext
 
     SplitView.fillWidth: true
     SplitView.fillHeight: true
@@ -35,7 +36,9 @@ Item{
             showFilterIcon: root.showFilterIcon
         }
 
-        ListTitleView{}  // 列表头
+        ListTitleView {
+            style: root.style
+        }  // 列表头
 
         Item{
             clip: true
@@ -58,6 +61,8 @@ Item{
                     modelController: root.modelController
                     leftController: root.leftController
                     popupManager: root.popupManager
+                    apiClient: root.apiClient
+                    globalContext: root.globalContext
                 }
             }
         }

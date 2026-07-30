@@ -1,15 +1,42 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
 Dialog {
-    anchors.centerIn: parent
-    width: adaptive.boundedWidth(500, 380, 620)
-    height: adaptive.boundedHeight(160, 150, 220)
-    modal: true
-    property alias ip_input_text: ip.text
+    id: root
+    required property var adaptiveMetrics
+    required property var settings
+    required property var style
 
-    standardButtons: Dialog.Apply | Dialog.Ok
+    anchors.centerIn: parent
+    width: root.adaptiveMetrics.boundedWidth(500, 380, 620)
+    height: root.adaptiveMetrics.boundedHeight(210, 190, 270)
+    modal: true
+    readonly property string normalizedHost: ip.text.trim()
+    readonly property bool acceptableHost: root.isValidHost(root.normalizedHost)
+    readonly property var presetHosts: ["127.0.0.1", "localhost", "10.9.41.112"]
+
+    standardButtons: Dialog.Cancel | Dialog.Ok
+
+    function isValidHost(host) {
+        return host.length > 0
+                && host.length <= 253
+                && host.indexOf("://") < 0
+                && host.indexOf("/") < 0
+                && host.indexOf("\\") < 0
+                && host.indexOf(":") < 0
+                && !/\s/.test(host)
+                && /^[A-Za-z0-9.-]+$/.test(host)
+                && host.charAt(0) !== "."
+                && host.charAt(host.length - 1) !== "."
+    }
+
+    onOpened: {
+        ip.text = root.settings.server_ip
+        ip.forceInputFocus()
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -17,7 +44,7 @@ Dialog {
 
         Label {
             text: qsTr("连接设置")
-            font.pixelSize: adaptive.fontMetric(22, 18, 28)
+            font.pixelSize: root.adaptiveMetrics.fontMetric(22, 18, 28)
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
@@ -25,7 +52,14 @@ Dialog {
         TextFieldItem {
             id: ip
             title: qsTr("IP 地址")
-            text: coreSetting.server_ip
+            text: root.settings.server_ip
+            Layout.fillWidth: true
+        }
+
+        Label {
+            visible: !root.acceptableHost && ip.text.length > 0
+            text: qsTr("请输入不含协议和端口的主机名或 IP 地址")
+            color: root.style.statusErrorColor
             Layout.fillWidth: true
         }
 
@@ -36,12 +70,23 @@ Dialog {
             Flow {
                 anchors.fill: parent
 
-                ShowItemDelegate { text: "127.0.0.1" }
-                ShowItemDelegate { text: "10.9.41.112" }
-                ShowItemDelegate { text: "192.168.99.100" }
+                Repeater {
+                    model: root.presetHosts
+                    ItemDelegate {
+                        required property string modelData
+                        text: modelData
+                        onClicked: ip.text = modelData
+                    }
+                }
             }
         }
     }
 
-    onAccepted: coreSetting.server_ip = ip.text
+    onAccepted: {
+        if (root.acceptableHost) {
+            root.settings.server_ip = root.normalizedHost
+        } else {
+            Qt.callLater(root.open)
+        }
+    }
 }

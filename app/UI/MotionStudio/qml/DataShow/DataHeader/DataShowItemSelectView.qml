@@ -20,17 +20,23 @@ Item{
     Column{
         spacing: 10
         CheckRecItem{
+            controller: root.controller
+            style: root.style
             text: "缺陷信息".split("").join('\n')
             height:100
             currentShowModel: root.controller.topDataManage.defectShowModel
         }
 
         CheckRecItem{
+            controller: root.controller
+            style: root.style
             text: "数据信息".split("").join('\n')
             height:100
             currentShowModel: root.controller.topDataManage.dataInfoShowModel
         }
         CheckRecItem{
+            controller: root.controller
+            style: root.style
             text: "曲线信息".split("").join('\n')
             height:100
             currentShowModel: root.controller.topDataManage.lineShowModel

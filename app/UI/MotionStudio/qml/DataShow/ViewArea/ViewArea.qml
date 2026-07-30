@@ -2,11 +2,15 @@ import QtQuick
 import QtQuick.Controls
 import "../Aerial"
 import "../Comps"
-import "ViewTool"
 Item {
     id:root
 
     required property var dataAreaShowCore
+    required property var style
+    required property var globalContext
+    required property var apiClient
+    required property var settings
+    required property var surfaceData
 
     anchors.fill: parent
 
@@ -31,12 +35,23 @@ Item {
             width: root.dataAreaShowCore.canvasContentWidth
             height: root.dataAreaShowCore.canvasContentHeight
 
-            ImageView{}
-
-            ShowDefects{ // 缺陷绘制
+            ImageView {
+                areaController: root.dataAreaShowCore
+                apiService: root.apiClient
+                settingsStore: root.settings
+                surfaceData: root.surfaceData
+                appStyle: root.style
             }
-            ControlView{
-            // 控制系统
+
+            ShowDefects { // 缺陷绘制
+                controller: root.dataAreaShowCore
+                defectClassController: root.globalContext.defectClassProperty
+                style: root.style
+            }
+            ControlView {
+                controller: root.dataAreaShowCore
+                flickable: flick
+                style: root.style
             }
         }
 
@@ -44,6 +59,8 @@ Item {
 
     AerialView{// 鸟亏图
         source: root.dataAreaShowCore.pre_source  // 缩略图像
+        controller: root.dataAreaShowCore
+        style: root.style
         y:root.height - height-scrollBarH.height
     }
 

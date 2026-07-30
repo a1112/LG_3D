@@ -9,6 +9,9 @@ Item{
     required property var style
     required property var apiClient
     required property var globalContext
+    required property var settings
+    required property var view3DController
+    required property var adaptiveMetrics
 
     StackLayout{
         anchors.fill: parent
@@ -19,9 +22,14 @@ Item{
             modelStore: root.modelStore
             style: root.style
             apiClient: root.apiClient
+            globalContext: root.globalContext
         }
 
         Data3DLayout{
+            surfaceData: root.surface
+            dataShowCore: root.controller
+            view3DController: root.view3DController
+            style: root.style
         }
 
         DataAreaLayout{    // 2D 图像的显示
@@ -29,6 +37,9 @@ Item{
             dataShowCore: root.controller
             modelStore: root.modelStore
             style: root.style
+            globalContext: root.globalContext
+            apiClient: root.apiClient
+            settings: root.settings
         }
 
     }
@@ -37,5 +48,8 @@ Item{
         style: root.style
         surfaceData: root.surface
         globalContext: root.globalContext
+        adaptiveMetrics: root.adaptiveMetrics
+        modelStore: root.modelStore
+        view3DController: root.view3DController
     }
 }

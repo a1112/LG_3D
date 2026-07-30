@@ -2,19 +2,21 @@ import QtQuick
 
 Item {
     id: root
+    required property var settings
 
     property var lastUrls: ({})
 
     readonly property string protocol: "http://"
     readonly property string ws_protocol: "ws://"
-    readonly property string hostname: coreSetting.server_ip
+    readonly property string hostname: root.settings.server_ip
 
     readonly property int pythonApiPort: 5010
     readonly property int rustApiPort: 5011
     readonly property int pythonImageServerPort: 6012
     readonly property int rustImageServerPort: 6013
-    readonly property int activeApiPort: coreSetting.useRustTestServer ? rustApiPort : pythonApiPort
-    readonly property int activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : pythonImageServerPort
+    readonly property int activeApiPort: root.settings.useRustTestServer ? rustApiPort : pythonApiPort
+    readonly property int activeImageServerPort: root.settings.useRustImageServer
+                                                  ? rustImageServerPort : pythonImageServerPort
 
     readonly property string serverUrl: protocol + hostname + ":" + activeApiPort
     readonly property string wsServerUrl: ws_protocol + hostname + ":" + activeApiPort
@@ -23,7 +25,7 @@ Item {
     readonly property string serverUrlData: serverUrl
     readonly property string serverUrlImage: protocol + hostname + ":" + activeImageServerPort
     readonly property string rustImageServerUrl: protocol + hostname + ":" + rustImageServerPort
-    readonly property string serverUrlAlg2D: coreSetting.useRustTestServer
+    readonly property string serverUrlAlg2D: root.settings.useRustTestServer
                                               ? serverUrl
                                               : protocol + hostname + ":6020"
 
@@ -32,8 +34,8 @@ Item {
     readonly property int databasPort: activeApiPort
     readonly property int dataPort: activeApiPort
     readonly property int plcPort: activeApiPort
-    readonly property int alg2dPort: coreSetting.useRustTestServer ? rustApiPort : 6020
-    readonly property bool usingRustImageServer: coreSetting.useRustImageServer
+    readonly property int alg2dPort: root.settings.useRustTestServer ? rustApiPort : 6020
+    readonly property bool usingRustImageServer: root.settings.useRustImageServer
 
     function getLastUrlByKey(key) {
         return lastUrls[key]
@@ -44,16 +46,19 @@ Item {
     }
 
     function url(reUrl, ...args) {
-        let key = ""
-        for (let argIndex in args) {
-            key = args[0]
-            if (typeof(args[argIndex]) === "object") {
-                reUrl += getGetArgs(args[argIndex])
+        let key = args.length > 0 ? String(args[0]) : reUrl
+        for (let argIndex = 0; argIndex < args.length; ++argIndex) {
+            let argument = args[argIndex]
+            if (argument !== null && typeof argument === "object") {
+                reUrl += getGetArgs(argument)
             } else {
-                reUrl += "/" + args[argIndex]
+                reUrl += "/" + String(argument)
             }
         }
-        lastUrls[key] = reUrl
+        // Keep URL construction safe inside bindings (especially WebSocket.url).
+        // Reassigning lastUrls here would make the binding depend on and mutate
+        // the same property, causing a binding loop.
+        root.lastUrls[key] = reUrl
         return reUrl
     }
 
@@ -63,7 +68,7 @@ Item {
             if (res) {
                 res += "&"
             }
-            res += key + "=" + dictData[key]
+            res += encodeURIComponent(key) + "=" + encodeURIComponent(dictData[key])
         }
         return res
     }
@@ -76,7 +81,7 @@ Item {
             } else {
                 res += "?"
             }
-            res += key + "=" + dictData[key]
+            res += encodeURIComponent(key) + "=" + encodeURIComponent(dictData[key])
         }
         return res
     }

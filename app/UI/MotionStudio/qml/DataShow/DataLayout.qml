@@ -18,6 +18,7 @@ ColumnLayout{
     required property var alarmInfo
     required property var apiClient
     required property var globalContext
+    required property var view3DController
 
     anchors.fill:parent
     SplitView{
@@ -46,6 +47,8 @@ ColumnLayout{
             adaptiveMetrics: root.adaptiveMetrics
             apiClient: root.apiClient
             globalContext: root.globalContext
+            view3DController: root.view3DController
+            settings: root.settings
         // <----------
         // SplitView.fillWidth: true
         // SplitView.fillHeight:true
@@ -55,6 +58,9 @@ ColumnLayout{
             visible: root.controller.viewRendererListView
             implicitHeight: root.adaptiveMetrics.scaleMetric(100, 80, 130)
             SplitView.fillWidth: true
+            surfaceData: root.surfaceData
+            controller: root.controller
+            style: root.style
         }
 
         MaxMinValueShow{
@@ -65,7 +71,10 @@ ColumnLayout{
         }
 
     }
-    DataShowItemFoot{
+    FootToolBar {
         Layout.fillWidth: true
+        surfaceData: root.surfaceData
+        controller: root.controller
+        style: root.style
     }
 }

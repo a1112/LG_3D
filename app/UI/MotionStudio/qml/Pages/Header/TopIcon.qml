@@ -8,6 +8,7 @@ Item{
     height: root.style.topHeight
     width:ustb.width
     Base.USTB{
+        style: root.style
         id:ustb
         height:parent.height
         MouseArea{

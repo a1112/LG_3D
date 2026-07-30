@@ -24,7 +24,7 @@ Item {
 
     Timer {
         id: appendTimer
-        interval: 0
+        interval: 1
         repeat: true
         onTriggered: root._appendBatch()
     }

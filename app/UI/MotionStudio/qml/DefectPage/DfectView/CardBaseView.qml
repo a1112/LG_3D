@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import "../../Base/IconButtons"
 import "../Core"
 //  缺陷显示主要界面
 Item {
@@ -15,6 +14,7 @@ Item {
     required property var appController
     required property var apiClient
     required property var coreController
+    required property var globalContext
 
     property string card_id: ""
     readonly property DefectCoreModel defectCoreModel: root.defectController.defectCoreModel
@@ -33,6 +33,8 @@ Item {
             defectModel: root.defectCoreModel
             style: root.style
             menuController: defectDataViewMenu
+            globalContext: root.globalContext
+            apiClient: root.apiClient
         }
     }
     DefectDataViewMenu{

@@ -1,13 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "CardView/ChartView"
-import "CardView/AlarmSetting"
 import "DfectView"
 import "Head"
 import "../Base"
-import "Alarm"
-import "HistoryView"
 ColumnLayout {
     id: root
 
@@ -18,6 +14,7 @@ ColumnLayout {
     required property var appController
     required property var apiClient
     required property var coreController
+    required property var globalContext
 
     SplitView.fillHeight: true
     SplitView.fillWidth: true
@@ -40,6 +37,7 @@ ColumnLayout {
         appController: root.appController
         apiClient: root.apiClient
         coreController: root.coreController
+        globalContext: root.globalContext
     }
 }
 

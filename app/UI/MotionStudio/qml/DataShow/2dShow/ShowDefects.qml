@@ -1,13 +1,19 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 Item {
-    id:root
+    id: root
+    required property var controller
+    required property var defectClassController
+    required property var style
     anchors.fill: parent
-    property var defects : []
-    Repeater{
-        model: dataShowCore.defectModel
-        DefectShowItem{
+    Repeater {
+        model: root.controller.defectModel
+        DefectShowItem {
+            controller: root.controller
+            defectClassController: root.defectClassController
+            style: root.style
         }
     }
-
 }

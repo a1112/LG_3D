@@ -6,8 +6,13 @@ Item {
 
     required property int index
     required property var filterController
+    required property var globalContext
+    required property var apiClient
 
-    property DefectItemModel defectItem:DefectItemModel{}
+    property DefectItemModel defectItem: DefectItemModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
     property var defectData
     property bool respectFilter: false
     property int thumbnailSize: 96

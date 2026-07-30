@@ -6,27 +6,32 @@ import "../Base"
 
 PopupBase {
     id: root
+
+    required property var adaptiveMetrics
+    required property var appInfo
+    required property var style
+
     anchors.centerIn: parent
-    width: adaptive.boundedWidth(800, 560, 980)
-    height: adaptive.boundedHeight(500, 380, 680)
+    width: root.adaptiveMetrics.boundedWidth(800, 560, 980)
+    height: root.adaptiveMetrics.boundedHeight(500, 380, 680)
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: adaptive.scaleMetric(2, 2, 4)
-        spacing: adaptive.mainSpacing
+        anchors.margins: root.adaptiveMetrics.scaleMetric(2, 2, 4)
+        spacing: root.adaptiveMetrics.mainSpacing
 
         Label {
             text: qsTr("系统信息")
-            font.pixelSize: adaptive.fontMetric(22, 18, 28)
+            font.pixelSize: root.adaptiveMetrics.fontMetric(22, 18, 28)
             font.bold: true
-            color: Material.color(Material.Blue)
+            color: root.style.titleColor
             Layout.alignment: Qt.AlignHCenter
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 1
-            color: Material.color(Material.Grey)
+            color: root.style.headerBorderColor
         }
 
         ColumnLayout{
@@ -43,22 +48,26 @@ PopupBase {
                     spacing: 4
 
                     Label {
-                        text: qsTr("原始图像 S 端: ") + (app.coreInfo.originalImageFolderS || qsTr("未知"))
+                        text: qsTr("原始图像 S 端: ")
+                              + (root.appInfo.originalImageFolderS || qsTr("未知"))
                         wrapMode: Text.WrapAnywhere
                         Layout.fillWidth: true
                     }
                     Label {
-                        text: qsTr("原始图像 L 端: ") + (app.coreInfo.originalImageFolderL || qsTr("未知"))
+                        text: qsTr("原始图像 L 端: ")
+                              + (root.appInfo.originalImageFolderL || qsTr("未知"))
                         wrapMode: Text.WrapAnywhere
                         Layout.fillWidth: true
                     }
                     Label {
-                        text: qsTr("保存图像 S 端: ") + (app.coreInfo.saveImageFolderS || qsTr("未知"))
+                        text: qsTr("保存图像 S 端: ")
+                              + (root.appInfo.saveImageFolderS || qsTr("未知"))
                         wrapMode: Text.WrapAnywhere
                         Layout.fillWidth: true
                     }
                     Label {
-                        text: qsTr("保存图像 L 端: ") + (app.coreInfo.saveImageFolderL || qsTr("未知"))
+                        text: qsTr("保存图像 L 端: ")
+                              + (root.appInfo.saveImageFolderL || qsTr("未知"))
                         wrapMode: Text.WrapAnywhere
                         Layout.fillWidth: true
                     }
@@ -85,26 +94,26 @@ PopupBase {
                 columnSpacing: 16
 
                 Label { text: qsTr("Python 版本:") }
-                Label { text: app.coreInfo.pythonVersion || qsTr("未知"); wrapMode: Text.NoWrap }
+                Label { text: root.appInfo.pythonVersion || qsTr("未知"); wrapMode: Text.NoWrap }
 
                 Label { text: qsTr("服务版本:") }
-                Label { text: app.coreInfo.serverVersion || qsTr("未知"); wrapMode: Text.NoWrap }
+                Label { text: root.appInfo.serverVersion || qsTr("未知"); wrapMode: Text.NoWrap }
 
                 Label { text: qsTr("缓存方式:") }
-                Label { text: app.coreInfo.cacheMode || qsTr("未知"); wrapMode: Text.NoWrap }
+                Label { text: root.appInfo.cacheMode || qsTr("未知"); wrapMode: Text.NoWrap }
 
                 Label { text: qsTr("CPU 型号:") }
-                Label { text: app.coreInfo.cpuModel || qsTr("未知"); wrapMode: Text.WrapAnywhere; Layout.fillWidth: true }
+                Label { text: root.appInfo.cpuModel || qsTr("未知"); wrapMode: Text.WrapAnywhere; Layout.fillWidth: true }
 
                 Label { text: qsTr("GPU 型号:") }
                 Label {
-                    text: app.coreInfo.gpuModels || qsTr("未知")
+                    text: root.appInfo.gpuModels || qsTr("未知")
                     wrapMode: Text.WrapAnywhere
                     Layout.fillWidth: true
                 }
 
                 Label { text: qsTr("数据库:") }
-                Label { text: app.coreInfo.databaseUrl || qsTr("未知"); wrapMode: Text.WrapAnywhere; Layout.fillWidth: true }
+                Label { text: root.appInfo.databaseUrl || qsTr("未知"); wrapMode: Text.WrapAnywhere; Layout.fillWidth: true }
             }
         }
 

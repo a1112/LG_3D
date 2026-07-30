@@ -15,6 +15,7 @@ HeaderBase {
     required property var controller
     required property var areaController
     required property var style
+    onMaximizeRequested: root.surfaceData.showMax = !root.surfaceData.showMax
 
     height: 27
 
@@ -30,6 +31,7 @@ HeaderBase {
             GammaBtn{
                 visible: root.surfaceData.is2DrootView
                 controller: root.controller
+                style: root.style
             }
         }
             ToolBtns{
@@ -42,7 +44,9 @@ HeaderBase {
             implicitHeight: 1
         }
 
-        HeaderTitle{}
+        HeaderTitle {
+            surfaceData: root.surfaceData
+        }
 
         Item{
             Layout.fillWidth: true
@@ -52,10 +56,12 @@ HeaderBase {
             spacing: 10
             visible: root.surfaceData.is3DrootView
             View3DZScaleBtn{
+                controller: root.controller
                 anchors.verticalCenter:parent.verticalCenter
             }
             View3DChangeItem{
-
+                controller: root.controller
+                style: root.style
             }
         }
 
@@ -71,6 +77,7 @@ HeaderBase {
         // }
         Row{
         ItemDelegateItemLabel {
+            style: root.style
             height: 20
             text: qsTr("2D")
             key:qsTr("2D")
@@ -82,6 +89,7 @@ HeaderBase {
         }
 
         ItemDelegateItemLabel {
+            style: root.style
             key: root.surfaceData.currentViewKey
             has_data: true
             height: 20
@@ -96,6 +104,7 @@ HeaderBase {
             }
         }
         ItemDelegateItemLabel {
+            style: root.style
             height: 20
             key:"MESH"
             text: qsTr("3D")
@@ -107,6 +116,7 @@ HeaderBase {
 
         Row{
             WindowModelChangeButton {
+                style: root.style
                 height:25
                 width: 25
                 shouMaxIcon: root.surfaceData.showMax
@@ -156,9 +166,8 @@ HeaderBase {
 
     Popup2D{
         id: popup
-
-    }
-    TitleMenu{
-        id:titleMenu
+        surfaceData: root.surfaceData
+        controller: root.controller
+        style: root.style
     }
 }

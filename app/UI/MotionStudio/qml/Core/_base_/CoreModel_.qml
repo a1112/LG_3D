@@ -9,7 +9,7 @@ CoreModel_Data {
     property bool keepLatestHasData:true
 
     // 保持最新图像 -> 最大时间
-    property int autoKeepTimeMax : coreSetting.autoKeepTimeMax
+    property int autoKeepTimeMax : settings.autoKeepTimeMax
     // 保持最新图像 -> 当前时间
     property int autoKeepTime: 0
     // 设置 刷新计时器
@@ -18,7 +18,7 @@ CoreModel_Data {
         keepLatest = value
     }
 
-    readonly property var defectDictAll:global.defectClassProperty.defectDictAll
+    readonly property var defectDictAll: globalContext.defectClassProperty.defectDictAll
 
-    readonly property var flushDefectDictAll:global.defectClassProperty.flushDefectDictAll
+    readonly property var flushDefectDictAll: globalContext.defectClassProperty.flushDefectDictAll
 }

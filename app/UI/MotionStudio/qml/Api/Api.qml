@@ -1,6 +1,7 @@
 import QtQuick
 // import QtWebSockets 1.8
 Api_DataBase {
+    id: api
 
         //  6012
     readonly property int urlListModel_maxCouint:200
@@ -16,7 +17,7 @@ Api_DataBase {
                     {
                     url:url,
                     type:type,
-                    timeString:tool.getNowTimeString()
+                    timeString: api.toolService.getNowTimeString()
                     }
                     )
     }
@@ -44,11 +45,11 @@ Api_DataBase {
     }
 
     function setImageServerBackend(useRust){
-        coreSetting.useRustImageServer = useRust
+        api.settings.useRustImageServer = useRust
     }
 
     function getImageServerBackend(){
-        return coreSetting.useRustImageServer ? "rust" : "python"
+        return api.settings.useRustImageServer ? "rust" : "python"
     }
 
     function getRustImageServerUrl(){
@@ -74,7 +75,7 @@ Api_DataBase {
 
     //全局下载器
     function downloadFile(url,save_path,success,failure){
-        return fileDownloader.downloadFile(url, save_path)
+        return api.downloadClient.downloadFile(url, save_path)
     }
 
     function getWsReDetectionUrl(){

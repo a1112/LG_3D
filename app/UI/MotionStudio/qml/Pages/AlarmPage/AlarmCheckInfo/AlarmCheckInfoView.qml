@@ -116,6 +116,7 @@ CardBase {
                     height:5
                 }
                 CheckRec{
+                    style: root.style
                     fillWidth: true
                     text : "返修"
                     color: root.currentPortInt == 2
@@ -131,6 +132,7 @@ CardBase {
                 }
 
                 CheckRec{
+                    style: root.style
                     fillWidth: true
                     text : "未确认"
                     color: root.currentPortInt == 0
@@ -146,6 +148,7 @@ CardBase {
                 }
 
                 CheckRec{
+                    style: root.style
                     fillWidth: true
                     text : "通过"
                     color: root.currentPortInt == 1

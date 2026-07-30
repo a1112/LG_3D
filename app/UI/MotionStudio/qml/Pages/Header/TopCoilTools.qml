@@ -1,6 +1,5 @@
 import QtQuick
-import "../../btns"
-import "../../DataShow/Foot"
+import "../../DataShow/Foot" as Foot
 
 RowBase {
     id: root
@@ -8,11 +7,11 @@ RowBase {
     required property var adaptiveMetrics
     required property var modelStore
     required property var authManager
-
     visible: root.authManager.isAdmin
     spacing: root.adaptiveMetrics.headerSpacing
     Row{
-        ItemDelegateItem {
+        Foot.ItemDelegateItem {
+            style: root.style
             height: root.adaptiveMetrics.headerTabHeight
             text: "2D视图"
             onClicked: {
@@ -20,7 +19,8 @@ RowBase {
                 root.modelStore.surfaceS.rootViewIndex = 0
             }
         }
-        ItemDelegateItem {
+        Foot.ItemDelegateItem {
+            style: root.style
             height: root.adaptiveMetrics.headerTabHeight
             text: "3D视图"
             onClicked: {
@@ -31,6 +31,7 @@ RowBase {
     }
 
     CheckRec{
+        style: root.style
         id: maskToggle
         implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         typeIndex:1
@@ -40,6 +41,7 @@ RowBase {
         onCheckedChanged: root.modelStore.imageMaskChecked = maskToggle.checked
     }
     CheckRec{
+        style: root.style
         id: quickToggle
         visible: !root.modelStore.imageMaskChecked
         implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
@@ -51,10 +53,12 @@ RowBase {
     }
 
     SeparatorLine{
-        color: "#CAF143"
+        style: root.style
+        color: root.style.statusSuccessColor
     }
 
     CheckRec{
+        style: root.style
         id: surfaceSToggle
         implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         text: "S端"
@@ -64,6 +68,7 @@ RowBase {
 
 
     CheckRec{
+        style: root.style
         id: surfaceLToggle
         implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         text: "L端"

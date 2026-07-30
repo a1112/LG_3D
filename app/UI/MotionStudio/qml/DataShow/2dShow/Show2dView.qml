@@ -10,6 +10,7 @@ Item {
     required property var modelStore
     required property var style
     required property var apiClient
+    required property var globalContext
 
     anchors.fill: parent
     Rectangle{
@@ -39,8 +40,14 @@ Item {
             height: root.dataShowCore.canvasContentHeight
 
             ImageView{
+                surfaceData: root.surfaceData
+                dataShowCore: root.dataShowCore
+                style: root.style
             }
-            ShowDefects{ // 缺陷绘制
+            ShowDefects { // 缺陷绘制
+                controller: root.dataShowCore
+                defectClassController: root.globalContext.defectClassProperty
+                style: root.style
             }
             DrawView{
                 surfaceData: root.surfaceData
@@ -48,8 +55,11 @@ Item {
                 style: root.style
                 apiClient: root.apiClient
             }
-            ControlView{
-            // 控制系统
+            ControlView {
+                controller: root.dataShowCore
+                surfaceData: root.surfaceData
+                flickable: flick
+                style: root.style
             }
 
 
@@ -69,6 +79,8 @@ Item {
 
     AerialView{// 鸟亏图
         source: root.dataShowCore.source
+        controller: root.dataShowCore
+        style: root.style
         y:root.height - height-scrollBarH.height
     }
     HoverHandler{

@@ -4,6 +4,12 @@ Item {
     id: root
 
     required property var surfaceData
+    required property var apiClient
+    required property var modelStore
+    required property var globalContext
+    required property var settings
+    required property var imageCacheService
+    required property var defectController
     property string key: "AREA"
 
     property int _lastPreheatCoilId: -1
@@ -45,9 +51,14 @@ Item {
         if (!coilId) {
             return
         }
-        let areaUrl = api.getFileSource(key, coilId, surfaceData.areaViewKey, false)
-        api.ajax.get(appendQuery(areaUrl, "count=0"), function(){}, function(){})
-        imageCache.pushCache(api.getFileSource(key, coilId, surfaceData.areaViewKey, true))
+        let areaUrl = root.apiClient.getFileSource(
+                    key, coilId, root.surfaceData.areaViewKey, false)
+        root.apiClient.ajax.get(root.appendQuery(areaUrl, "count=0"),
+                                function(){}, function(){})
+        root.imageCacheService.pushCache(root.apiClient.getFileSource(
+                                             key, coilId,
+                                             root.surfaceData.areaViewKey,
+                                             true))
     }
 
     function appendQuery(url, query) {
@@ -65,7 +76,7 @@ Item {
             return
         }
         _lastPreheatCoilId = surfaceData.coilId
-        let model = coreModel.currentCoilListModel
+        let model = root.modelStore.currentCoilListModel
         let index = _findCoilIndex(model, surfaceData.coilId)
         let neighborIds = _collectNeighborIds(model, index, _preheatRange)
         for (let i = 0; i < neighborIds.length; i++) {
@@ -86,7 +97,7 @@ Item {
     Timer {
         id: defectLoadTimer
         interval: 800  // 比其他数据再晚一些加载
-        onTriggered: flushDefect()
+        onTriggered: root.defectController.flushDefect()
     }
       // 鍥炬爣鐨勬樉绀烘柟寮?
     property int chartShowType: 0
@@ -106,12 +117,17 @@ Item {
         if (!defectName) {
             return false
         }
-        let sharedName = global.defectClassProperty.shared_defect_name(defectName)
-        return global.defectClassProperty.defectDictAll[sharedName] ?? false
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(
+                    defectName)
+        return root.globalContext.defectClassProperty.defectDictAll[sharedName]
+                ?? false
     }
 
-    readonly property bool hasAreaDecision: coreModel && coreModel.hasDataCoilId === surfaceData.coilId
-                                           && coreModel.has_data !== null && coreModel.has_data !== undefined
+    readonly property bool hasAreaDecision:
+        root.modelStore
+        && root.modelStore.hasDataCoilId === root.surfaceData.coilId
+        && root.modelStore.has_data !== null
+        && root.modelStore.has_data !== undefined
     property int areaCacheVersion: 0
     property bool recacheInProgress: false
     property string lastRecacheMessage: ""
@@ -139,14 +155,14 @@ Item {
         }
         recacheInProgress = true
         lastRecacheMessage = "rebuilding"
-        api.recacheAreaTiles(surfaceData.key,
+        root.apiClient.recacheAreaTiles(surfaceData.key,
                              surfaceData.coilId,
                              surfaceData.areaViewKey,
                              function(result) {
                                  recacheInProgress = false
                                  lastRecacheMessage = result
-                                 if (coreSetting.useRustImageServer) {
-                                     api.clearRustImageCache(function() {
+                                 if (root.settings.useRustImageServer) {
+                                     root.apiClient.clearRustImageCache(function() {
                                          console.log("Rust image cache cleared")
                                          refreshAreaTilesAfterRecache()
                                      }, function(error, status) {
@@ -325,8 +341,8 @@ Item {
         running: false
         repeat: false
         onTriggered: {
-            if (surfaceData.error_auto)
-                errorDrawer()
+            if (root.surfaceData.error_auto)
+                root.errorDrawer()
         }
     }
     property var triggerErrorDrawer: surfaceData.coilId+surfaceData.scan3dScaleZ+medianZValue+tower_warning_threshold_downValue+tower_warning_threshold_upValue
@@ -345,7 +361,7 @@ Item {
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
-        surfaceData.source = api.geRenderDrawerSource(surfaceData.key,
+        surfaceData.source = root.apiClient.geRenderDrawerSource(surfaceData.key,
                                                       surfaceData.coilId,
                                                       renderScale.toFixed(2),
                                                       parseInt(medianZValue-rangeZValue)
@@ -357,11 +373,11 @@ Item {
     function errorDrawer()
     {
         // 检查设置中的叠加图层开关
-        if (!coreSetting.showErrorOverlay) {
+        if (!root.settings.showErrorOverlay) {
             surfaceData.error_visible=false
             return
         }
-        surfaceData.error_source = api.geErrorDrawerSource(surfaceData.key,
+        surfaceData.error_source = root.apiClient.geErrorDrawerSource(surfaceData.key,
                                                            surfaceData.coilId,
                                                            1,
                                                            surfaceData.tower_warning_threshold_down  // mm 值：蓝色阈值
@@ -386,24 +402,25 @@ Item {
         id: pendingDefectTimer
         interval: 500
         onTriggered: {
-            if (coreModel.pendingDefect && flick && surfaceData.isAreaRootView) {
-                let pending = coreModel.pendingDefect
+            if (root.modelStore.pendingDefect && root.flick
+                    && root.surfaceData.isAreaRootView) {
+                let pending = root.modelStore.pendingDefect
                 let currentCoilId = currentCoilModel ? currentCoilModel.coilId : surfaceData.coilId
                 let targetView = pending.viewMode || "AREA"
                 if (targetView === "AREA"
                         && pending.surface === surfaceData.key
                         && Number(pending.coilId) === Number(currentCoilId)
                         && setDefectShowView(pending)) {
-                    coreModel.pendingDefect = null
+                    root.modelStore.pendingDefect = null
                 }
             }
         }
     }
 
     Connections {
-        target: coreModel
+        target: root.modelStore
         function onPendingDefectChanged() {
-            if (coreModel.pendingDefect) {
+            if (root.modelStore.pendingDefect) {
                 pendingDefectTimer.restart()
             }
         }
@@ -432,8 +449,9 @@ Item {
         interval: 100
         onTriggered: {
             // 如果 coilId 已设置但图像未加载，触发加载
-            if (surfaceData.coilId > 0 && surfaceData.area_source === "") {
-                flush()
+            if (root.surfaceData.coilId > 0
+                    && root.surfaceData.area_source === "") {
+                root.flush()
             }
         }
     }

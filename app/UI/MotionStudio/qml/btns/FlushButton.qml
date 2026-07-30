@@ -1,4 +1,6 @@
 
 ImageButton{
-    source:coreStyle.getIcon("Flush_Dark")// coreStyle.getStyleIcon("Flush")
+    id: root
+    required property var style
+    source: root.style.getIcon("Flush_Dark")
 }

@@ -12,6 +12,7 @@ Loader{
     required property var modelStore
     required property var style
     required property var apiClient
+    required property var globalContext
 
     active: root.surfaceData.is2DrootView
     Layout.fillWidth: true
@@ -27,6 +28,7 @@ Loader{
             modelStore: root.modelStore
             style: root.style
             apiClient: root.apiClient
+            globalContext: root.globalContext
         }    // 2D 显示
 
         MaskToolView{

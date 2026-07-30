@@ -47,7 +47,7 @@ DataListViewItenBase {
                     }
 
                     StateWrapper{
-                        // c_state:coilState
+                        summary: root.listItemCoil
                     }
 
                     Item {

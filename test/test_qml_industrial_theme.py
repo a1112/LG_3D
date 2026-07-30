@@ -155,9 +155,10 @@ def test_common_dark_theme_text_uses_theme_colors():
         assert (
             "coreStyle.labelColor" in text
             or "coreStyle.textColor" in text
-            or "style.textColor" in text
-            or "root.style.labelColor" in text
-            or "root.style.textColor" in text
+                or "style.textColor" in text
+                or "root.style.labelColor" in text
+                or "root.style.textColor" in text
+                or "root.style.secondaryTextColor" in text
         )
 
 
@@ -179,8 +180,8 @@ def test_data_overlays_and_defect_filters_use_semantic_theme_tokens():
     assert "style.secondaryTextColor" in defect_filter_text
     assert 'imageTypeColor: "#999999"' not in data_core_text
     assert 'imageTypeColor = "#52c41a"' not in data_core_text
-    assert "coreStyle.statusInactiveColor" in data_core_text
-    assert "coreStyle.statusSuccessColor" in data_core_text
+    assert "root.style.statusInactiveColor" in data_core_text
+    assert "root.style.statusSuccessColor" in data_core_text
     for relative_path in overlay_files:
         text = read_qml(relative_path)
         assert "#772e2e2e" not in text
@@ -230,6 +231,23 @@ def test_display_style_system_is_available_from_settings():
         assert f'"{theme_key}"' in style_settings_text
     for removed_theme in ("ocean", "forest", "purple", "sunset"):
         assert f'"{removed_theme}"' not in style_settings_text
+
+
+def test_settings_hide_unimplemented_alarm_and_3d_pages():
+    settings_text = read_qml(Path("SettingPage") / "SettingPageView.qml")
+    qrc_text = (MOTION_STUDIO_ROOT / "qml.qrc").read_text(encoding="utf-8")
+
+    assert 'qsTr("报警")' not in settings_text
+    assert 'qsTr("3D 渲染")' not in settings_text
+    assert "AlarmSetting {}" not in settings_text
+    assert "D3Setting {}" not in settings_text
+    for removed_path in (
+        Path("SettingPage") / "AlarmSetting" / "AlarmSetting.qml",
+        Path("SettingPage") / "D3Setting" / "D3Setting.qml",
+        Path("SettingPage") / "BaseSetting" / "BaseSetting.qml",
+    ):
+        assert not (QML_ROOT / removed_path).exists()
+        assert f"qml/{removed_path.as_posix()}" not in qrc_text
 
 
 def test_frameless_window_uses_standard_caption_controls():
@@ -296,11 +314,14 @@ def test_simulated_3d_view_uses_local_runtime_obj_loader():
 
     assert "import QtQuick3D.AssetUtils" in node_text
     assert "RuntimeLoader" in node_text
-    assert "testDataMeshUrl" in node_text
+    assert "required property var surfaceData" in node_text
+    assert "root.surfaceData.meshUrl" in node_text
+    assert "testDataMeshUrl" in surface_text
     assert "file:////\"+api.apiConfig.hostname" not in node_text
     assert "testDataMeshPath" in surface_text
     assert "testDataMeshExists" in surface_text
-    assert "testDataMeshExists" in toolbox_text
+    assert "root.surfaceData.meshExits" in toolbox_text
+    assert "testDataMeshExists" not in toolbox_text
 
 
 def test_initial_coil_selection_refreshes_after_async_list_load():
@@ -316,6 +337,8 @@ def test_initial_coil_selection_refreshes_after_async_list_load():
     assert "function refreshAll(forceMetadata)" in init_text
     assert "property bool refreshQueued: false" in controller_text
     assert "function _appendBatch()" in controller_text
+    assert "interval: 1" in controller_text
+    assert "interval: 0" not in controller_text
     assert "coreController.setCoilIndex(0)" in controller_text
     assert "Qt.callLater(refresh)" in controller_text
     assert "property bool loaded: false" in bootstrap_text
@@ -379,11 +402,13 @@ def test_high_confidence_qml_member_and_dialog_errors_are_fixed():
 
     assert not (QML_ROOT / "Base" / "ManualDefectItem.qml").exists()
     assert "Material.text" not in foot_item_text
-    assert "signal particleTriggerRequested()" in watermark_text
-    assert "function onParticleTriggerRequested()" in watermark_text
+    assert "required property var style" in watermark_text
+    assert "QtQuick3D" not in watermark_text
+    assert "particleTriggerRequested" not in watermark_text
     assert "required property int index" in watermark_text
     assert "animItem.item" not in watermark_text
-    assert "watcher: app.captureAlarmWatcher" in global_alarm_text
+    assert "required property var captureAlarmWatcher" in global_alarm_text
+    assert "watcher: root.captureAlarmWatcher" in global_alarm_text
     assert 'property string outputUrl: ""' in redetection_text
     assert alg_test_text.count("FolderDialog {") == 2
     assert "FileDialog.OpenDirectory" not in alg_test_text
@@ -513,6 +538,9 @@ def test_primary_data_view_passes_chart_dependencies_from_app_boundary():
     main_layout = read_qml(Path("MainLayout.qml"))
     data_root = read_qml(Path("DataShowRoot.qml"))
     data_layout = read_qml(Path("DataShow") / "DataShowLayout.qml")
+    data_background = read_qml(
+        Path("DataShow") / "_base_" / "DataShowBackground.qml"
+    )
     data_view = read_qml(Path("DataShow") / "DataShowView.qml")
     header = read_qml(
         Path("DataShow") / "DataHeader" / "DataHeaderView.qml"
@@ -539,7 +567,10 @@ def test_primary_data_view_passes_chart_dependencies_from_app_boundary():
     ):
         assert f"required property var {dependency}" in main_layout
         assert f"required property var {dependency}" in data_root
-        assert f"required property var {dependency}" in data_layout
+        if dependency in ("adaptiveMetrics", "style"):
+            assert f"required property var {dependency}" in data_background
+        else:
+            assert f"required property var {dependency}" in data_layout
     assert "sourceComponent: DataShowRoot {" in main_layout
     assert "source: \"DataShowRoot.qml\"" not in main_layout
     assert "adaptiveMetrics: app.adaptive" in app_text
@@ -792,16 +823,23 @@ def test_rust_services_use_fixed_ports_and_test_api_defaults_to_python():
     assert "property bool useRustTestServer: false" in core_setting_text
     assert "imageServerBackendDefaultVersion < currentImageServerBackendDefaultVersion" in core_setting_text
     assert "readonly property int rustApiPort: 5011" in api_config_text
-    assert "activeApiPort: coreSetting.useRustTestServer ? rustApiPort : pythonApiPort" in api_config_text
-    assert "activeImageServerPort: coreSetting.useRustImageServer ? rustImageServerPort : pythonImageServerPort" in api_config_text
+    assert re.search(
+        r"activeApiPort:\s*root\.settings\.useRustTestServer\s*\?\s*rustApiPort\s*:\s*pythonApiPort",
+        api_config_text,
+    )
+    assert re.search(
+        r"activeImageServerPort:\s*root\.settings\.useRustImageServer\s*"
+        r"\?\s*rustImageServerPort\s*:\s*pythonImageServerPort",
+        api_config_text,
+    )
     for dependency in ("settings", "style"):
         assert f"required property var {dependency}" in general_setting_text
     assert "coreSetting." not in general_setting_text
     assert "coreStyle." not in general_setting_text
     assert "onValueModified: root.settings.defaultAreaTileCount" in general_setting_text
     assert "onValueChanged: coreSetting.defaultAreaTileCount" not in general_setting_text
-    assert "active: coreSetting.useRustTestServer" in api_database_text
-    assert "if (!coreSetting.useRustTestServer)" in api_database_text
+    assert "active: api_database.settings.useRustTestServer" in api_database_text
+    assert "if (!api_database.settings.useRustTestServer)" in api_database_text
     assert "server_port" not in connect_dialog_text
     assert "rustImageServerPort" not in general_setting_text
 
@@ -810,8 +848,8 @@ def test_infinite_alert_animations_stop_when_their_visual_is_hidden():
     label_text = read_qml(Path("animation") / "AnimLabel.qml")
     image_text = read_qml(Path("animation") / "AnimErrorImage.qml")
     error_label_text = read_qml(Path("animation") / "AnimErrorLabel.qml")
-    simple_error_text = read_qml(
-        Path("Pages") / "AlarmPage" / "AlarmSimple" / "SimpleErrView.qml"
+    simple_error_path = (
+        QML_ROOT / "Pages" / "AlarmPage" / "AlarmSimple" / "SimpleErrView.qml"
     )
 
     for text in (label_text, image_text):
@@ -821,14 +859,14 @@ def test_infinite_alert_animations_stop_when_their_visual_is_hidden():
         assert "onFinished:" not in text
         assert "restart()" not in text
     assert "running: root.running && root.visible" in error_label_text
-    assert "color: coreStyle.statusErrorColor" in simple_error_text
+    assert not simple_error_path.exists()
 
 
 def test_header_time_text_is_readable_on_dark_theme():
     time_text = read_qml(Path("Base") / "TimeText.qml")
 
     assert 'color: "#333"' not in time_text
-    assert 'root.style.isDark ? "#DDEBFF"' in time_text
+    assert "color: root.style.titleColor" in time_text
 
 
 def test_height_point_websocket_reconnects_after_close():
@@ -837,7 +875,11 @@ def test_height_point_websocket_reconnects_after_close():
     assert "Timer {" in api_text
     assert "id: heightPointReconnectTimer" in api_text
     assert "function _scheduleHeightPointReconnect()" in api_text
-    assert "active: coreSetting.useRustTestServer && _heightPointConnectEnabled" in api_text
+    assert re.search(
+        r"active:\s*api_database\.settings\.useRustTestServer\s*"
+        r"&&\s*api_database\._heightPointConnectEnabled",
+        api_text,
+    )
     assert "heightPointSocket.active =" not in api_text
     assert "_heightPointReconnectDelayMs * 2" in api_text
     assert "_heightPointReconnectMaxDelayMs" in api_text
@@ -956,7 +998,7 @@ def test_2d_area_context_menu_can_rebuild_tile_cache():
     assert "property int areaCacheVersion" in area_core_text
     assert "property bool recacheInProgress" in area_core_text
     assert "property string lastRecacheMessage" in area_core_text
-    assert "api.clearRustImageCache" in area_core_text
+    assert "root.apiClient.clearRustImageCache" in area_core_text
     assert "areaCacheVersion += 1" in area_core_text
     assert "function recacheAreaTiles()" in area_core_text
     assert "canRecacheAreaTiles" in menu_text
@@ -973,11 +1015,28 @@ def test_2d_defects_share_defect_class_visibility_list():
     assert "return name.slice(3)" in defect_class_text
     assert "function normalize_defect_dict_data(data)" in defect_class_text
     assert 'if (sharedName in normalized)' in defect_class_text
-    assert "let sharedName = global.defectClassProperty.shared_defect_name(defectName)" in data_show_core_text
+    assert "root.globalContext.defectClassProperty.shared_defect_name(" in data_show_core_text
     assert (
         "let sharedName = root.globalContext.defectClassProperty.shared_defect_name(name)"
         in filter_core_text
     )
+
+
+def test_coil_list_max_defect_excludes_masked_classes():
+    defect_class_text = read_qml(Path("Property") / "DefectClassProperty.qml")
+    coil_model_text = read_qml(Path("Model") / "CoilModel.qml")
+
+    assert "signal defectConfigurationChanged()" in defect_class_text
+    assert "function is_defect_enabled(defectName)" in defect_class_text
+    assert "return initialized ? defaultDefectClass.defectShow : true" in defect_class_text
+    assert "function onDefectConfigurationChanged()" in coil_model_text
+    assert (
+        "defectClassProperty.is_defect_enabled(configName)"
+        in coil_model_text
+    )
+    assert 'maxDefectName = ""' in coil_model_text
+    assert "maxDefectLevel = 0" in coil_model_text
+    assert 'maxDefectSurface = ""' in coil_model_text
 
 
 def test_pending_defect_is_consumed_only_by_the_matching_view():
@@ -986,15 +1045,15 @@ def test_pending_defect_is_consumed_only_by_the_matching_view():
     area_core_text = read_qml(Path("DataShow") / "Core" / "DataShowAreaCore.qml")
 
     assert 'viewMode: "2D"' in menu_text
-    assert "&& !surfaceData.isAreaRootView" in image_core_text
+    assert "&& !root.surfaceData.isAreaRootView" in image_core_text
     assert 'let targetView = pending.viewMode || "2D"' in image_core_text
     assert 'targetView !== "AREA"' in image_core_text
-    assert "&& surfaceData.isAreaRootView" in area_core_text
+    assert "&& root.surfaceData.isAreaRootView" in area_core_text
     assert 'let targetView = pending.viewMode || "AREA"' in area_core_text
     assert 'targetView === "AREA"' in area_core_text
     for text in (image_core_text, area_core_text):
         assert "&& setDefectShowView(pending)" in text
-        assert "coreModel.pendingDefect = null" in text
+        assert "root.modelStore.pendingDefect = null" in text
 
 
 def test_image_viewports_share_bounded_zoom_and_throttled_pointer_updates():
@@ -1024,10 +1083,11 @@ def test_2d_image_loading_uses_valid_thumbnail_urls_and_independent_alarm_overla
     image_text = read_qml(Path("DataShow") / "2dShow" / "ImageView.qml")
 
     assert 'return url + (url.indexOf("?") >= 0 ? "&" : "?") + query' in image_text
-    assert 'root.appendQuery(surfaceData.source, "thumbnail=true")' in image_text
+    assert 'root.appendQuery(root.surfaceData.source,' in image_text
+    assert '"thumbnail=true")' in image_text
     assert "source: thumbnailBaseUrl" in image_text
     assert 'surfaceData.source + "&thumbnail=true"' not in image_text
-    assert "visible: surfaceData.error_visible" in image_text
+    assert "visible: root.surfaceData.error_visible" in image_text
     assert "surfaceData.error_visible && dataShowCore.adjustConfig.image_gamma_enable" not in image_text
     assert "running: fullImage.status === Image.Loading" in image_text
     assert 'text: qsTr("图像加载失败")' in image_text
@@ -1155,7 +1215,7 @@ def test_clock_is_shared_and_unused_duplicate_datetime_components_are_removed():
     assert "root.coreController.nowTime" in time_text
     assert 'Qt.formatDateTime(root.currentDate, "yyyy-MM-dd HH:mm:ss")' in time_text
     assert "triggeredOnStart: true" in core_text
-    assert "app.visibility !== Window.Minimized" in core_text
+    assert "root.appWindow.visibility !== Window.Minimized" in core_text
     for removed_path in (
         Path("Base") / "DateTime.qml",
         Path("Base") / "NowDate.qml",
@@ -1291,7 +1351,8 @@ def test_global_error_levels_are_event_driven_instead_of_polled():
     assert "errorState = Object.assign({}, state)" in error_text
     assert "function refreshPrimaryError()" in error_text
     assert "errorDict = Object.assign({}, errors)" in error_text
-    assert 'setStateLevel("网络", i, ok ? 0 : 3)' in net_text
+    assert "root.modelStore.coreGlobalError.setStateLevel(" in net_text
+    assert '"网络", i, ok ? 0 : 3)' in net_text
     assert 'errorState["网络"][i]' not in net_text
 
 
@@ -1308,8 +1369,6 @@ def test_api_payloads_use_shared_safe_json_parser_on_runtime_paths():
         Path("Pages") / "AlarmPage" / "CoreAlarmInfo.qml",
         Path("Pages") / "AlarmPage" / "AlarmItem" / "AlarmHardware.qml",
         Path("Pages") / "AlarmPage" / "AlarmCheckInfo" / "AlarmCheckInfoView.qml",
-        Path("Pages") / "LeftPage" / "DataList" / "CoilState.qml",
-        Path("PopupView") / "ListValueChange" / "ViewChangeInput.qml",
         Path("PopupView") / "MsgPop" / "MsgPopView.qml",
         Path("SettingPage") / "CameraSetting" / "CameraSetting.qml",
         Path("PopupView") / "HardwareMonitor" / "HardwareMonitorView.qml",
@@ -1345,9 +1404,9 @@ def test_coil_specific_requests_reject_stale_responses_and_debug_payloads_are_re
     assert "datetime.datetime(" not in detail_text
     assert "var t = [" not in detail_text
     for token in (
-        "coreStyle.statusSuccessColor",
-        "coreStyle.statusWarningColor",
-        "coreStyle.statusErrorColor",
+        "root.style.statusSuccessColor",
+        "root.style.statusWarningColor",
+        "root.style.statusErrorColor",
     ):
         assert token in alarm_text
 
@@ -1360,9 +1419,9 @@ def test_network_alarm_probes_real_service_ports_without_legacy_duplicates():
     assert 'titleText: "核心 API"' in net_text
     assert 'titleText: "图像服务"' in net_text
     assert 'titleText: "2D 算法"' in net_text
-    assert "api.apiConfig.activeApiPort" in net_text
-    assert "api.apiConfig.activeImageServerPort" in net_text
-    assert "api.apiConfig.alg2dPort" in net_text
+    assert "root.apiClient.apiConfig.activeApiPort" in net_text
+    assert "root.apiClient.apiConfig.activeImageServerPort" in net_text
+    assert "root.apiClient.apiConfig.alg2dPort" in net_text
     assert "api.apiConfig.databasPort" not in net_text
     assert "api.apiConfig.dataPort" not in net_text
 
@@ -1391,7 +1450,7 @@ def test_capture_alarm_polling_uses_explicit_dependencies_and_stops_offline():
     assert "getCameraAlarm" not in camera_text
     assert "onStatusPayloadChanged" in camera_text
     assert "reuseItems: true" in camera_text
-    assert "watcher: app.captureAlarmWatcher" in global_alarm_text
+    assert "watcher: root.captureAlarmWatcher" in global_alarm_text
     assert "AlarmInfoGlob.qml" not in qrc_text
 
 
@@ -1435,9 +1494,10 @@ def test_3d_model_loads_immediately_and_retries_with_bounded_backoff():
 
     assert "property int maxReloadAttempts: 3" in node_text
     assert "scheduleModelLoad(1)" in node_text
-    assert "500 * Math.pow(2, node.reloadAttempt - 1)" in node_text
-    assert "Math.min(3000," in node_text
-    assert "node.reloadAttempt < node.maxReloadAttempts" in node_text
+    assert "root.reloadAttempt - 1" in node_text
+    assert "Math.min(" in node_text
+    assert "3000," in node_text
+    assert "root.reloadAttempt < root.maxReloadAttempts" in node_text
     assert "interval:5000" not in node_text
     assert 'console.log("Model loaded successfully")' not in node_text
 

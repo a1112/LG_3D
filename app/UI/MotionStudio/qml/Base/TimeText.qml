@@ -16,5 +16,5 @@ Label {
     font.family: root.fonts.timeFamioly || "Microsoft YaHei"
     font.pixelSize: root.adaptiveMetrics.fontMetric(24, 18, 30)
     font.features: {"tnum": 1}
-    color: root.style.isDark ? "#DDEBFF" : root.style.textColor
+    color: root.style.titleColor
 }

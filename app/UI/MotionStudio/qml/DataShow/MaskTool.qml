@@ -8,6 +8,9 @@ Item {
     required property var style
     required property var surfaceData
     required property var globalContext
+    required property var adaptiveMetrics
+    required property var modelStore
+    required property var view3DController
     width:parent.width
     height:parent.height
 
@@ -28,6 +31,12 @@ Item {
     }
 
     ViewChangView{  // 右侧的数据切换
+        adaptiveMetrics: root.adaptiveMetrics
+        surfaceData: root.surfaceData
+        dataShowCore: root.controller
+        modelStore: root.modelStore
+        view3DController: root.view3DController
+        style: root.style
         height:root.height
         x:root.width- width -70
         y:25

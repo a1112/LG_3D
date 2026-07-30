@@ -1,9 +1,14 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../BaseSetting"
 
 ColumnLayout{
+    id: root
+    required property var apiClient
+    required property var settings
+    required property var style
+    required property var coreController
+
     spacing: 16
     Layout.margins: 20
     
@@ -24,9 +29,14 @@ ColumnLayout{
                     font.bold: true
                 }
                 Label{
-                    text: core.developer_mode ? "TestData/125143" : (app.coreSetting.useSharedFolder ? "\\\\" + app.api.apiConfig.hostname + "/" + app.coreSetting.sharedFolderBaseName : "数据库")
+                    text: root.coreController.developer_mode
+                          ? "TestData/125143"
+                          : (root.settings.useSharedFolder
+                             ? "\\\\" + root.apiClient.apiConfig.hostname + "/"
+                               + root.settings.sharedFolderBaseName
+                             : qsTr("数据库"))
                     font.pixelSize: 13
-                    color: coreStyle.labelColor
+                    color: root.style.secondaryTextColor
                 }
             }
             
@@ -39,9 +49,11 @@ ColumnLayout{
                     font.bold: true
                 }
                 Label{
-                    text: core.developer_mode ? "TestData (测试数据)" : (app.coreSetting.useSharedFolder ? "共享文件夹" : "本地数据库")
+                    text: root.coreController.developer_mode
+                          ? qsTr("TestData（测试数据）")
+                          : (root.settings.useSharedFolder ? qsTr("共享文件夹") : qsTr("本地数据库"))
                     font.pixelSize: 13
-                    color: coreStyle.labelColor
+                    color: root.style.secondaryTextColor
                 }
             }
             
@@ -56,11 +68,12 @@ ColumnLayout{
                 Rectangle{
                     width: 80
                     height: 24
-                    color: core.developer_mode ? "#FF6B6B" : "#51CF66"
+                    color: root.coreController.developer_mode
+                           ? root.style.statusWarningColor : root.style.statusSuccessColor
                     radius: 4
                     Label{
                         anchors.centerIn: parent
-                        text: core.developer_mode ? qsTr("测试模式") : qsTr("生产模式")
+                        text: root.coreController.developer_mode ? qsTr("测试模式") : qsTr("生产模式")
                         font.pixelSize: 12
                         color: "white"
                     }
@@ -76,24 +89,9 @@ ColumnLayout{
                     font.bold: true
                 }
                 Label{
-                    text: app.api.apiConfig.hostname
+                    text: root.apiClient.apiConfig.hostname
                     font.pixelSize: 13
-                    color: coreStyle.labelColor
-                }
-            }
-            
-            // 数据库状态
-            RowLayout{
-                spacing: 8
-                Label{
-                    text: qsTr("数据库：")
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-                Label{
-                    text: "Offline"
-                    font.pixelSize: 13
-                    color: coreStyle.labelColor
+                    color: root.style.secondaryTextColor
                 }
             }
         }
@@ -107,46 +105,19 @@ ColumnLayout{
             anchors.fill: parent
             spacing: 8
             
-            // 配置文件路径
+            // 图像服务实现
             RowLayout{
                 spacing: 8
                 Label{
-                    text: qsTr("配置目录：")
+                    text: qsTr("图像服务：")
                     font.pixelSize: 14
                     font.bold: true
                 }
                 Label{
-                    text: "D:\\CONFIG_3D"
+                    text: root.settings.useRustTestServer ? qsTr("Rust 测试服务") : qsTr("Python 服务")
                     font.pixelSize: 13
-                    color: coreStyle.labelColor
+                    color: root.style.secondaryTextColor
                 }
-            }
-            
-            // API端口
-            RowLayout{
-                spacing: 8
-                Label{
-                    text: qsTr("API端口：")
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-                Label{
-                    text: app.coreSetting.useRustTestServer ? qsTr("Rust 测试") : qsTr("Python")
-                    font.pixelSize: 13
-                    color: coreStyle.labelColor
-                }
-            }
-        }
-    }
-    
-    // 刷新按钮
-    RowLayout{
-        Layout.alignment: Qt.AlignRight
-        Button{
-            text: qsTr("刷新信息")
-            onClicked: {
-                // 这里可以添加刷新逻辑，重新获取系统信息
-                console.log("刷新系统信息")
             }
         }
     }

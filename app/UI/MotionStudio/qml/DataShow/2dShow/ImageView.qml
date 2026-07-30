@@ -5,6 +5,11 @@ import "../../Base"
 
 Item {
     id: root
+
+    required property var surfaceData
+    required property var dataShowCore
+    required property var style
+
     anchors.fill: parent
 
     function appendQuery(url, query) {
@@ -16,6 +21,7 @@ Item {
 
     BackSvg{
         anchors.fill: parent
+        style: root.style
     }
 
     // ========== 缩略图层（快速显示）==========
@@ -35,10 +41,16 @@ Item {
 
         // 缩略图源：带有 thumbnail=true 参数（仅用于 HTTP URL）
         property string thumbnailBaseUrl: {
-            if (!surfaceData.source || !surfaceData.hasViewData(surfaceData.currentViewKey)) return ""
+            if (!root.surfaceData.source
+                    || !root.surfaceData.hasViewData(
+                        root.surfaceData.currentViewKey)) {
+                return ""
+            }
             // 只有 HTTP/HTTPS URL 才添加 thumbnail 参数
-            if (surfaceData.source.startsWith("http://") || surfaceData.source.startsWith("https://")) {
-                return root.appendQuery(surfaceData.source, "thumbnail=true")
+            if (root.surfaceData.source.startsWith("http://")
+                    || root.surfaceData.source.startsWith("https://")) {
+                return root.appendQuery(root.surfaceData.source,
+                                        "thumbnail=true")
             }
             return ""  // file:// 不使用缩略图，直接加载原图
         }
@@ -53,17 +65,18 @@ Item {
         anchors.fill: parent
         fillMode: Image.PreserveAspectFit
         asynchronous: true
-        source: surfaceData.hasViewData(surfaceData.currentViewKey) ? surfaceData.source : ""
+        source: root.surfaceData.hasViewData(root.surfaceData.currentViewKey)
+                ? root.surfaceData.source : ""
 
         onStatusChanged: {
             if (status === Image.Ready) {
-                dataShowCore.sourceWidth = sourceSize.width
-                dataShowCore.sourceHeight = sourceSize.height
+                root.dataShowCore.sourceWidth = sourceSize.width
+                root.dataShowCore.sourceHeight = sourceSize.height
             }
         }
 
         Component.onCompleted: {
-            dataShowCore.imageItem = this
+            root.dataShowCore.imageItem = fullImage
         }
     }
 
@@ -71,9 +84,9 @@ Item {
     GammaAdjust {
         anchors.fill: fullImage
         source: fullImage
-        gamma: dataShowCore.adjustConfig.image_gamma
+        gamma: root.dataShowCore.adjustConfig.image_gamma
         enabled: visible
-        visible: dataShowCore.adjustConfig.image_gamma_enable
+        visible: root.dataShowCore.adjustConfig.image_gamma_enable
     }
 
     // ========== 错误叠加层 ==========
@@ -83,10 +96,10 @@ Item {
         anchors.fill: parent
         fillMode: Image.PreserveAspectFit
         asynchronous: true
-        source: surfaceData.error_source
-        visible: surfaceData.error_visible
+        source: root.surfaceData.error_source
+        visible: root.surfaceData.error_visible
         enabled: visible
-        opacity: surfaceData.tower_warning_show_opacity/100
+        opacity: root.surfaceData.tower_warning_show_opacity / 100
     }
 
     BusyIndicator {
@@ -102,20 +115,20 @@ Item {
         visible: fullImage.status === Image.Error
         width: imageErrorLabel.implicitWidth + 28
         height: imageErrorLabel.implicitHeight + 16
-        radius: coreStyle.controlRadius
-        color: coreStyle.panelElevatedColor
+        radius: root.style.controlRadius
+        color: root.style.panelElevatedColor
         border.width: 1
-        border.color: coreStyle.statusErrorColor
+        border.color: root.style.statusErrorColor
 
         Label {
             id: imageErrorLabel
             anchors.centerIn: parent
             text: qsTr("图像加载失败")
-            color: coreStyle.statusErrorColor
+            color: root.style.statusErrorColor
         }
     }
 
     Component.onCompleted: {
-        dataShowCore.image_show = image_show
+        root.dataShowCore.image_show = image_show
     }
 }

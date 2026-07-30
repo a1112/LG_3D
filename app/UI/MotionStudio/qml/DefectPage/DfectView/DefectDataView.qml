@@ -9,6 +9,8 @@ Item {
     required property var defectModel
     required property var style
     required property var menuController
+    required property var globalContext
+    required property var apiClient
 
     clip: true
 
@@ -33,6 +35,8 @@ Item {
             height: GridView.view.cellHeight
             style: root.style
             menuController: root.menuController
+            globalContext: root.globalContext
+            apiClient: root.apiClient
         }
     }
 }

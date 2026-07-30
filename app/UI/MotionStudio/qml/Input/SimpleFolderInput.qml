@@ -5,7 +5,11 @@ import QtQuick.Layouts
 import "../Labels"
 import "../Pages/Header"
 RowLayout {
-    id:root
+    id: root
+
+    required property var style
+    required property var toolService
+
     property alias value :value_id.text
     property alias placeholderText:value_id.placeholderText
     property string text: ""
@@ -15,7 +19,7 @@ RowLayout {
     FolderDialog{
         id:folderDialog
         onAccepted:{
-            value_id.text=tool.url_to_str(selectedFile)
+            value_id.text = root.toolService.url_to_str(folderDialog.selectedFolder)
         }
     }
 
@@ -27,6 +31,7 @@ RowLayout {
         Layout.fillWidth:true
     }
     CheckRec{
+        style: root.style
         fillWidth: true
         text:root.select_text
         onClicked:{

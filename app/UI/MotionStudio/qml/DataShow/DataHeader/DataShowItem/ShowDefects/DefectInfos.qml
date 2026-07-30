@@ -27,13 +27,6 @@ Item{
             Label{
                 text: root.defect.defect_name
                 font.pointSize: 20
-                MouseArea{
-                    anchors.fill:parent
-                    acceptedButtons:Qt.RightButton
-                    onClicked:{
-                        defectMenu.popup()
-                    }
-                }
             }
 
         }
@@ -74,15 +67,6 @@ Item{
                 }
             }
         }
-    }
-
-    HoverHandler{
-        id : hovrHanller
-    }
-    DefectSelectMenu{
-        id : defectMenu
-        defect: root.defect
-        defectClassController: root.defectClassController
     }
 
 }

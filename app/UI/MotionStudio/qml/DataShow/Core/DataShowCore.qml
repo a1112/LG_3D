@@ -3,15 +3,25 @@ import "../../Model"
 import "_base_"
 DataShowCore_ {
     // OBJ
-    id:root
+    id: root
 
-    property DataShowControl controls:  DataShowControl{
+    required property var style
+    required property var imageCacheService
+
+    property DataShowControl controls: DataShowControl {
+        controller: root
         hoverPoint:root.hoverPoint
     }
     property DataShowControl3D controls3D:  DataShowControl3D{
     }
     property DataShowAreaCore dataShowAreaCore: DataShowAreaCore{
         surfaceData: root.surfaceData
+        apiClient: root.apiClient
+        modelStore: root.modelStore
+        globalContext: root.globalContext
+        settings: root.settings
+        imageCacheService: root.imageCacheService
+        defectController: root
     }
 
     function flush(){
@@ -28,7 +38,7 @@ DataShowCore_ {
         interval: 1200  // 确保图像加载完成后再加载缺陷（增加延迟）
         onTriggered: {
             // 第三阶段：加载缺陷数据和缺陷图像
-            flushDefect()
+            root.flushDefect()
         }
     }
       // 图标的显示方式
@@ -218,7 +228,8 @@ DataShowCore_ {
         let requestX = hoverdX
         let requestY = hoverdY
         hoverZRequestRunning = true
-        hoverZRequest = api.get_zValueData(surfaceData.key,surfaceData.coilId,
+        hoverZRequest = root.apiClient.get_zValueData(
+                           root.surfaceData.key, root.surfaceData.coilId,
                            requestX,
                            requestY,
                            (result)=>{
@@ -240,18 +251,18 @@ DataShowCore_ {
         id: hoverZRequestTimer
         interval: 100
         repeat: false
-        onTriggered: get_zValue()
+        onTriggered: root.get_zValue()
     }
 
     Connections {
-        target: surfaceData
+        target: root.surfaceData
         function onCoilIdChanged() {
-            hoverZRequestId += 1
-            hoverZPending = false
-            hoverZRequestRunning = false
-            if (hoverZRequest) {
-                hoverZRequest.abort()
-                hoverZRequest = null
+            root.hoverZRequestId += 1
+            root.hoverZPending = false
+            root.hoverZRequestRunning = false
+            if (root.hoverZRequest) {
+                root.hoverZRequest.abort()
+                root.hoverZRequest = null
             }
         }
     }
@@ -289,8 +300,8 @@ DataShowCore_ {
         running: false
         repeat: false
         onTriggered: {
-            if (surfaceData.error_auto)
-                errorDrawer()
+            if (root.surfaceData.error_auto)
+                root.errorDrawer()
         }
     }
     property var triggerErrorDrawer: surfaceData.coilId+surfaceData.scan3dScaleZ+medianZValue+tower_warning_threshold_downValue+tower_warning_threshold_upValue
@@ -306,7 +317,7 @@ DataShowCore_ {
     // ========== 新增：图像类型状态 ==========
     property string currentImageType: "none"  // "gray", "jet", "none"
     property string imageTypeText: "未加载"
-    property color imageTypeColor: coreStyle.statusInactiveColor
+    property color imageTypeColor: root.style.statusInactiveColor
 
     readonly property real medianZValue:surfaceData.medianZInt // #parseInt(Math.abs(medianZ/surfaceData.scan3dScaleZ))
     readonly property real medianZ: surfaceData.medianZ
@@ -326,27 +337,27 @@ DataShowCore_ {
             return
         }
         // 检查是否启用 1024 缓冲模式
-        if (coreSetting.enable1024CacheMode) {
+        if (root.settings.enable1024CacheMode) {
             // 启用时：第一阶段加载 GRAY 缓存图（快速显示）
-            surfaceData.source = api.geRenderDrawerSource(
-                surfaceData.key,
-                surfaceData.coilId,
-                renderScale.toFixed(2),
-                parseInt(medianZValue-rangeZValue),
-                parseInt(medianZValue+rangeZValue),
+            root.surfaceData.source = root.apiClient.geRenderDrawerSource(
+                root.surfaceData.key,
+                root.surfaceData.coilId,
+                root.renderScale.toFixed(2),
+                parseInt(root.medianZValue - root.rangeZValue),
+                parseInt(root.medianZValue + root.rangeZValue),
                 true,  // mask
                 true   // grayscale - GRAY 模式，使用 GRAY 缓存
             )
             surfaceData.currentViewKey = "GRAY"
             currentImageType = "gray"
             imageTypeText = "灰度预览"
-            imageTypeColor = coreStyle.statusInactiveColor
+            imageTypeColor = root.style.statusInactiveColor
 
             // 第二阶段：延迟加载 JET 图像（更高质量）
             renderTimer.restart()
         } else {
             // 禁用时：直接加载 JET 图像，跳过灰度预览
-            surfaceData.source = api.geRenderDrawerSource(
+            root.surfaceData.source = root.apiClient.geRenderDrawerSource(
                 surfaceData.key,
                 surfaceData.coilId,
                 renderScale.toFixed(2),
@@ -358,7 +369,7 @@ DataShowCore_ {
             surfaceData.currentViewKey = "JET"
             currentImageType = "jet"
             imageTypeText = "彩色显示"
-            imageTypeColor = coreStyle.statusSuccessColor
+            imageTypeColor = root.style.statusSuccessColor
         }
     }
 
@@ -366,22 +377,23 @@ DataShowCore_ {
         id: renderTimer
         interval: 500  // 500ms 后切换到 JET 图像
         onTriggered: {
-            if (!surfaceData.coilInfoReady || surfaceData.coilId <= 0) {
+            if (!root.surfaceData.coilInfoReady
+                    || root.surfaceData.coilId <= 0) {
                 return
             }
-            surfaceData.source = api.geRenderDrawerSource(
-                surfaceData.key,
-                surfaceData.coilId,
-                renderScale.toFixed(2),
-                parseInt(medianZValue-rangeZValue),
-                parseInt(medianZValue+rangeZValue),
+            root.surfaceData.source = root.apiClient.geRenderDrawerSource(
+                root.surfaceData.key,
+                root.surfaceData.coilId,
+                root.renderScale.toFixed(2),
+                parseInt(root.medianZValue - root.rangeZValue),
+                parseInt(root.medianZValue + root.rangeZValue),
                 true,  // mask
                 false  // grayscale - JET 模式，使用 JET 缓存
             )
-            surfaceData.currentViewKey = "JET"
-            currentImageType = "jet"
-            imageTypeText = "彩色显示"
-            imageTypeColor = coreStyle.statusSuccessColor
+            root.surfaceData.currentViewKey = "JET"
+            root.currentImageType = "jet"
+            root.imageTypeText = "彩色显示"
+            root.imageTypeColor = root.style.statusSuccessColor
         }
     }
     property int tower_warning_threshold_upValue: surfaceData.tower_warning_threshold_up/surfaceData.scan3dScaleZ
@@ -389,11 +401,11 @@ DataShowCore_ {
     function errorDrawer()
     {
         // 检查设置中的叠加图层开关
-        if (!coreSetting.showErrorOverlay) {
+        if (!root.settings.showErrorOverlay) {
             surfaceData.error_visible=false
             return
         }
-        surfaceData.error_source = api.geErrorDrawerSource(surfaceData.key,
+        surfaceData.error_source = root.apiClient.geErrorDrawerSource(surfaceData.key,
                                                            surfaceData.coilId,
                                                            1,
                                                            surfaceData.tower_warning_threshold_down  // mm 值：蓝色阈值
@@ -417,24 +429,25 @@ DataShowCore_ {
         id: pendingDefectTimer
         interval: 500
         onTriggered: {
-            if (coreModel.pendingDefect && flick && !surfaceData.isAreaRootView) {
-                let pending = coreModel.pendingDefect
+            if (root.modelStore.pendingDefect && root.flick
+                    && !root.surfaceData.isAreaRootView) {
+                let pending = root.modelStore.pendingDefect
                 let currentCoilId = currentCoilModel ? currentCoilModel.coilId : surfaceData.coilId
                 let targetView = pending.viewMode || "2D"
                 if (targetView !== "AREA"
                         && pending.surface === surfaceData.key
                         && Number(pending.coilId) === Number(currentCoilId)
                         && setDefectShowView(pending)) {
-                    coreModel.pendingDefect = null
+                    root.modelStore.pendingDefect = null
                 }
             }
         }
     }
 
     Connections {
-        target: coreModel
+        target: root.modelStore
         function onPendingDefectChanged() {
-            if (coreModel.pendingDefect) {
+            if (root.modelStore.pendingDefect) {
                 pendingDefectTimer.restart()
             }
         }
@@ -461,8 +474,9 @@ DataShowCore_ {
         interval: 100
         onTriggered: {
             // 如果 coilId 已设置但图像未加载，触发加载
-            if (surfaceData.coilId > 0 && surfaceData.source === "") {
-                flush()
+            if (root.surfaceData.coilId > 0
+                    && root.surfaceData.source === "") {
+                root.flush()
             }
         }
     }

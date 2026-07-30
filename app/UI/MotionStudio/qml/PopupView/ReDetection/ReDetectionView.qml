@@ -7,16 +7,21 @@ import "../../Input"
 import "../../Labels"
 import "../../Pages/Header"
 
-Menu{
+Menu {
+    id: root
+
+    required property var modelStore
+    required property var apiClient
+    required property var style
 
     property ReDetectionStatus reDetectionStatus: ReDetectionStatus{}
     // 是否在打开时根据当前列表自动填充起止流水号
     property bool useAutoRange: true
     property string outputUrl: ""
+    property bool connected: false
     dim:true
 
     x:parent.width
-    id:root
     width: 590
     height: col.height+60
 
@@ -28,7 +33,7 @@ Menu{
 
     onOpened:{
         if (useAutoRange){
-            let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+            let mmList = root.modelStore.getCurrentCoilListModelMinMaxId()
             from_id.value=mmList[0]
             to_id.value=mmList[1]
         }
@@ -104,6 +109,7 @@ Menu{
 
         }
         CheckRecButton{
+            style: root.style
             Layout.alignment: Qt.AlignVCenter
             text: "识别"
             // enabled: root.reDetectionStatus.canChange
@@ -120,7 +126,7 @@ Menu{
     WebSocket{
         id:ws_id
         url:{
-            return api.getWsReDetectionUrl()
+            return root.apiClient.getWsReDetectionUrl()
         }
         onTextMessageReceived:(message)=>{
                                   try{

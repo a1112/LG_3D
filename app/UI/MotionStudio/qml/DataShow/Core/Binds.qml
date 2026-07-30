@@ -1,17 +1,17 @@
 import QtQuick
 import "../../Core/Surface"
-/*
-
-
-*/
-//绑定切换工具
 
 Item {
-    property SurfaceData surfaceData
-    property AdjustConfig adjustConfig:AdjustConfig{}       // 调节功能
-    property TopDataManage topDataManage:TopDataManage{}    // 数据显示切换
+    id: root
 
-    property DefectManage defectManage: DefectManage{}      // 缺陷显示管理功能
+    required property SurfaceData surfaceData
+    required property var settings
 
+    property AdjustConfig adjustConfig: AdjustConfig {
+        surfaceData: root.surfaceData
+    }
+    property TopDataManage topDataManage: TopDataManage {
+        settings: root.settings
+    }
+    property DefectManage defectManage: DefectManage {}
 }
-

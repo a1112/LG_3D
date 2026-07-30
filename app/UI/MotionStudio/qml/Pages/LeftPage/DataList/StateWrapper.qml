@@ -3,6 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import "../../../animation"
 Row {
+    id: root
+    required property var summary
     // property CoilState c_state
     spacing:1
 
@@ -21,10 +23,10 @@ Row {
         width:20
     AnimErrorImage{
         running:false
-        visible:listItemCoil.grad>1
+        visible: root.summary.grad > 1
         width: parent.width
         height: parent.height
-                    source:listItemCoil.level2Source(listItemCoil.grad)
+                    source: root.summary.level2Source(root.summary.grad)
     }
     }
     // Repeater{

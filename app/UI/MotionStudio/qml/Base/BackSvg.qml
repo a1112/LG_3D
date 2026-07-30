@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 Item{
+id: root
+required property var style
 Canvas {
         id: gridCanvas
         anchors.fill: parent
@@ -11,7 +13,8 @@ Canvas {
             var cellSize = 15;
             for (var x = 0; x < width; x += cellSize) {
                 for (var y = 0; y < height; y += cellSize) {
-                    ctx.fillStyle = ((x / cellSize + y / cellSize) % 2 === 0) ?"rgba(255, 255, 255, 0)" : coreStyle.backC;
+                    ctx.fillStyle = ((x / cellSize + y / cellSize) % 2 === 0)
+                            ? "rgba(255, 255, 255, 0)" : root.style.backC;
                     ctx.fillRect(x, y, cellSize, cellSize);
                 }
             }

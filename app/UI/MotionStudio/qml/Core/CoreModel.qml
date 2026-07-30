@@ -4,17 +4,17 @@ import "_base_"
 import "Surface"
 import "JsonUtils.js" as JsonUtils
 CoreModel_ {
-    id: root
+    id: modelRoot
 
     property CoreGlobalError coreGlobalError: CoreGlobalError {
-        model: root
+        model: modelRoot
     }
 
     property int maxCoilListModelLen: 300
 
     property int currentCoilListIndex: 0
     onCurrentCoilListIndexChanged:{
-        core.flushListItem()
+        modelRoot.coreController.flushListItem()
     }
 
 
@@ -81,12 +81,24 @@ CoreModel_ {
 
 
     property SurfaceData surfaceL: SurfaceData{
-        currentCoilModel: core.currentCoilModel
+        modelStore: modelRoot
+        apiClient: modelRoot.apiClient
+        settings: modelRoot.settings
+        coreController: modelRoot.coreController
+        imageCacheService: modelRoot.imageCacheService
+        scriptLauncher: modelRoot.scriptLauncher
+        currentCoilModel: modelRoot.coreController.currentCoilModel
         key:"L"
     }
 
     property SurfaceData surfaceS: SurfaceData{
-        currentCoilModel: core.currentCoilModel
+        modelStore: modelRoot
+        apiClient: modelRoot.apiClient
+        settings: modelRoot.settings
+        coreController: modelRoot.coreController
+        imageCacheService: modelRoot.imageCacheService
+        scriptLauncher: modelRoot.scriptLauncher
+        currentCoilModel: modelRoot.coreController.currentCoilModel
         key:"S"
     }
 
@@ -126,7 +138,7 @@ CoreModel_ {
 
     function updateData(upData){
         // 如果正在加载初始数据，跳过更新（防止竞态条件）
-        if (app && app.init && app.init.isListLoading) {
+        if (modelRoot.initController.isListLoading) {
             console.log("List is loading, skipping updateData")
             return
         }
@@ -174,7 +186,7 @@ CoreModel_ {
         }
 
         if (keepLatest && realCoilListModel.count > 0){
-            core.setCoilIndex(0)
+            modelRoot.coreController.setCoilIndex(0)
         }
     }
 
@@ -188,11 +200,11 @@ CoreModel_ {
             historyCoilListModel.insert(0,data[i])
         }
         // core.setCoilIndex(1)
-        core.setCoilIndex(0)
+        modelRoot.coreController.setCoilIndex(0)
     }
 
     function searchByCoilNo(coilNo){
-        api.searchByCoilNo(coilNo,
+        modelRoot.apiClient.searchByCoilNo(coilNo,
                            (result)=>{
                                 setSearch(JsonUtils.parse(result, [], "search by coil number"))
                            },
@@ -200,7 +212,7 @@ CoreModel_ {
                            )
     }
     function searchByCoilId(coilId){
-        api.searchByCoilId(coilId,
+        modelRoot.apiClient.searchByCoilId(coilId,
                            (result)=>{
                                setSearch(JsonUtils.parse(result, [], "search by coil id"))
 
@@ -211,7 +223,7 @@ CoreModel_ {
     }
 
     function searchByCoilDateTime(start,end){
-        api.searchByTime(start,end,
+        modelRoot.apiClient.searchByTime(start,end,
                            (result)=>{
                                      // console.log(result)
                                      setSearch(JsonUtils.parse(result, [], "search by time"))

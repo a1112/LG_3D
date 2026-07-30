@@ -4,12 +4,16 @@ import QtQuick.Layouts
 import QtQuick.Controls.Material
 
 Item {
+    id: root
+
+    required property var style
+
     Layout.fillWidth: true
     implicitHeight: 25
     // anchors.verticalCenter: parent.verticalCenter
     Rectangle{
         anchors.fill: parent
-        color: coreStyle.headerBackgroundColor
+        color: root.style.headerBackgroundColor
     }
     RowLayout{
         anchors.fill: parent

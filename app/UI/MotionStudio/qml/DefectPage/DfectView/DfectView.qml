@@ -13,6 +13,7 @@ RowLayout {
     required property var appController
     required property var apiClient
     required property var coreController
+    required property var globalContext
 
     CardBaseView {
         Layout.fillWidth: true
@@ -24,5 +25,6 @@ RowLayout {
         appController: root.appController
         apiClient: root.apiClient
         coreController: root.coreController
+        globalContext: root.globalContext
     }
 }

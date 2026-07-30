@@ -1,17 +1,22 @@
 import QtQuick
 import "../"
 import "../../../Core/Surface"
-import "../../../DataShow/2dShow/ViewTool"
 import "../../../Core/JsonUtils.js" as JsonUtils
 Item {
     id: root
 
-    property SurfaceData surfaceData
+    required property SurfaceData surfaceData
+    required property var apiClient
+    required property var modelStore
+    required property var globalContext
+    required property var toolService
+    required property var settings
 
     property Image image_show
 
     property Binds binds :Binds{
         surfaceData: root.surfaceData
+        settings: root.settings
     }
     //      alias objcet
     readonly property AdjustConfig adjustConfig:binds.adjustConfig
@@ -86,8 +91,10 @@ Item {
     property int un_show_num:0
 
     function defect_show(defectName){
-        let sharedName = global.defectClassProperty.shared_defect_name(defectName)
-        return global.defectClassProperty.defectDictAll[sharedName]??false
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(
+                    defectName)
+        return root.globalContext.defectClassProperty.defectDictAll[sharedName]
+                ?? false
     }
 
     function appendDefect(item){
@@ -95,10 +102,12 @@ Item {
 
     }
     function set_show_state(){ // 设置显示状态
-        return tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
+        return root.toolService.for_list_model(
+                    root.globalContext.defectClassProperty.defectDictModel,
+                    (item)=>{
                                        let name = item.name
-                                       if (!(item["name"] in coreModel.defectDictAll)){
-                                           coreModel.defectDictAll[item["name"]]=item["show"]
+                                       if (!(item["name"] in root.globalContext.defectClassProperty.defectDictAll)){
+                                           root.globalContext.defectClassProperty.defectDictAll[item["name"]]=item["show"]
                                        }
 
                                        // 过滤掉 null 值
@@ -175,7 +184,8 @@ Item {
 
     function flushDefect(){//刷新
         defectClear()
-        api.getDefects(surfaceData.coilId,surfaceData.key,
+        root.apiClient.getDefects(root.surfaceData.coilId,
+                       root.surfaceData.key,
                        (result)=>{
                            defectsData = JsonUtils.parse(result, [], "surface defects")
                        },

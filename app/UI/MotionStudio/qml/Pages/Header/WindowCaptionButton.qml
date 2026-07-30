@@ -5,18 +5,22 @@ import QtQuick.Layouts
 AbstractButton {
     id: root
 
+    required property var style
+
     property string buttonType: "minimize"
     property string tipText: ""
-    property color iconColor: coreStyle.labelColor
-    property color hoverColor: buttonType === "close" ? "#C42B1C" : coreStyle.buttonHoverColor
-    property color pressedColor: buttonType === "close" ? "#A4261D" : coreStyle.selectionColor
+    property color iconColor: root.style.labelColor
+    property color hoverColor: buttonType === "close" ? "#C42B1C"
+                                                       : root.style.buttonHoverColor
+    property color pressedColor: buttonType === "close" ? "#A4261D"
+                                                         : root.style.selectionColor
 
-    width: coreStyle.windowButtonWidth
-    height: coreStyle.topHeight
-    implicitWidth: coreStyle.windowButtonWidth
-    implicitHeight: coreStyle.topHeight
-    Layout.preferredWidth: coreStyle.windowButtonWidth
-    Layout.preferredHeight: coreStyle.topHeight
+    width: root.style.windowButtonWidth
+    height: root.style.topHeight
+    implicitWidth: root.style.windowButtonWidth
+    implicitHeight: root.style.topHeight
+    Layout.preferredWidth: root.style.windowButtonWidth
+    Layout.preferredHeight: root.style.topHeight
     Layout.fillHeight: false
     padding: 0
     spacing: 0
@@ -27,7 +31,9 @@ AbstractButton {
 
     background: Rectangle {
         anchors.fill: parent
-        color: root.pressed ? root.pressedColor : (root.hovered ? root.hoverColor : coreStyle.headerBackgroundColor)
+        color: root.pressed ? root.pressedColor
+                            : (root.hovered ? root.hoverColor
+                                            : root.style.headerBackgroundColor)
         radius: 0
         border.width: 0
     }
@@ -83,7 +89,7 @@ AbstractButton {
                 function onButtonTypeChanged() { iconCanvas.requestPaint() }
             }
             Connections {
-                target: coreStyle
+                target: root.style
                 function onLabelColorChanged() { iconCanvas.requestPaint() }
                 function onHeaderBackgroundColorChanged() { iconCanvas.requestPaint() }
             }

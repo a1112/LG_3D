@@ -1,17 +1,20 @@
 import QtQuick
 import QtQuick.Controls
 Item {
-    id:root
-    width: 100
-    height: width/dataShowCore_.aspectRatio
+    id: root
 
-    property real zoom: width/dataShowCore_.aspectRatio
+    required property var controller
+    required property var style
+
+    width: 100
+    height: root.controller.aspectRatio > 0
+            ? width / root.controller.aspectRatio : width
 
     property real opacity_image: 0.4
     property alias source: image.source
     Rectangle {
         anchors.fill: parent
-        color: "#23000000"
+        color: root.style.infoOverlayColor
     }
 
 
@@ -27,12 +30,12 @@ Item {
     }
     Rectangle{
         id:rec
-    x:dataShowCore_.canvasContentXaspectRatio*parent.width
-    y:dataShowCore_.canvasContentYaspectRatio*parent.height
-     width: image.sourceSize.width* dataShowCore_.canvasWidthAspectRatio
-     height: image.sourceSize.height* dataShowCore_.canvasHeightAspectRatio
-     color:"#00000000"
-     border.color: "blue"
+    x: root.controller.canvasContentXaspectRatio * parent.width
+    y: root.controller.canvasContentYaspectRatio * parent.height
+     width: image.sourceSize.width * root.controller.canvasWidthAspectRatio
+     height: image.sourceSize.height * root.controller.canvasHeightAspectRatio
+     color: "transparent"
+     border.color: root.style.selectionColor
      border.width: 1
     }
 
@@ -41,7 +44,7 @@ Item {
             if(hovered){
                 image.opacity = 1
             }else{
-                image.opacity = opacity_image
+                image.opacity = root.opacity_image
             }
         }
 
@@ -51,23 +54,38 @@ Item {
             cursorShape: Qt.PointingHandCursor
 
             onPressed: {
-                let contentX=(mouseX-rec.height/2)/parent.width * dataShowCore_.canvasContentWidth
-                let contentY=(mouseY-rec.height/2)/parent.height * dataShowCore_.canvasContentHeight
-                dataShowCore_.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore_.canvasContentWidth-dataShowCore_.canvasWidth)
-                dataShowCore_.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore_.canvasContentHeight-dataShowCore_.canvasHeight)
+                root.moveViewport(mouseX, mouseY)
                 // dataShowCore.canvasWidth=rec.width/parent.width * dataShowCore.canvasContentWidth
                 // dataShowCore.canvasHeight=rec.height/parent.height * dataShowCore.canvasContentHeight
             }
 
             onPositionChanged: {
-                let contentX=(mouseX-rec.height/2)/parent.width * dataShowCore.canvasContentWidth
-                let contentY=(mouseY-rec.height/2)/parent.height * dataShowCore.canvasContentHeight
-                dataShowCore_.flick.contentX = Math.min(Math.max(0,contentX),dataShowCore_.canvasContentWidth-dataShowCore_.canvasWidth)
-                dataShowCore_.flick.contentY = Math.min(Math.max(0,contentY),dataShowCore_.canvasContentHeight-dataShowCore_.canvasHeight)
+                root.moveViewport(mouseX, mouseY)
                 // dataShowCore.canvasWidth=rec.width/parent.width * dataShowCore.canvasContentWidth
                 // dataShowCore.canvasHeight=rec.height/parent.height * dataShowCore.canvasContentHeight
             }
         }
 
+    function moveViewport(mouseX, mouseY) {
+        if (!root.controller.flick || width <= 0 || height <= 0) {
+            return
+        }
+        const contentX = (mouseX - rec.width / 2) / width
+                         * root.controller.canvasContentWidth
+        const contentY = (mouseY - rec.height / 2) / height
+                         * root.controller.canvasContentHeight
+        const maximumX = Math.max(
+                           0,
+                           root.controller.canvasContentWidth
+                           - root.controller.canvasWidth)
+        const maximumY = Math.max(
+                           0,
+                           root.controller.canvasContentHeight
+                           - root.controller.canvasHeight)
+        root.controller.flick.contentX = Math.min(
+                    Math.max(0, contentX), maximumX)
+        root.controller.flick.contentY = Math.min(
+                    Math.max(0, contentY), maximumY)
+    }
 
 }

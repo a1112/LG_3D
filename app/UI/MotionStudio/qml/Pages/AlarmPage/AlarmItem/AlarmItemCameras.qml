@@ -7,6 +7,9 @@ Item {
     id: root
 
     required property var watcher
+    required property var style
+    required property var apiClient
+    required property var coreController
     property string globalKey: ""
     property int alarmLevel: 0
     property ListModel cameraModel: ListModel {}
@@ -33,7 +36,7 @@ Item {
         }
     }
 
-    Component.onCompleted: syncStatus(watcher.statusPayload)
+    Component.onCompleted: root.syncStatus(root.watcher.statusPayload)
 
     ColumnLayout {
         anchors.fill: parent
@@ -42,7 +45,7 @@ Item {
             text: qsTr("相机状态")
             font.pointSize: 18
             font.bold: true
-            color: coreStyle.titleColor
+            color: root.style.titleColor
             font.family: "Microsoft YaHei"
             Layout.alignment: Qt.AlignHCenter
         }
@@ -58,7 +61,7 @@ Item {
 
             delegate: AlarmItemCamerasItem {
                 id: cameraDelegate
-                style: coreStyle
+                style: root.style
                 width: cameraGrid.cellWidth
                 height: cameraGrid.cellHeight
 
@@ -80,17 +83,9 @@ Item {
             text: qsTr("打开当前卷相机数据")
             enabled: root.globalKey !== ""
             onTriggered: Qt.openUrlExternally(
-                             api.getCameraDataUrl(core.coilIndex, root.globalKey))
-        }
-
-        MenuItem {
-            text: qsTr("打开原始数据保存路径")
-            enabled: false
-        }
-
-        MenuItem {
-            text: qsTr("重启相机")
-            enabled: false
+                             root.apiClient.getCameraDataUrl(
+                                 root.coreController.coilIndex,
+                                 root.globalKey))
         }
     }
 }

@@ -24,6 +24,7 @@ SplitView{
       required property var popupManager
       required property var coreController
       required property var authManager
+      required property var globalContext
 
       SplitView.preferredWidth: root.adaptiveMetrics.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
@@ -45,6 +46,7 @@ SplitView{
            style: root.style
            leftController: root.leftController
            authManager: root.authManager
+           modelStore: root.modelController
            Layout.fillWidth: true
            SplitView.fillWidth: true
        }
@@ -66,6 +68,7 @@ SplitView{
            leftController: root.leftController
            popupManager: root.popupManager
            apiClient: root.apiClient
+           globalContext: root.globalContext
        }
 
        FootView{

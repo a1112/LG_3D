@@ -1,6 +1,7 @@
 import QtQuick
+import "../../btns" as Buttons
 
-ToolsButton{
+Buttons.ToolsButton{
     id: root
 
     required property var style

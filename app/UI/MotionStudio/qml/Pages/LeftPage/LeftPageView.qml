@@ -5,7 +5,6 @@ import QtQuick.Controls.Material
 import "../../Pages/Card"
 import "../../Pages/AlarmPage"
 import "../../Pages/AlarmPage/AlarmItemSimple"
-import "../../Pages/AlarmPage/AlarmCheckInfo"
 import "DataList"
 import "SearchView"
 import "FliterSelect"
@@ -55,14 +54,6 @@ Item {
         //     SplitView.fillWidth: true
         //     Layout.fillWidth: true
         // }
-        AlarmCheckInfoView{  // 判级
-            width: parent.width
-            style: root.style
-            authManager: root.authManager
-            apiClient: root.apiClient
-            coreController: root.coreController
-            leftController: root.leftController
-        }
         AlarmItemSimple{    // 报警
             width: parent.width
             alarmInfo: root.alarmInfo
@@ -77,6 +68,7 @@ Item {
             style: root.style
             leftController: root.leftController
             authManager: root.authManager
+            modelStore: root.modelStore
             Layout.fillWidth: true
             SplitView.fillWidth: true
         }
@@ -95,6 +87,7 @@ Item {
             leftController: root.leftController
             popupManager: root.popupManager
             apiClient: root.apiClient
+            globalContext: root.globalContext
         }
 
         FootView{

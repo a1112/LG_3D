@@ -51,7 +51,10 @@ Item {
     }
 
     property var fliterDict:{return {}}
-    property var tempCoilModel :  CoilModel{}
+    property CoilModel tempCoilModel: CoilModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
     function flushModel(){
         root.fliterListModel.clear()
         root.toolService.for_list_model(root.modelStore.currentCoilListModel,(item_data)=>{
@@ -171,7 +174,10 @@ Item {
 
     property int hovedIndex:-1
 
-    property  CoilModel hovedCoilModel :CoilModel{}
+    property CoilModel hovedCoilModel: CoilModel {
+        globalContext: root.globalContext
+        apiClient: root.apiClient
+    }
 
     // ========== 悬停详情数据缓存 ==========
     property var detailCache: ({})  // 缓存已获取的详情数据

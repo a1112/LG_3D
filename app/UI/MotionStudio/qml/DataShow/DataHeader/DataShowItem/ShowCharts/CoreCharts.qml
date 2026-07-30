@@ -1,11 +1,16 @@
 import QtQuick 2.15
 
 Item {
+    id: root
+    required property var controller
+    required property var surfaceData
+    required property real drawWidth
+    required property real drawHeight
 
 
     property real tickSizeZ: 12
-    property int tickCountZ: Math.max(1, Math.floor(drawHeight / 20))
-    readonly property real medianZ: dataShowCore.medianZ
+    property int tickCountZ: Math.max(1, Math.floor(root.drawHeight / 20))
+    readonly property real medianZ: root.controller.medianZ
     // onMedianZChanged:{
     //     surfaceData.medianZ = medianZ
     // }
@@ -29,12 +34,12 @@ Item {
     }
 
     function dragTo(x,y){
-        if (!isFinite(drawWidth) || drawWidth <= 0) {
+        if (!isFinite(root.drawWidth) || root.drawWidth <= 0) {
             dragOffsetZ = 0
             return
         }
-        var dx = (x - startDragX)*((safeTickSizeZ * tickCountZ)/drawWidth)
-        var dy = (y - startDragY)*((safeTickSizeZ * tickCountZ)/drawWidth)
+        var dx = (x - startDragX)*((safeTickSizeZ * tickCountZ)/root.drawWidth)
+        var dy = (y - startDragY)*((safeTickSizeZ * tickCountZ)/root.drawWidth)
         dragOffsetZ = dy
     }
     function endDrag(){
@@ -42,7 +47,7 @@ Item {
         dragOffsetZ = 0
     }
 
-    property var lineData: surfaceData.lineData
+    property var lineData: root.surfaceData.lineData
 
     function findZValue(arr, n) {
       let left = 0;
@@ -62,13 +67,14 @@ Item {
 
     function getDistance(x1,y1){
         let i= 1
-        if (x1 < surfaceData.inner_circle_centre[0])
+        if (x1 < root.surfaceData.inner_circle_centre[0])
         {
             i=-1
         }
 
-        return Math.sqrt(Math.pow(x1-surfaceData.inner_circle_centre[0],2)+Math.pow(y1-surfaceData.inner_circle_centre[1],2))
-        *surfaceData.scan3dScaleX*i
+        return Math.sqrt(Math.pow(x1 - root.surfaceData.inner_circle_centre[0], 2)
+                         + Math.pow(y1 - root.surfaceData.inner_circle_centre[1], 2))
+                * root.surfaceData.scan3dScaleX * i
     }
 
     function isFilter(_list,i,n,value){

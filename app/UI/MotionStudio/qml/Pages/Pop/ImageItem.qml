@@ -49,9 +49,13 @@ ItemDelegate {
     Label {
         anchors.centerIn: parent
         text: root.key
+        color: root.style.titleColor
+        font.bold: true
         background: Rectangle {
-            color: "#2f2f2f"
-            radius: 5
+            color: root.style.headerBackgroundColor
+            border.width: 1
+            border.color: root.style.headerBorderColor
+            radius: root.style.controlRadius
         }
     }
 }
