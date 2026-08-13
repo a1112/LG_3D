@@ -10,7 +10,6 @@ let componentSource = ''
 let cssSource = ''
 
 beforeAll(async () => {
-  // @ts-expect-error Vitest runs this source check in Node; app builds intentionally omit Node typings.
   const { existsSync, readFileSync } = (await import('node:fs')) as {
     existsSync: (path: string) => boolean
     readFileSync: (path: string, encoding: 'utf8') => string
