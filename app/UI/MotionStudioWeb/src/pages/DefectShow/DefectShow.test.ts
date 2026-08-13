@@ -7,7 +7,6 @@ let defectExportDialogQml = ''
 let manualDefectEditDialogQml = ''
 
 beforeAll(async () => {
-  // @ts-expect-error Vitest runs this source check in Node; app builds intentionally omit Node typings.
   const { readFileSync } = (await import('node:fs')) as {
     readFileSync: (path: URL, encoding: 'utf8') => string
   }
