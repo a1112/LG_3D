@@ -20,7 +20,8 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
-    server: {
+    preview: { port: 17013, strictPort: true },
+  server: {
       port: 3015,
       strictPort: true,
       host: host || false,
