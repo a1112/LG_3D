@@ -520,8 +520,10 @@ fn launch_maintenance_tool(action: String, host: String) -> Result<String, Strin
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(project_resource_monitor::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            project_resource_monitor::project_resource_snapshot,
             start_drag_window,
             minimize_window,
             toggle_maximize_window,
@@ -749,3 +751,5 @@ mod tests {
         assert!(directory_dialog_directory(None).is_none());
     }
 }
+
+mod project_resource_monitor;
