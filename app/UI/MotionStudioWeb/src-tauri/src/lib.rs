@@ -519,7 +519,7 @@ fn launch_maintenance_tool(action: String, host: String) -> Result<String, Strin
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    tauri::Builder::default().plugin(project_window_chrome::init())
         .plugin(project_resource_monitor::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -753,3 +753,5 @@ mod tests {
 }
 
 mod project_resource_monitor;
+
+mod project_window_chrome;
