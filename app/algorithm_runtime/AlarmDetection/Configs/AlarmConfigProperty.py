@@ -13,16 +13,16 @@ class AlarmConfigProperty(BaseConfigProperty):
         super().__init__(file_path)
 
     def get_alarm_flat_roll_config(self,data_integration):
-        return FlatRollConfig(self.config["FlatRoll"],data_integration)
+        return FlatRollConfig(self.config.get("FlatRoll", {}), data_integration)
 
     def get_taper_shape_config(self,data_integration):
         return TaperShapeConfig(self.config.get("TaperShape", {}),data_integration)
 
     def get_loose_coil_config(self,data_integration):
-        return LooseCoilConfig(self.config["LooseCoil"],data_integration)
+        return LooseCoilConfig(self.config.get("LooseCoil", {}), data_integration)
 
     def get_defect_config(self,data_integration):
-        return DefectConfig(self.config["Defect"],data_integration)
+        return DefectConfig(self.config.get("Defect", {}), data_integration)
 
     def get_info_json(self):
-        pass
+        return self.config

@@ -30,7 +30,15 @@ class SurfaceConfigProperty:
         return str(Path(self.saveFolder)/str(coil_id)/"3D.npz")
 
     def get_mesh_file(self, coil_id):
-        return str(Path(self.saveFolder) / str(coil_id) / "meshes"/"defaultobject_mesh.mesh")
+        output_dir = Path(self.saveFolder) / str(coil_id)
+        optimized_mesh = output_dir / "meshes" / "defaultobject_mesh.mesh"
+        if optimized_mesh.exists():
+            return str(optimized_mesh)
+        # Balsam is an optional post-processing step.  The Open3D writer
+        # produces a valid OBJ before that step, so keep the model usable when
+        # the optimizer is unavailable or times out.
+        fallback_obj = output_dir / "3D.obj"
+        return str(fallback_obj if fallback_obj.exists() else optimized_mesh)
 
     def get_preview_file(self, coil_id, type_):
         preview_dir = Path(self.saveFolder) / str(coil_id) / "preview"

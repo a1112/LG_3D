@@ -13,12 +13,15 @@ Menu {
     required property var modelStore
     required property var apiClient
     required property var style
+    property var dataController: null
+    property var coreController: null
 
     property ReDetectionStatus reDetectionStatus: ReDetectionStatus{}
     // 是否在打开时根据当前列表自动填充起止流水号
     property bool useAutoRange: true
     property string outputUrl: ""
     property bool connected: false
+    property bool refreshSent: false
     dim:true
 
     x:parent.width
@@ -118,6 +121,7 @@ Menu {
                 ws_id.sendTextMessage(
                             JSON.stringify({"from_id":from_id.value,"to_id":to_id.value,"folder":root.outputUrl})
                             )
+                root.refreshSent = false
                 root.reDetectionStatus.strat()
             }
         }
@@ -134,15 +138,20 @@ Menu {
                                       if (data.error){
                                           root.reDetectionStatus.setError(data.error)
                                       }else{
-                                          root.reDetectionStatus.setRunning()
-                                          root.reDetectionStatus.progress = data.progress
-                                          if (!data.running && data.total>0 && data.pending===0){
-                                              root.reDetectionStatus.setFinished()
-                                          }
+                                           root.reDetectionStatus.setRunning()
+                                           root.reDetectionStatus.progress = data.progress
+                                           if (!data.running && data.total>0 && data.pending===0){
+                                               root.reDetectionStatus.setFinished()
+                                               if (!root.refreshSent && root.coreController
+                                                       && root.coreController.refreshAfterRedetection) {
+                                                   root.refreshSent = true
+                                                   root.coreController.refreshAfterRedetection()
+                                               }
+                                           }
                                       }
                                   }catch(e){
                                       console.log("reDetection ws parse error", e, message)
-                                      root.reDetectionStatus.setRunning()
+                                      root.reDetectionStatus.setError("重新识别状态数据无效，请重新连接")
                                   }
                               }
         onErrorStringChanged:(error)=>{

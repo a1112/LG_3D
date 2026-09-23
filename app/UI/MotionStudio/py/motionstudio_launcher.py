@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 import os
 import shutil
 import shlex
@@ -170,6 +171,24 @@ def run(*, base_dir: Path) -> int:
         @Slot(str, result=bool)
         def fileExists(self, path: str) -> bool:
             return self._path_from_url_or_path(path).exists()
+
+        @Slot(str, result=str)
+        def fileRevision(self, path: str) -> str:
+            try:
+                stat = self._path_from_url_or_path(path).stat()
+                return f"{stat.st_mtime_ns}:{stat.st_size}" if stat.st_size > 0 else ""
+            except OSError:
+                return ""
+
+        @Slot(str, result=str)
+        def meshBuildState(self, obj_path: str) -> str:
+            try:
+                status_path = self._path_from_url_or_path(obj_path).with_name("mesh_status.json")
+                status = json.loads(status_path.read_text(encoding="utf-8"))
+                state = status.get("state", "") if isinstance(status, dict) else ""
+                return state if state in {"processing", "ready", "error"} else ""
+            except (OSError, ValueError):
+                return ""
 
         @Slot(result=bool)
         def developerMode(self) -> bool:

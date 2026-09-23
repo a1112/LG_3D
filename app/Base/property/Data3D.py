@@ -203,7 +203,7 @@ class LineData:
         self.mask_image = mask_image
         self.p1 = p1
         self.p2 = p2
-        self.image_threshold = 100
+        self.image_threshold = 0 if np.asarray(mask_image).dtype == np.bool_ else 100
 
     @property
     def points(self):
@@ -282,7 +282,10 @@ class LineData:
 
     @property
     def none_data_sub(self):
-        indices = np.where(self.ray_line_mm[:, 2] < self.zero_mm + 10)[0]
+        # Use the same raw-depth validity rule as ray trimming and taper
+        # detection. A fixed 10 mm threshold changes with camera calibration
+        # and incorrectly classifies valid shallow points as gaps.
+        indices = np.flatnonzero(~valid_line_height_mask(self.ray_line, 10))
         segments = []
         unit_distance_mm = self.unit_distance_mm
         if len(indices) > 0:

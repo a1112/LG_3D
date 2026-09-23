@@ -8,6 +8,7 @@ Item {
     required property var modelStore
 
     property int dataHasRequestId: 0
+    signal redetectionCompleted(int coilId)
 
     function setCoilStatus(ccoil_id,level,msg,success,failure){
         root.apiClient.setCoilStatus(ccoil_id,level,msg,success,failure)
@@ -77,5 +78,21 @@ Item {
                      }
                      )
 
+    }
+
+    // Re-detection rewrites 3D files asynchronously. Drop the per-coil
+    // availability cache and notify surface views so they can reload.
+    function refreshAfterRedetection(){
+        let coilId = Number(root.coreController.currentCoilModel.coilId || 0)
+        if (coilId <= 0) {
+            return
+        }
+        root.modelStore.invalidateHasDataCache(coilId)
+        root.modelStore.has_data = null
+        root.modelStore.hasDataCoilId = coilId
+        root.init_data_has()
+        root.modelStore.surfaceS.setCoilId(coilId)
+        root.modelStore.surfaceL.setCoilId(coilId)
+        root.redetectionCompleted(coilId)
     }
 }

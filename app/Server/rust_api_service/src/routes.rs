@@ -13823,6 +13823,32 @@ struct XlsxWorksheet {
     rows: Vec<Vec<String>>,
 }
 
+fn xlsx_flat_roll_diameter_mm(row: &AlarmFlatRollRow, inner: bool) -> Option<f64> {
+    if inner {
+        let stored = row
+            .data
+            .as_deref()
+            .and_then(|text| serde_json::from_str::<Value>(text).ok())
+            .and_then(|detail| {
+                let value = detail.get("inner_diameter_mm")?;
+                value.as_f64().or_else(|| value.as_str()?.trim().parse::<f64>().ok())
+            });
+        if let Some(diameter) = positive_f64(stored) {
+            return Some(diameter);
+        }
+    }
+
+    // Historical rows store pixel dimensions. A missing calibration retains
+    // the legacy scale; an explicitly invalid calibration must stay invalid.
+    let scale = positive_f64(Some(row.accuracy_x.unwrap_or(XLSX_FLAT_ROLL_PIXEL_SCALE)))?;
+    let pixels = positive_f64(if inner {
+        row.inner_circle_width
+    } else {
+        row.out_circle_width
+    })?;
+    positive_f64(Some(pixels * scale))
+}
+
 fn export_xlsx_alarm_table(
     coils: &[CoilSummaryRow],
     alarm_rows: &XlsxAlarmExportRows,
@@ -13857,15 +13883,11 @@ fn export_xlsx_alarm_values(
         {
             values.push((
                 format!("{surface}端 检测外径"),
-                option_f64_to_string(flat_roll.out_circle_width.map(|value| {
-                    round_mysql_float_for_python_json(value * XLSX_FLAT_ROLL_PIXEL_SCALE)
-                })),
+                option_f64_to_string(xlsx_flat_roll_diameter_mm(flat_roll, false)),
             ));
             values.push((
                 format!("{surface}端 检测内径"),
-                option_f64_to_string(flat_roll.inner_circle_width.map(|value| {
-                    round_mysql_float_for_python_json(value * XLSX_FLAT_ROLL_PIXEL_SCALE)
-                })),
+                option_f64_to_string(xlsx_flat_roll_diameter_mm(flat_roll, true)),
             ));
             if let Some(alarm_info) = alarm_info_by_surface.get(surface) {
                 values.push((
@@ -17587,10 +17609,12 @@ fn has_named_image(surface_dir: &FsPath, name: &str) -> bool {
 }
 
 fn has_python_default_mesh(surface_dir: &FsPath) -> bool {
-    surface_dir
-        .join("meshes")
-        .join("defaultobject_mesh.mesh")
-        .exists()
+    [
+        surface_dir.join("meshes").join("defaultobject_mesh.mesh"),
+        surface_dir.join("3D.obj"),
+    ]
+    .iter()
+    .any(|path| path.exists())
 }
 
 fn find_named_image_file(dir: &FsPath, name: &str) -> Option<PathBuf> {

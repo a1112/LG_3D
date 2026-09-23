@@ -1,0 +1,51 @@
+{
+  "synthetic_only": true,
+  "single_surface_only": true,
+  "balsam_executable": "PySide6/balsam.exe",
+  "balsam_success": true,
+  "elapsed_seconds": 1.9690000000409782,
+  "depth_valid_pixels": 111273,
+  "obj_file": "work/3d_implementation_20260923/synthetic/3D.obj",
+  "obj_bytes": 1528852,
+  "vertices": 12363,
+  "triangles": 23860,
+  "bounds_min_mm": [
+    -129.0,
+    -129.75,
+    -6.218629837036133
+  ],
+  "bounds_max_mm": [
+    129.0,
+    129.0,
+    9.253649711608887
+  ],
+  "dimensions_mm": [
+    258.0,
+    258.75,
+    15.47227954864502
+  ],
+  "normal_positive_z": true,
+  "analytic_height_error_max_mm": 0.06544106664299187,
+  "analytic_height_error_mean_mm": 0.00039178823182520076,
+  "obj_export_error_max_mm": 5.346620582713513e-06,
+  "center_hole_bridge_triangles": 0,
+  "missing_patch_bridge_triangles": 0,
+  "qt_mesh_count": 1,
+  "qt_mesh_files": [
+    {
+      "path": "work/3d_implementation_20260923/synthetic/meshes/defaultobject_mesh.mesh",
+      "bytes": 583308
+    }
+  ],
+  "qt_qml_files": [
+    "work/3d_implementation_20260923/synthetic/Node3D.qml"
+  ],
+  "mesh_status": {
+    "schema_version": 1,
+    "coil_id": "synthetic-annulus",
+    "state": "ready",
+    "obj_file": "3D.obj",
+    "updated_at": "2026-09-23T02:12:31.798182+00:00",
+    "optimizer_success": true
+  }
+}

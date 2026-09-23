@@ -1,75 +1,49 @@
+from collections.abc import Mapping
+
 from .ConfigBase import ConfigBase
 from Base.property.Base import DataIntegration
 
-class  FlatRollConfigItem(ConfigBase):
+class FlatRollConfigItem(ConfigBase):
     def __init__(self, config):
+        if not isinstance(config, Mapping):
+            config = {}
         super().__init__(config)
-        self.name=config["name"]
-        self.filter=config["filter"]
-        self.max=config["max"]
-        self.min=config["min"]
-        self.msg=config["msg"]
+        self.name = config.get("name", "默认判断规则")
+        self.filter = config.get("filter", {})
+        self.max = config.get("max", 780)
+        self.min = config.get("min", 600)
+        self.msg = config.get("msg", config.get("info", ""))
 
     def get_config(self):
-        return self.name,self.max,self.min,self.msg
+        return self.name, self.max, self.min, self.msg
 
 class FlatRollConfig(ConfigBase):
     """
-    垂直松卷 等级判断
+    按去向选择扁卷内径判断规则。
     """
     def __init__(self, config,data_integration:DataIntegration):
-        test = {
-            # "Base": {
-            #     "name": "默认判断规则",
-            #     "max": 780,
-            #     "min": 600,
-            #     "info": "默认判断规则 最大为780，最大最小差别≤50mmm  最小设置为 600 mm"
-            # },
-            # "0": {
-            #     "name": "VAMA",
-            #     "max": 780,
-            #     "min": 705,
-            #     "info": "冷轧去向如有松卷(12点方向两层之间超过6mm认定为松卷)，不计最内圈应大于715mm，包含最内圈需不低于700mm"
-            # },
-            # "2": {
-            #     "name": "冷轧基板",
-            #     "min": 700,
-            #     "max": 780,
-            #     "info": "冷轧去向如有松卷(12点方向两层之间超过6mm认定为松卷)，不计最内圈应大于715mm，包含最内圈需不低于700mm"
-            # }
-            "msg":"松卷检测",
-            "base":{
-                "name":"test",
-                "filter": {
-                    "type": "base"
-                },
-
-                "max": 780,
-                "min": 600,
-                "msg": "不计最内圈应大于780mm，包含最内圈需不低于600mm"
-
-            },
-            "configs":[
-                {
-                    "filter": {
-                        "type": "out_name",
-                        "name": "VAMA"
-                    },
-                    "max": 780,
-                    "min": 705,
-                    "info": "不计最内圈应大于715mm，包含最内圈需不低于700mm"
-                }
-            ]
-        }
-        config = test
+        if not isinstance(config, Mapping):
+            config = {}
         super().__init__(config)
         self.data_integration = data_integration
 
-        # self.name = config['name']
-        # self.max_width = config["max"]
-        # self.min_width = config["min"]
-        # self.msg = config["info"]
-
     def get_config(self):
-        # for item_config in self.config["configs"]:
-        return FlatRollConfigItem(self.config["base"])
+        base = self.config.get("Base", self.config.get("base", {}))
+        if not isinstance(base, Mapping):
+            base = {}
+        code = getattr(self.data_integration, "next_code", None)
+        candidates = [str(code)] if code is not None else []
+        try:
+            number = int(float(code))
+            candidates.extend((str(number), chr(number)))
+        except (TypeError, ValueError, OverflowError):
+            pass
+        selected = {}
+        for candidate in candidates:
+            item = self.config.get(candidate)
+            if isinstance(item, Mapping):
+                selected = item
+                break
+        merged = dict(base)
+        merged.update(selected)
+        return FlatRollConfigItem(merged)

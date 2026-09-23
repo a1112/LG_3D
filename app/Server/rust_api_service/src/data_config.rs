@@ -318,8 +318,10 @@ fn has_named_image(coil_dir: &Path, name: &str) -> bool {
 }
 
 fn has_python_default_mesh(coil_dir: &Path) -> bool {
-    coil_dir
-        .join("meshes")
-        .join("defaultobject_mesh.mesh")
-        .exists()
+    [
+        coil_dir.join("meshes").join("defaultobject_mesh.mesh"),
+        coil_dir.join("3D.obj"),
+    ]
+    .iter()
+    .any(|path| path.exists())
 }

@@ -1,4 +1,5 @@
 import type { CoilData } from '@/types'
+import { calibratedFlatRollDiameter, calibratedFlatRollLevel } from './flatRoll'
 
 export interface DetailRow {
   key: string
@@ -132,6 +133,8 @@ export function buildCurrentCoilStateSections(states: unknown): CoilStateSection
 }
 
 function flatRollSideDiameterMm(item: Record<string, unknown>): number | null {
+  const calibrated = calibratedFlatRollDiameter(item)
+  if (calibrated !== null) return calibrated
   const innerWidth = numberValue(item.inner_circle_width, -1)
   const accuracyX = numberValue(item.accuracy_x, 1)
   if (innerWidth <= 0) return null
@@ -146,7 +149,8 @@ function flatRollRows(flatRoll: Record<string, unknown>): { level: number; rows:
   })
   const diameters = sides.map((side) => side.innerDiameterMm).filter((value): value is number => value !== null)
   const averageDiameter = diameters.length > 0 ? diameters.reduce((sum, value) => sum + value, 0) / diameters.length : null
-  const level = averageDiameter === null ? 0 : averageDiameter < 680 ? 2 : 1
+  const storedLevel = Math.max(...sides.map((side) => calibratedFlatRollLevel(side.item)))
+  const level = storedLevel || (averageDiameter === null ? 0 : averageDiameter < 680 ? 2 : 1)
   const rows: DetailRow[] = [{ key: '内径测量', value: formatMm(averageDiameter) }]
 
   for (const side of sides) {

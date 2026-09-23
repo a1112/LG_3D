@@ -454,6 +454,9 @@ def _inner_ellipse_from_radial_edges(binary, outer_ellipse):
         stable = np.convolve(foreground.astype(np.uint8),
                              np.ones(3, dtype=np.uint8),
                              mode="valid") == 3
+        # A coil eye requires a background-to-steel edge. A solid disk must
+        # not manufacture an inner circle at the search's minimum radius.
+        stable &= np.r_[False, ~foreground[:-3]]
         transitions = np.flatnonzero(stable)
         if transitions.size == 0:
             continue

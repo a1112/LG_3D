@@ -8,6 +8,24 @@ import {
 } from './currentCoilDetail'
 
 describe('currentCoilDetail', () => {
+  it('uses saved calibrated diameter and grading thresholds for new flat-roll results', () => {
+    const [section] = buildCurrentCoilAlarmSections({
+      FlatRoll: { S: { inner_circle_width: 20, accuracy_x: 2, level: 3,
+        data: JSON.stringify({ inner_diameter_mm: 20, inner_ellipse_angle: 90 }) } },
+    })
+    expect(section.level).toBe(3)
+    expect(section.rows).toContainEqual({ key: '内径测量', value: '20.00 mm' })
+  })
+
+  it.each(['{', 'null', '[]', '{"inner_diameter_mm":-1}'])(
+    'retains legacy diameter fallback for invalid flat-roll metadata %s', (data) => {
+      const [section] = buildCurrentCoilAlarmSections({
+        FlatRoll: { S: { inner_circle_width: 2000, accuracy_x: 0.34, data } },
+      })
+      expect(section.rows).toContainEqual({ key: '内径测量', value: '680.00 mm' })
+    },
+  )
+
   it('builds QML-compatible current coil base rows from normalized and raw fields', () => {
     const rows = buildCurrentCoilBaseRows({
       id: 42,

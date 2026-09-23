@@ -32,6 +32,8 @@ Item {
     onRootViewIndexChanged: {
         if (rootViewIndex == 2) {
             refreshAreaSource()
+        } else if (rootViewIndex == 1) {
+            restartModelRefresh()
         }
     }
 
@@ -343,7 +345,10 @@ Item {
                                      && root.modelStore.has_data && key
                                      ? root.modelStore.has_data[key] : null
 
-    onDataAvailabilitySourceChanged: rebuildViewHasData()
+    onDataAvailabilitySourceChanged: {
+        rebuildViewHasData()
+        restartModelRefresh()
+    }
     onKeyChanged: {
         rebuildViewHasData()
         refreshAreaSource()
@@ -449,6 +454,7 @@ Item {
         heightDataRetryAfter = 0
         heightDataPending = false
         coilId = coilId_
+        restartModelRefresh()
         coilInfoReady = false
         medianZInt = 0
         medianZ = 0
@@ -758,16 +764,74 @@ Item {
                                                  + "/meshes/defaultobject_mesh.mesh"
     readonly property string productionMeshUrl: getSharedFolderBase(key, coilId)
                                                 + "/meshes/defaultobject_mesh.mesh"
+    readonly property string productionObjPath: "\\\\" + root.apiClient.apiConfig.hostname + "/"
+                                                + root.settings.sharedFolderBaseName + key + "/" + coilId
+                                                + "/3D.obj"
+    readonly property string productionObjUrl: getSharedFolderBase(key, coilId)
+                                               + "/3D.obj"
     readonly property string testDataMeshPath: root.scriptLauncher && root.coreController.developer_mode
                                                ? root.scriptLauncher.testDataMeshPath(key, coilId) : ""
     readonly property string testDataMeshUrl: root.scriptLauncher && root.coreController.developer_mode
                                               ? root.scriptLauncher.testDataMeshUrl(key, coilId) : ""
-    readonly property string meshUrl: root.coreController.developer_mode && testDataMeshUrl !== ""
-                                      ? testDataMeshUrl : productionMeshUrl
+    property string meshUrl: ""
+    property string meshRevision: ""
+    property bool meshExits: false
+    property string meshBuildState: ""
+    property int meshRefreshAttempts: 0
+    signal meshReloadRequested()
 
-    property bool meshExits: root.scriptLauncher
-                            ? (root.coreController.developer_mode
-                               ? root.scriptLauncher.testDataMeshExists(key, coilId)
-                               : root.scriptLauncher.fileExists(productionMeshPath))
-                            : false
+    function restartModelRefresh() {
+        meshRefreshAttempts = 0
+        modelRefreshTimer.restart()
+        refreshMeshModel()
+    }
+
+    function refreshMeshModel() {
+        if (!root.scriptLauncher || coilId <= 0) {
+            meshUrl = ""
+            meshRevision = ""
+            meshExits = false
+            meshBuildState = ""
+            return
+        }
+        let selectedPath = productionMeshPath
+        let selectedUrl = productionMeshUrl
+        let exists = false
+        meshBuildState = !root.coreController.developer_mode && root.scriptLauncher.meshBuildState
+                         ? root.scriptLauncher.meshBuildState(productionObjPath) : ""
+        if (root.coreController.developer_mode) {
+            selectedPath = testDataMeshPath
+            selectedUrl = testDataMeshUrl
+            exists = root.scriptLauncher.testDataMeshExists(key, coilId)
+        } else {
+            // OBJ is atomically published before optional Balsam optimization.
+            // Prefer it so a previous .mesh cannot hide a fresh reconstruction.
+            if (root.scriptLauncher.fileExists(productionObjPath)) {
+                selectedPath = productionObjPath
+                selectedUrl = productionObjUrl
+            }
+            exists = root.scriptLauncher.fileExists(selectedPath)
+        }
+        let revision = exists && root.scriptLauncher.fileRevision
+                       ? root.scriptLauncher.fileRevision(selectedPath) : (exists ? selectedPath : "")
+        let changed = revision !== meshRevision || selectedUrl !== meshUrl
+        meshExits = exists && revision !== ""
+        meshRevision = revision
+        meshUrl = meshExits ? selectedUrl : ""
+        if (changed && meshExits)
+            meshReloadRequested()
+    }
+
+    Timer {
+        id: modelRefreshTimer
+        interval: 2000
+        repeat: true
+        onTriggered: {
+            root.refreshMeshModel()
+            root.meshRefreshAttempts += 1
+            if (root.meshRefreshAttempts >= 180 && !root.is3DrootView
+                    && root.meshBuildState !== "processing")
+                stop()
+        }
+    }
 }

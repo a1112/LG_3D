@@ -136,7 +136,11 @@ def _file_has_testdata(path_str: str, kind: str, coil_id: int) -> bool:
         return False
 
     if kind == "MESH":
-        return (base / "meshes" / "defaultobject_mesh.mesh").exists()
+        return any((base / relative_path).exists() for relative_path in (
+            Path("meshes") / "defaultobject_mesh.mesh",
+            Path("3D.obj"),
+            Path("meshes") / "defaultobject.obj",
+        ))
 
     if kind == "JPG":
         # 灰度预期：GRAY.*

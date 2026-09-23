@@ -1,17 +1,23 @@
-﻿import os
+import json
 import multiprocessing
+import os
+import shutil
 import subprocess
 import threading
 import time
+from datetime import datetime, timezone
 from multiprocessing import JoinableQueue as MulQueue
-from queue import Full, Queue as ThreadQueue
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from queue import Empty, Full, Queue as ThreadQueue
 
+from matplotlib import colormaps
 from matplotlib.colors import Normalize
-from matplotlib.pyplot import get_cmap
 
 import numpy as np
 import open3d as o3d
-from scipy.spatial import Delaunay
+from scipy.ndimage import convolve, median_filter, minimum_filter
+from scipy.spatial import Delaunay, QhullError
 
 from Base.CONFIG import serverConfigProperty
 from Base.utils.Log import logger
@@ -26,7 +32,10 @@ DEFAULT_D3_JOIN_GRACE_SECONDS = 30.0
 def _get_float_env(name: str, default: float) -> float:
     raw_value = os.getenv(name, str(default))
     try:
-        return max(float(raw_value), 0.1)
+        value = float(raw_value)
+        if not np.isfinite(value):
+            raise ValueError("timeout must be finite")
+        return max(value, 0.1)
     except ValueError:
         logger.warning("invalid %s=%s, use %s", name, raw_value, default)
         return default
@@ -46,22 +55,80 @@ def _get_d3_join_timeout() -> float:
 
 
 def gaussian_kernel(size, sigma=1):
-    """生成高斯卷积核。"""
-    kernel_1D = np.linspace(-(size // 2), size // 2, size)
-    for i in range(size):
-        kernel_1D[i] = np.exp(-0.5 * (kernel_1D[i] / sigma) ** 2)
-    kernel_1D /= kernel_1D.sum()
-    kernel_2D = np.outer(kernel_1D, kernel_1D)
-    kernel_2D /= kernel_2D.sum()
-    return kernel_2D
+    """Return a normalized Gaussian kernel for depth downsampling."""
+    try:
+        size = int(size)
+        sigma = float(sigma)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("kernel size and sigma must be numeric") from exc
+    if size < 1 or not np.isfinite(sigma) or sigma <= 0:
+        raise ValueError("kernel size and sigma must be positive")
+    coordinates = np.arange(size, dtype=np.float64) - (size - 1) / 2
+    kernel_1d = np.exp(-0.5 * (coordinates / sigma)**2)
+    kernel_1d /= kernel_1d.sum()
+    kernel_2d = np.outer(kernel_1d, kernel_1d)
+    return kernel_2d / kernel_2d.sum()
 
 
 def downsample_data_with_convolution(matrix, kernel_size):
-    """通过卷积对矩阵进行下采样。"""
+    """Smooth and subsample a matrix while preserving its original scale.
+
+    Zero padding is intentionally avoided: depth maps use zero for invalid
+    pixels, and treating those zeros as measurements creates dark borders and
+    false peaks around holes.  Callers that need a validity mask should use
+    :func:`_downsample_depth` so both arrays use the same weighted kernel.
+    """
+    matrix = np.asarray(matrix)
+    kernel_size = int(kernel_size)
+    if matrix.ndim != 2:
+        raise ValueError("matrix must be a two-dimensional array")
     kernel = gaussian_kernel(kernel_size)
-    from scipy.ndimage import convolve
-    downsampled_matrix = convolve(matrix, kernel, mode='constant', cval=0.0)
-    return downsampled_matrix[::kernel_size, ::kernel_size]
+    weights = convolve(np.ones(matrix.shape, dtype=np.float64), kernel, mode="nearest")
+    smoothed = convolve(matrix.astype(np.float64, copy=False), kernel, mode="nearest")
+    smoothed = np.divide(smoothed, weights, out=np.zeros_like(smoothed), where=weights > 0)
+    return smoothed[::kernel_size, ::kernel_size]
+
+
+def _downsample_depth(depth, valid_mask, kernel_size, median_size):
+    """Smooth measured values without filling holes or lowering their edges."""
+    depth = np.asarray(depth, dtype=np.float64)
+    valid_mask = np.asarray(valid_mask, dtype=bool)
+    if depth.ndim != 2 or valid_mask.shape != depth.shape:
+        raise ValueError("depth and valid_mask must be two-dimensional arrays of equal shape")
+    finite_mask = valid_mask & np.isfinite(depth) & (depth > 0)
+    values = np.where(finite_mask, depth, 0.0)
+    median_size = int(median_size)
+    kernel_size = int(kernel_size)
+    if median_size < 1 or kernel_size < 1:
+        raise ValueError("median size and downsample size must be positive")
+    if median_size > 1:
+        # A zero-filled median would depress the ring boundary. Keep measured
+        # values there; filter only neighborhoods consisting entirely of data.
+        complete = minimum_filter(finite_mask, size=median_size, mode="nearest")
+        filtered = median_filter(values, size=median_size, mode="nearest")
+        values[complete] = filtered[complete]
+        del complete, filtered
+    kernel = gaussian_kernel(kernel_size)
+    coverage = convolve(finite_mask.astype(np.float64), kernel, mode="nearest")
+    weighted_depth = convolve(values, kernel, mode="nearest")
+    smoothed = np.divide(weighted_depth, coverage, out=np.zeros_like(weighted_depth), where=coverage > 1e-12)
+    # Never manufacture a point where the actual sampled sensor pixel is void.
+    return smoothed[::kernel_size, ::kernel_size], finite_mask[::kernel_size, ::kernel_size].copy()
+
+
+def _sampled_cell_mask(valid_mask, step):
+    """Disallow faces crossing any unsampled invalid pixel between vertices."""
+    valid_mask = np.asarray(valid_mask, dtype=bool)
+    rows = np.arange(0, valid_mask.shape[0], step)
+    cols = np.arange(0, valid_mask.shape[1], step)
+    # Integral image evaluates all source rectangles in O(pixel_count) time.
+    invalid = np.pad((~valid_mask).astype(np.uint32), ((1, 0), (1, 0)))
+    np.cumsum(invalid, axis=0, dtype=np.uint32, out=invalid)
+    np.cumsum(invalid, axis=1, dtype=np.uint32, out=invalid)
+    top, bottom = rows[:-1, None], rows[1:, None] + 1
+    left, right = cols[None, :-1], cols[None, 1:] + 1
+    counts = invalid[bottom, right] - invalid[top, right] - invalid[bottom, left] + invalid[top, left]
+    return counts == 0
 
 
 def filter_outliers(matrix, threshold=2):
@@ -80,8 +147,19 @@ def apply_jet_colormap(z_coords, minV=None, maxV=None):
     if minV > maxV:
         minV, maxV = maxV, minV
     norm = Normalize(vmin=minV, vmax=maxV, clip=True)
-    cmap = get_cmap('jet')
+    cmap = colormaps.get_cmap('jet')
     return cmap(norm(z_coords))
+
+
+def _as_finite_point_cloud(point_cloud, *, minimum_points=3):
+    points = np.asarray(point_cloud, dtype=np.float64)
+    if points.ndim != 2 or points.shape[1] != 3:
+        raise ValueError("point_cloud must have shape (N, 3)")
+    finite = np.isfinite(points).all(axis=1)
+    points = points[finite]
+    if points.shape[0] < minimum_points:
+        raise ValueError(f"at least {minimum_points} finite points are required")
+    return points
 
 
 def generate_mesh_from_point_cloud_pcl(point_cloud):
@@ -95,21 +173,26 @@ def generate_mesh_from_point_cloud_pcl(point_cloud):
         mesh: open3d.geometry.TriangleMesh
             生成的三角网格。
     """
-    from scipy.spatial import Delaunay
     import trimesh
 
-    # 使用 Delaunay 三角剖分
-    delaunay = Delaunay(point_cloud[:, :2])  # 只使用 x, y 坐标进行三角剖分
+    points = _as_finite_point_cloud(point_cloud)
+    # Duplicate XY samples make Qhull fail even when their Z values differ.
+    # Keep the first sample so every generated face refers to a stable vertex.
+    _, unique_indices = np.unique(points[:, :2], axis=0, return_index=True)
+    points = points[np.sort(unique_indices)]
+    if points.shape[0] < 3:
+        raise ValueError("at least three unique XY points are required")
+    try:
+        delaunay = Delaunay(points[:, :2])
+    except QhullError as exc:
+        raise ValueError("point cloud XY coordinates are degenerate") from exc
     triangles = delaunay.simplices
 
-    mesh = trimesh.Trimesh(vertices=point_cloud, faces=triangles)
+    mesh = trimesh.Trimesh(vertices=points, faces=triangles, process=False)
     return mesh
 
 
-# from scipy.spatial import Delaunay
-
-
-def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05):
+def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05, poisson_depth=9):
     """
     从点云生成三角网格（经过体素化优化）。
 
@@ -123,236 +206,303 @@ def generate_mesh_from_point_cloud_optimized(point_cloud, voxel_size=0.05):
         mesh: open3d.geometry.TriangleMesh
             生成的三角网格。
     """
+    points = _as_finite_point_cloud(point_cloud)
+    try:
+        voxel_size = float(voxel_size)
+        poisson_depth = int(poisson_depth)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("voxel_size and poisson_depth must be numeric") from exc
+    if not np.isfinite(voxel_size) or voxel_size <= 0:
+        raise ValueError("voxel_size must be a positive finite number")
+    if not 2 <= poisson_depth <= 12:
+        raise ValueError("poisson_depth must be between 2 and 12")
+
     # 将点云转化为 Open3D 点云对象
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(point_cloud)
+    pcd.points = o3d.utility.Vector3dVector(points)
 
     # 进行体素化下采样
     pcd_downsampled = pcd.voxel_down_sample(voxel_size)
 
-    # 计算点云法线
-    pcd_downsampled.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    if len(pcd_downsampled.points) < 3:
+        raise ValueError("voxel downsampling left fewer than three points")
+
+    # 计算点云法线.  The radius scales with the input resolution; a fixed
+    # 0.1 radius made normal estimation fail for millimetre-scale scans.
+    radius = max(voxel_size * 2.5, np.finfo(float).eps)
+    pcd_downsampled.estimate_normals(
+        search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=radius, max_nn=30))
 
     # 使用 Poisson 重建生成网格
-    mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd_downsampled, depth=9)
+    mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        pcd_downsampled, depth=poisson_depth)
 
     # 计算法线（如果需要）
     mesh.compute_vertex_normals()
 
+    if len(mesh.triangles) == 0:
+        raise ValueError("Poisson reconstruction returned no triangles")
     return mesh
 
 
-# def generate_mesh_from_point_cloud(point_cloud):
-#     """
-#     从点云生成三角网格。
-#
-#     point_cloud: (N, 3) numpy 数组
-#         输入的点云数据，每个点包含 x, y, z 坐标。
-#
-#     返回:
-#         mesh: open3d.geometry.TriangleMesh
-#             生成的三角网格。
-#     """
-#     points = point_cloud[:, :2]  # 只使用 x 和 y 坐标进行 Delaunay 三角剖分
-#     tri = Delaunay(points)  # 使用 Delaunay 进行二维三角剖分
-#     triangles = tri.simplices  # 获取三角形的索引
-#
-#     # 创建 Open3D 的 TriangleMesh 对象
-#     mesh = o3d.geometry.TriangleMesh()
-#     mesh.vertices = o3d.utility.Vector3dVector(point_cloud)  # 使用完整的 x, y, z 坐标作为顶点
-#     mesh.triangles = o3d.utility.Vector3iVector(triangles)  # 设置三角形面
-#     mesh.compute_vertex_normals()  # 计算每个顶点的法线
-#
-#     return mesh
-
-def generate_mesh_from_grid(x_coords, y_coords, z_coords, valid_mask, max_cell_z_span=300):
-    """从规则栅格生成单层表面网格，避免跨空洞闭合成长筒。"""
-    if valid_mask.size == 0 or np.count_nonzero(valid_mask) < 3:
+def generate_mesh_from_grid(x_coords, y_coords, z_coords, valid_mask, max_cell_z_span=300,
+                            cell_valid_mask=None):
+    """Build local surface triangles without spanning holes or depth jumps."""
+    coordinates = [np.asarray(values, dtype=np.float64) for values in (x_coords, y_coords, z_coords)]
+    valid_mask = np.asarray(valid_mask, dtype=bool).copy()
+    shape = coordinates[0].shape
+    if len(shape) != 2 or any(values.shape != shape for values in coordinates) or valid_mask.shape != shape:
+        raise ValueError("coordinate arrays and valid_mask must have equal 2D shapes")
+    max_cell_z_span = float(max_cell_z_span)
+    if not np.isfinite(max_cell_z_span) or max_cell_z_span < 0:
+        raise ValueError("max_cell_z_span must be a non-negative finite number")
+    grid = np.stack(coordinates, axis=-1)
+    valid_mask &= np.isfinite(grid).all(axis=-1)
+    if np.count_nonzero(valid_mask) < 3:
         raise ValueError("empty point cloud, cannot build mesh")
-
-    rows, cols = valid_mask.shape
-    index_map = np.full((rows, cols), -1, dtype=np.int32)
-    valid_points = np.argwhere(valid_mask)
-    index_map[valid_mask] = np.arange(valid_points.shape[0], dtype=np.int32)
-
-    vertices = np.stack((x_coords[valid_mask], y_coords[valid_mask], z_coords[valid_mask]), axis=-1)
-    triangles = []
-
-    def _triangle_ok(p1, p2, p3):
-        if not (valid_mask[p1] and valid_mask[p2] and valid_mask[p3]):
-            return False
-        z_values = np.array([z_coords[p1], z_coords[p2], z_coords[p3]])
-        return float(z_values.max() - z_values.min()) <= max_cell_z_span
-
-    for row in range(rows - 1):
-        for col in range(cols - 1):
-            p00 = (row, col)
-            p10 = (row + 1, col)
-            p01 = (row, col + 1)
-            p11 = (row + 1, col + 1)
-
-            if _triangle_ok(p00, p10, p01):
-                triangles.append([
-                    int(index_map[p00]),
-                    int(index_map[p10]),
-                    int(index_map[p01]),
-                ])
-            if _triangle_ok(p10, p11, p01):
-                triangles.append([
-                    int(index_map[p10]),
-                    int(index_map[p11]),
-                    int(index_map[p01]),
-                ])
-
-    if not triangles:
+    indexes = np.full(shape, -1, dtype=np.int32)
+    indexes[valid_mask] = np.arange(np.count_nonzero(valid_mask), dtype=np.int32)
+    vertices = grid[valid_mask]
+    # +Z winding for x=column and y=row. Only immediate grid neighbors connect.
+    triangles = np.stack((
+        np.stack((indexes[:-1, :-1], indexes[:-1, 1:], indexes[1:, :-1]), axis=-1),
+        np.stack((indexes[1:, :-1], indexes[:-1, 1:], indexes[1:, 1:]), axis=-1),
+    ), axis=-2)
+    usable = (triangles >= 0).all(axis=-1)
+    if cell_valid_mask is not None:
+        cells = np.asarray(cell_valid_mask, dtype=bool)
+        if cells.shape != (max(shape[0] - 1, 0), max(shape[1] - 1, 0)):
+            raise ValueError("cell_valid_mask must describe every grid cell")
+        usable &= cells[..., None]
+    triangles = triangles[usable]
+    if triangles.size:
+        points = vertices[triangles]
+        areas = np.linalg.norm(np.cross(points[:, 1] - points[:, 0], points[:, 2] - points[:, 0]), axis=1)
+        triangles = triangles[(areas > np.finfo(float).eps) & (np.ptp(points[:, :, 2], axis=1) <= max_cell_z_span)]
+    if not triangles.size:
         raise ValueError("no valid surface triangles, cannot build mesh")
-
+    used, inverse = np.unique(triangles, return_inverse=True)
+    vertices = vertices[used]
+    triangles = inverse.reshape(-1, 3).astype(np.int32)
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(vertices)
-    mesh.triangles = o3d.utility.Vector3iVector(np.asarray(triangles, dtype=np.int32))
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
     mesh.compute_vertex_normals()
-
     return mesh, vertices
 
 
 def save_colored_obj(mesh, colors, filename):
-    """将彩色网格保存为 .obj 文件。"""
-    return o3d.io.write_triangle_mesh(filename, mesh)
+    """Write an Open3D mesh as OBJ, optionally attaching per-vertex colors.
+
+    Open3D silently drops malformed color arrays, so validate and normalize
+    them here.  The return value follows ``write_triangle_mesh`` and is False
+    when the writer rejects the mesh.
+    """
+    if not isinstance(mesh, o3d.geometry.TriangleMesh):
+        raise TypeError("mesh must be an open3d TriangleMesh")
+    output = Path(filename)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if len(mesh.vertices) == 0 or len(mesh.triangles) == 0:
+        raise ValueError("cannot write an empty triangle mesh")
+
+    has_colors = colors is not None
+    if has_colors:
+        color_array = np.array(colors, dtype=np.float64, copy=True)
+        if color_array.ndim != 2 or color_array.shape[0] != len(mesh.vertices) or color_array.shape[1] not in (3, 4):
+            raise ValueError("colors must have shape (vertex_count, 3) or (vertex_count, 4)")
+        if not np.isfinite(color_array).all():
+            raise ValueError("colors must contain only finite values")
+        if color_array.shape[1] == 4:
+            color_array = color_array[:, :3]
+        if color_array.max(initial=0) > 1.0:
+            color_array /= 255.0
+        if color_array.min(initial=0) < 0 or color_array.max(initial=0) > 1:
+            raise ValueError("colors must be in [0, 1] or [0, 255]")
+        mesh.vertex_colors = o3d.utility.Vector3dVector(color_array)
+
+    # Keep the last valid OBJ visible until a complete replacement is ready.
+    with NamedTemporaryFile(dir=output.parent, prefix=f".{output.stem}-", suffix=".obj", delete=False) as temporary:
+        temporary_path = Path(temporary.name)
+    try:
+        if not o3d.io.write_triangle_mesh(str(temporary_path), mesh, write_triangle_uvs=False):
+            return False
+        if temporary_path.stat().st_size == 0:
+            return False
+        os.replace(temporary_path, output)
+        return True
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
 
-def toMesh(obj, managerQueue):
-    cmdBalsam = serverConfigProperty.balsam_exe
-    cmd = [str(cmdBalsam), "--optimizeMeshes", str(obj)]
+def toMesh(obj, managerQueue=None):
+    """Run Qt's Balsam optimizer when available.
+
+    Mesh generation remains useful without Balsam (for example on a test or
+    development host), so a missing executable is reported as a false result
+    rather than raising from the worker thread.  ``managerQueue`` is retained
+    for API compatibility with the original saver.
+    """
+    obj_path = Path(obj).resolve()
+    if not obj_path.is_file():
+        logger.error("optimize mesh input does not exist: %s", obj_path)
+        return False
+    configured = getattr(serverConfigProperty, "balsam_exe", None)
+    executable = str(configured or "").strip()
+    if not executable:
+        logger.warning("balsam executable is not configured; keep unoptimized OBJ: %s", obj_path)
+        return False
+    resolved = str(Path(executable).resolve()) if Path(executable).is_file() else shutil.which(executable)
+    if not resolved:
+        logger.warning("balsam executable is unavailable; keep unoptimized OBJ: %s", executable)
+        return False
+
+    cmd = [str(resolved), "--optimizeMeshes", str(obj_path)]
     logger.debug("optimize mesh command: %s", cmd)
     try:
-        work_path = os.path.dirname(obj)
-        env = os.environ.copy()
-        balsam_timeout = _get_balsam_timeout()
-        subprocess.check_call(cmd, cwd=work_path, env=env, timeout=balsam_timeout)
+        result = subprocess.run(
+            cmd,
+            cwd=str(obj_path.parent),
+            env=os.environ.copy(),
+            timeout=_get_balsam_timeout(),
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            errors="replace",
+        )
+        if result.returncode != 0:
+            logger.error("optimize mesh failed with exit code %s: obj=%s stderr=%s", result.returncode, obj_path,
+                         (result.stderr or "").strip()[-500:])
+            return False
     except subprocess.TimeoutExpired:
-        logger.error("optimize mesh timed out after %ss: obj=%s", _get_balsam_timeout(), obj)
-    except Exception as e:
-        logger.exception("optimize mesh failed: obj=%s error=%s", obj, e)
-    logger.debug("optimize mesh finished: %s", obj)
+        logger.error("optimize mesh timed out after %ss: obj=%s", _get_balsam_timeout(), obj_path)
+        return False
+    except OSError as exc:
+        logger.error("optimize mesh could not start: obj=%s error=%s", obj_path, exc)
+        return False
+    logger.debug("optimize mesh finished: %s", obj_path)
+    return True
 
 
 def _get_point_cloud_(data, managerQueue):
-    def _format_z_range(points):
-        if points.size == 0 or points.shape[0] == 0:
-            return "N/A", "N/A"
-        return f"{points[:, 2].min():.2f}", f"{points[:, 2].max():.2f}"
-
-    from scipy.ndimage import median_filter
-    coilId, npyData, mask, configDatas, circleConfig, saveFile, median_non_mm, [pixel_x_precision, pixel_y_precision,
-                                                                                pixel_z_precision] = data
-    valid_mask = mask > 0
-    npyData[mask == 0] = 0
-    matrix = median_filter(npyData, size=Globs.control.median_filter_size)
-    # 对数据进行下采样
-    matrix = downsample_data_with_convolution(matrix, Globs.control.downsampleSize)
-    valid_matrix = downsample_data_with_convolution(valid_mask.astype(np.float32), Globs.control.downsampleSize) > 0.2
-    rows, cols = matrix.shape
-    cx, cy = circleConfig["inner_circle"]['ellipse'][0]  # 中心点x坐标
-    # 生成x和y坐标的网格
-    x_indices = np.arange(rows) - cx
-    y_indices = np.arange(cols) - cy
-    x_coords, y_coords = np.meshgrid(x_indices, y_indices, indexing='ij')
-    # 计算x, y, z坐标
-    x_coords = x_coords * pixel_x_precision
-    y_coords = y_coords * pixel_y_precision
-    z_coords = matrix * pixel_z_precision
-    # 合并x, y, z坐标
-    point_cloud = np.stack((x_coords, y_coords, z_coords), axis=-1).reshape(-1, 3)
-    valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
-    if valid_point_cloud.shape[0] >= 1:
-        mean_values2 = valid_point_cloud.mean(axis=0)
-    else:
-        mean_values2 = point_cloud.mean(axis=0)
-
-    # 删除z < 0 的点
-    # point_cloud = point_cloud[point_cloud[:, 2] >= 10]
-
-    mean_values2[2] = median_non_mm
-    point_cloud[:, :] -= mean_values2
-    # 调试：记录过滤前的点云统计
-    valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
-    z_min, z_max = _format_z_range(valid_point_cloud)
-    logger.debug(
-        "point_cloud before filter: shape=%s, z_range=(%s, %s), median_non_mm=%.2f",
-        valid_point_cloud.shape,
-        z_min,
-        z_max,
-        median_non_mm,
+    """Convert the eight-field legacy or nine-field calibrated job to mm."""
+    if not isinstance(data, (tuple, list)) or len(data) not in (8, 9):
+        raise ValueError("3D save data must contain eight or nine fields")
+    coil_id, depth, mask, config_data, circle_config, save_file, baseline_mm, precision = data[:8]
+    depth = np.asarray(depth, dtype=np.float64)
+    mask = np.asarray(mask)
+    if depth.ndim != 2 or mask.shape != depth.shape:
+        raise ValueError("depth data and mask must be equal 2D arrays")
+    try:
+        scale_x, scale_y, scale_z = (float(value) for value in precision)
+        offset_z = float(data[8]) if len(data) == 9 else 0.0
+        baseline_mm = float(baseline_mm)
+        step = int(Globs.control.downsampleSize)
+        median_size = int(Globs.control.median_filter_size)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("invalid 3D calibration or filter configuration") from exc
+    if not all(np.isfinite(value) and value > 0 for value in (scale_x, scale_y, scale_z)):
+        raise ValueError("3D pixel precision must be positive and finite")
+    if not np.isfinite(offset_z) or not np.isfinite(baseline_mm):
+        raise ValueError("3D offset and baseline must be finite")
+    if step < 1 or median_size < 1:
+        raise ValueError("3D filter sizes must be positive")
+    valid = (mask > 0) & np.isfinite(depth) & (depth > 0)
+    sampled, sampled_valid = _downsample_depth(depth, valid, step, median_size)
+    try:
+        cx, cy = (float(value) for value in circle_config["inner_circle"]["ellipse"][0])
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise ValueError("circleConfig does not contain inner_circle ellipse center") from exc
+    if not np.isfinite(cx) or not np.isfinite(cy):
+        raise ValueError("circle center must be finite")
+    rows, cols = sampled.shape
+    x_coords, y_coords = np.meshgrid(
+        (np.arange(cols, dtype=np.float64) * step - cx) * scale_x,
+        (np.arange(rows, dtype=np.float64) * step - cy) * scale_y,
     )
-
-    # 扩大过滤范围：从 [-150, 500] 改为 [-500, 1000]
-    z_filter_mask = np.logical_and(z_coords >= -500, z_coords <= 1000)
-    valid_matrix = np.logical_and(valid_matrix, z_filter_mask)
-    point_cloud = point_cloud[valid_matrix.reshape(-1)]
-
-    # 调试：记录过滤后的点云统计
-    if point_cloud.shape[0] < 100:
-        z_min, z_max = _format_z_range(point_cloud)
-        logger.warning("point_cloud after filter: shape=%s, z_range=(%s, %s)", point_cloud.shape, z_min, z_max)
-
-    # 兜底：如果过滤后点云为空或太少，使用未过滤的点云
-    original_count = point_cloud.shape[0]
-    if original_count < 1000:
-        logger.warning("point_cloud has only %s points after filtering, using unfiltered data", original_count)
-        # 重新生成未过滤的点云
-        point_cloud = np.stack((x_coords, y_coords, z_coords), axis=-1).reshape(-1, 3)
-        valid_point_cloud = point_cloud[valid_matrix.reshape(-1)]
-        if valid_point_cloud.shape[0] >= 1:
-            mean_values2 = valid_point_cloud.mean(axis=0)
-        else:
-            mean_values2 = point_cloud.mean(axis=0)
-        mean_values2[2] = median_non_mm
-        point_cloud[:, :] -= mean_values2
-        valid_matrix = downsample_data_with_convolution(valid_mask.astype(np.float32), Globs.control.downsampleSize) > 0.2
-        point_cloud = point_cloud[valid_matrix.reshape(-1)]
-        logger.debug("using unfiltered point_cloud: shape=%s", point_cloud.shape)
-
+    z_coords = sampled * scale_z + offset_z - baseline_mm
+    # Preserve the existing relative height limits without reinstating rejected
+    # outliers when fewer than 1000 points remain.
+    sampled_valid &= np.isfinite(z_coords) & (z_coords >= -500) & (z_coords <= 1000)
+    grid = np.stack((x_coords, y_coords, z_coords), axis=-1)
     return {
-        "point_cloud": point_cloud,
+        "point_cloud": grid[sampled_valid],
         "x_coords": x_coords,
         "y_coords": y_coords,
         "z_coords": z_coords,
-        "valid_mask": valid_matrix,
-    }, saveFile
+        "valid_mask": sampled_valid,
+        "cell_valid_mask": _sampled_cell_mask(valid, step),
+    }, save_file
+
+
+def _write_mesh_status(save_file, coil_id, state, *, optimizer_success=None, error=None):
+    """Publish the asynchronous mesh result without exposing the depth payload."""
+    output = Path(save_file)
+    status = {
+        "schema_version": 1,
+        "coil_id": str(coil_id),
+        "state": state,
+        "obj_file": output.name,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "optimizer_success": optimizer_success,
+    }
+    if error is not None:
+        status["error"] = str(error)
+    temporary_path = None
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with NamedTemporaryFile(mode="w", dir=output.parent, prefix=".mesh_status-", suffix=".json",
+                                encoding="utf-8", delete=False) as temporary:
+            temporary_path = Path(temporary.name)
+            json.dump(status, temporary, ensure_ascii=False, allow_nan=False)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, output.with_name("mesh_status.json"))
+        return True
+    except OSError as exc:
+        logger.error("failed to publish mesh status for %s: %s", output, exc)
+        return False
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def _record_rejected_mesh_task(task, reason):
+    """Do not leave an old successful status behind for a rejected rebuild."""
+    if not isinstance(task, (tuple, list)) or len(task) not in (8, 9):
+        return
+    if not isinstance(task[5], (str, os.PathLike)):
+        return
+    _write_mesh_status(task[5], task[0], "error", error=reason)
 
 
 def _save_3d(data, managerQueue):
-    t0 = time.time()
-    point_cloud_data, saveFile = _get_point_cloud_(data, managerQueue)
-    point_cloud = point_cloud_data["point_cloud"]
-    t1 = time.time()
-    logger.debug("_get_point_cloud_ %s", t1 - t0)
-    if point_cloud.size == 0 or point_cloud.shape[0] < 3:
-        logger.error("empty point cloud for %s, skip mesh generation", saveFile)
-        return
-    t2 = time.time()
-    # 使用Delaunay三角剖分生成三角网格
-    # mesh=generate_mesh_from_point_cloud_pcl(point_cloud)
+    save_file = data[5]
+    coil_id = data[0]
+    _write_mesh_status(save_file, coil_id, "processing")
+    started = time.monotonic()
     try:
-        mesh, mesh_vertices = generate_mesh_from_grid(
-            point_cloud_data["x_coords"],
-            point_cloud_data["y_coords"],
-            point_cloud_data["z_coords"],
-            point_cloud_data["valid_mask"],
+        result, save_file = _get_point_cloud_(data, managerQueue)
+        if result["point_cloud"].shape[0] < 3:
+            raise ValueError("not enough valid depth points to build a mesh")
+        mesh, _ = generate_mesh_from_grid(
+            result["x_coords"], result["y_coords"], result["z_coords"], result["valid_mask"],
+            cell_valid_mask=result.get("cell_valid_mask"),
         )
-    except ValueError as e:
-        logger.error("generate_mesh_from_grid failed for %s: %s", saveFile, e)
-        return
-
-    t3 = time.time()
-    logger.debug("generate_mesh_from_grid %s", t3 - t2)
-    # o3d.visualization.draw_geometries([mesh])
-    # 保存无顶点颜色的表面网格，颜色由前端材质统一控制
-    save_colored_obj(mesh, None, str(saveFile))
-    t4 = time.time()
-    logger.debug("save_colored_obj %s", t4 - t3)
-    toMesh(str(saveFile), managerQueue)
-    logger.debug("toMesh end")
+        if not save_colored_obj(mesh, None, str(save_file)):
+            raise OSError("Open3D failed to write the OBJ mesh")
+        # OBJ consumers can display this complete model while Qt conversion
+        # runs. Conversion failure does not invalidate a usable OBJ.
+        _write_mesh_status(save_file, coil_id, "ready")
+        optimized = toMesh(str(save_file), managerQueue)
+        _write_mesh_status(save_file, coil_id, "ready", optimizer_success=optimized)
+        logger.debug("3D mesh ready: coil=%s output=%s elapsed=%.3fs", coil_id, save_file,
+                     time.monotonic() - started)
+        return True
+    except Exception as exc:
+        _write_mesh_status(save_file, coil_id, "error", error=exc)
+        logger.exception("3D mesh generation failed: coil=%s output=%s", coil_id, save_file)
+        return False
 
 
 class D3Saver:
@@ -362,23 +512,33 @@ class D3Saver:
 
     def __init__(self, managerQueue, loggerProcess):
         self.managerQueue = managerQueue
-        self.num_processes = Globs.control.D3SaverWorkNum
+        try:
+            self.num_processes = max(int(Globs.control.D3SaverWorkNum), 1)
+            queue_size = max(int(Globs.control.D3SaverThreadMaxsize), 1)
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError("invalid D3 saver worker or queue configuration") from exc
         self.type_ = Globs.control.D3SaverThreadType
         self.queue_put_timeout = _get_d3_queue_put_timeout()
         self.join_timeout = _get_d3_join_timeout()
+        self._state_lock = threading.Lock()
+        self._joined = False
         if self.type_ == "multiprocessing":
-            self.queue = MulQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
+            self.queue = MulQueue(maxsize=queue_size)
+            self._stop_event = multiprocessing.Event()
         else:
-            self.queue = ThreadQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
+            self.queue = ThreadQueue(maxsize=queue_size)
+            self._stop_event = threading.Event()
         self.processes = []
         self._initialize_processes()
 
     def _initialize_processes(self):
         for _ in range(self.num_processes):
             if self.type_ == "multiprocessing":
-                process = multiprocessing.Process(target=self._save_3d, args=(self.queue, self.managerQueue))
+                process = multiprocessing.Process(target=self._save_3d,
+                                                  args=(self.queue, self.managerQueue, self._stop_event))
             else:
-                process = threading.Thread(target=self._save_3d, args=(self.queue, self.managerQueue))
+                process = threading.Thread(target=self._save_3d,
+                                           args=(self.queue, self.managerQueue, self._stop_event))
             process.daemon = True
             self.processes.append(process)
             process.start()
@@ -386,7 +546,13 @@ class D3Saver:
     def add_(self, *args) -> bool:
         task = args[0] if len(args) == 1 else args
         try:
-            self.queue.put(task, timeout=self.queue_put_timeout)
+            # Serialize acceptance with the insertion of shutdown sentinels.
+            with self._state_lock:
+                if self._joined:
+                    logger.warning("3DSaver rejected task after shutdown")
+                    _record_rejected_mesh_task(task, "3D mesh rebuild rejected: saver is shut down")
+                    return False
+                self.queue.put(task, timeout=self.queue_put_timeout)
             try:
                 queue_size = self.queue.qsize()
             except (AttributeError, NotImplementedError):
@@ -395,14 +561,24 @@ class D3Saver:
             return True
         except Full:
             logger.error("3DSaver queue full, drop 3D mesh save task")
+            _record_rejected_mesh_task(task, "3D mesh rebuild rejected: save queue is full")
         except Exception as e:
             logger.exception("3DSaver queue put failed: %s", e)
+            _record_rejected_mesh_task(task, f"3D mesh rebuild could not be queued: {e}")
         return False
 
     @staticmethod
-    def _save_3d(queue, managerQueue):
+    def _save_3d(queue, managerQueue, stop_event=None):
         while True:
-            data = queue.get()
+            try:
+                data = queue.get(timeout=0.2)
+            except Empty:
+                if stop_event is not None and stop_event.is_set():
+                    break
+                continue
+            except (EOFError, OSError) as exc:
+                logger.error("3DSaver worker queue closed: %s", exc)
+                break
             if data is None:
                 queue.task_done()
                 break
@@ -420,7 +596,11 @@ class D3Saver:
                 data = None
 
     def join(self):
-        # 阻塞直到所有任务完成
+        """Drain queued jobs and stop workers within the configured deadline."""
+        with self._state_lock:
+            if self._joined:
+                return
+            self._joined = True
         deadline = time.monotonic() + self.join_timeout
         sent_stop_count = 0
         while sent_stop_count < self.num_processes:
@@ -435,14 +615,24 @@ class D3Saver:
                         sent_stop_count,
                         self.num_processes,
                     )
+                    self._stop_event.set()
                     break
             except Exception as e:
                 logger.exception("3DSaver shutdown failed while sending stop signal: %s", e)
+                self._stop_event.set()
                 break
         # 停止所有进程
         for process in self.processes:
-            process.join(timeout=self.join_timeout)
+            # Share one shutdown deadline across the worker pool.
+            remaining = max(deadline - time.monotonic(), 0.1)
+            original_timeout = self.join_timeout
+            self.join_timeout = min(original_timeout, remaining)
+            try:
+                process.join(timeout=self.join_timeout)
+            finally:
+                self.join_timeout = original_timeout
             if process.is_alive():
+                self._stop_event.set()
                 logger.warning("3DSaver worker did not exit within %ss: %s", self.join_timeout, process)
                 terminate = getattr(process, "terminate", None)
                 if callable(terminate):

@@ -17,6 +17,7 @@ from Base.utils.DetectionSpeedRecord import DetectionSpeedRecord
 from Base.utils.Log import logger
 from .CoilMaskModel import CoilDetectionModel
 from .CoilClsModel import CoilClsModel
+from .model_bundle import is_background_class
 from .tool import create_xml, get_image_box
 
 ccm = None
@@ -136,9 +137,14 @@ def merge_rectangles(rectangles):
 def commit_defects(defect_dict, data_integration):
     defect_list = []
     for name, defect_list_ in defect_dict.items():
-        defect_list_ = merge_rectangles(defect_list_)
+        # ``merge_rectangles`` historically consumed its input with ``pop``.
+        # Pass a copy here so the detection result kept on ``DataIntegration``
+        # remains available for diagnostics and re-detection.
+        defect_list_ = merge_rectangles(list(defect_list_))
         for defect in defect_list_:
             x1, y1, x2, y2, label_index, source = defect
+            if x2 <= x1 or y2 <= y1:
+                continue
             defect_list.append({
                 "secondaryCoilId": data_integration.coilId,
                 "surface": data_integration.key,
@@ -152,8 +158,8 @@ def commit_defects(defect_dict, data_integration):
                 "defectSource": source,
                 "defectData": ""
             })
-    # delete_defects_by_secondary_coil_id(coilState.coilId,coilState.key)
-    add_defects(defect_list)
+    if defect_list:
+        add_defects(defect_list)
 
 
 def save_classifier_item(image, save_url):
@@ -266,27 +272,35 @@ def get_clip_images(join_image,
         join_image = np.array(join_image)
     if isinstance(mask_image, Image.Image):
         mask_image = np.array(mask_image)
-    w = join_image.shape[1]
-    h = join_image.shape[0]
-    w_item_size = w // clip_num
-    h_item_size = h // clip_num
+    if join_image.ndim not in (2, 3) or mask_image.shape[:2] != join_image.shape[:2]:
+        raise ValueError("detection image and mask dimensions must match")
+    h, w = join_image.shape[:2]
+    if h == 0 or w == 0:
+        return [], [], []
+    clip_num = int(clip_num)
+    if clip_num < 1:
+        raise ValueError("clip_num must be positive")
+    # Avoid zero/small tiles while including the rightmost and bottommost
+    # remainder pixels. Previously floor division silently omitted those edges.
+    columns = min(clip_num, max(1, w // 200))
+    rows = min(clip_num, max(1, h // 200))
+    x_edges = np.linspace(0, w, columns + 1, dtype=int)
+    y_edges = np.linspace(0, h, rows + 1, dtype=int)
     clip_image_list = []
     clip_mask_list = []
     clip_info_list = []
-    for i in range(clip_num):
-        for j in range(clip_num):
-            c_x, c_y, c_w, c_h = w_item_size * j - 20, h_item_size * i - 20, w_item_size + 20, h_item_size + 20
-            c_x, c_y, c_w, c_h = max(c_x, 0), max(c_y, 0), c_w, c_h
-            if c_h < 200 or c_w < 200:
-                continue
-            clip_image = join_image[c_y:c_y + c_h, c_x:c_x + c_w]
-            clip_mask = mask_image[c_y:c_y + c_h, c_x:c_x + c_w]
-            if np.count_nonzero(clip_mask) / (
-                    clip_mask.shape[0] * clip_mask.shape[1]) > mask_threshold:
-                clip_image = Image.fromarray(clip_image)
-                clip_image_list.append(clip_image)
+    for i in range(rows):
+        for j in range(columns):
+            c_x = max(int(x_edges[j]) - 20, 0)
+            c_y = max(int(y_edges[i]) - 20, 0)
+            right = min(int(x_edges[j + 1]) + 20, w)
+            bottom = min(int(y_edges[i + 1]) + 20, h)
+            clip_image = join_image[c_y:bottom, c_x:right]
+            clip_mask = mask_image[c_y:bottom, c_x:right]
+            if np.count_nonzero(clip_mask) / clip_mask.size > mask_threshold:
+                clip_image_list.append(Image.fromarray(clip_image))
                 clip_mask_list.append(clip_mask)
-                clip_info_list.append((c_x, c_y, c_w, c_h))
+                clip_info_list.append((c_x, c_y, right - c_x, bottom - c_y))
     return clip_image_list, clip_mask_list, clip_info_list
 
 
@@ -300,8 +314,7 @@ def detection_by_image_list(clip_image_url_list, cdm_=None):
         for url, image, info in zip(clip_image_url_list, clip_image_list,
                                     res_list):
             if len(info):
-                folder = (Path(url).parent.parent /
-                          "detection_by_image_list")
+                folder = (Path(url).parent.parent / "detection_by_image_list")
                 folder.mkdir(exist_ok=True, parents=True)
                 save_url = folder / Path(url).name
                 save_detection_item(info, image, save_url)
@@ -336,25 +349,33 @@ def classifiers_data(image_list,
     res_index, res_source, names = ccm.predict_image(sub_image_clip_list,
                                                      deadline=deadline)
     index = 0
+    classified_image_list = []
 
     for item, clip_info in zip(res_list, clip_info_list):
         x_offset, y_offset, *_ = clip_info
-        for item_item_index, item_item in enumerate(item):
-            item[item_item_index] = list(item[item_item_index])
+        classified_items = []
+        for item_item in item:
+            classified_item = list(item_item)
             index_cls, source_cls, name = res_index[index], res_source[
                 index], names[index]
-            x1, y1, x2, y2, *_ = item[item_item_index]
-            w, h = x2 - x1, y2 - y1
-            item[item_item_index][0] = x1 + x_offset
-            item[item_item_index][1] = y1 + y_offset
-            item[item_item_index][2] = x2 + x_offset
-            item[item_item_index][3] = y2 + y_offset
-            item[item_item_index][4] = index_cls
-            item[item_item_index][5] = source_cls
-            item[item_item_index][6] = name
-            sub_info_list.append(item[item_item_index])
+            classified_image = sub_image_clip_list[index]
             index += 1
-    return sub_info_list, sub_image_clip_list
+            if is_background_class(name):
+                continue
+
+            x1, y1, x2, y2, *_ = classified_item
+            classified_item[0] = x1 + x_offset
+            classified_item[1] = y1 + y_offset
+            classified_item[2] = x2 + x_offset
+            classified_item[3] = y2 + y_offset
+            classified_item[4] = index_cls
+            classified_item[5] = source_cls
+            classified_item[6] = name
+            classified_items.append(classified_item)
+            sub_info_list.append(classified_item)
+            classified_image_list.append(classified_image)
+        item[:] = classified_items
+    return sub_info_list, classified_image_list
 
 
 def detection_by_image(join_image,
@@ -365,7 +386,8 @@ def detection_by_image(join_image,
                        save_base_folder=None,
                        cdm_=None,
                        save_only=False,
-                       deadline=None):
+                       deadline=None,
+                       save_images=True):
     global cdm
     pil_image = None
     if isinstance(join_image, Image.Image):
@@ -410,7 +432,8 @@ def detection_by_image(join_image,
             clip_info_list,
             deadline=classifier_deadline,
         )
-        if save_base_folder is not None or control.save_sub_image:
+        if save_images and (save_base_folder is not None
+                            or control.save_sub_image):
             save_classifier_result(
                 sub_info_list,
                 sub_image_list,
@@ -419,8 +442,18 @@ def detection_by_image(join_image,
                 save_to_folders=save_only
                 or (save_base_folder is None and control.save_sub_image),
                 deadline=classifier_deadline)
-    if control.save_detection:
-        save_detection(res_list,
+    if save_images and control.save_detection:
+        saved_results = res_list
+        if control.detection_model == DetectionType.DetectionAndClassifiers:
+            # Classifier output is global, but XML annotations belong to each
+            # saved tile. Keep both representations consistent.
+            saved_results = [
+                [[box[0] - info[0], box[1] - info[1],
+                  box[2] - info[0], box[3] - info[1], *box[4:]]
+                 for box in results]
+                for results, info in zip(res_list, clip_info_list)
+            ]
+        save_detection(saved_results,
                        clip_image_list,
                        clip_info_list,
                        id_str,
@@ -448,12 +481,26 @@ def detection(data_integration: DataIntegration, deadline=None):
     defect_dict = defaultdict(list)
     for res, clip_image, clip_info in zip(res_list, clip_image_list,
                                           clip_info_list):  # 数据提交
+        # The classifier path already returns global coordinates; the direct
+        # detector returns tile coordinates.
+        clip_x, clip_y = (0, 0) if control.detection_model == DetectionType.DetectionAndClassifiers else clip_info[:2]
+        image_height, image_width = data_integration.npy_image.shape[:2]
         for box in res:
             xmin, ymin, xmax, ymax, label_index, source, name = box
-            # x, y, w, h = clip_info
-            x, y = 0, 0
-            defect_dict[name].append(
-                (x + xmin, y + ymin, x + xmax, y + ymax, label_index, source))
+            # Convert direct detector boxes once and clamp to the image bounds.
+            try:
+                x1 = max(0, min(image_width, int(round(float(xmin) + clip_x))))
+                y1 = max(0, min(image_height, int(round(float(ymin) + clip_y))))
+                x2 = max(0, min(image_width, int(round(float(xmax) + clip_x))))
+                y2 = max(0, min(image_height, int(round(float(ymax) + clip_y))))
+            except (TypeError, ValueError, OverflowError):
+                logger.warning("skip invalid detection box: %s", box)
+                continue
+            if x2 <= x1 or y2 <= y1:
+                logger.warning("skip empty detection box: %s", box)
+                continue
+            defect_dict[str(name)].append(
+                (x1, y1, x2, y2, label_index, source))
 
     data_integration.set_defect_dict(defect_dict)
     commit_defects(defect_dict, data_integration)
@@ -462,9 +509,17 @@ def detection(data_integration: DataIntegration, deadline=None):
 @DetectionSpeedRecord.timing_decorator("深度学习检测全部时间")
 def detection_all(data_integration_list: DataIntegrationList):
     deadline = time.monotonic() + DETECTION_TIMEOUT_SECONDS
+    errors = {}
     for dataIntegration in data_integration_list:
-        _check_deadline(deadline, "coil detection")
-        detection(dataIntegration, deadline=deadline)
+        try:
+            _check_deadline(deadline, "coil detection")
+            detection(dataIntegration, deadline=deadline)
+        except Exception as exc:
+            errors[dataIntegration.key] = str(exc)
+            dataIntegration.set_defect_dict(None)
+            logger.exception("defect detection failed coil=%s surface=%s",
+                             dataIntegration.coilId, dataIntegration.key)
+    return errors
 
 
 def detection_by_coil_id(coil_id: int,
@@ -515,7 +570,6 @@ def clip_by_coil_id(coil_id, save_base_folder, suf_key=None):
             try:
                 x, y, w, h = clip_info
                 clip_image.save(
-                    str(save_base_folder /
-                        f"{id_str}_{x}_{y}_{w}_{h}.png"))
+                    str(save_base_folder / f"{id_str}_{x}_{y}_{w}_{h}.png"))
             finally:
                 clip_image.close()

@@ -126,6 +126,7 @@ Item {
         modelStore: root.modelStore
         apiClient: root.apiClient
         style: root.appStyle
+        coreController: root.coreController
     }  //重新识别
     function popupReDetectionView(fromId, toId){
         if (fromId !== undefined && toId !== undefined){

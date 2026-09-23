@@ -8,6 +8,7 @@ from CoilDataBase.Coil import add_obj
 from CoilDataBase.models import AlarmTaperShape
 
 from AlarmDetection.Result.GradResult import AlarmGradResult
+from AlarmDetection.Result.errors import record_alarm_error
 from AlarmDetection.Configs.TaperShapeConfig import (
     DEFAULT_TAPER_HEIGHT_LIMITS,
     TaperShapeConfig,
@@ -701,6 +702,10 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     )
     warning_messages = _taper_error_messages(data_integration, "taper_shape_warnings")
     grading_error_messages = _taper_error_messages(data_integration, "taper_shape_grading_errors")
+    for message in detection_error_messages:
+        record_alarm_error(data_integration, "taper_shape", message)
+    for message in grading_error_messages:
+        record_alarm_error(data_integration, "taper_shape_grading", message)
     if not valid_metrics:
         error_msg = "塔形检测失败: 无有效线数据"
         detail_messages = [
@@ -713,6 +718,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         ]
         if detail_messages:
             error_msg = f"{error_msg}；{'；'.join(detail_messages)}"
+        record_alarm_error(data_integration, "taper_shape", error_msg)
         return AlarmGradResult(3, error_msg, taper_shape_config)
 
     max_outer_metrics = _select_max_metrics(data_integration, valid_metrics, "outer_max_point")
@@ -790,6 +796,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
         or taper_attempt_count >= MIN_TAPER_ATTEMPT_COUNT_FOR_COVERAGE
     )
     if enforce_angle_coverage and valid_angle_coverage_ratio < MIN_TAPER_VALID_ANGLE_COVERAGE_RATIO:
+        record_alarm_error(data_integration, "taper_shape", "塔形有效角度覆盖不足")
         grad = max(grad, 3)
         if error_msg == "正常":
             error_msg = "塔形检测质量不足"
@@ -885,6 +892,7 @@ def grading_alarm_taper_shape(data_integration: DataIntegration):
     )
     save_error_msg = _save_taper_alarm_detail(alarm_taper_shape)
     if save_error_msg:
+        record_alarm_error(data_integration, "taper_shape_commit", save_error_msg)
         return AlarmGradResult(
             grad,
             f"{error_msg}\n{save_error_msg}",

@@ -1,9 +1,7 @@
+from collections.abc import Mapping
 from typing import Union
 
-from CoilDataBase.models import AlarmLooseCoil
 from Base.property.Base import DataIntegration, DataIntegrationList
-from Base.property.Data3D import LineData
-from CoilDataBase.Alarm import addAlarmLooseCoil
 from Base.utils.Log import logger
 import numpy as np
 
@@ -53,26 +51,41 @@ class AlarmLooseData:
             ]
 
     def detection(self):
-        for rotate in self.lineDataDicts:
-            lineData1 = self.lineDataDicts[rotate][0]
-            lineData2 = self.lineDataDicts[rotate][1]
-            lineData1: LineData
-            lineData2: LineData
-            ray1 = lineData1.ray_line_mm
-            ray2 = lineData2.ray_line_mm
-            lineData1.none_data_sub
-            lineData2.none_data_sub
-            # # grouped_subsegments = group_consecutive(subsegment)
-            # # oldHasdata = False
-            # # for index,point in enumerate(ray1):
-            # #     hasData=lineData1.mmNoneData(point[2])
+        return {
+            rotate: tuple(line.max_zero_width_mm for line in lines)
+            for rotate, lines in self.lineDataDicts.items()
+        }
 
 
 def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
-    for d in data_integration.detectionLineData:
-        d.dataIntegration = data_integration
-        d.detection()
-        addAlarmLooseCoil(d.get_alarm_loose_coil())
+    """Measure each available ray; one failed ray must not hide valid gaps."""
+    alarm_data = data_integration.alarmData
+    alarm_data.loose_coil_measurements = []
+    alarm_data.loose_coil_errors = []
+    line_data = getattr(alarm_data, "lineDataDict", None) or {}
+    if isinstance(line_data, Mapping):
+        items = line_data.items()
+    elif isinstance(line_data, (list, tuple)):
+        items = enumerate(line_data)
+    else:
+        alarm_data.loose_coil_errors.append("无效径向线数据")
+        return []
+    for key, line in items:
+        try:
+            angle = float(getattr(line, "rotation_angle", None)
+                          if getattr(line, "rotation_angle", None) is not None else key)
+            width = float(line.max_zero_width_mm)
+            if not np.isfinite(angle) or not np.isfinite(width) or width < 0:
+                raise ValueError("非有限角度或间隙宽度")
+            segments = [list(segment) for segment in line.none_data_sub]
+            alarm_data.loose_coil_measurements.append({
+                "rotation_angle": angle % 360,
+                "max_width_mm": width,
+                "segments": segments,
+            })
+        except (AttributeError, ValueError, TypeError, IndexError, OverflowError) as e:
+            alarm_data.loose_coil_errors.append(f"{key}度: {e}")
+    return alarm_data.loose_coil_measurements
 
 
 def _detectionAlarmLooseCoilAll_(
@@ -80,27 +93,7 @@ def _detectionAlarmLooseCoilAll_(
     """
     获取 LineData 数据假设同角度检测
     """
-    line_datas = []
+    if isinstance(data_integration_list, DataIntegration):
+        data_integration_list = [data_integration_list]
     for dataIntegration in data_integration_list:
-        line_datas.append(
-            [dataIntegration, dataIntegration.alarmData.lineDataDict])
-        addAlarmLooseCoil(
-            AlarmLooseCoil(secondaryCoilId=dataIntegration.coilId,
-                           surface=dataIntegration.surface,
-                           max_width=5,
-                           rotation_angle=0))
-
-    if len(line_datas) == 2:
-        alarm_loose_data = AlarmLooseData(line_datas)
-        if not alarm_loose_data.lineDataDicts:
-            logger.warning(
-                "skip loose coil cross-surface detection without common rotations: coil=%s",
-                line_datas[0][0].coilId,
-            )
-            return
-        alarm_loose_data.detection()
-    else:
-        logger.debug(
-            "loose coil cross-surface detection requires exactly 2 surfaces, got %s",
-            len(line_datas))
-        return
+        _detectionAlarmLooseCoil_(dataIntegration)

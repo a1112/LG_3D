@@ -398,6 +398,7 @@ def _estimate_inner_ellipse_from_radial_edges(binary, outer_ellipse):
         stable_foreground = np.convolve(
             foreground.astype(np.uint8), np.ones(3, dtype=np.uint8),
             mode="valid") == 3
+        stable_foreground &= np.r_[False, ~foreground[:-3]]
         transitions = np.flatnonzero(stable_foreground)
         if transitions.size == 0:
             continue
@@ -1032,6 +1033,7 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
                 obj_file,
                 data_integration.median_3d_mm,
                 data_integration.get_bd_xyz(),
+                data_integration.scan3dCoordinateOffsetZ,
             ])
             if not queued:
                 logger.error("3D mesh save queue failed for %s/%s",
@@ -1395,7 +1397,9 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
         npy_data = tool.hstack_3d(depth_images,
                                   join_mask_image=join_mask_image)
 
+        quarter_turns = 0
         if self.rotate == 90 or data_integration.surface == "S":
+            quarter_turns += 1
             join_image = np.rot90(join_image, 1)
             join_mask_image = np.rot90(join_mask_image, 1)
             join_validity = np.rot90(join_validity, 1)
@@ -1406,10 +1410,20 @@ class ImageMosaic(Globs.control.BaseImageMosaic):
             npy_data = cv2.flip(npy_data, 1)
 
         if self.rotate == -90 or data_integration.surface == "L":
+            quarter_turns -= 1
             join_image = np.rot90(join_image, -1)
             join_mask_image = np.rot90(join_mask_image, -1)
             join_validity = np.rot90(join_validity, -1)
             npy_data = np.rot90(npy_data, -1)
+
+        if quarter_turns % 2:
+            # Image columns/rows exchange roles in a quarter-turn. All later
+            # measurements and meshes operate in the rotated image frame.
+            scale_x = getattr(data_integration, "scan3dCoordinateScaleX", None)
+            scale_y = getattr(data_integration, "scan3dCoordinateScaleY", None)
+            if scale_x is not None and scale_y is not None:
+                data_integration.set("scan3dCoordinateScaleX", scale_y)
+                data_integration.set("scan3dCoordinateScaleY", scale_x)
 
         box = tool.crop_black_border(join_mask_image)
         x, y, w, h = box

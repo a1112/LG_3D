@@ -190,8 +190,26 @@ class DataIntegration:
         return Path(self.saveFolder) / str(self.coilId)
 
     def set_npy_data(self, npy_data):
-        logger.debug("set_npy_data %s", npy_data.shape)
-        self.__npyData__ = npy_data
+        array = np.asarray(npy_data)
+        if array.ndim != 2 or 0 in array.shape:
+            raise ValueError(
+                f"invalid stitched 3D data shape: {getattr(array, 'shape', None)}"
+            )
+        if (not np.issubdtype(array.dtype, np.number)
+                or np.issubdtype(array.dtype, np.complexfloating)):
+            raise ValueError("stitched 3D data must be real-valued")
+        if self.npy_mask is not None and array.shape != self.npy_mask.shape:
+            raise ValueError(
+                f"stitched 3D/mask shape mismatch: {array.shape} != {self.npy_mask.shape}"
+            )
+        logger.debug("set_npy_data %s", array.shape)
+        invalid = ~np.isfinite(array) | (array < 0)
+        if self.npy_mask is not None:
+            invalid |= self.npy_mask == 0
+        if np.any(invalid):
+            array = array.copy()
+            array[invalid] = 0
+        self.__npyData__ = array
         self._npyData_ = None
         self.__median_non_zero__ = None
 
@@ -231,7 +249,7 @@ class DataIntegration:
         return self.z_to_mm(0)
 
     def point_to_mm(self, arr):
-        arr = arr.copy()
+        arr = np.array(arr, dtype=float, copy=True)
         arr[:,
             2] = arr[:,
                      2] * self.scan3dCoordinateScaleZ + self.scan3dCoordinateOffsetZ
@@ -261,9 +279,14 @@ class DataIntegration:
         y, x = np.indices(image.shape)
         distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
         annulus_mask = (distance >= r1) & (distance <= r2)
-        annular_mean_area = image[annulus_mask]
-        annular_mean_area = annular_mean_area[annular_mean_area != 0]
-        annular_mean = np.median(annular_mean_area)
+        if self.npy_mask is not None:
+            annulus_mask &= self.npy_mask > 0
+        annular_mean_area = np.asarray(image)[annulus_mask]
+        annular_mean_area = annular_mean_area[
+            np.isfinite(annular_mean_area) & (annular_mean_area > 0)
+        ]
+        annular_mean = (float(np.median(annular_mean_area))
+                        if annular_mean_area.size else float("nan"))
         return annular_mean, annulus_mask
 
     @property
@@ -272,7 +295,10 @@ class DataIntegration:
             self.__median_non_zero__, self.annulus_mask = self.annular_region_mean(
                 self.__npyData__, 0.6, 0.8)  # 获取平均值
             if np.isnan(self.__median_non_zero__):
-                nz = self.__npyData__[self.__npyData__ != 0]
+                valid = np.isfinite(self.__npyData__) & (self.__npyData__ > 0)
+                if self.npy_mask is not None:
+                    valid &= self.npy_mask > 0
+                nz = self.__npyData__[valid]
                 if nz.size:
                     self.__median_non_zero__ = np.median(nz)
                     logger.warning(
@@ -309,6 +335,8 @@ class DataIntegration:
         self.dictData["startTime"] = self.startTime
 
     def set_original_data(self, datas):
+        if not datas:
+            raise ValueError("missing camera data for 3D integration")
         self.originalData = datas
         self.bdList = []
         for camera in datas:
@@ -322,13 +350,17 @@ class DataIntegration:
             bd_item = BdData(metadata["bdConfig"])
             self.bdList.append(bd_item)
             self.coilData = metadata["coilData"]
-            self.use = self.coilData["Weight"]
-            self.scan3dCoordinateScaleX = bd_item.bdDataX.scan3dCoordinateScale
-            self.scan3dCoordinateScaleY = bd_item.bdDataY.scan3dCoordinateScale
-            self.scan3dCoordinateScaleZ = bd_item.bdDataZ.scan3dCoordinateScale
-            self.scan3dCoordinateOffsetX = bd_item.bdDataX.scan3dCoordinateOffset
-            self.scan3dCoordinateOffsetY = bd_item.bdDataY.scan3dCoordinateOffset
-            self.scan3dCoordinateOffsetZ = bd_item.bdDataZ.scan3dCoordinateOffset
+            self.use = self.coilData.get("Weight")
+            # Retain the historical reference camera. Other camera Z values
+            # are converted into these units before stitching.
+            for axis, item in (("X", bd_item.bdDataX), ("Y", bd_item.bdDataY),
+                               ("Z", bd_item.bdDataZ)):
+                scale = float(item.scan3dCoordinateScale)
+                offset = float(item.scan3dCoordinateOffset)
+                if not np.isfinite(scale) or scale <= 0 or not np.isfinite(offset):
+                    raise ValueError(f"invalid camera {camera.get('camera')} {axis} calibration")
+                setattr(self, f"scan3dCoordinateScale{axis}", scale)
+                setattr(self, f"scan3dCoordinateOffset{axis}", offset)
             self.dictData[
                 "scan3dCoordinateScaleX"] = self.scan3dCoordinateScaleX
             self.dictData[
@@ -413,13 +445,16 @@ class DataIntegration:
         logger.debug("commit")
         logger.debug(self.dictData.get("median_3d"))
         dict_data = self.dictData
-        dict_data["startTime"] = dict_data["startTime"].strftime(
-            "%Y-%m-%d %H:%M:%S:%f")
+        json_data = dict(dict_data)
+        start_time = json_data.get("startTime")
+        if isinstance(start_time, datetime.datetime):
+            json_data["startTime"] = start_time.strftime(
+                "%Y-%m-%d %H:%M:%S:%f")
         for k in ["median_3d", "median_3d_mm", "start"]:
-            v = dict_data.get(k)
-            if isinstance(v, float) and np.isnan(v):
-                logger.error("%s %s is NaN, fallback to 0", self.key, k)
-                dict_data[k] = 0.0
+            v = json_data.get(k)
+            if isinstance(v, (float, np.floating)) and not np.isfinite(v):
+                logger.error("%s %s is non-finite, fallback to 0", self.key, k)
+                json_data[k] = 0.0
         addCoilState(
             CoilStateDB(
                 secondaryCoilId=self.coilId,
@@ -445,7 +480,7 @@ class DataIntegration:
                 mask_area=self.dictData.get("mask_area"),
                 width=self.dictData.get("width"),
                 height=self.dictData.get("height"),
-                jsonData=str(json.dumps(dict_data))))
+                jsonData=str(json.dumps(json_data))))
 
     def add_server_detection_error(self,
                                    error_msg,
@@ -464,7 +499,7 @@ class DataIntegration:
         return self._hasDetectionError_
 
     def __iter__(self):
-        return self
+        return iter(()) if self.isNone() else iter((self,))
 
     def __next__(self):
         if self.index > 0 or self.isNone():
@@ -551,8 +586,11 @@ class DataIntegrationList:
     def append(self, data_integration: DataIntegration):
         self.dataIntegrationList.append(data_integration)
 
+    def __bool__(self):
+        return any(not item.isNone() for item in self.dataIntegrationList)
+
     def __iter__(self):
-        return self
+        return (item for item in self.dataIntegrationList if not item.isNone())
 
     def __next__(self):
         if self.index < len(self.dataIntegrationList):

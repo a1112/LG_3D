@@ -7,6 +7,7 @@ from CoilDataBase.storage_policy import should_store_model_name
 from Base.property.Data3D import LineData
 from Base.utils.Log import logger
 from .FlatRollData import FlatRollData
+from .errors import alarm_error_result, record_alarm_error
 
 
 class AlarmData:
@@ -14,7 +15,12 @@ class AlarmData:
     def __init__(self,data_integration):
         self.data_integration = data_integration
         self.flatRollData: Optional[FlatRollData] = None
-        self.lineDataDict:Optional[Dict[LineData]] = None
+        self.lineDataDict: Optional[Dict[float, LineData]] = None
+        self.flat_roll_error = ""
+        self.flat_roll_grad_result = None
+        self.loose_coil_measurements = None
+        self.loose_coil_errors = []
+        self.defect_grad_result = None
         self.taper_shape_disabled = False
         self.taper_shape_errors = []
         self.taper_shape_warnings = []
@@ -27,12 +33,14 @@ class AlarmData:
     def _commit_flat_roll_data(self):
         if self.flatRollData is None:
             logger.warning("skip missing flat roll data before taper line commit")
+            record_alarm_error(self.data_integration, "flat_roll_commit", "missing flat roll data")
             return
         try:
             self.flatRollData.commit()
-        except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
+        except Exception as e:
             logger.warning(
                 f"skip invalid flat roll data before taper line commit: {e}")
+            record_alarm_error(self.data_integration, "flat_roll_commit", e)
 
     def commit(self):
         self._commit_flat_roll_data()
@@ -48,6 +56,7 @@ class AlarmData:
                 "skip invalid taper line data container: "
                 f"{type(line_data_dict).__name__}")
             line_data_values = []
+            record_alarm_error(self.data_integration, "taper_line_commit", "invalid line data container")
         for lineData in line_data_values:
             try:
                 if should_store_model_name("LineData"):
@@ -56,11 +65,14 @@ class AlarmData:
                     model_list.extend(lineData.all_point_data_model(self.data_integration))
             except (AttributeError, TypeError, ValueError, IndexError, OverflowError) as e:
                 logger.warning(f"skip invalid taper line data: {e}")
+                record_alarm_error(self.data_integration, "taper_line_commit", e)
         if model_list:
             try:
                 Alarm.addObj(model_list)
             except Exception as e:
                 logger.warning(f"skip saving taper line models: {e}")
+                record_alarm_error(self.data_integration, "taper_line_commit", e)
+        return alarm_error_result(self.data_integration)
 
     def set_line_data_dict(self, line_data):
         self.lineDataDict = line_data or {}

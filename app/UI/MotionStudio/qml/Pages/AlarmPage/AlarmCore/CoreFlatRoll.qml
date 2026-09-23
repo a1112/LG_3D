@@ -33,15 +33,15 @@ Item {
     }
 
 
-    if(l.hasData && s.hasData){
+    if(l.innerDiameterMm > 0 && s.innerDiameterMm > 0){
         innerDiameter=(l.inner_circle_width+s.inner_circle_width)/2
         innerDiameterMm=(l.innerDiameterMm+s.innerDiameterMm)/2
     }
-    else if(l.hasData){
+    else if(l.innerDiameterMm > 0){
         innerDiameter=l.inner_circle_width
         innerDiameterMm=l.innerDiameterMm
     }
-    else if (s.hasData){
+    else if (s.innerDiameterMm > 0){
         innerDiameter=s.inner_circle_width
         innerDiameterMm=s.innerDiameterMm
     }
@@ -49,7 +49,10 @@ Item {
         innerDiameter=-1
         innerDiameterMm=-1
     }
-        if (innerDiameterMm>0){
+        if (Math.max(l.calibratedLevel, s.calibratedLevel) > 0) {
+            alarmLevel = Math.max(l.calibratedLevel, s.calibratedLevel)
+        }
+        else if (innerDiameterMm>0){
                 if (innerDiameterMm<680) {
                     alarmLevel=2
                 }

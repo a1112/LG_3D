@@ -1,3 +1,5 @@
+import { calibratedFlatRollDiameter, calibratedFlatRollLevel, flatRollInnerAngle } from './flatRoll'
+
 export interface DataHeaderInfoField {
   label: string
   value: string
@@ -119,6 +121,8 @@ function buildTaperSection(data: Record<string, unknown>): DataHeaderInfoSection
 }
 
 function flatRollSideDiameterMm(item: Record<string, unknown>): number {
+  const calibrated = calibratedFlatRollDiameter(item)
+  if (calibrated !== null) return calibrated
   const width = numberValue(item.inner_circle_width, 0)
   const accuracyX = numberValue(item.accuracy_x, 1)
   return width > 0 ? width * accuracyX : -1
@@ -132,10 +136,11 @@ function buildFlatRollSide(flatRoll: Record<string, unknown>, side: Side) {
 
   return {
     hasData,
+    calibratedLevel: calibratedFlatRollLevel(item),
     innerDiameterMm,
     centerX: hasData ? numberValue(item.inner_circle_center_x, 0) : null,
     centerY: hasData ? numberValue(item.inner_circle_center_y, 0) : null,
-    radius: hasData ? numberValue(item.inner_circle_radius, 0) : null,
+    radius: hasData ? numberValue(flatRollInnerAngle(item), 0) : null,
   }
 }
 
@@ -143,10 +148,11 @@ function buildFlatRollSection(data: Record<string, unknown>): DataHeaderInfoSect
   const flatRoll = asRecord(data.FlatRoll)
   const s = buildFlatRollSide(flatRoll, 'S')
   const l = buildFlatRollSide(flatRoll, 'L')
-  const diameters = [s.innerDiameterMm, l.innerDiameterMm].filter((value): value is number => value !== null)
+  const diameters = [s.innerDiameterMm, l.innerDiameterMm].filter((value): value is number => value !== null && value > 0)
   const innerDiameterMm =
     diameters.length > 0 ? diameters.reduce((sum, value) => sum + value, 0) / diameters.length : null
-  const level = innerDiameterMm !== null && innerDiameterMm > 0 ? (innerDiameterMm < 680 ? 2 : 1) : 0
+  const storedLevel = Math.max(s.calibratedLevel, l.calibratedLevel)
+  const level = storedLevel || (innerDiameterMm !== null && innerDiameterMm > 0 ? (innerDiameterMm < 680 ? 2 : 1) : 0)
   const centerText = (side: ReturnType<typeof buildFlatRollSide>) =>
     side.hasData ? `${fmt(side.centerX, 0)},${fmt(side.centerY, 0)}` : '--'
 

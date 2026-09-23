@@ -1,0 +1,364 @@
+{
+  "obj_back_before": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.472284317016602
+    ],
+    "native": false,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 180.0,
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/3D.obj",
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ],
+    "model_pixel_count": 0
+  },
+  "mesh_back_before": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.47227954864502
+    ],
+    "native": true,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 180.0,
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/meshes/defaultobject_mesh.mesh",
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ],
+    "model_pixel_count": 0
+  },
+  "obj_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.472293853759766
+    ],
+    "native": false,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 0,
+    "effective_center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/3D.obj",
+    "modelBoundsMin": [
+      -129.0,
+      -129.75,
+      -6.2186431884765625
+    ],
+    "modelBoundsMax": [
+      129.0,
+      129.0,
+      9.253650665283203
+    ],
+    "autoCenterOffset": [
+      -0.0,
+      0.375,
+      -1.5175037384033203
+    ],
+    "model_pixel_count": 38822,
+    "model_scale": [
+      1,
+      1,
+      1
+    ],
+    "model_offset": [
+      0,
+      0,
+      0
+    ],
+    "centering_error_mm": 0.0,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  },
+  "mesh_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.47227954864502
+    ],
+    "native": true,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 0,
+    "effective_center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/meshes/defaultobject_mesh.mesh",
+    "modelBoundsMin": [
+      -129.0,
+      -129.75,
+      -6.218629837036133
+    ],
+    "modelBoundsMax": [
+      129.0,
+      129.0,
+      9.253649711608887
+    ],
+    "autoCenterOffset": [
+      -0.0,
+      0.375,
+      -1.517509937286377
+    ],
+    "model_pixel_count": 38822,
+    "model_scale": [
+      1,
+      1,
+      1
+    ],
+    "model_offset": [
+      0,
+      0,
+      0
+    ],
+    "centering_error_mm": 0.0,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  },
+  "obj_back_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.472284317016602
+    ],
+    "native": false,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 180.0,
+    "effective_center": [
+      -5.043716200248127e-08,
+      -5.964047034012765e-08,
+      -9.485852103807701e-08
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/3D.obj",
+    "modelBoundsMin": [
+      -129.0,
+      -129.75,
+      -6.218629837036133
+    ],
+    "modelBoundsMax": [
+      129.00001525878906,
+      129.00001525878906,
+      9.253654479980469
+    ],
+    "autoCenterOffset": [
+      -7.62939453125e-06,
+      0.37499237060546875,
+      -1.517512321472168
+    ],
+    "model_pixel_count": 39353,
+    "model_scale": [
+      1,
+      1,
+      1
+    ],
+    "model_offset": [
+      0,
+      0,
+      0
+    ],
+    "centering_error_mm": 1.2287811858417872e-07,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  },
+  "mesh_back_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.47227954864502
+    ],
+    "native": true,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 180.0,
+    "effective_center": [
+      -5.405838976457744e-08,
+      -3.085363786681228e-08,
+      -1.0166905894948286e-07
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/meshes/defaultobject_mesh.mesh",
+    "modelBoundsMin": [
+      -129.0,
+      -129.75,
+      -6.218629837036133
+    ],
+    "modelBoundsMax": [
+      129.0,
+      129.0,
+      9.253649711608887
+    ],
+    "autoCenterOffset": [
+      -0.0,
+      0.375,
+      -1.517509937286377
+    ],
+    "model_pixel_count": 39353,
+    "model_scale": [
+      1,
+      1,
+      1
+    ],
+    "model_offset": [
+      0,
+      0,
+      0
+    ],
+    "centering_error_mm": 1.1920928664004656e-07,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  },
+  "obj_transform_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.472283363342285
+    ],
+    "native": false,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 45.0,
+    "effective_center": [
+      20.0,
+      -10.0,
+      5.0
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/3D.obj",
+    "modelBoundsMin": [
+      -129.00001525878906,
+      -129.75,
+      -6.218631744384766
+    ],
+    "modelBoundsMax": [
+      129.0,
+      129.00001525878906,
+      9.25365161895752
+    ],
+    "autoCenterOffset": [
+      7.62939453125e-06,
+      0.37499237060546875,
+      -1.517509937286377
+    ],
+    "model_pixel_count": 41012,
+    "model_scale": [
+      1.2,
+      0.8,
+      1.5
+    ],
+    "model_offset": [
+      20.0,
+      -10.0,
+      5.0
+    ],
+    "centering_error_mm": 0.0,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  },
+  "mesh_transform_preview": {
+    "ready": true,
+    "size": [
+      258.0,
+      258.75,
+      15.47227954864502
+    ],
+    "native": true,
+    "error": "",
+    "render_method": "QQuickRenderControl / OpenGL framebuffer",
+    "frames": 90,
+    "rotation_y": 45.0,
+    "effective_center": [
+      20.0,
+      -10.0,
+      5.0
+    ],
+    "window_visible": false,
+    "window_exposed": false,
+    "model": "work/3d_implementation_20260923/synthetic/meshes/defaultobject_mesh.mesh",
+    "modelBoundsMin": [
+      -129.0,
+      -129.75,
+      -6.218629837036133
+    ],
+    "modelBoundsMax": [
+      129.0,
+      129.0,
+      9.253649711608887
+    ],
+    "autoCenterOffset": [
+      -0.0,
+      0.375,
+      -1.517509937286377
+    ],
+    "model_pixel_count": 41012,
+    "model_scale": [
+      1.2,
+      0.8,
+      1.5
+    ],
+    "model_offset": [
+      20.0,
+      -10.0,
+      5.0
+    ],
+    "centering_error_mm": 0.0,
+    "image_saved": true,
+    "image_size": [
+      1000,
+      640
+    ]
+  }
+}

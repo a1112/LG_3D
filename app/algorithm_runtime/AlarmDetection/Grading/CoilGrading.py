@@ -3,7 +3,9 @@ from CoilDataBase.models import AlarmInfo
 from AlarmDetection.Grading.alarm_flat_roll import grading_alarm_flat_roll
 from AlarmDetection.Grading.alarm_loose_coil import grading_alarm_loose_coil
 from AlarmDetection.Grading.alarm_taper_shape import grading_alarm_taper_shape
+from AlarmDetection.Grading.alarm_defects import grading_alarm_defects
 from AlarmDetection.Result.GradResult import AlarmGradResult
+from AlarmDetection.Result.errors import alarm_error_result, merge_alarm_errors, record_alarm_error
 
 from Base.property.Base import CoilLineData, DataIntegration, DataIntegrationList
 from Base.utils.Log import logger
@@ -27,6 +29,7 @@ def _safe_grading(data_integration: DataIntegration, label: str, grading_func):
         surface = getattr(data_integration, "key", getattr(data_integration, "surface", ""))
         error_msg = f"{label}检测失败: {e}"
         logger.warning(f"{coil_id} {surface} {error_msg}")
+        record_alarm_error(data_integration, f"grading_{label}", e)
         return AlarmGradResult(3, error_msg, "")
 
 
@@ -48,8 +51,15 @@ def grading(data_integration: DataIntegration):
 
 
     flat_roll_grad_info = _safe_grading(data_integration, "扁卷", grading_alarm_flat_roll)
+    alarm_data = getattr(data_integration, "alarmData", None)
+    if alarm_data is not None:
+        alarm_data.flat_roll_grad_result = flat_roll_grad_info
     taper_shape_grad_info = _safe_grading(data_integration, "塔形", grading_alarm_taper_shape)
     alarm_loose_coil_info = _safe_grading(data_integration, "松卷", grading_alarm_loose_coil)
+    defect_grad_info = getattr(getattr(data_integration, "alarmData", None),
+                               "defect_grad_result", None)
+    if defect_grad_info is None:
+        defect_grad_info = _safe_grading(data_integration, "缺陷", grading_alarm_defects)
 
 
     alarm_info = AlarmInfo(
@@ -63,9 +73,10 @@ def grading(data_integration: DataIntegration):
         looseCoilMsg=alarm_loose_coil_info.errorMsg,
         flatRollGrad=flat_roll_grad_info.grad,
         flatRollMsg=flat_roll_grad_info.errorMsg,
-        defectGrad=1,
-        defectMsg="",
-        grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad, flat_roll_grad_info.grad)
+        defectGrad=defect_grad_info.grad,
+        defectMsg=defect_grad_info.errorMsg,
+        grad=max(taper_shape_grad_info.grad, alarm_loose_coil_info.grad,
+                 flat_roll_grad_info.grad, defect_grad_info.grad)
     )
     from CoilDataBase.Coil import add_obj
     try:
@@ -73,6 +84,8 @@ def grading(data_integration: DataIntegration):
     except Exception as e:
         coil_id, surface = _data_integration_log_fields(data_integration)
         logger.warning(f"{coil_id} {surface} 保存综合报警失败: {e}")
+        record_alarm_error(data_integration, "alarm_info_commit", e)
+    return alarm_error_result(data_integration)
 
 
 def grading_all(data_integration_list: DataIntegrationList):
@@ -80,13 +93,18 @@ def grading_all(data_integration_list: DataIntegrationList):
     级别判断系统
 
     """
+    errors = {}
     for dataIntegration in data_integration_list:
         coil_id, surface = _data_integration_log_fields(dataIntegration)
         try:
-            grading(dataIntegration)
+            merge_alarm_errors(errors, grading(dataIntegration))
         except Exception as e:
             logger.warning(f"{coil_id} {surface} 综合报警分级失败: {e}")
+            record_alarm_error(dataIntegration, "grading", e)
         try:
-            dataIntegration.alarmData.commit()
+            merge_alarm_errors(errors, dataIntegration.alarmData.commit())
         except Exception as e:
             logger.warning(f"{coil_id} {surface} 报警明细提交失败: {e}")
+            record_alarm_error(dataIntegration, "alarm_detail_commit", e)
+        merge_alarm_errors(errors, alarm_error_result(dataIntegration))
+    return errors

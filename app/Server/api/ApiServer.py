@@ -64,10 +64,15 @@ async def ws_re_detection_task(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()  # 非阻塞的接收消息
             logger.debug("websocket received: %s", data)
-            data = json.loads(data)
-            from_id = data["from_id"]
-            to_id = data["to_id"]
             try:
+                payload = json.loads(data)
+                if not isinstance(payload, dict):
+                    raise ValueError("重检请求必须是 JSON 对象")
+                from_id = payload.get("from_id")
+                to_id = payload.get("to_id")
+                if (type(from_id) is not int or type(to_id) is not int
+                        or from_id <= 0 or to_id < from_id):
+                    raise ValueError("重检卷号必须是正整数，且结束卷号不能小于起始卷号")
                 await asyncio.to_thread(
                     image_mosaic_thread.set_re_detection_by_coil_id, from_id,
                     to_id)

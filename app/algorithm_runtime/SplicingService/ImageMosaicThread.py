@@ -433,7 +433,12 @@ class ImageMosaicThread(Thread):
         detection_error_msg = "; ".join(mosaic_error_msgs)
         if data_integration_list:
             try:
-                cv_detection.detection_all(data_integration_list)
+                surface_errors = cv_detection.detection_all(data_integration_list) or {}
+                for surface, error in surface_errors.items():
+                    status[surface] = ErrorMap["ImageError"]
+                    detection_error_msg = "; ".join(
+                        msg for msg in (detection_error_msg,
+                                        f"{surface}: cv detection failed: {error}") if msg)
             except Exception as e:
                 detection_error_msg = "; ".join(
                     msg for msg in (detection_error_msg,
@@ -457,15 +462,29 @@ class ImageMosaicThread(Thread):
                 f"{COIL_PROCESSING_TIMEOUT_SECONDS}s")
             logger.error("%s SecondaryCoilId=%s", alarm_error_msg,
                          secondary_coil.Id)
+            for data_integration in data_integration_list:
+                status[data_integration.key] = ErrorMap["ImageError"]
         else:
             try:
-                AlarmDetection.detection.detection_all(
-                    data_integration_list)  # 判级
+                alarm_errors = AlarmDetection.detection.detection_all(
+                    data_integration_list) or {}
+                for surface, errors in alarm_errors.items():
+                    status[surface] = ErrorMap["ImageError"]
+                    detail = "; ".join(errors) if isinstance(errors, (list, tuple)) else str(errors)
+                    alarm_error_msg = "; ".join(
+                        msg for msg in (alarm_error_msg, f"{surface}: {detail}") if msg)
             except Exception as e:
                 alarm_error_msg = f"alarm detection failed: {e}"
                 logger.exception("alarm detection failed SecondaryCoilId=%s",
                                  secondary_coil.Id)
+                for data_integration in data_integration_list:
+                    status[data_integration.key] = ErrorMap["ImageError"]
         defection_time5 = time.time()
+        processing_error = "; ".join(
+            msg for msg in (detection_error_msg, alarm_error_msg) if msg)
+        if processing_error and not check_detection and getattr(self, "re_detection_running", False):
+            self.re_detection_error = f"{secondary_coil.Id}: {processing_error}"
+            self.add_msg(self.re_detection_error)
 
         logger.debug(
             "algorithm timing total_s=%s image_s=%s defect_s=%s alarm_s=%s",
@@ -491,8 +510,7 @@ class ImageMosaicThread(Thread):
                 "Grade":
                 0,
                 "Msg":
-                "; ".join(msg for msg in (detection_error_msg, alarm_error_msg)
-                          if msg)
+                processing_error
             })
             # 检测完成后同步摘要表
             try:

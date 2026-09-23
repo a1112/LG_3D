@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TESTDATA_COIL_ID = "193113"
 DEFAULT_SCAN3D_SCALE_X = 0.33693358302116394
@@ -60,14 +59,17 @@ def get_testdata_asset_dir(path: Path | str | None = None) -> Path:
     return base_dir
 
 
-def _load_npz_array(path: Path) -> np.ndarray | None:
+def _load_3d_array(path: Path) -> np.ndarray | None:
     if not path.exists():
         return None
-    with np.load(path) as data:
-        if "array" in data:
-            return np.array(data["array"], copy=True)
-        first_key = data.files[0] if data.files else None
-        return np.array(data[first_key], copy=True) if first_key else None
+    loaded = np.load(path, allow_pickle=False)
+    if isinstance(loaded, np.ndarray):
+        return np.array(loaded, copy=True)
+    with loaded:
+        if "array" in loaded:
+            return np.array(loaded["array"], copy=True)
+        first_key = loaded.files[0] if loaded.files else None
+        return np.array(loaded[first_key], copy=True) if first_key else None
 
 
 def _surface_asset_dir(surface_key: str) -> Path:
@@ -91,7 +93,10 @@ def get_testdata_coil_info(surface_key: str) -> dict | None:
         except Exception:
             info = {}
 
-    array = _load_npz_array(asset_dir / "3D.npz")
+    array = next(
+        (_load_3d_array(asset_dir / name)
+         for name in ("3D.npz", "3D.npy") if (asset_dir / name).exists()),
+        None)
     if array is not None:
         non_zero = array[array != 0]
         median_3d = float(np.median(non_zero)) if non_zero.size else 0.0

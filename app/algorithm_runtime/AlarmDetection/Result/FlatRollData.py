@@ -1,4 +1,7 @@
+import json
 from typing import Optional
+
+import numpy as np
 
 from CoilDataBase.Alarm import addAlarmFlatRoll
 from CoilDataBase.models import AlarmFlatRoll
@@ -31,6 +34,7 @@ class FlatRollData(BaseData):
     def get_alarm_flat_roll(self, data_integration=None):
         if data_integration is None:
             data_integration = self.dataIntegration
+        grade = getattr(getattr(data_integration, "alarmData", None), "flat_roll_grad_result", None)
         return AlarmFlatRoll(
             secondaryCoilId=data_integration.coilId,
             surface=data_integration.key,
@@ -46,11 +50,36 @@ class FlatRollData(BaseData):
             inner_circle_radius=self.inner_circle.circle.radius,
             accuracy_x=data_integration.accuracy_x,
             accuracy_y=data_integration.accuracy_y,
+            level=getattr(grade, "grad", None),
+            err_msg=getattr(grade, "errorMsg", None),
+            data=json.dumps({
+                "inner_diameter_mm": self.inner_diameter_mm(),
+                "inner_ellipse_angle": float(self.inner_circle.ellipse.rotation_angle),
+                "outer_ellipse_angle": float(self.out_circle.ellipse.rotation_angle),
+            }, allow_nan=False),
         )
 
     @property
     def inner_circle_width(self):
         return self.inner_circle.ellipse.width
+
+    def inner_diameter_mm(self) -> float:
+        """Return the ellipse's minor diameter after X/Y calibration."""
+        ellipse = self.inner_circle.ellipse
+        scale_x = float(self.dataIntegration.scan3dCoordinateScaleX)
+        scale_y = float(self.dataIntegration.scan3dCoordinateScaleY)
+        width, height = float(ellipse.width), float(ellipse.height)
+        angle = float(ellipse.rotation_angle)
+        values = (scale_x, scale_y, width, height, angle)
+        if not all(np.isfinite(value) for value in values):
+            raise ValueError("扁卷椭圆或标定包含非有限值")
+        if min(scale_x, scale_y, width, height) <= 0:
+            raise ValueError("扁卷椭圆轴长与标定比例必须大于零")
+        radians = np.deg2rad(angle)
+        rotation = np.array([[np.cos(radians), -np.sin(radians)],
+                             [np.sin(radians), np.cos(radians)]])
+        calibrated = np.diag([scale_x, scale_y]) @ rotation @ np.diag([width, height])
+        return float(np.linalg.svd(calibrated, compute_uv=False).min())
 
     def commit(self):
         """

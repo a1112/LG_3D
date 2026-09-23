@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest'
 import { buildDataHeaderInfoSections } from './dataHeaderInfo'
 
 describe('dataHeaderInfo', () => {
+  it('shows calibrated ellipse diameter, angle and saved alarm grade', () => {
+    const [, section] = buildDataHeaderInfoSections({ FlatRoll: {
+      L: {},
+      S: { inner_circle_width: 20, accuracy_x: 2, inner_circle_radius: 10, level: 3,
+        data: { inner_diameter_mm: 20, inner_ellipse_angle: 90 } },
+    } })
+    expect(section.level).toBe(3)
+    expect(section.fields).toContainEqual({ label: '内径(mm)', value: '20' })
+    expect(section.fields).toContainEqual({ label: 'S端旋转', value: '90.0' })
+  })
+
   it('builds QML DataShowItemInfos taper-shape and flat-roll fields from /coilAlarm data', () => {
     const sections = buildDataHeaderInfoSections({
       TaperShape: {

@@ -11,6 +11,18 @@ Item {
     required property var dataController
     required property var scriptLauncher
     required property var globalContext
+    signal redetectionCompleted(int coilId)
+
+    function refreshAfterRedetection(){
+        root.dataController.refreshAfterRedetection()
+    }
+
+    Connections {
+        target: root.dataController
+        function onRedetectionCompleted(coilId) {
+            root.redetectionCompleted(coilId)
+        }
+    }
 
     property var nowTime: new Date()
     Timer{

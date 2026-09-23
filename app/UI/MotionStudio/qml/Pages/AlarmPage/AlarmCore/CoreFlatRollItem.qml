@@ -16,7 +16,10 @@ Item {
     property real inner_circle_radius: 0.0  // 内圈旋转角度
     property real accuracy_x: 1.0
     property real accuracy_y: 1.0
-    readonly property real innerDiameterMm: inner_circle_width > 0 ? inner_circle_width * accuracy_x : -1
+    property real calibratedInnerDiameterMm: -1
+    readonly property real innerDiameterMm: calibratedInnerDiameterMm > 0 ? calibratedInnerDiameterMm
+                                            : inner_circle_width > 0 ? inner_circle_width * accuracy_x : -1
+    readonly property int calibratedLevel: calibratedInnerDiameterMm > 0 && level >= 1 && level <= 5 ? level : 0
     property var level: 0
     property var err_msg: ""
     property bool hasData:false
@@ -43,6 +46,7 @@ Item {
         inner_circle_radius=0
         accuracy_x=1
         accuracy_y=1
+        calibratedInnerDiameterMm=-1
         level=0
         err_msg=""
     }
@@ -62,6 +66,13 @@ Item {
             inner_circle_radius=numberValue(data["inner_circle_radius"], 0)
             accuracy_x=numberValue(data["accuracy_x"], 1)
             accuracy_y=numberValue(data["accuracy_y"], 1)
+            let detail = data["data"] || {}
+            if (typeof detail === "string") {
+                try { detail = JSON.parse(detail) } catch (error) { detail = {} }
+            }
+            detail = detail && typeof detail === "object" ? detail : {}
+            calibratedInnerDiameterMm=numberValue(detail.inner_diameter_mm, -1)
+            inner_circle_radius=numberValue(detail.inner_ellipse_angle, inner_circle_radius)
             level=numberValue(data["level"], 0)
             err_msg=data["err_msg"] || ""
         }

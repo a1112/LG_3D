@@ -18,6 +18,48 @@ from .export_config import ExportConfig
 from .defect_visibility import should_export_defect
 
 
+LEGACY_FLAT_ROLL_SCALE_X = 0.3415023386478424
+
+
+def _positive_finite_number(value):
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) and number > 0 else None
+
+
+def _flat_roll_diameter_mm(alarm_flat_roll, *, inner: bool):
+    if inner:
+        raw_detail = getattr(alarm_flat_roll, "data", None)
+        if isinstance(raw_detail, dict):
+            detail = raw_detail
+        else:
+            try:
+                detail = json.loads(raw_detail) if raw_detail else {}
+            except (TypeError, ValueError):
+                detail = {}
+        if isinstance(detail, dict):
+            diameter = _positive_finite_number(detail.get("inner_diameter_mm"))
+            if diameter is not None:
+                return diameter
+
+    # Older records only contain raw ellipse dimensions. Use their captured
+    # calibration; the historic fixed value applies only if it was not saved.
+    scale = getattr(alarm_flat_roll, "accuracy_x", None)
+    if scale is None:
+        scale = LEGACY_FLAT_ROLL_SCALE_X
+    scale = _positive_finite_number(scale)
+    width = _positive_finite_number(getattr(
+        alarm_flat_roll, "inner_circle_width" if inner else "out_circle_width", None))
+    if scale is None or width is None:
+        return ""
+    diameter = width * scale
+    return diameter if math.isfinite(diameter) else ""
+
+
 def get_header_data(secondary_coil: SecondaryCoil):
     coil_list = secondary_coil.childrenCoil
     if coil_list:
@@ -89,9 +131,9 @@ def get_alarm_info(secondary_coil, alarm_info_dict):
             alarm_flat_roll: AlarmFlatRoll
             res_data.update({
                 key + "端 检测外径":
-                alarm_flat_roll.out_circle_width * 0.3415023386478424,
+                _flat_roll_diameter_mm(alarm_flat_roll, inner=False),
                 key + "端 检测内径":
-                alarm_flat_roll.inner_circle_width * 0.3415023386478424,
+                _flat_roll_diameter_mm(alarm_flat_roll, inner=True),
                 # 更多参数
             })
             if alarm_info_dict[key]:

@@ -268,6 +268,18 @@ CoreModel_ {
         hasDataCacheOrder = order
     }
 
+    function invalidateHasDataCache(coilId){
+        let cache = hasDataCache || {}
+        let order = hasDataCacheOrder || []
+        let cacheKey = String(coilId)
+        if (cache[cacheKey] !== undefined) {
+            delete cache[cacheKey]
+            order = order.filter((key) => key !== cacheKey)
+            hasDataCache = cache
+            hasDataCacheOrder = order
+        }
+    }
+
     // 待定位的缺陷（从缺陷页面跳转时设置）
     property var pendingDefect: null
 

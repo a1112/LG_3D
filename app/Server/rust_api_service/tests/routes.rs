@@ -2073,7 +2073,10 @@ fn app_with_alarm_rows() -> axum::Router {
                 level: Some(2),
                 err_msg: Some("扁卷报警".to_string()),
                 crate_time: Some("2026-06-27 12:41:00".to_string()),
-                data: Some("{\"flat\":true}".to_string()),
+                data: Some(
+                    "{\"inner_diameter_mm\":123.45,\"inner_ellipse_angle\":17.5}"
+                        .to_string(),
+                ),
             },
             AlarmFlatRollRow {
                 id: 82,
@@ -11558,6 +11561,10 @@ async fn coil_alarm_endpoint_returns_python_alarm_detail_sections() {
     assert_eq!(body["FlatRoll"]["S"]["secondaryCoilId"], 42);
     assert_eq!(body["FlatRoll"]["S"]["out_circle_width"], 401.0);
     assert_eq!(body["FlatRoll"]["S"]["level"], 2);
+    assert_eq!(
+        body["FlatRoll"]["S"]["data"],
+        "{\"inner_diameter_mm\":123.45,\"inner_ellipse_angle\":17.5}"
+    );
     assert_eq!(body["FlatRoll"]["S"]["crateTime"]["year"], 2026);
     assert_eq!(
         body["FlatRoll"]["S"]
@@ -11628,6 +11635,7 @@ async fn coil_alarm_endpoint_returns_python_alarm_detail_sections() {
     assert_eq!(body["LooseCoil"]["S"][0]["Id"], 101);
     assert_eq!(body["LooseCoil"]["S"][0]["max_width"], 20.0);
     assert_eq!(body["LooseCoil"]["S"][0]["rotation_angle"], 2.5);
+    assert_eq!(body["LooseCoil"]["S"][0]["level"], 1);
     assert_eq!(body["LooseCoil"]["S"][0]["err_msg"], "松卷报警");
     assert_eq!(body["LooseCoil"]["L"], json!([]));
     assert_eq!(
@@ -11683,7 +11691,10 @@ async fn coil_alarm_endpoint_rounds_mysql_float_values_like_python_driver() {
             level: None,
             err_msg: None,
             crate_time: Some("2025-01-05 16:44:25".to_string()),
-            data: None,
+            data: Some(
+                "{\"max_width_unit\":\"mm\",\"max_width_mm\":5.0,\"max_width_px\":15.0}"
+                    .to_string(),
+            ),
         }])
         .with_alarm_taper_shapes(vec![AlarmTaperShapeRow {
             id: 983,
@@ -11716,7 +11727,10 @@ async fn coil_alarm_endpoint_rounds_mysql_float_values_like_python_driver() {
             level: Some(1),
             err_msg: Some("正常".to_string()),
             crate_time: Some("2025-01-05 16:44:25".to_string()),
-            data: None,
+            data: Some(
+                "{\"max_width_unit\":\"mm\",\"max_width_mm\":5.0,\"max_width_px\":15.0}"
+                    .to_string(),
+            ),
         }])
         .with_coil_states(vec![CoilStateRow {
             id: 985,
@@ -11760,7 +11774,7 @@ async fn coil_alarm_endpoint_rounds_mysql_float_values_like_python_driver() {
     assert_eq!(body["LooseCoil"]["L"][0]["max_width"], 5.0);
     assert_eq!(
         body["LooseCoil"]["L"][0]["data"],
-        "{\"max_width_raw\": 5.0, \"max_width_mm\": 5.0, \"max_width_unit\": \"mm\", \"max_width_scale\": 0.339437, \"max_width_scale_axis\": \"x\"}"
+        "{\"max_width_unit\": \"mm\", \"max_width_mm\": 5.0, \"max_width_px\": 15.0, \"max_width_raw\": 5.0, \"max_width_scale\": 0.339437, \"max_width_scale_axis\": \"x\"}"
     );
 }
 
@@ -11911,7 +11925,7 @@ async fn data_has_uses_runtime_configured_surface_folders_when_not_in_test_mode(
     .expect("mesh marker");
 
     let config = DataRuntimeConfig::load(&config_path).expect("runtime config");
-    let (status, body) = request_json(app_with_data_config(config), "GET", "/data_has/123").await;
+    let (status, body) = request_json(app_with_data_config(config.clone()), "GET", "/data_has/123").await;
 
     assert_eq!(status, StatusCode::OK);
     assert_eq!(
@@ -11927,26 +11941,33 @@ async fn data_has_uses_runtime_configured_surface_folders_when_not_in_test_mode(
 }
 
 #[tokio::test]
-async fn data_has_mesh_flag_matches_python_default_mesh_filename() {
+async fn data_has_mesh_flag_matches_loadable_mesh_filenames() {
     let root = unique_temp_dir();
     let save_s = root.join("Save_S");
     let save_l = root.join("Save_L");
     let config_path = root.join("Server3D.json");
     write_runtime_config(&config_path, &save_s, &save_l);
 
-    let s_mesh_dir = save_s.join("123").join("meshes");
+    let s_coil_dir = save_s.join("123");
     let l_mesh_dir = save_l.join("123").join("meshes");
-    fs::create_dir_all(&s_mesh_dir).expect("s mesh dir");
+    fs::create_dir_all(&s_coil_dir).expect("s coil dir");
     fs::create_dir_all(&l_mesh_dir).expect("l mesh dir");
-    fs::write(s_mesh_dir.join("defaultobject.obj"), b"obj").expect("legacy obj marker");
+    fs::write(s_coil_dir.join("3D.obj"), b"obj").expect("root obj marker");
     fs::write(l_mesh_dir.join("defaultobject_mesh.mesh"), b"mesh").expect("python mesh marker");
 
     let config = DataRuntimeConfig::load(&config_path).expect("runtime config");
-    let (status, body) = request_json(app_with_data_config(config), "GET", "/data_has/123").await;
+    let (status, body) = request_json(app_with_data_config(config.clone()), "GET", "/data_has/123").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["S"]["MESH"], false);
+    assert_eq!(body["S"]["MESH"], true);
     assert_eq!(body["L"]["MESH"], true);
+
+    fs::remove_file(s_coil_dir.join("3D.obj")).expect("remove root obj marker");
+    fs::remove_file(l_mesh_dir.join("defaultobject_mesh.mesh")).expect("remove mesh marker");
+    let (status, body) = request_json(app_with_data_config(config), "GET", "/data_has/123").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["S"]["MESH"], false);
+    assert_eq!(body["L"]["MESH"], false);
 
     let _ = fs::remove_dir_all(root);
 }
@@ -16937,6 +16958,88 @@ async fn xlsx_data_report_formats_taper_detail_json_like_python() {
         !sheet.contains("1.0, 2.5, raw"),
         "S端 塔形判定角度 should not retain float-like string precision unlike Python: {sheet}"
     );
+}
+
+fn app_with_xlsx_flat_roll_units(accuracy_x: Option<f64>, data: Option<&str>) -> axum::Router {
+    let repository = InMemoryCoilRepository::new()
+        .with_coils(vec![redetection_coil_summary(42)])
+        .with_alarm_flat_rolls(vec![AlarmFlatRollRow {
+            id: 1,
+            secondary_coil_id: 42,
+            surface: "S".to_string(),
+            out_circle_width: Some(4000.0),
+            out_circle_height: None,
+            out_circle_center_x: None,
+            out_circle_center_y: None,
+            out_circle_radius: None,
+            inner_circle_width: Some(2000.0),
+            inner_circle_height: None,
+            inner_circle_center_x: None,
+            inner_circle_center_y: None,
+            inner_circle_radius: None,
+            accuracy_x,
+            accuracy_y: Some(1.0),
+            level: Some(1),
+            err_msg: None,
+            crate_time: None,
+            data: data.map(str::to_string),
+        }]);
+    build_app(ApiState::new(Arc::new(repository)))
+}
+
+fn xlsx_first_row_value(sheet: &str, header: &str) -> String {
+    let header_position = sheet.find(&format!("<t>{header}</t>")).expect("export header");
+    let cell_position = sheet[..header_position].rfind("<c r=\"").expect("header cell");
+    let reference = sheet[cell_position + 6..].split('"').next().expect("cell reference");
+    let column = reference.trim_end_matches(|character: char| character.is_ascii_digit());
+    let marker = format!("<c r=\"{column}2\" t=\"inlineStr\"><is><t>");
+    sheet.split(&marker).nth(1).expect("data cell").split("</t>").next().unwrap().to_string()
+}
+
+async fn xlsx_flat_roll_unit_values(accuracy_x: Option<f64>, data: Option<&str>) -> (String, String) {
+    let response = request_response(
+        app_with_xlsx_flat_roll_units(accuracy_x, data),
+        "GET",
+        "/exportXlsxById/42/42?export_type=3D",
+    ).await;
+    let bytes = assert_xlsx_export_response(response, "example").await;
+    let sheet = xlsx_entry_text(&bytes, "xl/worksheets/sheet1.xml");
+    (xlsx_first_row_value(&sheet, "S端 检测内径"),
+     xlsx_first_row_value(&sheet, "S端 检测外径"))
+}
+
+#[tokio::test]
+async fn xlsx_flat_roll_export_prefers_persisted_mm_like_python() {
+    for data in [r#"{"inner_diameter_mm":700.25}"#, r#"{"inner_diameter_mm":"700.25"}"#] {
+        let values = xlsx_flat_roll_unit_values(Some(0.5), Some(data)).await;
+        assert_eq!(values, ("700.25".to_string(), "2000".to_string()));
+    }
+    let values = xlsx_flat_roll_unit_values(Some(f64::NAN), Some(r#"{"inner_diameter_mm":701}"#)).await;
+    assert_eq!(values, ("701".to_string(), String::new()));
+}
+
+#[tokio::test]
+async fn xlsx_flat_roll_export_uses_record_scale_and_missing_legacy_fallback() {
+    for data in [None, Some(""), Some("broken-json"), Some("null"), Some("[]"), Some("{}") ] {
+        assert_eq!(xlsx_flat_roll_unit_values(Some(0.5), data).await,
+                   ("1000".to_string(), "2000".to_string()));
+    }
+    assert_eq!(xlsx_flat_roll_unit_values(None, None).await,
+               ("683.004677".to_string(), "1366.009355".to_string()));
+}
+
+#[tokio::test]
+async fn xlsx_flat_roll_export_rejects_nonfinite_measurements_and_invalid_scales() {
+    for data in [r#"{"inner_diameter_mm":NaN}"#, r#"{"inner_diameter_mm":Infinity}"#,
+                 r#"{"inner_diameter_mm":"-Infinity"}"#, r#"{"inner_diameter_mm":-1}"#,
+                 r#"{"inner_diameter_mm":0}"#, r#"{"inner_diameter_mm":"bad"}"#] {
+        assert_eq!(xlsx_flat_roll_unit_values(Some(0.5), Some(data)).await,
+                   ("1000".to_string(), "2000".to_string()));
+    }
+    for scale in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+        assert_eq!(xlsx_flat_roll_unit_values(Some(scale), None).await,
+                   (String::new(), String::new()));
+    }
 }
 
 #[tokio::test]

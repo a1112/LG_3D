@@ -1,0 +1,31 @@
+{
+  "ready": true,
+  "size": [
+    258.0,
+    258.75
+  ],
+  "native": false,
+  "error": "",
+  "render_method": "QQuickRenderControl / OpenGL framebuffer",
+  "frames": 90,
+  "initial_camera_distance": 3040.1821799852723,
+  "initial_camera_fit_applied": true,
+  "surface_spacing_mm": 378.75,
+  "model_display_width": 258.75,
+  "left_gray_geometry_pixels": 118268,
+  "right_gray_geometry_pixels": 111801,
+  "both_halves_have_geometry_pixels": true,
+  "window_visible": false,
+  "window_exposed": false,
+  "model": "work/3d_implementation_20260923/synthetic/3D.obj",
+  "model_scale": [
+    8.0,
+    8.0,
+    8.0
+  ],
+  "image_saved": true,
+  "image_size": [
+    1200,
+    700
+  ]
+}
