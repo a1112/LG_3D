@@ -1,8 +1,16 @@
 import QtQuick
 
 Item {
+    required property var apiClient
+    required property var settings
+    required property var globalContext
+    required property var coreController
+    required property var initController
+    required property var imageCacheService
+    required property var scriptLauncher
+
     // 判断服务器是否在本地
-    readonly property bool serverInLocal: api.apiConfig.hostname === "127.0.0.1"
+    readonly property bool serverInLocal: apiClient.apiConfig.hostname === "127.0.0.1"
 
     // 是否显示图像遮挡
     property bool imageMaskChecked: false

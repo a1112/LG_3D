@@ -1,11 +1,178 @@
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Duration;
+
+use ::sqlx::AnyPool;
+use ::sqlx::any::AnyPoolOptions;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use serde_json::Value;
-use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+
+const DIALECT_MYSQL: u8 = 1;
+const DIALECT_POSTGRES: u8 = 2;
+static DATABASE_DIALECT: AtomicU8 = AtomicU8::new(DIALECT_MYSQL);
+static POSTGRES_SQL_CACHE: LazyLock<Mutex<HashMap<String, &'static str>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn using_postgres() -> bool {
+    DATABASE_DIALECT.load(Ordering::Relaxed) == DIALECT_POSTGRES
+}
+
+fn quote_postgres_identifiers_and_parameters(sql: &str) -> String {
+    let mut output = String::with_capacity(sql.len() + 64);
+    let mut chars = sql.chars().peekable();
+    let mut parameter_index = 0;
+    let mut in_string = false;
+    let mut in_quoted_identifier = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            output.push(ch);
+            if ch == '\'' {
+                if matches!(chars.peek(), Some('\'')) {
+                    output.push(chars.next().expect("peeked quote"));
+                } else {
+                    in_string = false;
+                }
+            }
+            continue;
+        }
+
+        if ch == '\'' {
+            in_string = true;
+            output.push(ch);
+            continue;
+        }
+        if ch == '`' {
+            in_quoted_identifier = !in_quoted_identifier;
+            output.push('"');
+            continue;
+        }
+        if ch == '?' {
+            parameter_index += 1;
+            output.push('$');
+            output.push_str(&parameter_index.to_string());
+            continue;
+        }
+        if !in_quoted_identifier && (ch.is_ascii_alphabetic() || ch == '_') {
+            let mut token = String::from(ch);
+            while matches!(chars.peek(), Some(next) if next.is_ascii_alphanumeric() || *next == '_')
+            {
+                token.push(chars.next().expect("peeked identifier character"));
+            }
+            let is_case_sensitive_identifier =
+                token.chars().any(|value| value.is_ascii_lowercase())
+                    && token.chars().any(|value| value.is_ascii_uppercase());
+            if is_case_sensitive_identifier {
+                output.push('"');
+                output.push_str(&token);
+                output.push('"');
+            } else {
+                output.push_str(&token);
+            }
+            continue;
+        }
+        output.push(ch);
+    }
+    output
+}
+
+fn postgres_sql(sql: &str) -> String {
+    let average_if = r#"IF(
+                    state_s.median_3d_mm IS NOT NULL AND state_l.median_3d_mm IS NOT NULL,
+                    (state_s.median_3d_mm + state_l.median_3d_mm) / 2,
+                    NULL
+                )"#;
+    let average_case = r#"CASE
+                    WHEN state_s.median_3d_mm IS NOT NULL AND state_l.median_3d_mm IS NOT NULL
+                    THEN (state_s.median_3d_mm + state_l.median_3d_mm) / 2
+                    ELSE NULL
+                END"#;
+    let alarm_if = "IF(COALESCE(S_HasAlarm, 0) OR COALESCE(L_HasAlarm, 0), TRUE, FALSE)";
+    let alarm_expression = "(COALESCE(S_HasAlarm, FALSE) OR COALESCE(L_HasAlarm, FALSE))";
+
+    let insert_ignore = sql.contains("INSERT IGNORE INTO");
+    let mut translated = sql
+        .replace(average_if, average_case)
+        .replace(alarm_if, alarm_expression)
+        .replace("INSERT IGNORE INTO", "INSERT INTO")
+        .replace("DATE_FORMAT(", "TO_CHAR(")
+        .replace("STR_TO_DATE(", "TO_TIMESTAMP(")
+        .replace("'%Y-%m-%d %H:%i:%s'", "'YYYY-MM-DD HH24:MI:SS'")
+        .replace("'%Y%m%d%H%i'", "'YYYYMMDDHH24MI'");
+
+    translated = quote_postgres_identifiers_and_parameters(&translated)
+        .replace("COALESCE(\"HasCoil\", 0)", "COALESCE(\"HasCoil\", FALSE)")
+        .replace(
+            "COALESCE(\"HasCoil\", FALSE) = 1",
+            "COALESCE(\"HasCoil\", FALSE) = TRUE",
+        )
+        .replace(
+            "COALESCE(\"S_HasAlarm\", 0)",
+            "COALESCE(\"S_HasAlarm\", FALSE)",
+        )
+        .replace(
+            "COALESCE(\"L_HasAlarm\", 0)",
+            "COALESCE(\"L_HasAlarm\", FALSE)",
+        );
+
+    let trimmed = translated.trim_end();
+    if (trimmed.starts_with("UPDATE ") || trimmed.starts_with("DELETE "))
+        && trimmed.ends_with("LIMIT 1")
+    {
+        translated.truncate(translated.rfind("LIMIT 1").expect("checked LIMIT suffix"));
+    }
+    if insert_ignore {
+        translated.push_str(" ON CONFLICT DO NOTHING");
+    }
+    translated
+}
+
+fn runtime_sql<'q>(sql: &'q str) -> &'q str {
+    if !using_postgres() {
+        return sql;
+    }
+    let mut cache = POSTGRES_SQL_CACHE.lock().expect("postgres SQL cache lock");
+    if let Some(translated) = cache.get(sql) {
+        return translated;
+    }
+    let translated: &'static str = Box::leak(postgres_sql(sql).into_boxed_str());
+    cache.insert(sql.to_string(), translated);
+    translated
+}
+
+mod sqlx {
+    use ::sqlx::Database;
+    pub use ::sqlx::Error;
+    use ::sqlx::query::{Query, QueryAs, QueryScalar};
+
+    pub fn query<'q, DB>(sql: &'q str) -> Query<'q, DB, <DB as Database>::Arguments<'q>>
+    where
+        DB: Database,
+    {
+        ::sqlx::query::<DB>(super::runtime_sql(sql))
+    }
+
+    pub fn query_as<'q, DB, O>(sql: &'q str) -> QueryAs<'q, DB, O, <DB as Database>::Arguments<'q>>
+    where
+        DB: Database,
+        O: for<'r> ::sqlx::FromRow<'r, DB::Row>,
+    {
+        ::sqlx::query_as::<DB, O>(super::runtime_sql(sql))
+    }
+
+    pub fn query_scalar<'q, DB, O>(
+        sql: &'q str,
+    ) -> QueryScalar<'q, DB, O, <DB as Database>::Arguments<'q>>
+    where
+        DB: Database,
+        (O,): for<'r> ::sqlx::FromRow<'r, DB::Row>,
+    {
+        ::sqlx::query_scalar::<DB, O>(super::runtime_sql(sql))
+    }
+}
 
 use crate::models::{
     AlarmFlatRollDataRow, AlarmFlatRollRow, AlarmInfoSummaryRow, AlarmLooseCoilRow,
@@ -22,10 +189,7 @@ use crate::models::{
 pub trait CoilRepository: Send + Sync {
     async fn list_coils(&self, limit: u32) -> Result<Vec<CoilSummaryRow>>;
     async fn search_coils_recent(&self, limit: u32) -> Result<Vec<CoilSummaryRow>>;
-    async fn search_coils_recent_for_export(
-        &self,
-        limit: u32,
-    ) -> Result<Vec<CoilSummaryRow>>;
+    async fn search_coils_recent_for_export(&self, limit: u32) -> Result<Vec<CoilSummaryRow>>;
     async fn latest_coil(&self) -> Result<Option<LatestCoilRow>>;
     async fn list_coils_after(&self, coil_id: i64, limit: u32) -> Result<Vec<CoilSummaryRow>>;
     async fn grader_list(&self, limit: u32) -> Result<Vec<GraderRow>>;
@@ -36,6 +200,7 @@ pub trait CoilRepository: Send + Sync {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>>;
     async fn search_coils_by_datetime(&self, start: &str, end: &str)
     -> Result<Vec<CoilSummaryRow>>;
@@ -43,6 +208,7 @@ pub trait CoilRepository: Send + Sync {
         &self,
         start: &str,
         end: &str,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>>;
     async fn backup_secondary_coils(&self) -> Result<Vec<SecondaryCoilRow>>;
     async fn secondary_coils(&self, coil_id: i64) -> Result<Vec<SecondaryCoilRow>>;
@@ -53,6 +219,7 @@ pub trait CoilRepository: Send + Sync {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilDefectRow>>;
     async fn backup_defects(&self) -> Result<Vec<CoilDefectRow>>;
     async fn manual_defects(&self, coil_id: i64, surface: &str) -> Result<Vec<ManualDefectRow>>;
@@ -724,6 +891,7 @@ impl CoilRepository for InMemoryCoilRepository {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>> {
         let mut rows = self
             .coil_snapshot()
@@ -731,6 +899,7 @@ impl CoilRepository for InMemoryCoilRepository {
             .filter(|coil| coil.id >= start_coil_id && coil.id <= end_coil_id)
             .collect::<Vec<_>>();
         rows.sort_by(|left, right| right.id.cmp(&left.id));
+        rows.truncate(limit.max(1) as usize);
         Ok(rows)
     }
 
@@ -769,6 +938,7 @@ impl CoilRepository for InMemoryCoilRepository {
         &self,
         start: &str,
         end: &str,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>> {
         let Some(start_time) = parse_python_datetime_minute(start) else {
             return Ok(Vec::new());
@@ -782,16 +952,14 @@ impl CoilRepository for InMemoryCoilRepository {
             .coil_snapshot()
             .into_iter()
             .filter(|coil| {
-                coil
-                    .create_time
+                coil.create_time
                     .as_deref()
                     .and_then(parse_sql_datetime_second)
-                    .is_some_and(|create_time| {
-                        create_time >= min_time && create_time <= max_time
-                    })
+                    .is_some_and(|create_time| create_time >= min_time && create_time <= max_time)
             })
             .collect::<Vec<_>>();
         rows.sort_by(|left, right| right.id.cmp(&left.id));
+        rows.truncate(limit.max(1) as usize);
         Ok(rows)
     }
 
@@ -864,6 +1032,7 @@ impl CoilRepository for InMemoryCoilRepository {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilDefectRow>> {
         let mut rows = self
             .defects
@@ -878,6 +1047,7 @@ impl CoilRepository for InMemoryCoilRepository {
                 .cmp(&right.secondary_coil_id)
                 .then_with(|| left.id.cmp(&right.id))
         });
+        rows.truncate(limit.max(1) as usize);
         Ok(rows)
     }
 
@@ -1555,16 +1725,44 @@ fn normalize_plc_curve_args(start_id: i64, end_id: i64, limit: u32) -> (i64, i64
     (start_id, end_id, limit, order_desc)
 }
 
-pub struct MySqlCoilRepository {
-    pool: MySqlPool,
+pub struct DatabaseCoilRepository {
+    pool: AnyPool,
 }
 
-impl MySqlCoilRepository {
+pub type MySqlCoilRepository = DatabaseCoilRepository;
+
+impl DatabaseCoilRepository {
     pub async fn connect(database_url: &str) -> Result<Self> {
-        let pool = MySqlPoolOptions::new()
+        let dialect = if database_url
+            .split_once(':')
+            .map(|(scheme, _)| matches!(scheme, "postgres" | "postgresql"))
+            .unwrap_or(false)
+        {
+            DIALECT_POSTGRES
+        } else {
+            DIALECT_MYSQL
+        };
+        DATABASE_DIALECT.store(dialect, Ordering::Relaxed);
+        ::sqlx::any::install_default_drivers();
+        let is_postgres = dialect == DIALECT_POSTGRES;
+        let pool_options = AnyPoolOptions::new()
             .max_connections(10)
-            .connect(database_url)
-            .await?;
+            .acquire_timeout(Duration::from_secs(10))
+            .idle_timeout(Some(Duration::from_secs(300)))
+            .max_lifetime(Some(Duration::from_secs(3600)))
+            .after_connect(move |connection, _metadata| {
+                Box::pin(async move {
+                    if is_postgres {
+                        ::sqlx::query("SET statement_timeout = '30s'")
+                            .execute(connection)
+                            .await?;
+                    }
+                    Ok(())
+                })
+            });
+        let pool =
+            tokio::time::timeout(Duration::from_secs(15), pool_options.connect(database_url))
+                .await??;
         Ok(Self { pool })
     }
 
@@ -1880,7 +2078,7 @@ FROM coil_summary
 "#;
 
 #[async_trait]
-impl CoilRepository for MySqlCoilRepository {
+impl CoilRepository for DatabaseCoilRepository {
     async fn list_coils(&self, limit: u32) -> Result<Vec<CoilSummaryRow>> {
         let limit = limit.clamp(1, 1000);
         let sql = format!(
@@ -1971,7 +2169,7 @@ impl CoilRepository for MySqlCoilRepository {
             LIMIT ?
             "#,
         )
-        .bind(limit)
+        .bind(i64::from(limit))
         .fetch_all(&self.pool)
         .await?;
         Ok(rows.into_iter().map(Into::into).collect())
@@ -2070,9 +2268,11 @@ impl CoilRepository for MySqlCoilRepository {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>> {
+        let limit = limit.clamp(1, 10_001);
         let sql = format!(
-            "{COIL_SUMMARY_SELECT} WHERE Id >= ? AND Id <= ? ORDER BY Id DESC"
+            "{COIL_SUMMARY_SELECT} WHERE Id >= ? AND Id <= ? ORDER BY Id DESC LIMIT {limit}"
         );
         self.query_coils(&sql, QueryBind::IdRange(start_coil_id, end_coil_id))
             .await
@@ -2094,9 +2294,11 @@ impl CoilRepository for MySqlCoilRepository {
         &self,
         start: &str,
         end: &str,
+        limit: u32,
     ) -> Result<Vec<CoilSummaryRow>> {
+        let limit = limit.clamp(1, 10_001);
         let sql = format!(
-            "{COIL_SUMMARY_SELECT} WHERE CreateTime >= STR_TO_DATE(?, '%Y%m%d%H%i') AND CreateTime <= STR_TO_DATE(?, '%Y%m%d%H%i') ORDER BY Id DESC"
+            "{COIL_SUMMARY_SELECT} WHERE CreateTime >= STR_TO_DATE(?, '%Y%m%d%H%i') AND CreateTime <= STR_TO_DATE(?, '%Y%m%d%H%i') ORDER BY Id DESC LIMIT {limit}"
         );
         self.query_coils(&sql, QueryBind::DateRange(start, end))
             .await
@@ -2231,8 +2433,10 @@ impl CoilRepository for MySqlCoilRepository {
         &self,
         start_coil_id: i64,
         end_coil_id: i64,
+        limit: u32,
     ) -> Result<Vec<CoilDefectRow>> {
-        let rows = sqlx::query_as::<_, CoilDefectSqlRow>(
+        let limit = limit.clamp(1, 100_001);
+        let sql = format!(
             r#"
             SELECT
                 Id AS id,
@@ -2251,12 +2455,14 @@ impl CoilRepository for MySqlCoilRepository {
             FROM CoilDefect
             WHERE secondaryCoilId >= ? AND secondaryCoilId <= ?
             ORDER BY secondaryCoilId ASC, Id ASC
+            LIMIT {limit}
             "#,
-        )
-        .bind(start_coil_id)
-        .bind(end_coil_id)
-        .fetch_all(&self.pool)
-        .await?;
+        );
+        let rows = sqlx::query_as::<_, CoilDefectSqlRow>(&sql)
+            .bind(start_coil_id)
+            .bind(end_coil_id)
+            .fetch_all(&self.pool)
+            .await?;
         Ok(rows.into_iter().map(Into::into).collect())
     }
 
@@ -2351,7 +2557,38 @@ impl CoilRepository for MySqlCoilRepository {
             .clone()
             .unwrap_or_else(|| "未知缺陷".to_string());
         let defect_class = self.defect_class_for_name(&defect_name).await?;
-        let result = sqlx::query(
+        let postgres_id = if using_postgres() {
+            Some(
+                sqlx::query_scalar::<_, i64>(
+                    "SELECT nextval(pg_get_serial_sequence('\"ManualDefect\"', 'Id'))",
+                )
+                .fetch_one(&self.pool)
+                .await?,
+            )
+        } else {
+            None
+        };
+        let insert_sql = if postgres_id.is_some() {
+            r#"
+            INSERT INTO ManualDefect (
+                Id,
+                secondaryCoilId,
+                surface,
+                defectClass,
+                defectName,
+                defectStatus,
+                defectX,
+                defectY,
+                defectW,
+                defectH,
+                defectSource,
+                defectData,
+                remark,
+                annotator
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            "#
+        } else {
             r#"
             INSERT INTO ManualDefect (
                 secondaryCoilId,
@@ -2369,25 +2606,32 @@ impl CoilRepository for MySqlCoilRepository {
                 annotator
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            "#,
-        )
-        .bind(defect.secondary_coil_id.unwrap_or_default())
-        .bind(defect.surface.as_deref().unwrap_or("S"))
-        .bind(defect_class)
-        .bind(defect_name)
-        .bind(defect.defect_status.unwrap_or(1))
-        .bind(defect.defect_x.unwrap_or_default())
-        .bind(defect.defect_y.unwrap_or_default())
-        .bind(defect.defect_w.unwrap_or_default())
-        .bind(defect.defect_h.unwrap_or_default())
-        .bind(0)
-        .bind(defect_data_for_storage(defect.defect_data))
-        .bind(defect.remark.unwrap_or_default())
-        .bind(defect.annotator.unwrap_or_else(|| "系统用户".to_string()))
-        .execute(&self.pool)
-        .await?;
+            "#
+        };
+        let mut insert = sqlx::query(insert_sql);
+        if let Some(defect_id) = postgres_id {
+            insert = insert.bind(defect_id);
+        }
+        let result = insert
+            .bind(defect.secondary_coil_id.unwrap_or_default())
+            .bind(defect.surface.as_deref().unwrap_or("S"))
+            .bind(defect_class)
+            .bind(defect_name)
+            .bind(defect.defect_status.unwrap_or(1))
+            .bind(defect.defect_x.unwrap_or_default())
+            .bind(defect.defect_y.unwrap_or_default())
+            .bind(defect.defect_w.unwrap_or_default())
+            .bind(defect.defect_h.unwrap_or_default())
+            .bind(0)
+            .bind(defect_data_for_storage(defect.defect_data))
+            .bind(defect.remark.unwrap_or_default())
+            .bind(defect.annotator.unwrap_or_else(|| "系统用户".to_string()))
+            .execute(&self.pool)
+            .await?;
 
-        let defect_id = result.last_insert_id() as i64;
+        let defect_id = postgres_id
+            .or_else(|| result.last_insert_id())
+            .ok_or_else(|| anyhow::anyhow!("database did not return a manual defect id"))?;
         self.manual_defect_by_id(defect_id)
             .await?
             .ok_or_else(|| anyhow::anyhow!("manual defect insert failed"))
@@ -2767,7 +3011,7 @@ impl CoilRepository for MySqlCoilRepository {
             .bind(start_id)
             .bind(end_id)
             .bind(end_id)
-            .bind(limit)
+            .bind(i64::from(limit))
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -2836,7 +3080,7 @@ impl CoilRepository for MySqlCoilRepository {
             .bind(start_id)
             .bind(end_id)
             .bind(end_id)
-            .bind(limit)
+            .bind(i64::from(limit))
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -3378,7 +3622,7 @@ impl CoilRepository for MySqlCoilRepository {
         match result {
             Ok(rows) => Ok(rows),
             Err(sqlx::Error::Database(error))
-                if matches!(error.code().as_deref(), Some("1146" | "42S02")) =>
+                if matches!(error.code().as_deref(), Some("1146" | "42S02" | "42P01")) =>
             {
                 Ok(Vec::new())
             }
@@ -3403,7 +3647,7 @@ impl CoilRepository for MySqlCoilRepository {
         match result {
             Ok(rows) => Ok(rows),
             Err(sqlx::Error::Database(error))
-                if matches!(error.code().as_deref(), Some("1146" | "42S02")) =>
+                if matches!(error.code().as_deref(), Some("1146" | "42S02" | "42P01")) =>
             {
                 Ok(Vec::new())
             }
@@ -3546,7 +3790,7 @@ impl CoilRepository for MySqlCoilRepository {
             LIMIT ?
             "#,
         )
-        .bind(limit)
+        .bind(i64::from(limit))
         .fetch_all(&self.pool)
         .await?;
 
@@ -3896,5 +4140,47 @@ impl CoilRepository for MySqlCoilRepository {
         .fetch_all(&self.pool)
         .await?;
         Ok(rows)
+    }
+}
+
+#[cfg(test)]
+mod dialect_tests {
+    use super::*;
+
+    #[test]
+    fn postgres_translation_quotes_identifiers_and_numbers_parameters() {
+        let sql = postgres_sql(
+            "SELECT Id, secondaryCoilId FROM CoilDefect WHERE secondaryCoilId = ? AND surface = '?'",
+        );
+        assert_eq!(
+            sql,
+            "SELECT \"Id\", \"secondaryCoilId\" FROM \"CoilDefect\" WHERE \"secondaryCoilId\" = $1 AND surface = '?'"
+        );
+    }
+
+    #[test]
+    fn postgres_translation_rewrites_mysql_dates_and_booleans() {
+        let sql = postgres_sql(
+            "SELECT DATE_FORMAT(CreateTime, '%Y-%m-%d %H:%i:%s'), COALESCE(HasCoil, 0) FROM coil_summary WHERE COALESCE(HasCoil, 0) = 1 AND CreateTime >= STR_TO_DATE(?, '%Y%m%d%H%i')",
+        );
+        assert!(sql.contains("TO_CHAR(\"CreateTime\", 'YYYY-MM-DD HH24:MI:SS')"));
+        assert!(sql.contains("COALESCE(\"HasCoil\", FALSE)"));
+        assert!(sql.contains("COALESCE(\"HasCoil\", FALSE) = TRUE"));
+        assert!(sql.contains("TO_TIMESTAMP($1, 'YYYYMMDDHH24MI')"));
+    }
+
+    #[test]
+    fn postgres_translation_rewrites_mysql_writes() {
+        let insert = postgres_sql("INSERT IGNORE INTO coil_summary (Id) VALUES (?)");
+        assert_eq!(
+            insert,
+            "INSERT INTO coil_summary (\"Id\") VALUES ($1) ON CONFLICT DO NOTHING"
+        );
+
+        let update = postgres_sql("UPDATE ManualDefect SET defectName = ? WHERE Id = ? LIMIT 1");
+        assert_eq!(
+            update.trim(),
+            "UPDATE \"ManualDefect\" SET \"defectName\" = $1 WHERE \"Id\" = $2"
+        );
     }
 }

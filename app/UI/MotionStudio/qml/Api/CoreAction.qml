@@ -2,10 +2,15 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
 Item {
+    id: root
+
+    required property var appWindow
+
     Action{//F11 全屏
         shortcut: StandardKey.FullScreen
         onTriggered:
-            app.visibility=app.visibility===Window.FullScreen?Window.Windowed:Window.FullScreen
+            root.appWindow.visibility = root.appWindow.visibility === Window.FullScreen
+                                      ? Window.Windowed : Window.FullScreen
     }
     Action{// Ctrl + C  复制
         shortcut: StandardKey.Copy

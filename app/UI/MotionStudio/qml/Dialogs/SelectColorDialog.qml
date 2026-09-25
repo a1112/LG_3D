@@ -1,7 +1,12 @@
 import Qt.labs.platform
 ColorDialog {
+    id: root
+
     property var acceptFunc
     onAccepted:{
-        acceptFunc(color)
+        let callback = root.acceptFunc
+        if (typeof callback === "function") {
+            callback(root.color)
+        }
     }
 }

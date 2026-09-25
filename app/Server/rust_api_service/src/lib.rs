@@ -17,5 +17,7 @@ pub use models::{
     LatestCoilRow, LineDataRow, ManualDefectRow, ManualDefectWrite, NextCodeDictRow, PlcDataRow,
     PointDataRow, SecondaryCoilRow, ServerDetectionErrorRow, TaperShapePointRow,
 };
-pub use repository::{CoilRepository, InMemoryCoilRepository, MySqlCoilRepository};
+pub use repository::{
+    CoilRepository, DatabaseCoilRepository, InMemoryCoilRepository, MySqlCoilRepository,
+};
 pub use routes::{ApiState, TestModeConfig, build_app};

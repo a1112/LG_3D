@@ -40,27 +40,52 @@
 #include "consolecontroller.h"
 #include <QSurfaceFormat>
 #include <QDateTime>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QMutex>
 #include <QMutexLocker>
-#include <QTextStream>
+#include <cstdio>
+
+namespace {
+
+constexpr qint64 kMotionStudioLogMaxBytes = 20LL * 1024LL * 1024LL;
+constexpr int kMotionStudioLogBackups = 3;
+
+bool rotateMotionStudioLog(const QString &logPath)
+{
+    const QFileInfo currentLog(logPath);
+    if (!currentLog.exists() || currentLog.size() < kMotionStudioLogMaxBytes) {
+        return true;
+    }
+
+    QFile::remove(logPath + QStringLiteral(".%1").arg(kMotionStudioLogBackups));
+    for (int index = kMotionStudioLogBackups - 1; index >= 1; --index) {
+        const QString source = logPath + QStringLiteral(".%1").arg(index);
+        if (!QFile::exists(source)) {
+            continue;
+        }
+        const QString destination = logPath + QStringLiteral(".%1").arg(index + 1);
+        QFile::remove(destination);
+        QFile::rename(source, destination);
+    }
+
+    const QString firstBackup = logPath + QStringLiteral(".1");
+    QFile::remove(firstBackup);
+    return QFile::rename(logPath, firstBackup);
+}
+
+} // namespace
 
 static void motionStudioMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     static QMutex mutex;
+    static QFile logFile;
+    static QString logPath;
+    static qint64 logBytesWritten = 0;
+    static bool logInitialized = false;
     QMutexLocker locker(&mutex);
-
-    QDir logDir(QCoreApplication::applicationDirPath());
-    for (int i = 0; i < 5; ++i) {
-        logDir.cdUp();
-    }
-    logDir.mkpath("debug_log/MotionStudio");
-
-    QFile file(logDir.filePath("debug_log/MotionStudio/qml.log"));
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-        return;
-    }
 
     const char *level = "DEBUG";
     switch (type) {
@@ -71,14 +96,60 @@ static void motionStudioMessageHandler(QtMsgType type, const QMessageLogContext 
     default: break;
     }
 
-    QTextStream out(&file);
-    out << QDateTime::currentDateTime().toString(Qt::ISODateWithMs)
-        << " [" << level << "] " << msg;
+    QString line = QDateTime::currentDateTime().toString(Qt::ISODateWithMs)
+                   + " [" + QString::fromLatin1(level) + "] " + msg;
     if (context.file) {
-        out << " (" << context.file << ":" << context.line << ")";
+        line += QStringLiteral(" (%1:%2)").arg(QString::fromUtf8(context.file)).arg(context.line);
     }
-    out << '\n';
-    out.flush();
+    const QString lineWithNewline = line + QLatin1Char('\n');
+
+    fprintf(stderr, "%s", lineWithNewline.toLocal8Bit().constData());
+    fflush(stderr);
+
+#ifdef _WIN32
+    const std::wstring debugLine = lineWithNewline.toStdWString();
+    OutputDebugStringW(debugLine.c_str());
+#endif
+
+    if (!logInitialized) {
+        QDir logDir(QCoreApplication::applicationDirPath());
+        for (int i = 0; i < 5; ++i) {
+            logDir.cdUp();
+        }
+        if (logDir.mkpath("debug_log/MotionStudio")) {
+            logPath = logDir.filePath("debug_log/MotionStudio/qml.log");
+            const bool rotationSucceeded = rotateMotionStudioLog(logPath);
+            logFile.setFileName(logPath);
+            if (logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+                // If a transient file lock prevented rotation, count only new
+                // bytes before retrying. This avoids a rotation attempt for
+                // every debug message while still retrying after another cap.
+                logBytesWritten = rotationSucceeded ? logFile.size() : 0;
+            }
+        }
+        logInitialized = true;
+    }
+
+    const QByteArray encodedLine = lineWithNewline.toUtf8();
+    if (logFile.isOpen()
+        && logBytesWritten + encodedLine.size() > kMotionStudioLogMaxBytes) {
+        logFile.flush();
+        logFile.close();
+        const bool rotationSucceeded = rotateMotionStudioLog(logPath);
+        logFile.setFileName(logPath);
+        if (logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+            logBytesWritten = rotationSucceeded ? logFile.size() : 0;
+        }
+    }
+    if (logFile.isOpen()) {
+        const qint64 written = logFile.write(encodedLine);
+        if (written > 0) {
+            logBytesWritten += written;
+        }
+        if (type != QtDebugMsg) {
+            logFile.flush();
+        }
+    }
 
     if (type == QtFatalMsg) {
         abort();
@@ -114,6 +185,7 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
     qInstallMessageHandler(motionStudioMessageHandler);
+    qInfo() << "MotionStudio starting, appDir=" << QCoreApplication::applicationDirPath();
 
     QQmlApplicationEngine engine;
     #ifdef _WIN32
@@ -146,7 +218,7 @@ int main(int argc, char *argv[])
 
     // qmlRegisterType<FileDownloader>("FileDownloader",1,0,"FileDownloader");
 
-    const QUrl url(u"qrc:/qml/main.qml"_qs);
+    const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
     QObject::connect(
                 &engine, &QQmlApplicationEngine::objectCreated, &app,
                 [url](QObject *obj, const QUrl &objUrl) {
@@ -158,7 +230,9 @@ int main(int argc, char *argv[])
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
     engine.addImportPath(":/");
 
+    qInfo() << "Loading QML" << url;
     engine.load(url);
+    qInfo() << "QML loaded, rootObjects=" << engine.rootObjects().size();
 
     if (engine.rootObjects().isEmpty()) {
         return -1;

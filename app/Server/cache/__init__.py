@@ -35,6 +35,7 @@ __all__: Tuple[str, ...] = (
     "startup_cache",
     "shutdown_cache",
     "get_cache_mode",
+    "get_cache_stats",
 )
 
 
@@ -44,6 +45,10 @@ def cache_provider() -> CacheProvider:
 
 def get_cache_mode() -> str:
     return _provider.mode
+
+
+def get_cache_stats() -> dict:
+    return _provider.stats()
 
 
 def startup_cache() -> None:

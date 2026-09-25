@@ -1,22 +1,29 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 
-Row{
+Row {
+    id: root
+
+    required property var hoverController
+    required property var style
+
     height: 150
     spacing: 3
     Repeater{
-        model: leftCore.preSourceModelS
+        model: root.hoverController.preSourceModelS
         ImageItem{
-            hasImage: leftCore.hovelCoilData && leftCore.hovelCoilData.Status_S>=0
-            image_source: model.image_source
-            key: model.key
+            hasImage: root.hoverController.hovelCoilData
+                      && root.hoverController.hovelCoilData.Status_S >= 0
+            style: root.style
         }
     }
     Repeater{
-        model: leftCore.preSourceModelL
+        model: root.hoverController.preSourceModelL
         ImageItem{
-            hasImage: leftCore.hovelCoilData && leftCore.hovelCoilData.Status_L>=0
-            image_source: model.image_source
-            key: model.key
+            hasImage: root.hoverController.hovelCoilData
+                      && root.hoverController.hovelCoilData.Status_L >= 0
+            style: root.style
         }
     }
 }

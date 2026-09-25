@@ -1,45 +1,126 @@
+pragma ComponentBehavior: Bound
 import QtQuick 2.15
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 Item {
-    id:root
-    property var glob_port
+    id: root
+
+    required property var apiClient
+    required property var modelStore
+    required property var style
+    required property var scriptLauncher
+
+    property int selectedPort: 0
     property int alarmLevel: 0
-    property ListModel netModel: ListModel{
-    }
+    property bool pollingEnabled: true
+    property bool requestRunning: false
+    property var pendingPorts: []
+    property int pollGeneration: 0
+    property ListModel netModel: ListModel {}
+
     function init() {
-        netModel.clear()
-        netModel.append({
-                            titleText: "采集服务",
-                            valueText: 0,
+        root.netModel.clear()
+        root.netModel.append({
+                            titleText: "核心 API",
+                            valueText: "--",
                             level: 1,
-                            msg: "api服务:采集务器（6相机）",
-                            port:api.apiConfig.databasPort,
+                            msg: "卷材、报警与配置接口",
+                            port: root.apiClient.apiConfig.activeApiPort
                         }
                     )
-        netModel.append({
-                            titleText: "数据服务",
-                            valueText: 0,
+        root.netModel.append({
+                            titleText: "图像服务",
+                            valueText: "--",
                             level: 1,
-                            port:api.apiConfig.databasPort,
-                            msg: "api服务:数据服务器"
+                            port: root.apiClient.apiConfig.activeImageServerPort,
+                            msg: "二维图像与渲染接口"
                         }
                         )
-        netModel.append(            {
-                            titleText: "3D服务",
-                            valueText: 0,
+        root.netModel.append({
+                            titleText: "2D 算法",
+                            valueText: "--",
                             level: 1,
-                            port:api.apiConfig.dataPort,
-                            msg: "api服务:PLC 交互"
+                            port: root.apiClient.apiConfig.alg2dPort,
+                            msg: "二维检测接口"
                         })
-        netModel.append({
-                            titleText: "PLC服务",
-                            valueText: 0,
-                            level: 1,
-                            port:api.apiConfig.dataPort,
-                            msg: "api服务:PLC 交互"
-                        })
+    }
+
+    function updatePortStatus(portNumber, delayValue, ok) {
+        for (let i = 0; i < root.netModel.count; ++i) {
+            let item = root.netModel.get(i)
+            if (Number(item.port) !== Number(portNumber)) {
+                continue
+            }
+            root.netModel.setProperty(
+                        i, "valueText",
+                        ok ? Number(delayValue).toFixed(0) + " ms"
+                           : qsTr("连接错误"))
+            root.netModel.setProperty(i, "level", ok ? 0 : 3)
+            root.modelStore.coreGlobalError.setStateLevel(
+                        "网络", i, ok ? 0 : 3)
+        }
+    }
+
+    function pollNextPort(generation) {
+        if (generation !== root.pollGeneration || !root.pollingEnabled) {
+            root.requestRunning = false
+            return
+        }
+        if (root.pendingPorts.length === 0) {
+            root.requestRunning = false
+            return
+        }
+        let portNumber = root.pendingPorts.shift()
+        root.apiClient.__getDelay__(portNumber, function(delayValue) {
+            if (generation !== root.pollGeneration) {
+                return
+            }
+            root.updatePortStatus(portNumber, delayValue, true)
+            root.pollNextPort(generation)
+        }, function() {
+            if (generation !== root.pollGeneration) {
+                return
+            }
+            root.updatePortStatus(portNumber, 0, false)
+            root.pollNextPort(generation)
+        })
+    }
+
+    function refresh() {
+        if (root.requestRunning || !root.pollingEnabled) {
+            return
+        }
+        let uniquePorts = []
+        for (let i = 0; i < root.netModel.count; ++i) {
+            let portNumber = Number(root.netModel.get(i).port)
+            if (isFinite(portNumber) && uniquePorts.indexOf(portNumber) < 0) {
+                uniquePorts.push(portNumber)
+            }
+        }
+        if (uniquePorts.length === 0) {
+            return
+        }
+        root.requestRunning = true
+        root.pendingPorts = uniquePorts
+        const generation = ++root.pollGeneration
+        root.pollNextPort(generation)
+    }
+
+    onPollingEnabledChanged: {
+        if (!root.pollingEnabled) {
+            root.pollGeneration++
+            root.pendingPorts = []
+            root.requestRunning = false
+        }
+    }
+
+    Timer {
+        interval: 10000
+        repeat: true
+        triggeredOnStart: true
+        running: root.visible && root.pollingEnabled
+        onTriggered: root.refresh()
     }
 
     Component.onCompleted: init()
@@ -59,7 +140,7 @@ Item {
             text:"网络状态"
             font.pointSize: 18
             font.bold: true
-            color: Material.color(Material.Blue)
+            color: root.style.titleColor
             font.family: "Microsoft YaHei"
             Layout.alignment: Qt.AlignHCenter
         }
@@ -69,13 +150,15 @@ Item {
             ToolTip.visible:hovered
             ToolTip.text: "远程到服务器"
             onClicked:{
-                ScriptLauncher.launchScript("/c start /wait mstsc /v "+api.apiConfig.hostname)
+                root.scriptLauncher.launchScript(
+                            "/c start /wait mstsc /v "
+                            + root.apiClient.apiConfig.hostname)
             }
             Image {
                 width: parent.width
                 height: parent.height
                 id: image
-                source: coreStyle.getIcon("uploading")
+                source: root.style.getIcon("uploading")
             }
         }
 
@@ -95,21 +178,22 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             GridView{
+                id: netGrid
                 anchors.fill: parent
-                model: netModel
+                model: root.netModel
                 cellWidth: parent.width / 2-1
                 cellHeight: 25
+                reuseItems: true
                 delegate: AlarmItemNetItem {
-                    title: titleText
-                    width: body.width / 2-1
+                    id: netDelegate
+                    style: root.style
+                    width: netGrid.cellWidth
                     height:25
-                    onClicked:{
-                    }
-                    MouseArea{
-                        anchors.fill: parent
+
+                    TapHandler {
                         acceptedButtons: Qt.RightButton
-                        onClicked:{
-                            glob_port=port
+                        onTapped: {
+                            root.selectedPort = netDelegate.port
                             netMenu.popup()
                         }
                     }
@@ -125,15 +209,9 @@ Item {
         MenuItem{
             text:"打开接口文档"
             onTriggered:{
-                api.openApi(glob_port)
+                root.apiClient.openApi(root.selectedPort)
             }
         }
-        MenuItem{
-            text:"重启服务"
-            onTriggered:{
-            }
-        }
-
     }
 
 }

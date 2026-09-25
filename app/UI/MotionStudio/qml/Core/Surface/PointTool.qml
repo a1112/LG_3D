@@ -1,64 +1,58 @@
 import QtQuick
-import "../../Model/server"
+
 Item {
-    property var pointDatas:[]
-    property ListModel pointDbData: ListModel{
+    id: root
+
+    property var pointDatas: []
+    property ListModel pointDbData: ListModel {
+        dynamicRoles: true
+    }
+    property ListModel pointUserData: ListModel {
         dynamicRoles: true
     }
 
-    property ListModel pointUserData:ListModel{
-        dynamicRoles: true
+    function clear() {
+        root.pointUserData.clear()
+        root.pointDbData.clear()
     }
 
-    function clear(){
-        pointUserData.clear()
-        return pointDbData.clear()
+    function addUserPoint(px, py) {
+        root.pointUserData.append({
+            "p_x": px,
+            "p_y": py,
+            "p_z": 0,
+            "type": "user"
+        })
     }
 
-    function addUserPoint(px,py){
-        var def= pointDataItem.defaultPoint
-        def["p_x"] = px
-        def["p_y"] = py
-        def["p_z"] = 0
-        def["type"]="user"
-        // 创建副本，避免修改原始对象，并过滤掉 null 值
-        var cleanDef = {}
-        for (var key in def) {
-            if (def[key] !== null && def[key] !== undefined) {
-                cleanDef[key] = def[key]
-            }
-        }
-        pointUserData.append(cleanDef)
-    }
-
-    function addDbPoint(dataItem){
-        if (!dataItem) return
-        if (dataItem["x"] === null || dataItem["x"] === undefined ||
-                dataItem["y"] === null || dataItem["y"] === undefined) {
+    function addDbPoint(dataItem) {
+        if (!dataItem
+                || dataItem.x === null || dataItem.x === undefined
+                || dataItem.y === null || dataItem.y === undefined) {
             return
         }
-        dataItem["p_x"]=dataItem["x"]
-        dataItem["p_y"]=dataItem["y"]
-        dataItem["p_z"]=dataItem["z"]
-        if (dataItem["z_mm"]<15) return
-        // 创建副本，过滤掉 null 值
-        var cleanItem = {}
-        for (var key in dataItem) {
+
+        let zMm = Number(dataItem.z_mm)
+        if (!isFinite(zMm) || zMm < 15) {
+            return
+        }
+
+        let cleanItem = {}
+        for (let key in dataItem) {
             if (dataItem[key] !== null && dataItem[key] !== undefined) {
                 cleanItem[key] = dataItem[key]
             }
         }
-        pointDbData.append(cleanItem)
+        cleanItem.p_x = dataItem.x
+        cleanItem.p_y = dataItem.y
+        cleanItem.p_z = dataItem.z
+        root.pointDbData.append(cleanItem)
     }
 
-    property PointData pointDataItem:PointData{}
-
-
-    function setDatas(data){
-        pointDatas=data
-        data.forEach((value)=>{
-            addDbPoint(value)
-                    })
-
+    function setDatas(data) {
+        root.pointDatas = Array.isArray(data) ? data : []
+        root.pointDatas.forEach(function(value) {
+            root.addDbPoint(value)
+        })
     }
 }

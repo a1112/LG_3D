@@ -3,12 +3,18 @@ import QtQuick.Controls
 import "../Aerial"
 import "Draw"
 import "../Comps"
-import "ViewTool"
 Item {
     id:root
+    required property var surfaceData
+    required property var dataShowCore
+    required property var modelStore
+    required property var style
+    required property var apiClient
+    required property var globalContext
+
     anchors.fill: parent
     Rectangle{
-    color: "black"
+    color: root.style.viewportBackgroundColor
     anchors.fill: parent
     }
 
@@ -16,10 +22,10 @@ Item {
         id:flick
         clip: true
         anchors.fill: parent
-        contentWidth: dataShowCore.canvasContentWidth
-        contentHeight: dataShowCore.canvasContentHeight
+        contentWidth: root.dataShowCore.canvasContentWidth
+        contentHeight: root.dataShowCore.canvasContentHeight
         Component.onCompleted: {
-            dataShowCore.flick = this
+            root.dataShowCore.flick = this
         }
         ScrollBar.vertical: ScrollBar {
             id:scrollBarV
@@ -30,18 +36,30 @@ Item {
         Item{
 
             id:canvas
-            width: dataShowCore.canvasContentWidth
-            height: dataShowCore.canvasContentHeight
+            width: root.dataShowCore.canvasContentWidth
+            height: root.dataShowCore.canvasContentHeight
 
             ImageView{
+                surfaceData: root.surfaceData
+                dataShowCore: root.dataShowCore
+                style: root.style
             }
-            ShowDefects{ // 缺陷绘制
+            ShowDefects { // 缺陷绘制
+                controller: root.dataShowCore
+                defectClassController: root.globalContext.defectClassProperty
+                style: root.style
             }
             DrawView{
-                // 绘制
+                surfaceData: root.surfaceData
+                dataShowCore: root.dataShowCore
+                style: root.style
+                apiClient: root.apiClient
             }
-            ControlView{
-            // 控制系统
+            ControlView {
+                controller: root.dataShowCore
+                surfaceData: root.surfaceData
+                flickable: flick
+                style: root.style
             }
 
 
@@ -50,28 +68,36 @@ Item {
 
     }
     CrossView{
-        visible: dataShowCore.chartHovered | dataShowCore.imageShowHovered
-        crossX:dataShowCore.hoverPoint.x
-        crossY:dataShowCore.hoverPoint.y
+        visible: root.dataShowCore.chartHovered
+                 || root.dataShowCore.imageShowHovered
+        dataShowCore: root.dataShowCore
+        surfaceData: root.surfaceData
+        style: root.style
+        crossX: root.dataShowCore.hoverPoint.x
+        crossY: root.dataShowCore.hoverPoint.y
     }
 
     AerialView{// 鸟亏图
-        source: dataShowCore.source
+        source: root.dataShowCore.source
+        controller: root.dataShowCore
+        style: root.style
         y:root.height - height-scrollBarH.height
     }
     HoverHandler{
         id:hoverHandler
-        onHoveredChanged: dataShowCore.imageShowHovered=hovered
+        onHoveredChanged: root.dataShowCore.imageShowHovered = hovered
         onPointChanged: {
-            if (Math.abs(dataShowCore.hoverPoint.x-point.position.x>5))
-                coreModel.setKeepLatest(false)
-            dataShowCore.hoverPoint = point.position
-        }
-    }
-
-    Component.onCompleted:{
-        if (typeof dataShowCore.view2DTool !== 'undefined') {
-            dataShowCore.view2DTool = root.view2DTool
+            var deltaX = Math.abs(
+                        root.dataShowCore.hoverPoint.x - point.position.x)
+            var deltaY = Math.abs(
+                        root.dataShowCore.hoverPoint.y - point.position.y)
+            if (deltaX < 2 && deltaY < 2) {
+                return
+            }
+            if (deltaX > 5 || deltaY > 5) {
+                root.modelStore.setKeepLatest(false)
+            }
+            root.dataShowCore.hoverPoint = point.position
         }
     }
 }

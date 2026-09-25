@@ -1,11 +1,16 @@
 import QtCore
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
+import "../../Core/JsonUtils.js" as JsonUtils
 
 GroupBox {
     id: root
+    required property var apiClient
+    required property var style
+    required property var settings
+    required property var appInfo
+    required property var downloadClient
     title: qsTr("软件更新")
     Layout.fillWidth: true
     Layout.preferredHeight: content.implicitHeight + 48
@@ -41,11 +46,11 @@ GroupBox {
     }
 
     function currentVersion() {
-        return stringValue(app && app.coreInfo ? app.coreInfo.serverVersion : "")
+        return stringValue(root.appInfo ? root.appInfo.serverVersion : "")
     }
 
     function defaultManifestUrl() {
-        return api.apiConfig.serverUrl + "/software_update/manifest"
+        return root.apiClient.apiConfig.serverUrl + "/software_update/manifest"
     }
 
     function defaultDownloadFolder() {
@@ -57,12 +62,12 @@ GroupBox {
     }
 
     function manifestUrl() {
-        let url = stringValue(coreSetting.softwareUpdateManifestUrl)
+        let url = stringValue(root.settings.softwareUpdateManifestUrl)
         return url.length > 0 ? url : defaultManifestUrl()
     }
 
     function resolvedDownloadUrl() {
-        let manualUrl = stringValue(coreSetting.softwareUpdatePackageUrl)
+        let manualUrl = stringValue(root.settings.softwareUpdatePackageUrl)
         if (manualUrl.length > 0) {
             return manualUrl
         }
@@ -220,14 +225,17 @@ GroupBox {
         errorText = ""
         progress = 0
 
-        api.loadJsonData(manifestUrl(), function(result) {
-            try {
-                setManifest(JSON.parse(result))
-            } catch (e) {
-                setError(qsTr("更新清单解析失败: ") + e)
+        root.apiClient.loadJsonData(root.manifestUrl(), function(result) {
+            let manifest = JsonUtils.parse(
+                    result, null, "software update manifest")
+            if (!manifest) {
+                root.setError(qsTr("更新清单解析失败"))
+                return
             }
+            root.setManifest(manifest)
         }, function(error, status) {
-            let fallbackUrl = stringValue(coreSetting.softwareUpdatePackageUrl)
+            let fallbackUrl = root.stringValue(
+                        root.settings.softwareUpdatePackageUrl)
             if (fallbackUrl.length > 0) {
                 downloadUrl = fallbackUrl
                 fileName = fileNameFromUrl(fallbackUrl)
@@ -254,7 +262,7 @@ GroupBox {
         errorText = ""
         statusText = qsTr("正在下载更新包...")
         updateState = downloadingState
-        fileDownloader.downloadFile(url, savePath, "")
+        root.downloadClient.downloadFile(url, root.savePath, "")
     }
 
     function openDownloadedFile() {
@@ -282,7 +290,7 @@ GroupBox {
             spacing: 12
 
             Image {
-                source: coreStyle.getIcon("upApp")
+                source: root.style.getIcon("upApp")
                 sourceSize.width: 32
                 sourceSize.height: 32
                 Layout.preferredWidth: 32
@@ -294,15 +302,18 @@ GroupBox {
                 spacing: 2
 
                 Label {
-                    text: qsTr("当前版本: ") + (currentVersion() || qsTr("未知"))
-                    color: coreStyle.titleColor
+                    text: qsTr("当前版本: ")
+                          + (root.currentVersion() || qsTr("未知"))
+                    color: root.style.titleColor
                     font.pixelSize: 15
                     font.bold: true
                 }
 
                 Label {
-                    text: statusText
-                    color: updateState === errorState ? Material.color(Material.Red) : coreStyle.labelColor
+                    text: root.statusText
+                    color: root.updateState === root.errorState
+                           ? root.style.statusErrorColor
+                           : root.style.labelColor
                     wrapMode: Text.WrapAnywhere
                     Layout.fillWidth: true
                 }
@@ -320,12 +331,14 @@ GroupBox {
 
             TextField {
                 id: manifestInput
-                text: coreSetting.softwareUpdateManifestUrl
-                placeholderText: defaultManifestUrl()
+                text: root.settings.softwareUpdateManifestUrl
+                placeholderText: root.defaultManifestUrl()
                 selectByMouse: true
-                enabled: !busy
+                enabled: !root.busy
                 Layout.fillWidth: true
-                onEditingFinished: coreSetting.softwareUpdateManifestUrl = text.trim()
+                onEditingFinished:
+                    root.settings.softwareUpdateManifestUrl =
+                        manifestInput.text.trim()
             }
         }
 
@@ -340,15 +353,17 @@ GroupBox {
 
             TextField {
                 id: packageInput
-                text: coreSetting.softwareUpdatePackageUrl
+                text: root.settings.softwareUpdatePackageUrl
                 placeholderText: qsTr("可选：直接填写 exe/msi/zip 下载地址")
                 selectByMouse: true
-                enabled: !busy
+                enabled: !root.busy
                 Layout.fillWidth: true
                 onEditingFinished: {
-                    coreSetting.softwareUpdatePackageUrl = text.trim()
-                    if (text.trim().length > 0) {
-                        fileName = fileNameFromUrl(text)
+                    root.settings.softwareUpdatePackageUrl =
+                        packageInput.text.trim()
+                    if (packageInput.text.trim().length > 0) {
+                        root.fileName =
+                            root.fileNameFromUrl(packageInput.text)
                     }
                 }
             }
@@ -364,8 +379,11 @@ GroupBox {
             }
 
             Label {
-                text: latestVersion.length > 0 ? latestVersion : qsTr("未获取")
-                color: updateAvailable ? Material.color(Material.Green) : coreStyle.labelColor
+                text: root.latestVersion.length > 0
+                      ? root.latestVersion : qsTr("未获取")
+                color: root.updateAvailable
+                       ? root.style.statusSuccessColor
+                       : root.style.labelColor
                 Layout.preferredWidth: 120
             }
 
@@ -374,26 +392,28 @@ GroupBox {
             }
 
             Label {
-                text: downloadFolder
-                color: coreStyle.labelColor
+                text: root.downloadFolder
+                color: root.style.labelColor
                 elide: Text.ElideMiddle
                 Layout.fillWidth: true
             }
         }
 
         ProgressBar {
-            visible: updateState === downloadingState || updateState === finishedState
+            visible: root.updateState === root.downloadingState
+                     || root.updateState === root.finishedState
             Layout.fillWidth: true
             from: 0
             to: 1
-            value: progress
-            indeterminate: updateState === downloadingState && progress <= 0
+            value: root.progress
+            indeterminate: root.updateState === root.downloadingState
+                           && root.progress <= 0
         }
 
         Label {
-            visible: releaseNotes.length > 0
-            text: releaseNotes
-            color: coreStyle.labelColor
+            visible: root.releaseNotes.length > 0
+            text: root.releaseNotes
+            color: root.style.labelColor
             wrapMode: Text.WrapAnywhere
             maximumLineCount: 4
             elide: Text.ElideRight
@@ -405,23 +425,30 @@ GroupBox {
             spacing: 10
 
             Button {
-                text: busy && updateState === checkingState ? qsTr("检查中...") : qsTr("检查更新")
-                enabled: !busy
-                onClicked: checkUpdate()
+                text: root.busy && root.updateState === root.checkingState
+                      ? qsTr("检查中...") : qsTr("检查更新")
+                enabled: !root.busy
+                onClicked: root.checkUpdate()
             }
 
             Button {
-                text: busy && updateState === downloadingState ? qsTr("下载中...") : qsTr("下载更新")
-                enabled: !busy && hasDownloadUrl
-                highlighted: updateAvailable || (latestVersion.length === 0 && hasDownloadUrl)
-                onClicked: startDownload()
+                text: root.busy && root.updateState === root.downloadingState
+                      ? qsTr("下载中...") : qsTr("下载更新")
+                enabled: !root.busy && root.hasDownloadUrl
+                highlighted: root.updateAvailable
+                             || (root.latestVersion.length === 0
+                                 && root.hasDownloadUrl)
+                onClicked: root.startDownload()
             }
 
             CheckBox {
+                id: autoOpenCheckBox
                 text: qsTr("完成后打开")
-                checked: coreSetting.softwareUpdateAutoOpen
-                enabled: !busy
-                onCheckedChanged: coreSetting.softwareUpdateAutoOpen = checked
+                checked: root.settings.softwareUpdateAutoOpen
+                enabled: !root.busy
+                onCheckedChanged:
+                    root.settings.softwareUpdateAutoOpen =
+                        autoOpenCheckBox.checked
             }
 
             Item {
@@ -430,26 +457,28 @@ GroupBox {
 
             Button {
                 text: qsTr("打开目录")
-                enabled: !busy
-                onClicked: openDownloadFolder()
+                enabled: !root.busy
+                onClicked: root.openDownloadFolder()
             }
 
             Button {
                 text: qsTr("打开安装包")
-                enabled: updateState === finishedState && savePath.length > 0
-                onClicked: openDownloadedFile()
+                enabled: root.updateState === root.finishedState
+                         && root.savePath.length > 0
+                onClicked: root.openDownloadedFile()
             }
 
             Button {
                 text: qsTr("退出并安装")
-                enabled: updateState === finishedState && savePath.length > 0
-                onClicked: installAndQuit()
+                enabled: root.updateState === root.finishedState
+                         && root.savePath.length > 0
+                onClicked: root.installAndQuit()
             }
         }
     }
 
     Connections {
-        target: fileDownloader
+        target: root.downloadClient
 
         function onDownloadProgress(bytesReceived, bytesTotal) {
             if (root.updateState !== root.downloadingState) {
@@ -465,7 +494,7 @@ GroupBox {
             root.progress = 1
             root.updateState = root.finishedState
             root.statusText = qsTr("更新包下载完成")
-            if (coreSetting.softwareUpdateAutoOpen) {
+            if (root.settings.softwareUpdateAutoOpen) {
                 root.openDownloadedFile()
             }
         }

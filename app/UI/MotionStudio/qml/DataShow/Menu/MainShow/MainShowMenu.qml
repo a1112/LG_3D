@@ -1,24 +1,48 @@
 
 import QtQuick.Controls.Material
 Menu {
-    title:"功能菜单"
+    id: root
+
+    required property var controller
+    required property var surfaceData
+    required property var globalContext
+
+    readonly property bool canRecacheAreaTiles:
+        root.surfaceData && root.surfaceData.isAreaRootView
+        && typeof root.controller.recacheAreaTiles === "function"
+
+    title: qsTr("功能菜单")
     MenuItem{
-        text:"打开URL..."
+        text: qsTr("打开 URL...")
+        enabled: Boolean(root.controller.source)
         onClicked:{
-            Qt.openUrlExternally(dataShowCore_.source)
+            Qt.openUrlExternally(root.controller.source)
         }
     }
 
     MenuItem{
-        text:"重置"
+        text: qsTr("重置")
         onClicked:{
-            dataShowCore_.resetView()
+            root.controller.resetView()
         }
     }
 
+    MenuItem{
+        text: root.controller.recacheInProgress
+              ? qsTr("重新缓存中...") : qsTr("重新缓存 2D 图像")
+        visible: root.canRecacheAreaTiles
+        enabled: root.canRecacheAreaTiles && !root.controller.recacheInProgress
+        onClicked:{
+            root.controller.recacheAreaTiles()
+        }
+    }
 
     ViewChangeMenu{
     }
     DefectViewMenu{}
-    AnnotationMenu{}
+    AnnotationMenu{
+        controller: root.controller
+        surfaceData: root.surfaceData
+        defectClassController: root.globalContext.defectClassProperty
+    }
 }

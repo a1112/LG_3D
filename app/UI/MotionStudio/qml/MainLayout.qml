@@ -1,34 +1,114 @@
-import QtQuick
+pragma ComponentBehavior: Bound
 
+import QtQuick
 import QtQuick.Layouts
 
 import "Pages/Header"
 import "Pages/Pop"
+
 Item {
-    width: 1980
-    height: 1080
+    id: root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var model
+    required property var settings
+    required property var viewControl
+    required property var appController
+    required property var leftController
+    required property var alarmInfo
+    required property var apiClient
+    required property var popupManager
+    required property var authManager
+    required property var globalContext
+    required property var coreController
+    required property var toolService
+    required property var imageCacheService
+
+    implicitWidth: root.adaptiveMetrics.designWidth
+    implicitHeight: root.adaptiveMetrics.designHeight
     anchors.fill: parent
-    id:root
+
     Rectangle {
         anchors.fill: parent
-        color: coreStyle.appBackgroundColor
+        color: root.style.appBackgroundColor
     }
-    ColumnLayout{
-        spacing: 10
+
+    ColumnLayout {
+        spacing: root.adaptiveMetrics.mainSpacing
         anchors.fill: parent
-        TopHeader{      // 标题界面
+
+            TopHeader {
+                adaptiveMetrics: root.adaptiveMetrics
+                style: root.style
+                modelStore: root.model
+                authManager: root.authManager
+                globalContext: root.globalContext
+                coreController: root.coreController
+                appController: root.appController
+                viewControl: root.viewControl
+                popupManager: root.popupManager
         }
 
-        StackLayout{
-            currentIndex : app_core.appIndex
+        StackLayout {
+            currentIndex: root.appController.appIndex
             Layout.fillWidth: true
             Layout.fillHeight: true
-            DataShowRoot{}  // 主 界面
-            DefectShowRoot{} // 缺陷 界面
+
+            Loader {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                asynchronous: true
+                active: true
+                sourceComponent: DataShowRoot {
+                    adaptiveMetrics: root.adaptiveMetrics
+                    style: root.style
+                    model: root.model
+                    settings: root.settings
+                    viewControl: root.viewControl
+                    alarmInfo: root.alarmInfo
+                    apiClient: root.apiClient
+                    popupManager: root.popupManager
+                    leftController: root.leftController
+                    coreController: root.coreController
+                    toolService: root.toolService
+                    imageCacheService: root.imageCacheService
+                    authManager: root.authManager
+                    globalContext: root.globalContext
+                }
+            }
+
+            Loader {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                asynchronous: true
+                active: StackLayout.isCurrentItem || status === Loader.Ready
+                sourceComponent: DefectShowRoot {
+                    adaptiveMetrics: root.adaptiveMetrics
+                    style: root.style
+                    modelStore: root.model
+                    settings: root.settings
+                    appController: root.appController
+                    leftController: root.leftController
+                    apiClient: root.apiClient
+                    popupManager: root.popupManager
+                    globalContext: root.globalContext
+                    coreController: root.coreController
+                    toolService: root.toolService
+                    authManager: root.authManager
+                }
+            }
         }
     }
 
-    LeftPrePop{     //   弹出 窗口
-        id:lp
+    LeftPrePop {
+        id: lp
+        adaptiveMetrics: root.adaptiveMetrics
+        style: root.style
+        hoverController: root.leftController
+        modelStore: root.model
+        toolService: root.toolService
+        globalContext: root.globalContext
+        apiClient: root.apiClient
     }
 }

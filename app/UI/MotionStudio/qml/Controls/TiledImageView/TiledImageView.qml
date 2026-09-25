@@ -1,27 +1,39 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 
 // TiledImageViewer.qml - 多级瓦片加载
 Rectangle {
     id: root
+
+    required property var controller
+    required property var apiClient
+    required property var settings
+    required property var surface
+    required property var style
+
     property int tileSize: 5460              // 单个瓦片的目标尺寸
     property int fixedTileCount: 3           // 3x3 瓦片布局
     property int count_ : fixedTileCount
     property string imageUrl: ""
     // viewport is injected from DataShowAreaCore.flick for lazy loading in-view tiles
-    property var viewport: dataAreaShowCore ? dataAreaShowCore.flick : null
+    property var viewport: controller ? controller.flick : null
     property real viewportX: viewport ? viewport.contentX : 0
     property real viewportY: viewport ? viewport.contentY : 0
     property real viewportW: viewport ? viewport.width : width
     property real viewportH: viewport ? viewport.height : height
-    property int defaultTileCount: Math.max(1, coreSetting ? coreSetting.defaultAreaTileCount : 3)
-    property string previewUrl: dataAreaShowCore && dataAreaShowCore.pre_source ? dataAreaShowCore.pre_source : ""
-    // Parallel load toggle; when true all tiles activate immediately
-    property bool enableParallelLoad: true
+    property int defaultTileCount: Math.max(1, settings ? settings.defaultAreaTileCount : 3)
+    property string previewUrl: controller && controller.pre_source ? controller.pre_source : ""
+    // Low-resolution levels are small enough to load as a complete 3x3 image.
+    // Higher levels continue to use viewport loading to avoid decoding all
+    // full-resolution tiles at once.
+    property bool enableParallelLoad: false
+    readonly property bool loadCompleteGrid: enableParallelLoad || currentLevel <= 1
     property int maxParallel: 16
     property int _requestToken: 0
-    property bool debugLog: coreSetting ? coreSetting.showTileDebugBorders : false
+    property var _imageInfoRequest: null
+    property bool debugLog: settings ? settings.showTileDebugBorders : false
+    property int tileRefreshGeneration: 0
 
     function debugLogMessage(message) {
         if (debugLog) {
@@ -46,36 +58,36 @@ Rectangle {
     ]
 
     // 单个瓦片的实际尺寸（从服务端获取后计算）
-    readonly property int actualTileWidth: dataAreaShowCore.sourceWidth > 0 ? parseInt(dataAreaShowCore.sourceWidth / fixedTileCount) : 0
-    readonly property int actualTileHeight: dataAreaShowCore.sourceHeight > 0 ? parseInt(dataAreaShowCore.sourceHeight / fixedTileCount) : 0
+    readonly property int actualTileWidth: controller.sourceWidth > 0 ? parseInt(controller.sourceWidth / fixedTileCount) : 0
+    readonly property int actualTileHeight: controller.sourceHeight > 0 ? parseInt(controller.sourceHeight / fixedTileCount) : 0
 
     signal imageInfoReady(string url)
     signal levelChanged(int newLevel)
 
     color: "#00000000"
-    property int source_item_width: parseInt(dataAreaShowCore.sourceWidth/count_)
-    property int source_item_height: parseInt(dataAreaShowCore.sourceHeight/count_)
+    property int source_item_width: parseInt(controller.sourceWidth/count_)
+    property int source_item_height: parseInt(controller.sourceHeight/count_)
 
     // ========== 新增：计算当前需要的瓦片等级 ==========
     function calculateNeededLevel() {
-        if (!enableMultiLevel || !dataAreaShowCore) {
-            debugLogMessage("[TiledView] calculateNeededLevel: dataAreaShowCore not available, returning 4")
+        if (!enableMultiLevel || !controller) {
+            debugLogMessage("[TiledView] calculateNeededLevel: controller not available, returning 4")
             return 4  // 不启用多级加载或数据不可用时直接用原图
         }
 
         // 获取当前缩放值
-        var scale = dataAreaShowCore.canvasScale || 1.0
+        var scale = controller.canvasScale || 1.0
         currentScale = scale  // 更新内部属性
 
         // 单个瓦片的显示尺寸（像素）- 使用画布内容尺寸计算
-        var actualTileWidth = dataAreaShowCore.sourceWidth / fixedTileCount
-        var actualTileHeight = dataAreaShowCore.sourceHeight / fixedTileCount
+        var actualTileWidth = controller.sourceWidth / fixedTileCount
+        var actualTileHeight = controller.sourceHeight / fixedTileCount
         var tileDisplayW = actualTileWidth * scale
         var tileDisplayH = actualTileHeight * scale
         var displaySize = Math.max(tileDisplayW, tileDisplayH)
 
-        debugLogMessage("[TiledView] calculateNeededLevel: sourceW=" + dataAreaShowCore.sourceWidth +
-                        ", sourceH=" + dataAreaShowCore.sourceHeight +
+        debugLogMessage("[TiledView] calculateNeededLevel: sourceW=" + controller.sourceWidth +
+                        ", sourceH=" + controller.sourceHeight +
                         ", scale=" + scale.toFixed(4) +
                         ", displaySize=" + displaySize.toFixed(0))
 
@@ -121,33 +133,22 @@ Rectangle {
         if (newLevel !== currentLevel || forceUpdate) {
             debugLogMessage("[TiledView] Level change: " + currentLevel + " -> " + newLevel + (forceUpdate ? " (forced)" : ""))
             currentLevel = newLevel
-            var scale = dataAreaShowCore ? dataAreaShowCore.canvasScale : 1.0
+            var scale = controller ? controller.canvasScale : 1.0
             currentScale = scale
             levelChanged(newLevel)
-
-            // 通知所有瓦片更新
-            updateAllTiles()
+            if (forceUpdate) {
+                tileRefreshGeneration += 1
+            }
         }
 
         isEvaluating = false
     }
 
-    // ========== 新增：更新所有瓦片 ==========
-    function updateAllTiles() {
-        debugLogMessage("[TiledView] updateAllTiles: level=" + currentLevel + ", count=" + tiledImage.count)
-        for (var i = 0; i < tiledImage.count; i++) {
-            var item = tiledImage.itemAt(i)
-            if (item && item.updateLevel) {
-                item.updateLevel(currentLevel)
-            }
-        }
-    }
-
     // ========== 新增：检查瓦片是否在视口内 ==========
     function isTileInView(tileX, tileY, tileW, tileH) {
         // 视口边界（考虑Flickable的contentX/Y是负值）
-        var vpX1 = -viewportX
-        var vpY1 = -viewportY
+        var vpX1 = viewportX
+        var vpY1 = viewportY
         var vpX2 = vpX1 + viewportW
         var vpY2 = vpY1 + viewportH
 
@@ -161,13 +162,10 @@ Rectangle {
         return !(tX2 <= vpX1 || tX1 >= vpX2 || tY2 <= vpY1 || tY1 >= vpY2)
     }
 
-    // ========== 监听视口和尺寸变化 ==========
-    onViewportXChanged: evaluateLevel()
-    onViewportYChanged: evaluateLevel()
-    onWidthChanged: evaluateLevel()
-    onHeightChanged: evaluateLevel()
-
     function get_num(px_width){
+        if (!isFinite(px_width) || px_width <= 0 || tileSize <= 0) {
+            return 1
+        }
         let i = 1
         while (true){
             if (px_width / i <= tileSize){
@@ -177,26 +175,44 @@ Rectangle {
         }
     }
 
+    function appendQuery(url, query) {
+        if (!url || url.length === 0) {
+            return ""
+        }
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
+    }
+
     function requestImageInfo() {
+        _requestToken += 1
+        const currentToken = _requestToken
+        if (_imageInfoRequest) {
+            _imageInfoRequest.abort()
+            _imageInfoRequest = null
+        }
         if (!imageUrl || imageUrl.length === 0) {
             return
         }
-        _requestToken += 1
-        const currentToken = _requestToken
         // 添加 count=0 参数获取图像尺寸信息
-        let infoUrl = imageUrl + "?count=0"
+        let infoUrl = appendQuery(imageUrl, "count=0")
         debugLogMessage("[TiledView] requestImageInfo: " + infoUrl)
-        api.ajax.get(infoUrl,(text)=>{
+        _imageInfoRequest = apiClient.ajax.get(infoUrl,(text)=>{
+                         _imageInfoRequest = null
                          if (currentToken !== _requestToken){
                              return
                          }
                          debugLogMessage("[TiledView] Image info response: " + text)
-                         let json_data = JSON.parse(text)
+                         let json_data
+                         try {
+                             json_data = JSON.parse(text)
+                         } catch (error) {
+                             debugLogMessage("[TiledView] Invalid image info: " + error)
+                             return
+                         }
                          // 使用服务端返回的真实尺寸
                          if (json_data["width"] && json_data["height"]) {
-                             dataAreaShowCore.sourceWidth = json_data["width"]
-                             dataAreaShowCore.sourceHeight = json_data["height"]
-                             debugLogMessage("[TiledView] Set sourceWidth=" + dataAreaShowCore.sourceWidth + ", sourceHeight=" + dataAreaShowCore.sourceHeight)
+                             controller.sourceWidth = json_data["width"]
+                             controller.sourceHeight = json_data["height"]
+                             debugLogMessage("[TiledView] Set sourceWidth=" + controller.sourceWidth + ", sourceHeight=" + controller.sourceHeight)
 
                              // 获取尺寸后重新评估等级并强制更新瓦片
                              evaluateLevel(true)
@@ -206,6 +222,7 @@ Rectangle {
                          }
                          imageInfoReady(imageUrl)
                      },(err)=>{
+                        _imageInfoRequest = null
                         // 保留错误日志用于调试
                         debugLogMessage("[TiledView] Image info error: " + err)
                      })
@@ -217,54 +234,68 @@ Rectangle {
         evaluateLevel()
     }
 
-    onImageUrlChanged: requestImageInfo()
+    Component.onDestruction: {
+        if (_imageInfoRequest) {
+            _imageInfoRequest.abort()
+            _imageInfoRequest = null
+        }
+    }
+
+    onImageUrlChanged: {
+        count_ = fixedTileCount
+        requestImageInfo()
+    }
 
     Repeater {
         id: tiledImage
-        model: count_ * count_
+        model: root.count_ * root.count_
         TiledImageItem{
+            required property int index
+
+            settings: root.settings
+            style: root.style
             // 瓦片位置和大小
-            x: parseInt(index / count_)*width
-            y: parseInt(index%count_)*height
-            width: root.width/count_
-            height: root.height/count_
+            x: parseInt(index % root.count_) * width
+            y: parseInt(index / root.count_) * height
+            width: root.width/root.count_
+            height: root.height/root.count_
 
             // 传递给瓦片项的属性
             imageUrl: root.imageUrl
             previewUrl: root.previewUrl
-            row_: parseInt(index/count_)
-            col_: parseInt(index%count_)
+            row_: parseInt(index/root.count_)
+            col_: parseInt(index%root.count_)
             count_: root.count_
             viewportX: root.viewportX
             viewportY: root.viewportY
             viewportW: root.viewportW
             viewportH: root.viewportH
-            enableParallelLoad: root.enableParallelLoad
+            enableParallelLoad: root.loadCompleteGrid
 
             // 多级加载相关属性
             currentScale: root.currentScale
             currentLevel: root.currentLevel
+            refreshGeneration: root.tileRefreshGeneration
 
             // 钢卷编号
-            coilNo: surfaceData && surfaceData.currentCoilModel ? surfaceData.currentCoilModel.coilNo : ""
+            coilNo: root.surface && root.surface.currentCoilModel ? root.surface.currentCoilModel.coilNo : ""
         }
     }
 
-    // ========== 定期检查缩放变化 ==========
-    Timer {
-        id: scaleCheckTimer
-        interval: 300  // 每300ms检查一次，减少CPU占用
-        repeat: true
-        running: enableMultiLevel && dataAreaShowCore !== null
+    Connections {
+        target: root.controller
+        enabled: root.enableMultiLevel && root.controller !== null
 
-        onTriggered: {
-            if (dataAreaShowCore) {
-                var newScale = dataAreaShowCore.canvasScale || 1.0
-                // 只有缩放变化超过阈值时才重新计算（避免频繁计算）
-                if (Math.abs(newScale - currentScale) > 0.2) {
-                    evaluateLevel()
-                }
-            }
+        function onCanvasScaleChanged() {
+            scaleEvaluationTimer.restart()
         }
+    }
+
+    // Coalesce wheel events instead of polling for a scale change forever.
+    Timer {
+        id: scaleEvaluationTimer
+        interval: 120
+        repeat: false
+        onTriggered: root.evaluateLevel()
     }
 }

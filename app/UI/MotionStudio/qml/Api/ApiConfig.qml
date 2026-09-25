@@ -1,104 +1,87 @@
 import QtQuick
-import Qt.labs.settings
+
 Item {
-    id:root
+    id: root
+    required property var settings
 
-    property var lastUrls:{return {}}
-
-    function getLastUrlByKey(key){
-        return lastUrls[key]
-    }
-    ListModel{
-
-    }
-
+    property var lastUrls: ({})
 
     readonly property string protocol: "http://"
-    readonly property string ws_protocol:"ws://"
+    readonly property string ws_protocol: "ws://"
+    readonly property string hostname: root.settings.server_ip
 
-    property PortTool portTool :PortTool{
+    readonly property int pythonApiPort: 5010
+    readonly property int rustApiPort: 5011
+    readonly property int pythonImageServerPort: 6012
+    readonly property int rustImageServerPort: 6013
+    readonly property int activeApiPort: root.settings.useRustTestServer ? rustApiPort : pythonApiPort
+    readonly property int activeImageServerPort: root.settings.useRustImageServer
+                                                  ? rustImageServerPort : pythonImageServerPort
+
+    readonly property string serverUrl: protocol + hostname + ":" + activeApiPort
+    readonly property string wsServerUrl: ws_protocol + hostname + ":" + activeApiPort
+    readonly property string serverUrlDaaBase: serverUrl
+    readonly property string wsServerUrlDaaBase: wsServerUrl
+    readonly property string serverUrlData: serverUrl
+    readonly property string serverUrlImage: protocol + hostname + ":" + activeImageServerPort
+    readonly property string rustImageServerUrl: protocol + hostname + ":" + rustImageServerPort
+    readonly property string serverUrlAlg2D: root.settings.useRustTestServer
+                                              ? serverUrl
+                                              : protocol + hostname + ":6020"
+
+    // These values are retained for network diagnostics; they are not user settings.
+    readonly property int port: activeApiPort
+    readonly property int databasPort: activeApiPort
+    readonly property int dataPort: activeApiPort
+    readonly property int plcPort: activeApiPort
+    readonly property int alg2dPort: root.settings.useRustTestServer ? rustApiPort : 6020
+    readonly property bool usingRustImageServer: root.settings.useRustImageServer
+
+    function getLastUrlByKey(key) {
+        return lastUrls[key]
     }
 
-    readonly property string serverUrl: protocol+hostname+":"+port
-    readonly property string wsServerUrl: ws_protocol+hostname+":"+port
-
-    readonly property string serverUrlDaaBase: protocol+hostname+":"+databasPort
-    readonly property string wsServerUrlDaaBase: ws_protocol+hostname+":"+databasPort
-
-    readonly property int activeImageServerPort: core.developer_mode ? port : (coreSetting.useRustImageServer ? rustImageServerPort : port)
-    readonly property string serverUrlImage: protocol+hostname+":"+activeImageServerPort
-    readonly property string serverUrlData: protocol+hostname+":"+dataPort
-
-
-    readonly property string hostname:coreSetting.server_ip
-    readonly property int port: coreSetting.server_port
-
-    readonly property int databasPort:  coreSetting.databasPort
-    readonly property int imageServerPort:  coreSetting.imageServerPort
-    readonly property int rustImageServerPort:  coreSetting.rustImageServerPort
-    readonly property int dataPort:  coreSetting.dataPort
-    readonly property int plcPort:  coreSetting.plcPort
-    readonly property int alg2dPort: coreSetting.alg2dPort
-
-    readonly property string serverUrlAlg2D: protocol+hostname+":"+alg2dPort
-    readonly property bool usingRustImageServer: coreSetting.useRustImageServer
-
-    property bool auto_server_port:true
-    property int _pre_port_value_:0
-
-    function getBaseUrl(){
-        return protocol+hostname+":"+server_port_base
+    function getBaseUrl() {
+        return serverUrl
     }
-    function url(reUrl,...args){
-        let key =""
 
-        if (auto_server_port){
-            // 自动端口映射
-            if (reUrl.indexOf("ws")>=0){
-                reUrl = portTool.getAutoWsUrl(args[0])
-            }
-            else{
-                reUrl = portTool.getAutoUrl(args[0])
+    function url(reUrl, ...args) {
+        let key = args.length > 0 ? String(args[0]) : reUrl
+        for (let argIndex = 0; argIndex < args.length; ++argIndex) {
+            let argument = args[argIndex]
+            if (argument !== null && typeof argument === "object") {
+                reUrl += getGetArgs(argument)
+            } else {
+                reUrl += "/" + String(argument)
             }
         }
-
-        for(let argIndex in args){
-            key=args[0]
-            if (typeof(args[argIndex])=='object')
-            {
-                reUrl+=getGetArgs(args[argIndex])
-            }
-            else{
-            reUrl+="/"+args[argIndex]
-                }
-        }
-        lastUrls[key]=reUrl
+        // Keep URL construction safe inside bindings (especially WebSocket.url).
+        // Reassigning lastUrls here would make the binding depend on and mutate
+        // the same property, causing a binding loop.
+        root.lastUrls[key] = reUrl
         return reUrl
     }
 
-
-    function getPostArgs(dictData){
-        let res=""
-        for(let key in dictData){
-            if(res){
-                res+="&"
+    function getPostArgs(dictData) {
+        let res = ""
+        for (let key in dictData) {
+            if (res) {
+                res += "&"
             }
-            res+=key+"="+dictData[key]
+            res += encodeURIComponent(key) + "=" + encodeURIComponent(dictData[key])
         }
         return res
     }
 
-
-    function getGetArgs(dictData){
-        let res=""
-        for(let key in dictData){
-            if(res){
-                res+="&"
+    function getGetArgs(dictData) {
+        let res = ""
+        for (let key in dictData) {
+            if (res) {
+                res += "&"
+            } else {
+                res += "?"
             }
-            else{
-            res+="?"
-            }
-            res+=key+"="+dictData[key]
+            res += encodeURIComponent(key) + "=" + encodeURIComponent(dictData[key])
         }
         return res
     }

@@ -14,7 +14,7 @@ router = APIRouter(tags=["参数设置"])
 
 
 @router.post("/setDefectDict")
-async def set_defect_dict(data: dict):
+def set_defect_dict(data: dict):
     """
     设置缺陷字典
     """
@@ -30,7 +30,7 @@ def _test_mode_config_path() -> Path:
     return Path(CONFIG.base_config_folder) / "test_mode_config.json"
 
 @router.get("/settings/test_mode")
-async def get_test_mode():
+def get_test_mode():
     """获取测试模式状态"""
     try:
         test_mode_config_path = _test_mode_config_path()
@@ -45,7 +45,7 @@ async def get_test_mode():
         raise HTTPException(status_code=500, detail=f"读取测试模式配置失败: {str(e)}")
 
 @router.post("/settings/test_mode")
-async def set_test_mode(request: TestModeRequest):
+def set_test_mode(request: TestModeRequest):
     """设置测试模式状态"""
     try:
         test_mode_config_path = _test_mode_config_path()
@@ -72,7 +72,7 @@ async def set_test_mode(request: TestModeRequest):
         raise HTTPException(status_code=500, detail=f"保存测试模式配置失败: {str(e)}")
 
 @router.get("/settings/test_mode_status")
-async def get_test_mode_status():
+def get_test_mode_status():
     """获取详细的测试模式状态信息"""
     try:
         test_mode_config_path = _test_mode_config_path()

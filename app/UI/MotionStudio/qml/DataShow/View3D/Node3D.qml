@@ -4,9 +4,12 @@ import QtQuick3D.AssetUtils
 
 
 Node {
-    id: node
+    id: root
+
+    required property var surfaceData
+
     eulerRotation.z:-90
-    property string meshKey: surfaceData.key
+    property string meshKey: root.surfaceData.key
     property bool centerDepth: true
     property bool alignMinDepthToZero: false
     property real modelOffsetX: 0
@@ -25,6 +28,8 @@ Node {
                                               Math.max(0, modelBoundsMax.z - modelBoundsMin.z)
                                               )
     readonly property bool modelReady: runtimeModel.status === RuntimeLoader.Success
+    property int reloadAttempt: 0
+    property int maxReloadAttempts: 3
 
     function updateModelCenter() {
         let minBounds = runtimeModel.bounds.minimum
@@ -40,49 +45,74 @@ Node {
         autoCenterOffset = Qt.vector3d(-centerX, -centerY, offsetZ)
     }
 
-    property string meshes_url: core.developer_mode && ScriptLauncher
-                                ? ScriptLauncher.testDataMeshUrl(meshKey, surfaceData.coilId)
-                                : surfaceData.meshUrl
+    property string meshes_url: root.surfaceData.meshUrl
     onMeshes_urlChanged: {
-        runtimeModel.source = ""
+        reloadAttempt = 0
         autoCenterOffset = Qt.vector3d(0, 0, 0)
-        t_.start()
+        scheduleModelLoad(1)
     }
-    Timer{
-        id:t_
-        interval:5000
-        onTriggered: {
-            runtimeModel.source = meshes_url
+
+    function scheduleModelLoad(delayMs) {
+        if (!meshes_url) {
+            runtimeModel.source = ""
+            return
         }
+        modelLoadTimer.interval = Math.max(1, delayMs)
+        modelLoadTimer.restart()
     }
-    Component.onCompleted: t_.start()
+
+    function loadModel() {
+        let expectedUrl = meshes_url
+        runtimeModel.source = ""
+        Qt.callLater(function() {
+            if (expectedUrl === meshes_url) {
+                runtimeModel.source = expectedUrl
+            }
+        })
+    }
+
+    Timer {
+        id: modelLoadTimer
+        repeat: false
+        onTriggered: root.loadModel()
+    }
+
+    Component.onCompleted: scheduleModelLoad(1)
 
     Node {
         id: node3D_obj
         objectName: "3D.obj"
-        x: node.autoCenterOffset.x + node.modelOffsetX
-        y: node.autoCenterOffset.y + node.modelOffsetY
-        z: node.autoCenterOffset.z + node.modelOffsetZ
-        eulerRotation.x: node.modelRotationX
-        eulerRotation.y: node.modelRotationY
-        eulerRotation.z: node.modelRotationZ
-        scale: node.modelScale
+        x: root.autoCenterOffset.x + root.modelOffsetX
+        y: root.autoCenterOffset.y + root.modelOffsetY
+        z: root.autoCenterOffset.z + root.modelOffsetZ
+        eulerRotation.x: root.modelRotationX
+        eulerRotation.y: root.modelRotationY
+        eulerRotation.z: root.modelRotationZ
+        scale: root.modelScale
         RuntimeLoader {
             id: runtimeModel
             objectName: "defaultobject"
             source: ""
             onStatusChanged: {
-                console.log("3D state: "+status)
                 if (status === RuntimeLoader.Success) {
-                    node.updateModelCenter()
-                    console.log("Model loaded successfully");
+                    root.reloadAttempt = 0
+                    root.updateModelCenter()
                 } else if (status === RuntimeLoader.Error) {
-                    console.log("Failed to load model:", errorString);
+                    if (root.reloadAttempt < root.maxReloadAttempts) {
+                        root.reloadAttempt += 1
+                        root.scheduleModelLoad(Math.min(
+                                                   3000,
+                                                   500 * Math.pow(
+                                                       2,
+                                                       root.reloadAttempt - 1)))
+                    } else {
+                        console.warn("3D model load failed:", errorString)
+                    }
                 }
 
 
             }
-            onBoundsChanged: node.updateModelCenter()
+            onBoundsChanged: root.updateModelCenter()
         }
     }
 

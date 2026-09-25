@@ -6,6 +6,7 @@ import "../Style/Adaptive"
 
 Item {
     id: root
+    objectName: "coreStyle"
 
     // ========== 主题预设 ==========
     property string themeName: "dark"  // 当前主题名称
@@ -131,11 +132,11 @@ Item {
         }
         var style = displayStyles[styleKey]
         displayStyleName = styleKey
-        topHeight = style.topHeight
-        windowButtonWidth = style.windowButtonWidth
-        headerButtonGap = style.headerButtonGap
-        controlRadius = style.controlRadius
-        titleFontSize = style.titleSize
+        _topHeight = style.topHeight
+        _windowButtonWidth = style.windowButtonWidth
+        _headerButtonGap = style.headerButtonGap
+        _controlRadius = style.controlRadius
+        _titleFontSize = style.titleSize
         console.log("Applied display style:", style.name)
     }
 
@@ -155,6 +156,14 @@ Item {
     property color headerBorderColor: "#2C4357"
     property color buttonHoverColor: "#233447"
     property color selectionColor: "#2F5F82"
+    property color statusSuccessColor: isDark ? "#4ADE80" : "#16803A"
+    property color statusWarningColor: isDark ? "#FBBF24" : "#A16207"
+    property color statusErrorColor: isDark ? "#FB7185" : "#C62828"
+    property color statusInactiveColor: isDark ? "#8CA0AF" : "#66727D"
+    property color secondaryTextColor: isDark ? "#9FB1BF" : "#5B6772"
+    property color infoOverlayColor: isDark ? "#D9162029" : "#E6FFFFFF"
+    property color infoOverlayBorderColor: isDark ? "#5A7890" : "#A8B5C1"
+    property color viewportBackgroundColor: isDark ? "#070B0F" : "#111820"
 
     // ========== 自适应视图 ==========
     property AdaptiveView adaptive_base: AdaptiveView {
@@ -167,9 +176,17 @@ Item {
         adaptive_name: "2560_1440"
     }
 
-    property AdaptiveViewBase currentAdaptive: adaptive_base
+    property AdaptiveViewBase currentAdaptive: autoGetAdaptiveView()
 
     function autoGetAdaptiveView() {
+        var width = Screen.desktopAvailableWidth > 0 ? Screen.desktopAvailableWidth : Screen.width
+        var height = Screen.desktopAvailableHeight > 0 ? Screen.desktopAvailableHeight : Screen.height
+        if (width >= 2400 && height >= 1300) {
+            return adaptive_2560p
+        }
+        if (width >= 1800 && height >= 1000) {
+            return adaptive_1920p
+        }
         return adaptive_base
     }
 
@@ -192,12 +209,20 @@ Item {
     property color itemDbackColor: isDark ? "#17212B" : "#E2E2E2"
 
     // ========== 尺寸属性 ==========
-    property int leftWidth: 450
-    property int topHeight: 45
-    property int windowButtonWidth: 46
-    property int headerButtonGap: 4
-    property int controlRadius: 3
-    property int titleFontSize: 22
+    property int _topHeight: 45
+    property int _windowButtonWidth: 46
+    property int _headerButtonGap: 4
+    property int _controlRadius: 3
+    property int _titleFontSize: 22
+
+    property int leftWidth: currentAdaptive.leftPanelPreferredWidth
+    property int leftMinimumWidth: currentAdaptive.leftPanelMinimumWidth
+    property int leftMaximumWidth: currentAdaptive.leftPanelMaximumWidth
+    property int topHeight: currentAdaptive.scaleMetric(_topHeight, 36, 64)
+    property int windowButtonWidth: currentAdaptive.scaleMetric(_windowButtonWidth, 36, 68)
+    property int headerButtonGap: currentAdaptive.scaleMetric(_headerButtonGap, 1, 10)
+    property int controlRadius: currentAdaptive.scaleMetric(_controlRadius, 2, 7)
+    property int titleFontSize: currentAdaptive.fontMetric(_titleFontSize, 18, 30)
 
     // ========== 持久化设置 ==========
     SettingsBase {

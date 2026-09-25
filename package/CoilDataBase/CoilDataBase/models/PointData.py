@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, Float, Text, DateTime, func
+from sqlalchemy import Column, Integer, ForeignKey, String, Float, Text, DateTime, func, Index
 from sqlalchemy.orm import relationship
 
 from ._base_ import Base
@@ -6,6 +6,10 @@ from ._base_ import Base
 
 class PointData(Base):
     __tablename__ = 'PointData'
+    __table_args__ = (
+        Index("idx_pointdata_secondary_surface", "secondaryCoilId",
+              "surface"),
+    )
     Id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
     secondaryCoilId = Column(Integer, ForeignKey('SecondaryCoil.Id'), comment="关联的二级卷ID")
     surface = Column(String(2), comment="表面标识（S/L）")

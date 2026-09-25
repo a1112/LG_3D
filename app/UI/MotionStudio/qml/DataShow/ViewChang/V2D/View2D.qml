@@ -1,15 +1,24 @@
 import QtQuick
 
 Item {
-    id:root
-    property var keyList:coreModel.allViewKeys  // 2D 视图的切换
+    id: root
+
+    required property var surfaceData
+    required property var dataShowCore
+    required property var modelStore
+    required property var style
+
+    property var keyList: root.modelStore.allViewKeys  // 2D 视图的切换
     property int netxKetIndex:0
-    property string next_key: keyList[(netxKetIndex+1)%keyList.length]
-    property real zoom: width/dataShowCore.aspectRatio
+    property string next_key: keyList.length > 0
+                              ? keyList[(netxKetIndex + 1) % keyList.length]
+                              : ""
+    property real zoom: root.dataShowCore.aspectRatio > 0
+                        ? width / root.dataShowCore.aspectRatio : 1
     Item{
         width: parent.width
         height: parent.height
-        visible:dataShowCore.controls.thumbnail_view_2d_enable
+        visible: root.dataShowCore.controls.thumbnail_view_2d_enable
 
     Image{
         id: image
@@ -18,21 +27,25 @@ Item {
         fillMode: Image.PreserveAspectFit
         sourceSize.width: parent.width
         sourceSize.height: parent.height
-        source: surfaceData.coilId > 0 && surfaceData.hasViewData(next_key) ? surfaceData.getSouceByKey(next_key,true) : ""
+        source: root.surfaceData.coilId > 0
+                && root.next_key !== ""
+                && root.surfaceData.hasViewData(root.next_key)
+                ? root.surfaceData.getSouceByKey(root.next_key, true) : ""
         asynchronous:true
     }
     MouseArea{
         anchors.fill:parent
         cursorShape:Qt.PointingHandCursor
         onClicked:{
-            surfaceData.rootViewto2D()
-            surfaceData.setViewSource(next_key)
-            netxKetIndex+=1
+            root.surfaceData.rootViewto2D()
+            root.surfaceData.setViewSource(root.next_key)
+            root.netxKetIndex += 1
         }
     }
     }
 
     ColorValueBar{
+        labelColor: root.style.textColor
         height:root.height
     }
 }

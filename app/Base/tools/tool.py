@@ -1,5 +1,6 @@
+import os
+
 import cv2
-import numpy
 import numpy as np
 from PIL import Image
 
@@ -8,14 +9,40 @@ from Base.utils.DetectionSpeedRecord import DetectionSpeedRecord
 from Base.utils.Log import logger
 
 
-def showImage(image, name="image"):
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name, default):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning("invalid %s=%s, use %s", name, value, default)
+        return default
+
+
+def showImage(image, name="image", *, enabled=None, wait_ms=None):
+    if enabled is None:
+        enabled = _env_bool("LG3D_DEBUG_IMAGE_SHOW", False)
+    if not enabled:
+        logger.debug("skip debug image window: %s", name)
+        return False
 
     if isinstance(image, Image.Image):
         image = np.array(image)
+    if wait_ms is None:
+        wait_ms = max(_env_int("LG3D_DEBUG_IMAGE_WAIT_MS", 1), 1)
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(name, 800, 800)
     cv2.imshow(name, image)
-    cv2.waitKey(0)
+    cv2.waitKey(wait_ms)
+    return True
 
 
 def getMask(gray_image):
@@ -32,7 +59,15 @@ def getMask(gray_image):
 def get_foreground(gray_image, direction="L", key=None):
     if isinstance(gray_image, Image.Image):
         gray_image = np.array(gray_image)
-    blurred_image = cv2.GaussianBlur(gray_image, (9, 9), 0)
+    source_image = np.asarray(gray_image)
+    if source_image.ndim == 3:
+        gray_for_mask = cv2.cvtColor(source_image[..., :3], cv2.COLOR_RGB2GRAY)
+    else:
+        gray_for_mask = source_image
+    if gray_for_mask.dtype != np.uint8:
+        gray_for_mask = np.clip(np.nan_to_num(gray_for_mask, nan=0), 0, 255).astype(np.uint8)
+    key_text = str(key or "")
+    blurred_image = cv2.GaussianBlur(gray_for_mask, (9, 9), 0)
     # 应用阈值处理
     _, binary_image = cv2.threshold(blurred_image, 65, 210, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     # ret, binary_image = cv2.threshold(blurred_image, 70, 255, cv2.THRESH_BINARY)
@@ -46,16 +81,19 @@ def get_foreground(gray_image, direction="L", key=None):
     contours.sort(key=cv2.contourArea, reverse=True)
     logger.debug("foreground contour areas: %s", [cv2.contourArea(c) for c in contours])
     # 创建掩膜并填充最大的轮廓
-    mask = np.zeros_like(gray_image)
+    mask = np.zeros_like(gray_for_mask)
     new_contours = []
     for c in contours:
-        if direction == "L" or "D" in key or "M" in key:
+        if direction == "L" or "D" in key_text or "M" in key_text:
             if cv2.boundingRect(c)[0] < 300:
                 new_contours.append(c)
         elif direction == "R":
 
             if cv2.boundingRect(c)[0] + cv2.boundingRect(c)[2] > cleaned_image.shape[1] - 500:
                 new_contours.append(c)
+    if contours and not new_contours:
+        new_contours = [contours[0]]
+        logger.warning("foreground contour fallback: direction=%s key=%s", direction, key_text)
     if new_contours:
         largest_contour = max(new_contours, key=cv2.contourArea)
         rec2 = cv2.boundingRect(largest_contour)
@@ -64,7 +102,7 @@ def get_foreground(gray_image, direction="L", key=None):
     # 应用掩膜移除背景
     # foreground = cv2.bitwise_and(gray_image, gray_image, mask=mask)
     # return foreground, mask,rec
-    return gray_image, mask
+    return source_image, mask
 
 
 def auto_crop(key, image, star_pos, direction):
@@ -78,18 +116,40 @@ def auto_crop(key, image, star_pos, direction):
 def crop_max_image_black_edges(key, image, star_pos):
     # 图像列求和，检测哪些列是主要黑色的
     # column_sum = np.sum(gray, axis=0)
-    h, w = image.shape
-    column_no_black_count = np.sum(image > 100, axis=0)
-    left_index = star_pos[0]
-    right_index = w - star_pos[1]
+    key_text = str(key or "")
+    image = np.asarray(image)
+    if image.ndim < 2 or image.shape[0] == 0 or image.shape[1] == 0:
+        logger.warning("crop_max_image_black_edges skip empty image: key=%s shape=%s", key_text, getattr(image, "shape", None))
+        return [0, 0, 0, 0]
+    if image.ndim == 3:
+        foreground = np.any(np.nan_to_num(image, nan=0) > 100, axis=2)
+    else:
+        foreground = np.nan_to_num(image, nan=0) > 100
+    h, w = foreground.shape
+    if not np.any(foreground):
+        logger.warning("crop_max_image_black_edges found no foreground: key=%s shape=%s", key_text, foreground.shape)
+        return [0, 0, w, h]
+    try:
+        crop_left = int(star_pos[0])
+        crop_right = int(star_pos[1])
+    except (TypeError, ValueError, IndexError):
+        logger.warning("invalid crop star_pos=%s for key=%s, use full bounds", star_pos, key_text)
+        crop_left = 0
+        crop_right = 0
+    column_no_black_count = np.sum(foreground, axis=0)
+    left_index = min(max(crop_left, 0), w - 1)
+    right_index = min(max(w - max(crop_right, 0), 0), w - 1)
     max_l = left_index + 300  # 规定最大裁剪
     min_r = right_index - 800  # 规定最大裁剪
     # 从左侧找到第一个非黑色列
+    max_l = min(max_l, w - 1)
+    min_r = max(min_r, 0)
     # l_threshold = 0.05 if "D" in key else 0.25
     # r_threshold = 0.25
     # while left_index > max_l or column_no_black_count[left_index]>5000*255: # /(column_no_black_count[max_l+100]) < l_threshold:
     #     left_index += 1
-    l_limit = 10 if "S_D" in key else 500
+    l_limit_base = 10 if "S_D" in key_text else 500
+    l_limit = min(l_limit_base, max(1, h // 2))
     while True:
         if left_index > max_l:
             break
@@ -100,25 +160,36 @@ def crop_max_image_black_edges(key, image, star_pos):
     # 从右侧找到第一个非黑色列
     # while right_index < maxR and column_no_black_count[right_index]>5*255: #/(column_no_black_count[maxR-100]) < r_threshold:
     #     right_index -= 1
-    r_limit = 10 if "L_D" in key else 500
+    r_limit_base = 10 if "L_D" in key_text else 500
+    r_limit = min(r_limit_base, max(1, h // 2))
     while True:
         if right_index < min_r:
             break
         if column_no_black_count[right_index] > r_limit:
             break
         right_index -= 1
-    logger.debug("r_index %s %s %s %s", key, right_index, w - right_index, column_no_black_count[right_index])
+    logger.debug("r_index %s %s %s %s", key_text, right_index, w - right_index, column_no_black_count[right_index])
     # showImage(image)
     # 保存裁剪后的图像
-    if "S_D" in key:
+    left_padding = 0 if "S_D" in key_text else 20
+    right_padding = 0 if "L_D" in key_text else 20
+    x = left_index + left_padding
+    right_edge = right_index + 1 - right_padding
+    if right_edge <= x:
         x = left_index
-    else:
-        x = left_index+20
-
-    if "L_D" in key:
-        width = right_index - x
-    else:
-        width = right_index - x-20
+        right_edge = right_index + 1
+    x = min(max(x, 0), w - 1)
+    right_edge = min(max(right_edge, x + 1), w)
+    width = right_edge - x
+    if width <= 0:
+        logger.warning(
+            "invalid crop range key=%s x=%s right=%s shape=%s, use full image",
+            key_text,
+            x,
+            right_edge,
+            foreground.shape,
+        )
+        return [0, 0, w, h]
     # tools.tool.showImage(image[:, x:x + width],f"{key}_{[x, 0, w-(width+x), h]}")
     return [x, 0, width, h]
 
@@ -138,9 +209,7 @@ def horizontal_projection_first_nonzero(mask):
         mask = np.array(mask)
     mask = np.asarray(mask)
     if mask.ndim < 2 or mask.shape[0] == 0 or mask.shape[1] == 0:
-        logger.warning(
-            f"horizontal_projection_first_nonzero skip empty mask: shape={getattr(mask, 'shape', None)}"
-        )
+        logger.warning("horizontal_projection_first_nonzero skip empty mask: shape=%s", getattr(mask, "shape", None))
         return np.array([], dtype=np.int32)
     height = mask.shape[0]
     # 使用np.argmax找到第一个非零值的索引
@@ -177,9 +246,7 @@ def find_cross_points(projections):
         r_ = projections[i]
         l_len = len(l_)
         if l_len == 0 or len(r_) == 0:
-            logger.warning(
-                f"find_cross_points skip empty projection: left={l_len}, right={len(r_)}"
-            )
+            logger.warning("find_cross_points skip empty projection: left=%s, right=%s", l_len, len(r_))
             cross_points.append((0, 0))
             continue
         abs_diff_l_r = np.abs(l_ - r_[0])
@@ -202,14 +269,18 @@ def crop_black_border(gray):
     if isinstance(gray, Image.Image):
         gray = np.array(gray)
     gray = np.asarray(gray)
-    # 阈值处理，获得二值图像
-    _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+    if gray.ndim < 2 or gray.shape[0] == 0 or gray.shape[1] == 0:
+        logger.warning("crop_black_border skip empty image: shape=%s", getattr(gray, "shape", None))
+        return 0, 0, 0, 0
+    if gray.ndim == 3:
+        foreground = np.any(np.nan_to_num(gray, nan=0) > 0, axis=2)
+    else:
+        foreground = np.nan_to_num(gray, nan=0) > 0
+    binary = foreground.astype(np.uint8)
     # 寻找非黑色区域的边界
     coords = cv2.findNonZero(binary)
     if coords is None:
-        logger.warning(
-            f"crop_black_border found no foreground, using full image: shape={gray.shape}"
-        )
+        logger.warning("crop_black_border found no foreground, using full image: shape=%s", gray.shape)
         return 0, 0, gray.shape[1], gray.shape[0]
     # 计算边界框
     x, y, w, h = cv2.boundingRect(coords)
@@ -345,11 +416,171 @@ def hstack_3d(npy_list, window_size=100, max_blocks=3, join_mask_image=None):
     return np.hstack(stitched)
 
 
+def _is_plausible_inner_ellipse(inner_ellipse, outer_ellipse):
+    if inner_ellipse is None or outer_ellipse is None:
+        return False
+    (inner_x, inner_y), inner_axes, _ = inner_ellipse
+    (outer_x, outer_y), outer_axes, _ = outer_ellipse
+    inner_min, inner_max = sorted(inner_axes)
+    outer_min, outer_max = sorted(outer_axes)
+    if inner_min <= 0 or outer_min <= 0:
+        return False
+    return (
+        np.hypot(inner_x - outer_x, inner_y - outer_y) <= outer_min * 0.12
+        and inner_min >= outer_min * 0.12
+        and inner_max <= outer_max * 0.72
+        and inner_max / inner_min <= 1.35
+    )
+
+
+def _inner_ellipse_from_radial_edges(binary, outer_ellipse):
+    (center_x, center_y), outer_axes, _ = outer_ellipse
+    outer_radius = min(outer_axes) / 2.0
+    min_radius = int(outer_radius * 0.12)
+    max_radius = int(outer_radius * 0.72)
+    height, width = binary.shape
+    points = []
+    distances = []
+
+    for angle in np.linspace(0, 2 * np.pi, 360, endpoint=False):
+        radii = np.arange(min_radius, max_radius + 1)
+        xs = np.rint(center_x + radii * np.cos(angle)).astype(np.int32)
+        ys = np.rint(center_y + radii * np.sin(angle)).astype(np.int32)
+        inside = (xs >= 0) & (xs < width) & (ys >= 0) & (ys < height)
+        xs, ys, radii = xs[inside], ys[inside], radii[inside]
+        if radii.size < 3:
+            continue
+        foreground = binary[ys, xs] > 0
+        stable = np.convolve(foreground.astype(np.uint8),
+                             np.ones(3, dtype=np.uint8),
+                             mode="valid") == 3
+        transitions = np.flatnonzero(stable)
+        if transitions.size == 0:
+            continue
+        index = int(transitions[0])
+        points.append((float(xs[index]), float(ys[index])))
+        distances.append(int(radii[index]))
+
+    if len(points) < 120:
+        return None
+    distances = np.asarray(distances, dtype=np.float32)
+    median_distance = float(np.median(distances))
+    keep = ((distances >= median_distance * 0.7)
+            & (distances <= median_distance * 1.3))
+    points = np.asarray(points, dtype=np.float32)[keep]
+    if len(points) < 100:
+        return None
+    contour = np.rint(points).astype(np.int32).reshape(-1, 1, 2)
+    ellipse = cv2.fitEllipse(contour)
+    ellipse_axes = sorted(ellipse[1])
+    if ellipse_axes[1] / ellipse_axes[0] > 1.05:
+        # With one camera sector missing, fitEllipse stretches toward the
+        # absent arc. The radial median is stable because it only uses intact
+        # directions, and a coil eye is nominally circular.
+        diameter = median_distance * 2.0
+        ellipse = (ellipse[0], (diameter, diameter), 0.0)
+    return ellipse if _is_plausible_inner_ellipse(ellipse,
+                                                   outer_ellipse) else None
+
+
+def get_inner_ellipse_by_mask(mask):
+    """Return a stable coil-eye ellipse even when a missing frame opens it."""
+    source = np.asarray(mask)
+    if source.ndim == 3:
+        source = np.max(source, axis=2)
+    if source.ndim != 2 or source.size == 0:
+        return None
+    binary = np.where(source > 150, 255, 0).astype(np.uint8)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+    outer_contour = max(contours, key=cv2.contourArea)
+    if len(outer_contour) < 5:
+        return None
+    outer_ellipse = cv2.fitEllipse(outer_contour)
+    outer_mask = np.zeros(binary.shape, dtype=np.uint8)
+    cv2.ellipse(outer_mask, outer_ellipse, 255, thickness=cv2.FILLED)
+    hole_candidates = np.where((outer_mask > 0) & (binary == 0), 255,
+                               0).astype(np.uint8)
+    hole_contours, _ = cv2.findContours(hole_candidates, cv2.RETR_EXTERNAL,
+                                        cv2.CHAIN_APPROX_SIMPLE)
+    image_center = np.array(outer_ellipse[0], dtype=np.float32)
+    candidate = None
+    candidate_score = None
+    for contour in hole_contours:
+        area = cv2.contourArea(contour)
+        if area < binary.size * 0.005 or len(contour) < 5:
+            continue
+        moments = cv2.moments(contour)
+        if moments["m00"] <= 0:
+            continue
+        center = np.array([
+            moments["m10"] / moments["m00"],
+            moments["m01"] / moments["m00"],
+        ], dtype=np.float32)
+        score = np.linalg.norm(center - image_center) / max(area**0.5, 1.0)
+        if candidate_score is None or score < candidate_score:
+            candidate = contour
+            candidate_score = score
+
+    ellipse = cv2.fitEllipse(candidate) if candidate is not None else None
+    if _is_plausible_inner_ellipse(ellipse, outer_ellipse):
+        return ellipse
+    recovered = _inner_ellipse_from_radial_edges(binary, outer_ellipse)
+    if recovered is not None:
+        logger.warning(
+            "recovered circle config inner ellipse: rejected=%s recovered=%s",
+            ellipse, recovered)
+    return recovered
+
+
 def get_circle_config_by_mask(mask):
     # 获取圆参数
     # showImage(mask)
     if isinstance(mask, Image.Image):
         mask = np.array(mask)
+    mask = np.asarray(mask)
+    if mask.ndim < 2 or mask.shape[0] == 0 or mask.shape[1] == 0:
+        raise ValueError(f"invalid mask shape for circle config: {getattr(mask, 'shape', None)}")
+    if mask.ndim == 3:
+        mask = np.max(mask, axis=2)
+    if mask.dtype != np.uint8:
+        mask = np.clip(np.nan_to_num(mask, nan=0), 0, 255).astype(np.uint8)
+
+    recovered_ellipse = get_inner_ellipse_by_mask(mask)
+    if recovered_ellipse is not None:
+        (center_x, center_y), (ellipse_width,
+                               ellipse_height), _ = recovered_ellipse
+        return {
+            "inner_circle": {
+                "circlex": [
+                    int(center_x),
+                    int(center_y),
+                    int(max(ellipse_width, ellipse_height) / 2),
+                ],
+                "ellipse": recovered_ellipse,
+                "inner_circle": [
+                    (center_x, center_y),
+                    min(ellipse_width, ellipse_height) / 2,
+                ],
+            }
+        }
+
+    def _fallback_circle_config(reason):
+        height, width = mask.shape[:2]
+        radius = max(min(width, height) / 2, 1.0)
+        center = (width / 2, height / 2)
+        ellipse = (center, (radius * 2, radius * 2), 0.0)
+        logger.warning("circle config fallback: %s shape=%s", reason, mask.shape)
+        return {
+            "inner_circle": {
+                "circlex": [int(center[0]), int(center[1]), int(radius)],
+                "ellipse": ellipse,
+                "inner_circle": [center, radius]
+            }
+        }
+
     mask = cv2.bitwise_not(mask)
     # 找到轮廓
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -371,6 +602,8 @@ def get_circle_config_by_mask(mask):
         if distance < min_distance:
             min_distance = distance
             closest_contour = contour
+    if closest_contour is None:
+        return _fallback_circle_config("no valid contour")
     (circlexX, circlexY), circlexRadius = cv2.minEnclosingCircle(closest_contour)
     rect = cv2.minAreaRect(closest_contour)
     (box_x, box_y), (box_w, box_h), box_angle = rect
@@ -378,7 +611,10 @@ def get_circle_config_by_mask(mask):
     # 计算内接圆（在最小包围矩形中）
     inner_circle_radius = min(box_w, box_h) / 2
     inner_circle_center = (box_x, box_y)
-    ellipse = cv2.fitEllipse(closest_contour)
+    if len(closest_contour) >= 5:
+        ellipse = cv2.fitEllipse(closest_contour)
+    else:
+        ellipse = (inner_circle_center, (inner_circle_radius * 2, inner_circle_radius * 2), box_angle)
 
     return {
         "inner_circle": {

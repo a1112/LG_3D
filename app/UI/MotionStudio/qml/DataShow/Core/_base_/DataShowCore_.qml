@@ -1,16 +1,22 @@
 import QtQuick
 import "../"
 import "../../../Core/Surface"
-import "../../../DataShow/2dShow/ViewTool"
+import "../../../Core/JsonUtils.js" as JsonUtils
 Item {
     id: root
 
-    property SurfaceData surfaceData
+    required property SurfaceData surfaceData
+    required property var apiClient
+    required property var modelStore
+    required property var globalContext
+    required property var toolService
+    required property var settings
 
     property Image image_show
 
     property Binds binds :Binds{
         surfaceData: root.surfaceData
+        settings: root.settings
     }
     //      alias objcet
     readonly property AdjustConfig adjustConfig:binds.adjustConfig
@@ -85,7 +91,10 @@ Item {
     property int un_show_num:0
 
     function defect_show(defectName){
-        return global.defectClassProperty.defectDictAll[defectName]??false
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(
+                    defectName)
+        return root.globalContext.defectClassProperty.defectDictAll[sharedName]
+                ?? false
     }
 
     function appendDefect(item){
@@ -93,10 +102,12 @@ Item {
 
     }
     function set_show_state(){ // 设置显示状态
-        return tool.for_list_model(global.defectClassProperty.defectDictModel,(item)=>{
+        return root.toolService.for_list_model(
+                    root.globalContext.defectClassProperty.defectDictModel,
+                    (item)=>{
                                        let name = item.name
-                                       if (!(item["name"] in coreModel.defectDictAll)){
-                                           coreModel.defectDictAll[item["name"]]=item["show"]
+                                       if (!(item["name"] in root.globalContext.defectClassProperty.defectDictAll)){
+                                           root.globalContext.defectClassProperty.defectDictAll[item["name"]]=item["show"]
                                        }
 
                                        // 过滤掉 null 值
@@ -123,9 +134,11 @@ Item {
         if(defectsData.length>0){
             defectsData.forEach((item)=>{
                                     if (!item) return
-                                    let defectName = item.defectName
-                                    if (global.defectClassProperty.is_area_defect_name(defectName)){
-                                        global.defectClassProperty.ensure_defect_class_item(defectName)
+                                    let rawDefectName = item.defectName
+                                    let defectName = global.defectClassProperty.shared_defect_name(rawDefectName)
+                                    let isAreaDefect = global.defectClassProperty.is_area_defect_name(rawDefectName)
+                                    if (isAreaDefect){
+                                        global.defectClassProperty.ensure_defect_class_item(rawDefectName)
                                     }
                                     if (defectName in defectDict){
                                         defectDict[defectName].push(item)
@@ -143,9 +156,9 @@ Item {
                                     }
                                     cleanItem["configDefectName"] = defectName
 
-                                    if(defectName.indexOf("2D_")>=0){
+                                    if(isAreaDefect){
                                         cleanItem["is_area"]=true
-                                        cleanItem.defectName=cleanItem.defectName.slice(3)
+                                        cleanItem.defectName=defectName
                                         areaDefectModel.append(cleanItem)
                                     }
                                     else{
@@ -171,9 +184,10 @@ Item {
 
     function flushDefect(){//刷新
         defectClear()
-        api.getDefects(surfaceData.coilId,surfaceData.key,
+        root.apiClient.getDefects(root.surfaceData.coilId,
+                       root.surfaceData.key,
                        (result)=>{
-                           defectsData = JSON.parse(result)
+                           defectsData = JsonUtils.parse(result, [], "surface defects")
                        },
                        (err)=>{
                        }

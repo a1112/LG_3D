@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -5,17 +7,17 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtWebSockets
 
-import "../Base"
-import "../../Labels"
-import "../../Input"
-import "../../Pages/Header"
+import "../../Core/JsonUtils.js" as JsonUtils
 
 ApplicationWindow {
     id: root
 
+    required property var apiClient
+    required property var adaptiveMetrics
+    required property var style
 
-    width: 900
-    height: 640
+    width: adaptiveMetrics.boundedWidth(900, 680, 1100)
+    height: adaptiveMetrics.boundedHeight(640, 500, 820)
     property var modelList: []
     property var selectedModel: null
     property string targetFolder: ""
@@ -43,21 +45,17 @@ ApplicationWindow {
 
 
     function refreshModels() {
-        if (!api || !api.getAlgModels) {
+        if (!root.apiClient || !root.apiClient.getAlgModels) {
             statusMessage = qsTr("缺少算法模型接口")
             return
         }
         loadingModels = true
         statusMessage = qsTr("正在获取模型列表...")
-        api.getAlgModels(function(resp) {
+        root.apiClient.getAlgModels(function(resp) {
             loadingModels = false
             var parsed = []
-            try {
-                var data = JSON.parse(resp)
-                parsed = data.models || []
-            } catch (e) {
-                console.warn("getAlgModels parse error", e)
-            }
+            var data = JsonUtils.parse(resp, {}, "algorithm model list")
+            parsed = data.models || []
             modelList = parsed
             if (parsed.length > 0) {
                 selectedModel = parsed[0]
@@ -99,9 +97,9 @@ ApplicationWindow {
     }
 
     function progressUrl() {
-        if (!api || !api.getAlgTestWsUrl)
+        if (!root.apiClient || !root.apiClient.getAlgTestWsUrl)
             return ""
-        return api.getAlgTestWsUrl()
+        return root.apiClient.getAlgTestWsUrl()
     }
 
     function startTest() {
@@ -130,9 +128,8 @@ ApplicationWindow {
                 save_label: optionSaveLabel
             }
         }
-        api.startAlgTest(payload, function(resp) {
-            var js = {}
-            try { js = JSON.parse(resp) } catch(e) { js = {} }
+        root.apiClient.startAlgTest(payload, function(resp) {
+            var js = JsonUtils.parse(resp, {}, "algorithm test start")
             if (js.task_id)
                 currentTaskId = js.task_id
             statusMessage = qsTr("任务已启动")
@@ -152,8 +149,15 @@ ApplicationWindow {
         running = false
         statusMessage = qsTr("已请求停止")
         progressSocket.active = false
-        if (api && api.stopAlgTest) {
-            api.stopAlgTest({task_id: currentTaskId}, function(){ appendLog(qsTr("服务端已确认停止")) }, function(err){ appendLog(qsTr("停止失败: %1").arg(err)) })
+        if (root.apiClient && root.apiClient.stopAlgTest) {
+            root.apiClient.stopAlgTest(
+                        {task_id: root.currentTaskId},
+                        function() {
+                            root.appendLog(qsTr("服务端已确认停止"))
+                        },
+                        function(err) {
+                            root.appendLog(qsTr("停止失败: %1").arg(err))
+                        })
         }
     }
 
@@ -170,7 +174,7 @@ ApplicationWindow {
 
     function appendLog(msg) {
         var stamp = Qt.formatDateTime(new Date(), "hh:mm:ss")
-        logModel.append({text: stamp + "  " + msg})
+        logModel.append({logText: stamp + "  " + msg})
         if (logModel.count > 200)
             logModel.remove(0, logModel.count - 200)
     }
@@ -193,23 +197,19 @@ ApplicationWindow {
 
     ListModel { id: logModel }
 
-    FileDialog {
+    FolderDialog {
         id: targetFolderDialog
         title: qsTr("选择目标文件夹")
-        fileMode: FileDialog.OpenDirectory !== undefined ? FileDialog.OpenDirectory : 0
         onAccepted: {
-            if (selectedFiles && selectedFiles.length > 0)
-                targetFolder = cleanFolderPath(selectedFiles[0])
+            root.targetFolder = root.cleanFolderPath(selectedFolder)
         }
     }
 
-    FileDialog {
+    FolderDialog {
         id: outputFolderDialog
         title: qsTr("选择输出文件夹")
-        fileMode: FileDialog.OpenDirectory !== undefined ? FileDialog.OpenDirectory : 0
         onAccepted: {
-            if (selectedFiles && selectedFiles.length > 0)
-                outputFolder = cleanFolderPath(selectedFiles[0])
+            root.outputFolder = root.cleanFolderPath(selectedFolder)
         }
     }
 
@@ -219,34 +219,34 @@ ApplicationWindow {
         url: ""
         onStatusChanged: {
             if (status === WebSocket.Error) {
-                appendLog(qsTr("进度连接错误: %1").arg(errorString))
-                statusMessage = errorString
-            } else if (status === WebSocket.Closed && running) {
-                appendLog(qsTr("进度连接已关闭"))
+                root.appendLog(qsTr("进度连接错误: %1").arg(errorString))
+                root.statusMessage = errorString
+            } else if (status === WebSocket.Closed && root.running) {
+                root.appendLog(qsTr("进度连接已关闭"))
             }
         }
         onTextMessageReceived: function(message) {
-            var js = {}
-            try { js = JSON.parse(message) } catch(e) { js = {message: message} }
-            if (js.task_id && !currentTaskId)
-                currentTaskId = js.task_id
+            var js = JsonUtils.parse(message, {message: message},
+                                     "algorithm test progress")
+            if (js.task_id && !root.currentTaskId)
+                root.currentTaskId = js.task_id
             if (js.speed !== undefined)
-                progressSpeed = js.speed
+                root.progressSpeed = js.speed
             if (js.done !== undefined)
-                processedCount = js.done
+                root.processedCount = js.done
             if (js.total !== undefined)
-                totalCount = js.total
+                root.totalCount = js.total
             if (js.eta !== undefined)
-                etaSeconds = js.eta || 0
+                root.etaSeconds = js.eta || 0
             if (js.message)
-                appendLog(js.message)
+                root.appendLog(js.message)
             if (js.status)
-                statusMessage = js.status
+                root.statusMessage = js.status
             if (js.finished) {
-                running = false
+                root.running = false
                 progressSocket.active = false
                 if (js.summary)
-                    appendLog(qsTr("任务完成"))
+                    root.appendLog(qsTr("任务完成"))
             }
         }
     }
@@ -280,8 +280,10 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 model: root.modelList
                 textRole: "display_name"
-                displayText: selectedModel ? selectedModel.display_name : qsTr("请选择模型")
-                enabled: !loadingModels
+                displayText: root.selectedModel
+                             ? root.selectedModel.display_name
+                             : qsTr("请选择模型")
+                enabled: !root.loadingModels
                 delegate: ItemDelegate {
                     required property int index
                     width: modelCombo.width
@@ -289,7 +291,7 @@ ApplicationWindow {
                     text: modelData.display_name || modelData.name
                     onClicked: {
                         modelCombo.currentIndex = index
-                        selectedModel = modelData
+                        root.selectedModel = modelData
                         modelCombo.popup.close()
                     }
                 }
@@ -297,12 +299,12 @@ ApplicationWindow {
             RowLayout {
                 Button {
                     text: qsTr("刷新")
-                    enabled: !loadingModels
-                    onClicked: refreshModels()
+                    enabled: !root.loadingModels
+                    onClicked: root.refreshModels()
                 }
                 BusyIndicator {
-                    running: loadingModels
-                    visible: loadingModels
+                    running: root.loadingModels
+                    visible: root.loadingModels
                     width: 20
                     height: 20
                 }
@@ -311,9 +313,9 @@ ApplicationWindow {
             Label { text: qsTr("目标文件夹"); Layout.alignment: Qt.AlignVCenter }
             TextField {
                 Layout.fillWidth: true
-                text: targetFolder
+                text: root.targetFolder
                 placeholderText: qsTr("递归扫描的图像根目录")
-                onEditingFinished: targetFolder = text.trim()
+                onEditingFinished: root.targetFolder = text.trim()
             }
             Button {
                 text: qsTr("选择")
@@ -323,9 +325,9 @@ ApplicationWindow {
             Label { text: qsTr("输出文件夹"); Layout.alignment: Qt.AlignVCenter }
             TextField {
                 Layout.fillWidth: true
-                text: outputFolder
+                text: root.outputFolder
                 placeholderText: qsTr("保存检测结果的目录")
-                onEditingFinished: outputFolder = text.trim()
+                onEditingFinished: root.outputFolder = text.trim()
             }
             Button {
                 text: qsTr("选择")
@@ -340,22 +342,22 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     from: 0
                     to: 100
-                    value: threshold * 100
+                    value: root.threshold * 100
                     stepSize: 1
-                    onValueChanged: threshold = value / 100
+                    onValueChanged: root.threshold = value / 100
                 }
                 TextField {
                     width: 60
-                    text: threshold.toFixed(2)
+                    text: root.threshold.toFixed(2)
                     inputMethodHints: Qt.ImhFormattedNumbersOnly
                     onEditingFinished: {
                         var val = parseFloat(text)
                         if (isNaN(val))
                             val = 0.4
                         val = Math.max(0.01, Math.min(0.99, val))
-                        threshold = val
-                        text = threshold.toFixed(2)
-                        thresholdSlider.value = threshold * 100
+                        root.threshold = val
+                        text = root.threshold.toFixed(2)
+                        thresholdSlider.value = root.threshold * 100
                     }
                 }
             }
@@ -367,14 +369,14 @@ ApplicationWindow {
                 ButtonGroup { id: modeGroup }
                 RadioButton {
                     text: qsTr("复制")
-                    checked: mode === "copy"
-                    onClicked: mode = "copy"
+                    checked: root.mode === "copy"
+                    onClicked: root.mode = "copy"
                     ButtonGroup.group: modeGroup
                 }
                 RadioButton {
                     text: qsTr("移动")
-                    checked: mode === "move"
-                    onClicked: mode = "move"
+                    checked: root.mode === "move"
+                    onClicked: root.mode = "move"
                     ButtonGroup.group: modeGroup
                 }
             }
@@ -393,14 +395,15 @@ ApplicationWindow {
                 }
                 CheckBox {
                     text: qsTr("分类保存")
-                    checked: optionClassify
-                    onToggled: optionClassify = checked
+                    checked: root.optionClassify
+                    onToggled: root.optionClassify = checked
                 }
                 CheckBox {
                     text: qsTr("保存标注文件")
-                    enabled: !selectedModel || selectedModel.type !== "classifier"
-                    checked: optionSaveLabel && enabled
-                    onToggled: optionSaveLabel = enabled && checked
+                    enabled: !root.selectedModel
+                             || root.selectedModel.type !== "classifier"
+                    checked: root.optionSaveLabel && enabled
+                    onToggled: root.optionSaveLabel = enabled && checked
                 }
             }
         }
@@ -409,14 +412,14 @@ ApplicationWindow {
             Layout.fillWidth: true
             spacing: 10
             Button {
-                text: running ? qsTr("执行中...") : qsTr("开始测试")
-                enabled: !running
-                onClicked: startTest()
+                text: root.running ? qsTr("执行中...") : qsTr("开始测试")
+                enabled: !root.running
+                onClicked: root.startTest()
             }
             Button {
                 text: qsTr("停止")
-                enabled: running
-                onClicked: stopTest()
+                enabled: root.running
+                onClicked: root.stopTest()
             }
             Button {
                 text: qsTr("关闭")
@@ -424,8 +427,8 @@ ApplicationWindow {
             }
             Item { Layout.fillWidth: true }
             Label {
-                text: statusMessage
-                color: Material.color(Material.LightBlue)
+                text: root.statusMessage
+                color: root.style.accentColor
                 elide: Text.ElideRight
                 Layout.preferredWidth: 320
             }
@@ -434,16 +437,23 @@ ApplicationWindow {
         ProgressBar {
             Layout.fillWidth: true
             from: 0
-            to: Math.max(totalCount, 1)
-            value: processedCount
+            to: Math.max(root.totalCount, 1)
+            value: root.processedCount
         }
 
         RowLayout {
             Layout.fillWidth: true
             spacing: 20
-            Label { text: qsTr("%1 / %2 张").arg(processedCount).arg(totalCount || qsTr("未知")) }
-            Label { text: qsTr("速度 %1 张/秒").arg(progressSpeed.toFixed(2)) }
-            Label { text: qsTr("预计 %1").arg(formatEta(etaSeconds)) }
+            Label {
+                text: qsTr("%1 / %2 张").arg(root.processedCount)
+                      .arg(root.totalCount || qsTr("未知"))
+            }
+            Label {
+                text: qsTr("速度 %1 张/秒").arg(root.progressSpeed.toFixed(2))
+            }
+            Label {
+                text: qsTr("预计 %1").arg(root.formatEta(root.etaSeconds))
+            }
             Item { Layout.fillWidth: true }
         }
 
@@ -456,9 +466,10 @@ ApplicationWindow {
                 clip: true
                 model: logModel
                 delegate: Text {
+                    required property string logText
                     width: logList.width - 12
-                    text: model.text
-                    color: "#E0E0E0"
+                    text: logText
+                    color: root.style.labelColor
                     wrapMode: Text.WrapAnywhere
                 }
             }

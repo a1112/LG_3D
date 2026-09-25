@@ -3,6 +3,11 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 ItemDelegate{
+    id: root
+
+    required property string key
+    required property var value
+
     width: 100
     height: 25
      RowLayout{
@@ -12,12 +17,12 @@ ItemDelegate{
             height: 1
          }
          Label{
-             text:key+":"
+             text: root.key + ":"
          }
          Label{
             horizontalAlignment: Text.AlignHCenter
              Layout.fillWidth: true
-             text:value
+             text: root.value
              font.pixelSize: 18
              font.family: "Arial"
              font.bold:true

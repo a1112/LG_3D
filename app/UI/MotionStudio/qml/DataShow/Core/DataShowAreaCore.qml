@@ -1,11 +1,16 @@
 import QtQuick
-import "_base_"
-import "../../Core/Surface"
-import "../../DataShow/2dShow/ViewTool"
 import "../../Model"
 Item {
-        property string key: "AREA"
-    id:root
+    id: root
+
+    required property var surfaceData
+    required property var apiClient
+    required property var modelStore
+    required property var globalContext
+    required property var settings
+    required property var imageCacheService
+    required property var defectController
+    property string key: "AREA"
 
     property int _lastPreheatCoilId: -1
     property int _preheatRange: 2
@@ -46,9 +51,21 @@ Item {
         if (!coilId) {
             return
         }
-        let areaUrl = api.getFileSource(key, coilId, surfaceData.areaViewKey, false)
-        api.ajax.get(areaUrl, function(){}, function(){})
-        imageCache.pushCache(areaUrl)
+        let areaUrl = root.apiClient.getFileSource(
+                    key, coilId, root.surfaceData.areaViewKey, false)
+        root.apiClient.ajax.get(root.appendQuery(areaUrl, "count=0"),
+                                function(){}, function(){})
+        root.imageCacheService.pushCache(root.apiClient.getFileSource(
+                                             key, coilId,
+                                             root.surfaceData.areaViewKey,
+                                             true))
+    }
+
+    function appendQuery(url, query) {
+        if (!url || url.length === 0) {
+            return ""
+        }
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + query
     }
 
     function preheatAreaAround() {
@@ -59,7 +76,7 @@ Item {
             return
         }
         _lastPreheatCoilId = surfaceData.coilId
-        let model = coreModel.currentCoilListModel
+        let model = root.modelStore.currentCoilListModel
         let index = _findCoilIndex(model, surfaceData.coilId)
         let neighborIds = _collectNeighborIds(model, index, _preheatRange)
         for (let i = 0; i < neighborIds.length; i++) {
@@ -70,6 +87,9 @@ Item {
     }
     function flush(){
         surfaceData.error_visible=false
+        if (surfaceData.coilId > 0 && surfaceData.area_source === "") {
+            surfaceData.refreshAreaSource()
+        }
         // 延迟加载缺陷数据，优先保证图像加载
         defectLoadTimer.restart()
     }
@@ -77,7 +97,7 @@ Item {
     Timer {
         id: defectLoadTimer
         interval: 800  // 比其他数据再晚一些加载
-        onTriggered: flushDefect()
+        onTriggered: root.defectController.flushDefect()
     }
       // 鍥炬爣鐨勬樉绀烘柟寮?
     property int chartShowType: 0
@@ -97,13 +117,75 @@ Item {
         if (!defectName) {
             return false
         }
-        return global.defectClassProperty.defectDictAll[defectName] ?? false
+        let sharedName = root.globalContext.defectClassProperty.shared_defect_name(
+                    defectName)
+        return root.globalContext.defectClassProperty.defectDictAll[sharedName]
+                ?? false
     }
 
-    property string source: surfaceData.hasViewData(surfaceData.areaViewKey) ? surfaceData.area_source : "" //"http://127.0.0.1:5012/image/area/S/66252?"//
-    // AREA 缩略图跟随当前原图/MASK 图层。
+    readonly property bool hasAreaDecision:
+        root.modelStore
+        && root.modelStore.hasDataCoilId === root.surfaceData.coilId
+        && root.modelStore.has_data !== null
+        && root.modelStore.has_data !== undefined
+    property int areaCacheVersion: 0
+    property bool recacheInProgress: false
+    property string lastRecacheMessage: ""
+    readonly property string areaBaseSource: (!hasAreaDecision || surfaceData.hasViewData(surfaceData.areaViewKey)) ? surfaceData.area_source : ""
+    property string source: areaCacheVersion > 0 ? appendQuery(areaBaseSource, "areaCacheVersion=" + areaCacheVersion) : areaBaseSource
     property string pre_source: surfaceData.getSouceByKey(surfaceData.areaViewKey, true)
 
+    function resetImageStateForSource() {
+        sourceWidth = 0
+        sourceHeight = 0
+        canvasScale = 1.0
+        if (flick) {
+            flick.contentX = 0
+            flick.contentY = 0
+        }
+    }
+
+    onSourceChanged: {
+        resetImageStateForSource()
+    }
+
+    function recacheAreaTiles() {
+        if (recacheInProgress || !surfaceData || surfaceData.coilId <= 0 || !surfaceData.key) {
+            return
+        }
+        recacheInProgress = true
+        lastRecacheMessage = "rebuilding"
+        root.apiClient.recacheAreaTiles(surfaceData.key,
+                             surfaceData.coilId,
+                             surfaceData.areaViewKey,
+                             function(result) {
+                                 recacheInProgress = false
+                                 lastRecacheMessage = result
+                                 if (root.settings.useRustImageServer) {
+                                     root.apiClient.clearRustImageCache(function() {
+                                         console.log("Rust image cache cleared")
+                                         refreshAreaTilesAfterRecache()
+                                     }, function(error, status) {
+                                         console.log("Rust image cache clear failed:", status, error)
+                                         refreshAreaTilesAfterRecache()
+                                     })
+                                 } else {
+                                     refreshAreaTilesAfterRecache()
+                                 }
+                                 console.log("AREA tile cache rebuilt:", result)
+                             },
+                             function(error, status) {
+                                 recacheInProgress = false
+                                 lastRecacheMessage = "failed: " + status + " " + error
+                                 console.log("AREA tile cache rebuild failed:", status, error)
+                             })
+    }
+
+    function refreshAreaTilesAfterRecache() {
+        areaCacheVersion += 1
+        surfaceData.refreshAreaSource()
+        resetImageStateForSource()
+    }
 
     // 琢诲竷鏁版嵁
     property real canvasScale: 1.0 // 鐢诲竷缂╂斁姣斾緥锛屽垵濮嬪€璁句负 1.0锛屽悗缁皢鑷姭璁★級
@@ -173,6 +255,9 @@ Item {
     }
 
     function getAspectRatioByPoint(point){
+        if (canvasContentWidth <= 0 || canvasContentHeight <= 0) {
+            return Qt.point(0, 0)
+        }
         let asX =(point.x+canvasContentX)/canvasContentWidth
         let asY =(point.y+canvasContentY)/canvasContentHeight
         return Qt.point(asX,asY)
@@ -192,10 +277,10 @@ Item {
         return x*canvasScale
     }
     function toMm(w){
-        return w/canvasScale*surfaceData.scan3dScaleX
+        return canvasScale > 0 ? w/canvasScale*surfaceData.scan3dScaleX : 0
     }
     function pxto_top(px){
-        return parseInt(px/canvasScale)
+        return canvasScale > 0 ? parseInt(px/canvasScale) : 0
     }
     function px_to_width_mm(px){
         return px*surfaceData.scan3dScaleX
@@ -256,8 +341,8 @@ Item {
         running: false
         repeat: false
         onTriggered: {
-            if (surfaceData.error_auto)
-                errorDrawer()
+            if (root.surfaceData.error_auto)
+                root.errorDrawer()
         }
     }
     property var triggerErrorDrawer: surfaceData.coilId+surfaceData.scan3dScaleZ+medianZValue+tower_warning_threshold_downValue+tower_warning_threshold_upValue
@@ -276,7 +361,7 @@ Item {
     property int rangeZValue: rangeZ/surfaceData.scan3dScaleZ
     function renderDrawer()
     {
-        surfaceData.source = api.geRenderDrawerSource(surfaceData.key,
+        surfaceData.source = root.apiClient.geRenderDrawerSource(surfaceData.key,
                                                       surfaceData.coilId,
                                                       renderScale.toFixed(2),
                                                       parseInt(medianZValue-rangeZValue)
@@ -288,11 +373,11 @@ Item {
     function errorDrawer()
     {
         // 检查设置中的叠加图层开关
-        if (!coreSetting.showErrorOverlay) {
+        if (!root.settings.showErrorOverlay) {
             surfaceData.error_visible=false
             return
         }
-        surfaceData.error_source = api.geErrorDrawerSource(surfaceData.key,
+        surfaceData.error_source = root.apiClient.geErrorDrawerSource(surfaceData.key,
                                                            surfaceData.coilId,
                                                            1,
                                                            surfaceData.tower_warning_threshold_down  // mm 值：蓝色阈值
@@ -303,9 +388,13 @@ Item {
 
 
     function setDefectShowView(defect){
+        if (!flick || !defect) {
+            return false
+        }
         setToMaxScale()
-        flick.contentX =defect.defect_x-(flick.width-defect.defect_w)/2
-        flick.contentY = defect.defect_y-(flick.height-defect.defect_h)/2
+        flick.contentX = Math.max(0, defect.defect_x - (flick.width - defect.defect_w) / 2)
+        flick.contentY = Math.max(0, defect.defect_y - (flick.height - defect.defect_h) / 2)
+        return true
     }
 
     // 监听从缺陷页面跳转时的待定位缺陷
@@ -313,25 +402,25 @@ Item {
         id: pendingDefectTimer
         interval: 500
         onTriggered: {
-            if (coreModel.pendingDefect && flick) {
-                let pending = coreModel.pendingDefect
+            if (root.modelStore.pendingDefect && root.flick
+                    && root.surfaceData.isAreaRootView) {
+                let pending = root.modelStore.pendingDefect
                 let currentCoilId = currentCoilModel ? currentCoilModel.coilId : surfaceData.coilId
-                console.log("DataShowAreaCore pendingDefect:", pending.surface, pending.coilId, "current:", surfaceData.key, currentCoilId)
-                // 检查是否匹配当前表面和卷材（使用 currentCoilModel.coilId）
-                if (pending.surface === surfaceData.key && pending.coilId === currentCoilId) {
-                    setDefectShowView(pending)
-                    console.log("定位到缺陷 (AREA)")
+                let targetView = pending.viewMode || "AREA"
+                if (targetView === "AREA"
+                        && pending.surface === surfaceData.key
+                        && Number(pending.coilId) === Number(currentCoilId)
+                        && setDefectShowView(pending)) {
+                    root.modelStore.pendingDefect = null
                 }
-                // 清除待定位缺陷
-                coreModel.pendingDefect = null
             }
         }
     }
 
     Connections {
-        target: coreModel
+        target: root.modelStore
         function onPendingDefectChanged() {
-            if (coreModel.pendingDefect) {
+            if (root.modelStore.pendingDefect) {
                 pendingDefectTimer.restart()
             }
         }
@@ -360,8 +449,9 @@ Item {
         interval: 100
         onTriggered: {
             // 如果 coilId 已设置但图像未加载，触发加载
-            if (surfaceData.coilId > 0 && surfaceData.area_source === "") {
-                flush()
+            if (root.surfaceData.coilId > 0
+                    && root.surfaceData.area_source === "") {
+                root.flush()
             }
         }
     }

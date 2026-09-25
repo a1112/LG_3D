@@ -64,6 +64,14 @@
   justify-content: flex-end;
 }
 
+.export-report-progress-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5a6b7a;
+  font-size: 13px;
+}
+
 .export-report-finished {
   display: grid;
   grid-template-columns: auto minmax(120px, 1fr) auto auto;

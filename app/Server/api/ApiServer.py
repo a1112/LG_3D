@@ -34,6 +34,23 @@ async def _close_unavailable_websocket(websocket: WebSocket, detail: str) -> Non
     await websocket.close(code=1011)
 
 
+async def _run_websocket_tasks(*coroutines) -> None:
+    """Run paired websocket loops and always cancel the surviving peer."""
+    tasks = [asyncio.create_task(coroutine) for coroutine in coroutines]
+    try:
+        done, _pending = await asyncio.wait(tasks,
+                                            return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            exception = task.exception()
+            if exception is not None:
+                raise exception
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 @router.websocket("/ws/reDetection")
 async def ws_re_detection_task(websocket: WebSocket):
     if not _runtime_available() or getattr(Globs, "imageMosaicThread", None) is None:
@@ -50,7 +67,13 @@ async def ws_re_detection_task(websocket: WebSocket):
             data = json.loads(data)
             from_id = data["from_id"]
             to_id = data["to_id"]
-            image_mosaic_thread.set_re_detection_by_coil_id(from_id, to_id)
+            try:
+                await asyncio.to_thread(
+                    image_mosaic_thread.set_re_detection_by_coil_id, from_id,
+                    to_id)
+            except ValueError as exc:
+                logger.warning("re-detection request rejected: %s", exc)
+                await websocket.send_json({"error": str(exc)})
 
     async def send_messages():
         while True:
@@ -62,7 +85,7 @@ async def ws_re_detection_task(websocket: WebSocket):
     # 使用 asyncio.gather 来并发运行接收和发送任务
 
     try:
-        await asyncio.gather(receive_messages(), send_messages())
+        await _run_websocket_tasks(receive_messages(), send_messages())
     except WebSocketDisconnect:
         return
 
@@ -73,7 +96,11 @@ async def http_re_detection_start(from_id: int, to_id: int):
     通过 HTTP 启动重新识别任务，指定起止 SecondaryCoilId。
     """
     image_mosaic_thread = _image_mosaic_thread()
-    image_mosaic_thread.set_re_detection_by_coil_id(from_id, to_id)
+    try:
+        await asyncio.to_thread(
+            image_mosaic_thread.set_re_detection_by_coil_id, from_id, to_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
     return image_mosaic_thread.get_re_detection_msg()
 
 
@@ -122,7 +149,7 @@ async def ws_detection_state(websocket: WebSocket):
             await websocket.send_text(json.dumps(Globs.serverMsg.msgList, ensure_ascii=False))
 
     try:
-        await asyncio.gather(receive_messages(), send_messages())
+        await _run_websocket_tasks(receive_messages(), send_messages())
     except WebSocketDisconnect:
         return
 

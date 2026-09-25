@@ -20,6 +20,7 @@ import Globs
 
 DEFAULT_D3_QUEUE_PUT_TIMEOUT = 5.0
 DEFAULT_BALSAM_TIMEOUT = 300.0
+DEFAULT_D3_JOIN_GRACE_SECONDS = 30.0
 
 
 def _get_float_env(name: str, default: float) -> float:
@@ -37,6 +38,11 @@ def _get_d3_queue_put_timeout() -> float:
 
 def _get_balsam_timeout() -> float:
     return _get_float_env("LG3D_BALSAM_TIMEOUT", DEFAULT_BALSAM_TIMEOUT)
+
+
+def _get_d3_join_timeout() -> float:
+    default_timeout = _get_balsam_timeout() + DEFAULT_D3_JOIN_GRACE_SECONDS
+    return _get_float_env("LG3D_D3_SAVE_JOIN_TIMEOUT", default_timeout)
 
 
 def gaussian_kernel(size, sigma=1):
@@ -96,14 +102,8 @@ def generate_mesh_from_point_cloud_pcl(point_cloud):
     delaunay = Delaunay(point_cloud[:, :2])  # 只使用 x, y 坐标进行三角剖分
     triangles = delaunay.simplices
 
-    # 创建 Trimesh 网格
     mesh = trimesh.Trimesh(vertices=point_cloud, faces=triangles)
-
-    # 可视化网格
-    mesh.show()
-
-
-import open3d as o3d
+    return mesh
 
 
 # from scipy.spatial import Delaunay
@@ -365,6 +365,7 @@ class D3Saver:
         self.num_processes = Globs.control.D3SaverWorkNum
         self.type_ = Globs.control.D3SaverThreadType
         self.queue_put_timeout = _get_d3_queue_put_timeout()
+        self.join_timeout = _get_d3_join_timeout()
         if self.type_ == "multiprocessing":
             self.queue = MulQueue(maxsize=Globs.control.D3SaverThreadMaxsize)
         else:
@@ -414,12 +415,36 @@ class D3Saver:
                 logger.exception("Failed to save 3D mesh")
             finally:
                 queue.task_done()
+                # Mesh jobs contain the full depth and mask arrays. Do not
+                # retain the previous job while waiting on an empty queue.
+                data = None
 
     def join(self):
         # 阻塞直到所有任务完成
-        self.queue.join()
+        deadline = time.monotonic() + self.join_timeout
+        sent_stop_count = 0
+        while sent_stop_count < self.num_processes:
+            timeout = max(min(self.queue_put_timeout, deadline - time.monotonic()), 0.1)
+            try:
+                self.queue.put(None, timeout=timeout)
+                sent_stop_count += 1
+            except Full:
+                if time.monotonic() >= deadline:
+                    logger.error(
+                        "3DSaver shutdown timed out while sending stop signals: sent=%s/%s",
+                        sent_stop_count,
+                        self.num_processes,
+                    )
+                    break
+            except Exception as e:
+                logger.exception("3DSaver shutdown failed while sending stop signal: %s", e)
+                break
         # 停止所有进程
-        for _ in range(self.num_processes):
-            self.queue.put(None)
         for process in self.processes:
-            process.join()
+            process.join(timeout=self.join_timeout)
+            if process.is_alive():
+                logger.warning("3DSaver worker did not exit within %ss: %s", self.join_timeout, process)
+                terminate = getattr(process, "terminate", None)
+                if callable(terminate):
+                    terminate()
+                    process.join(timeout=2)

@@ -399,6 +399,12 @@ fn app_with_redetection_seed_data() -> axum::Router {
     build_app(ApiState::new(Arc::new(repository)))
 }
 
+fn app_with_many_coils(count: i64) -> axum::Router {
+    let coils = (1..=count).map(redetection_coil_summary).collect();
+    let repository = InMemoryCoilRepository::new().with_coils(coils);
+    build_app(ApiState::new(Arc::new(repository)))
+}
+
 fn app_with_save_to_sql_seed_data() -> axum::Router {
     let repository = seed_repository_with_defect(0.95, Some(json!({"source":"test"})), 2.4)
         .with_secondary_coils(vec![
@@ -3142,8 +3148,8 @@ async fn current_coil_returns_latest_row_from_repository_when_present() {
 
 #[tokio::test]
 async fn current_coil_includes_plc_compat_fields_when_secondary_coil_present() {
-    let repository = seed_repository_with_defect(0.95, Some(json!({"source":"test"})), 2.4).with_secondary_coils(
-        vec![SecondaryCoilRow {
+    let repository = seed_repository_with_defect(0.95, Some(json!({"source":"test"})), 2.4)
+        .with_secondary_coils(vec![SecondaryCoilRow {
             id: 42,
             coil_no: "REAL-SECONDARY-0042".to_string(),
             coil_type: Some("REAL-Q235".to_string()),
@@ -3154,8 +3160,7 @@ async fn current_coil_includes_plc_compat_fields_when_secondary_coil_present() {
             weight: Some(66.0),
             act_width: Some(1258.5),
             create_time: Some("2026-06-27 12:34:50".to_string()),
-        }],
-    );
+        }]);
     let app = build_app(ApiState::new(Arc::new(repository)));
 
     let response = request_response(app, "GET", "/currentCoil").await;
@@ -3190,9 +3195,8 @@ async fn plc_info_matches_python_plc_adapter_startup_contract() {
     let response_without_slash = request_response(app_with_seed_data(), "GET", "/plc/info").await;
     assert_eq!(response_without_slash.status(), StatusCode::OK);
     assert_eq!(
-        serde_json::from_slice::<Value>(&response_bytes(response_without_slash).await).expect(
-            "plc info no slash json"
-        ),
+        serde_json::from_slice::<Value>(&response_bytes(response_without_slash).await)
+            .expect("plc info no slash json"),
         json!({
             "typeList": ["int", "real", "dword", "string", "bytes", "word", "bool"],
             "plc_ip": "192.168.0.1",
@@ -3274,10 +3278,16 @@ async fn plc_get_endpoint_rejects_invalid_inputs() {
     let app = app_with_seed_data();
 
     let bad_type_response = request_response(app.clone(), "GET", "/plc/get/DB1/unknown/2").await;
-    assert_eq!(bad_type_response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        bad_type_response.status(),
+        StatusCode::INTERNAL_SERVER_ERROR
+    );
 
     let bad_length_response = request_response(app, "GET", "/plc/get/DB1/int/-1").await;
-    assert_eq!(bad_length_response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        bad_length_response.status(),
+        StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -4221,17 +4231,19 @@ async fn openapi_json_preserves_python_path_parameter_names() {
         let path_params: Vec<&str> = parameters
             .iter()
             .filter(|param| param["in"] == "path")
-            .map(|param| {
-                param["name"]
-                    .as_str()
-                    .expect("path parameter name")
-            })
+            .map(|param| param["name"].as_str().expect("path parameter name"))
             .collect();
         assert_eq!(path_params, names, "path parameter names for {path}");
     };
 
-    assert_path_params("/coilInfo/{coil_id}/{surface_key}", &["coil_id", "surface_key"]);
-    assert_path_params("/search/defects/{coil_id}/{direction}", &["coil_id", "direction"]);
+    assert_path_params(
+        "/coilInfo/{coil_id}/{surface_key}",
+        &["coil_id", "surface_key"],
+    );
+    assert_path_params(
+        "/search/defects/{coil_id}/{direction}",
+        &["coil_id", "direction"],
+    );
     assert_path_params(
         "/search/defects_all/{coil_id}/{direction}",
         &["coil_id", "direction"],
@@ -4240,8 +4252,14 @@ async fn openapi_json_preserves_python_path_parameter_names() {
         "/manual_defects/{coil_id}/{direction}",
         &["coil_id", "direction"],
     );
-    assert_path_params("/get_point_data/{coil_id}/{surface_key}", &["coil_id", "surface_key"]);
-    assert_path_params("/get_line_data/{coil_id}/{surface_key}", &["coil_id", "surface_key"]);
+    assert_path_params(
+        "/get_point_data/{coil_id}/{surface_key}",
+        &["coil_id", "surface_key"],
+    );
+    assert_path_params(
+        "/get_line_data/{coil_id}/{surface_key}",
+        &["coil_id", "surface_key"],
+    );
     assert_path_params(
         "/coilData/heightData/{surface_key}/{coil_id}",
         &["surface_key", "coil_id"],
@@ -4250,9 +4268,18 @@ async fn openapi_json_preserves_python_path_parameter_names() {
         "/coilData/heightPoint/{surface_key}/{coil_id}",
         &["surface_key", "coil_id"],
     );
-    assert_path_params("/coilData/Render/{surfaceKey}/{coil_id}", &["surfaceKey", "coil_id"]);
-    assert_path_params("/coilData/Area/{surface_key}/{coil_id}", &["surface_key", "coil_id"]);
-    assert_path_params("/coilData/Error/{surface_key}/{coil_id}", &["surface_key", "coil_id"]);
+    assert_path_params(
+        "/coilData/Render/{surfaceKey}/{coil_id}",
+        &["surfaceKey", "coil_id"],
+    );
+    assert_path_params(
+        "/coilData/Area/{surface_key}/{coil_id}",
+        &["surface_key", "coil_id"],
+    );
+    assert_path_params(
+        "/coilData/Error/{surface_key}/{coil_id}",
+        &["surface_key", "coil_id"],
+    );
     assert_path_params(
         "/image/preview/{surface_key}/{coil_id}/{type_}",
         &["surface_key", "coil_id", "type_"],
@@ -4261,7 +4288,10 @@ async fn openapi_json_preserves_python_path_parameter_names() {
         "/image/source/{surface_key}/{coil_id}/{type_}",
         &["surface_key", "coil_id", "type_"],
     );
-    assert_path_params("/image/area/{surface_key}/{coil_id}", &["surface_key", "coil_id"]);
+    assert_path_params(
+        "/image/area/{surface_key}/{coil_id}",
+        &["surface_key", "coil_id"],
+    );
     assert_path_params(
         "/image/area/{surface_key}/{coil_id}/{type_}",
         &["surface_key", "coil_id", "type_"],
@@ -5818,6 +5848,23 @@ async fn redetection_start_rejects_non_python_int_converter_paths_like_python() 
 }
 
 #[tokio::test]
+async fn redetection_start_rejects_ranges_larger_than_stability_limit() {
+    let (status, body) =
+        request_json(app_with_many_coils(501), "GET", "/reDetection/start/1/501").await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["running"], false);
+    assert_eq!(body["total"], 0);
+    assert_eq!(body["pending"], 0);
+    assert!(
+        body["error"]
+            .as_str()
+            .expect("redetection error")
+            .contains("exceeds 500 coils")
+    );
+}
+
+#[tokio::test]
 async fn redetection_start_normalizes_reverse_range_and_returns_python_status_fields() {
     let app = app_with_redetection_seed_data();
 
@@ -5979,16 +6026,14 @@ async fn redetection_websocket_accepts_missing_folder_field() {
     let (mut socket, _) = connect_async(&ws_url).await.expect("connect websocket");
 
     socket
-        .send(
-            Message::Text(
-                json!({
-                    "from_id": 42,
-                    "to_id": 44
-                })
-                .to_string()
-                .into(),
-            ),
-        )
+        .send(Message::Text(
+            json!({
+                "from_id": 42,
+                "to_id": 44
+            })
+            .to_string()
+            .into(),
+        ))
         .await
         .expect("send payload without folder");
 
@@ -6469,8 +6514,16 @@ async fn alg_2d_test_start_classifier_uses_classify_folder_and_ignores_save_labe
     .await;
 
     assert_eq!(start_response.status(), StatusCode::OK);
-    let expected_image = output_dir.join("normal").join("classified").join("normal").join("good.jpg");
-    let unexpected_xml = output_dir.join("normal").join("classified").join("normal").join("good.xml");
+    let expected_image = output_dir
+        .join("normal")
+        .join("classified")
+        .join("normal")
+        .join("good.jpg");
+    let unexpected_xml = output_dir
+        .join("normal")
+        .join("classified")
+        .join("normal")
+        .join("good.xml");
     for _ in 0..100 {
         if expected_image.exists() {
             break;
@@ -6554,7 +6607,10 @@ async fn alg_2d_test_start_classifier_empty_image_marks_empty_and_normal_summary
         }
     }
 
-    let expected_image = output_dir.join("normal").join("empty").join("empty_case.jpg");
+    let expected_image = output_dir
+        .join("normal")
+        .join("empty")
+        .join("empty_case.jpg");
     assert!(
         expected_image.exists(),
         "classifier empty image should be written to normal/empty"
@@ -10774,7 +10830,10 @@ async fn settings_test_mode_get_and_post_read_write_python_config_shape() {
     let config_path = root.join("test_mode_config.json");
     let _env_guard = set_env_var_guard("RUST_API_TEST_MODE_CONFIG", &config_path);
     let _developer_mode_guard = set_env_var_guard("API_DEVELOPER_MODE", "false");
-    let _config_dir_guard = set_env_var_guard("CONFIG_3D_DIR", root.join("config").to_string_lossy().as_ref());
+    let _config_dir_guard = set_env_var_guard(
+        "CONFIG_3D_DIR",
+        root.join("config").to_string_lossy().as_ref(),
+    );
     let _computername_guard = set_env_var_guard("COMPUTERNAME", "production-host");
     let _hostname_guard = set_env_var_guard("HOSTNAME", "production-host");
 
@@ -12308,8 +12367,8 @@ async fn image_source_route_mask_query_prefers_mask_png_then_uses_placeholder_wh
     .await;
     assert_eq!(mask_response.status(), StatusCode::OK);
 
-    let with_mask_image = image::load_from_memory(&response_bytes(mask_response).await)
-        .expect("masked source image");
+    let with_mask_image =
+        image::load_from_memory(&response_bytes(mask_response).await).expect("masked source image");
     assert_eq!(with_mask_image.dimensions(), (10, 12));
 
     let source_response = request_response(
@@ -16581,6 +16640,22 @@ async fn range_and_config_xlsx_exports_return_python_compatible_attachment_respo
 }
 
 #[tokio::test]
+async fn xlsx_export_rejects_ranges_larger_than_stability_limit() {
+    let response = request_response(
+        app_with_many_coils(501),
+        "GET",
+        "/exportXlsxById/1/501?export_type=3D",
+    )
+    .await;
+
+    assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    assert_eq!(
+        response_bytes(response).await.as_ref(),
+        b"export exceeds 500 items"
+    );
+}
+
+#[tokio::test]
 async fn xlsx_exports_use_python_default_worksheet_names() {
     let response = request_response(
         app_with_seed_data(),
@@ -17355,16 +17430,14 @@ async fn backup_image_task_websocket_rejects_missing_folder_field() {
     let (mut socket, _) = connect_async(&ws_url).await.expect("connect backup ws");
 
     socket
-        .send(
-            Message::Text(
-                json!({
-                    "from_id": 50,
-                    "to_id": 51,
-                })
-                .to_string()
-                .into(),
-            ),
-        )
+        .send(Message::Text(
+            json!({
+                "from_id": 50,
+                "to_id": 51,
+            })
+            .to_string()
+            .into(),
+        ))
         .await
         .expect("send payload without folder");
 

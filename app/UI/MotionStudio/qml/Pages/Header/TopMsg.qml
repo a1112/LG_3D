@@ -2,42 +2,55 @@ import QtQuick
 import QtQuick.Controls.Material
 import "../../Base" as Base
 Row{
-    visible:auth.isAdmin
+    id: root
+
+    required property var authManager
+    required property var modelStore
+    required property var coreController
+    required property var globalContext
+    required property var style
+
+    visible: root.authManager.isAdmin
     spacing: 40
 Base.DropShadowLabel{
     text: "最新"
     color: Material.color(Material.Orange)
-    visible:coreModel.isListRealModel && core.isLast
+    visible: root.modelStore.isListRealModel && root.coreController.isLast
 }
 Base.DropShadowLabel{
-    text: coreModel.isListRealModel? "实时" :"历史"
-    color: coreModel.currentCoilListTextColor
+    text: root.modelStore.isListRealModel ? "实时" : "历史"
+    color: root.modelStore.currentCoilListTextColor
 }
 Base.DropShadowLabel{
-    text:global.screenConfig.width>2000?"     Local Model !":"Loc"
-    visible: core.isLocal
+    text: root.globalContext.screenConfig.width > 2000
+          ? "     Local Model !" : "Loc"
+    visible: root.coreController.isLocal
     color:  Material.color(Material.Pink)
     layer.enabled: true
 }
 CheckRec{
+    style: root.style
     Material.foreground: Material.color(Material.Yellow)
-    visible: coreModel.currentCoilListIndex==1
+    visible: root.modelStore.currentCoilListIndex === 1
     implicitWidth: 35
     typeIndex:1
     checkColor: Material.color(Material.Green)
     text: "<-返回实时"
     fillWidth: true
-    checked:  coreModel.imageMaskChecked
+    checked: root.modelStore.imageMaskChecked
     onClicked:{
-    coreModel.currentCoilListIndex=0
+    root.modelStore.currentCoilListIndex = 0
     }
 }
 Base.DropShadowLabel{
-    visible:auth.isAdmin && global.screenConfig.width>2000
-    text: core.currentCoilModel.coilNo
-    font.family: "Microsoft YaHei"
-    font.pixelSize: 18
-    font.bold: true
+    visible: root.authManager.isAdmin
+             && root.globalContext.screenConfig.width > 2000
+    text: root.coreController.currentCoilModel.coilNo
+    font: Qt.font({
+        family: "Microsoft YaHei",
+        pixelSize: 18,
+        bold: true
+    })
     layer.enabled: true
 }
 }

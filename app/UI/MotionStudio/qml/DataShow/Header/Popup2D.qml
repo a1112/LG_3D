@@ -4,6 +4,9 @@ import QtQuick.Controls.Material
 import "../Foot"
 Popup{
     id: popup
+    required property var surfaceData
+    required property var controller
+    required property var style
     width: showViewListView.width+20
     height: showViewListView.height
     topMargin : 0
@@ -23,6 +26,9 @@ Popup{
     ShowViewListView{
         id:showViewListView
         implicitHeight: 100
+        surfaceData: popup.surfaceData
+        controller: popup.controller
+        style: popup.style
     }
     HoverHandler{
         id:hoverHandlerPop

@@ -1,15 +1,17 @@
 import json
-from pathlib import Path,WindowsPath
+from os import PathLike
+
 
 class BaseConfig:
-    def __init__(self,f_):
-        self._run_=True
-        if isinstance(f_,(str,WindowsPath)):
-            self.config = json.load(open(f_, "r", encoding = "utf-8"))
+    def __init__(self, f_):
+        self._run_ = True
+        if isinstance(f_, (str, PathLike)):
+            with open(f_, "r", encoding="utf-8") as config_file:
+                self.config = json.load(config_file)
         else:
             self.config = f_
 
-    def get_value(self,key,default):
+    def get_value(self, key, default):
         try:
             return self.config[key]
         except KeyError:

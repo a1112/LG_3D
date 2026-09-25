@@ -1,15 +1,17 @@
 import QtQuick
 import QtQuick.Controls
 Row {
+    id: root
+    required property var surfaceData
     Label{
         font.bold: true
-        text:surfaceData.key_string+"   "
+        text: root.surfaceData.key_string + "   "
         font.pointSize: 18
-        color: surfaceData.keyColor
+        color: root.surfaceData.keyColor
     }
     Label{
         font.bold: true
-        text:surfaceData.is2DrootView?surfaceData.currentViewKey:
-                    surfaceData.isAreaRootView? "2D相机":                   "3D"
+        text: root.surfaceData.is2DrootView ? root.surfaceData.currentViewKey
+              : root.surfaceData.isAreaRootView ? qsTr("2D相机") : qsTr("3D")
     }
 }

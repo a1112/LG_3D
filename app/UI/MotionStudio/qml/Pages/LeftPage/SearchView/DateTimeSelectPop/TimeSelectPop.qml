@@ -1,8 +1,8 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import "../../../Header"
-import QtQuick.Layouts
 import "../../../../types"
 
 BaseSelectPop {
@@ -10,10 +10,11 @@ BaseSelectPop {
     width: 240
     height: 170
 
-    property DateTime dateTime
+    required property DateTime dateTime
 
     Pane {
         anchors.fill: parent
+        Material.background: root.style.panelElevatedColor
     }
 
     Row {
@@ -25,27 +26,30 @@ BaseSelectPop {
             width: 60
             height: root.height
             model: 24
-            currentIndex: dateTime.hour
+            currentIndex: root.dateTime.hour
             onCurrentIndexChanged: {
                 if (moving) {
-                    dateTime.hour = currentIndex
+                    root.dateTime.setTime(currentIndex, root.dateTime.minute)
                 }
             }
 
             delegate: Item {
                 id: hourDelegate
+                required property int modelData
                 width: hoursTumbler.width
                 height: hoursTumbler.height / hoursTumbler.visibleItemCount
 
                 Label {
                     anchors.centerIn: parent
-                    text: modelData
+                    text: hourDelegate.modelData
                     opacity: 1.0
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 18
                     font.bold: true
-                    color: hoursTumbler.currentIndex === modelData ? Material.color(Material.Orange) : coreStyle.textColor
+                    color: hoursTumbler.currentIndex === hourDelegate.modelData
+                           ? root.style.statusWarningColor
+                           : root.style.textColor
                     font.family: "Roboto-Medium"
                 }
             }
@@ -64,27 +68,30 @@ BaseSelectPop {
             width: 60
             height: root.height
             model: 60
-            currentIndex: dateTime.minute
+            currentIndex: root.dateTime.minute
             onCurrentIndexChanged: {
                 if (moving) {
-                    dateTime.minute = currentIndex
+                    root.dateTime.setTime(root.dateTime.hour, currentIndex)
                 }
             }
 
             delegate: Item {
                 id: minuteDelegate
+                required property int modelData
                 width: minutesTumbler.width
                 height: minutesTumbler.height / minutesTumbler.visibleItemCount
 
                 Label {
                     anchors.centerIn: parent
-                    text: modelData
+                    text: minuteDelegate.modelData
                     opacity: 1.0
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 18
                     font.bold: true
-                    color: minutesTumbler.currentIndex === modelData ? Material.color(Material.Green) : coreStyle.textColor
+                    color: minutesTumbler.currentIndex === minuteDelegate.modelData
+                           ? root.style.statusSuccessColor
+                           : root.style.textColor
                     font.family: "Roboto-Medium"
                 }
             }

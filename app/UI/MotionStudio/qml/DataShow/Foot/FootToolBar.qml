@@ -6,7 +6,10 @@ import QtQuick.Layouts
 import "../ViewChang"
 
 Item {
-    id:root
+    id: root
+    required property var surfaceData
+    required property var controller
+    required property var style
     height: 25
     width: parent.width
     Pane{
@@ -17,19 +20,21 @@ Item {
         anchors.fill: parent
         Row{
             ItemDelegateItem {
+                style: root.style
                 height: root.height
                 text: qsTr("视图")
-                selected: dataShowCore.viewRendererListView
+                selected: root.controller.viewRendererListView
                 onClicked: {
-                    dataShowCore.viewRendererListView =! dataShowCore.viewRendererListView
+                    root.controller.viewRendererListView = !root.controller.viewRendererListView
                 }
             }
             ItemDelegateItem {
+                style: root.style
                 height: root.height
                 text: qsTr("高低值")
-                selected: dataShowCore.viewRendererMaxMinValue
+                selected: root.controller.viewRendererMaxMinValue
                 onClicked: {
-                    dataShowCore.viewRendererMaxMinValue =! dataShowCore.viewRendererMaxMinValue
+                    root.controller.viewRendererMaxMinValue = !root.controller.viewRendererMaxMinValue
                 }
             }
 
@@ -37,11 +42,13 @@ Item {
                 width: 1
                 height: root.height-6
                 anchors.verticalCenter: parent.verticalCenter
-                color: "#0090E0"
+                color: root.style.headerBorderColor
             }
         }
 
-        FootMsg{
+        FootMsg {
+            surfaceData: root.surfaceData
+            style: root.style
         }
 
         Item{
@@ -49,7 +56,9 @@ Item {
             implicitHeight: 1
         }
         // CoilInfoRow{}
-        ToolBoxViewRow{
+        ToolBoxViewRow {
+            surfaceData: root.surfaceData
+            controller: root.controller
         }
         Item{
             width: 30

@@ -1,7 +1,11 @@
 import QtQuick
 
 Rectangle{
-    color: "#43CAF1"
+    id: root
+
+    required property var style
+
+    color: root.style.accentColor
     width: 2
-    height: root.height-5
+    height: parent ? Math.max(0, parent.height - 5) : 0
 }

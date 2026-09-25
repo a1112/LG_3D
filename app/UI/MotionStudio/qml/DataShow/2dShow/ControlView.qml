@@ -1,28 +1,35 @@
 import QtQuick 2.15
+import "../Core/ViewportMath.js" as ViewportMath
 
 Item {
+    id: root
+    required property var controller
+    required property var surfaceData
+    required property var flickable
+    required property var style
+
     anchors.fill: parent
 
 
     TapHandler{
         acceptedButtons: Qt.LeftButton
-        enabled:dataShowCore.controls.isMoveModel
+        enabled: root.controller.controls.isMoveModel
         onDoubleTapped: {
-            surfaceData.p2 = Qt.point(dataShowCore.hoverdX,dataShowCore.hoverdY)
-            surfaceData.addSignPoint(
-                        Qt.point(dataShowCore.hoverdX,dataShowCore.hoverdY)
+            root.surfaceData.p2 = Qt.point(root.controller.hoverdX, root.controller.hoverdY)
+            root.surfaceData.addSignPoint(
+                        Qt.point(root.controller.hoverdX, root.controller.hoverdY)
                         )
         }
     }
 
     TapHandler{
         acceptedButtons: Qt.LeftButton|Qt.RightButton
-        enabled:dataShowCore.controls.isShowSurveyModel
+        enabled: root.controller.controls.isShowSurveyModel
 
 
         onTapped: (eventPoint, button)=> {
                       if (button==Qt.LeftButton){
-                          dataShowCore.controls.setSurveyPoint(eventPoint.position)
+                          root.controller.controls.setSurveyPoint(eventPoint.position)
                       }
 
                       console.log(
@@ -34,26 +41,19 @@ Item {
 
     WheelHandler{  // 缩放
 
-        onWheel: (event)=> {
-                     let hX = event.x-flick.contentX
-                     let hY = event.y-flick.contentY
-                     dataShowCore.scaleTempPoint = dataShowCore.getAspectRatioByPoint (Qt.point(hX,hY))
-                     if (event.angleDelta.y > 0) {
-                        dataShowCore.canvasScale *= 1.1
-                     } else {
-                        dataShowCore.canvasScale *= 0.9
-                     }
-                     if (dataShowCore.canvasScale > dataShowCore.maxScale){
-                        dataShowCore.canvasScale = dataShowCore.maxScale
-                        dataShowCore.setMaxErrorScale("red")
-                     }
-                     else if (dataShowCore.canvasScale <= dataShowCore.minScale){
-
-                        dataShowCore.canvasScale = dataShowCore.minScale
-                         dataShowCore.setMaxErrorScale("blue")
-                     }
-                     dataShowCore.setFlickablebyPoint(Qt.point(hX, hY))
-                }
+        onWheel: function(event) {
+            var boundary = ViewportMath.zoomAt(root.controller,
+                                               root.flickable,
+                                               event.x,
+                                               event.y,
+                                               event.angleDelta.y)
+            if (boundary > 0) {
+                root.controller.setMaxErrorScale(root.style.statusErrorColor)
+            } else if (boundary < 0) {
+                root.controller.setMaxErrorScale(root.style.accentColor)
+            }
+            event.accepted = true
+        }
     }
 
 }

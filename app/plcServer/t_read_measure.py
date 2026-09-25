@@ -1,7 +1,10 @@
 import logging
 import time
 
-from server import read_plc
+try:
+    from .server import read_plc
+except ImportError:  # pragma: no cover - direct script execution
+    from server import read_plc
 
 logger = logging.getLogger(__name__)
 

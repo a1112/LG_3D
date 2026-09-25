@@ -12,6 +12,44 @@ from .models import *
 log = logging.getLogger(__name__)
 
 
+class QueryResultLimitExceeded(ValueError):
+    """Raised before eager-loading an oversized database result set."""
+
+    def __init__(self, max_count: int):
+        self.max_count = max_count
+        super().__init__(f"query result exceeds {max_count} records")
+
+
+class QueryDefectLimitExceeded(ValueError):
+    """Raised before eager-loading an oversized set of defect relationships."""
+
+    def __init__(self, max_count: int):
+        self.max_count = max_count
+        super().__init__(f"query result exceeds {max_count} defects")
+
+
+def _check_defect_result_limit(session, filters, max_count: int) -> None:
+    max_count = int(max_count)
+    if max_count < 1:
+        raise ValueError("max_defects must be positive")
+    rows = (session.query(CoilDefect.Id).filter(*filters).limit(
+        max_count + 1).all())
+    if len(rows) > max_count:
+        raise QueryDefectLimitExceeded(max_count)
+
+
+def _limited_query_all(query, max_count: Optional[int]):
+    if max_count is None:
+        return query.all()
+    max_count = int(max_count)
+    if max_count < 1:
+        raise ValueError("max_count must be positive")
+    rows = query.limit(max_count + 1).all()
+    if len(rows) > max_count:
+        raise QueryResultLimitExceeded(max_count)
+    return rows
+
+
 def add_obj(obj):
     return tool.add_obj(obj)
 
@@ -34,15 +72,45 @@ def get_all_join_query(session: Session):
     )
 
 
-def get_all_join_data_by_id(start_id, end_id):
+def get_all_join_data_by_id(start_id,
+                            end_id,
+                            max_defects: Optional[int] = None):
     with Session() as session:
+        if max_defects is not None:
+            _check_defect_result_limit(
+                session,
+                (
+                    CoilDefect.secondaryCoilId >= start_id,
+                    CoilDefect.secondaryCoilId <= end_id,
+                ),
+                max_defects,
+            )
         return get_all_join_query(session).filter(
             SecondaryCoil.Id >= start_id, SecondaryCoil.Id
             <= end_id).order_by(SecondaryCoil.Id.desc()).all()
 
 
-def get_all_join_data_by_num(num, maxsize=None):
+def get_all_join_data_by_num(num,
+                             maxsize=None,
+                             max_defects: Optional[int] = None):
     with Session() as session:
+        if max_defects is not None:
+            id_query = session.query(SecondaryCoil.Id)
+            if maxsize:
+                id_query = id_query.filter(SecondaryCoil.Id < maxsize)
+            id_rows = id_query.order_by(SecondaryCoil.Id.desc()).limit(
+                int(num)).all()
+            ids = [row[0] for row in id_rows]
+            if not ids:
+                return []
+            _check_defect_result_limit(
+                session,
+                (CoilDefect.secondaryCoilId.in_(ids), ),
+                max_defects,
+            )
+            return get_all_join_query(session).filter(
+                SecondaryCoil.Id.in_(ids)).order_by(
+                    SecondaryCoil.Id.desc()).all()
         if maxsize:
             return get_all_join_query(session).filter(
                 SecondaryCoil.Id < maxsize).order_by(
@@ -51,11 +119,46 @@ def get_all_join_data_by_num(num, maxsize=None):
             SecondaryCoil.Id.desc())[:num]
 
 
-def get_all_join_data_by_time(start_time, end_time):
+def get_all_join_data_by_time(start_time,
+                              end_time,
+                              max_count: Optional[int] = None,
+                              max_defects: Optional[int] = None):
     with Session() as session:
+        filters = (
+            SecondaryCoil.CreateTime >= start_time,
+            SecondaryCoil.CreateTime <= end_time,
+        )
+        if max_defects is not None:
+            _check_defect_result_limit(
+                session,
+                (
+                    CoilDefect.secondaryCoilId == SecondaryCoil.Id,
+                    SecondaryCoil.CreateTime >= start_time,
+                    SecondaryCoil.CreateTime <= end_time,
+                ),
+                max_defects,
+            )
+
+        if max_count is None:
+            return get_all_join_query(session).filter(*filters).order_by(
+                SecondaryCoil.Id.desc()).all()
+
+        max_count = int(max_count)
+        if max_count < 1:
+            raise ValueError("max_count must be positive")
+
+        # Probe only primary keys first. Loading one extra row is enough to
+        # reject the request without materialising hundreds of relationship
+        # collections through get_all_join_query().
+        id_rows = (session.query(SecondaryCoil.Id).filter(*filters).order_by(
+            SecondaryCoil.Id.desc()).limit(max_count + 1).all())
+        if len(id_rows) > max_count:
+            raise QueryResultLimitExceeded(max_count)
+        ids = [row[0] for row in id_rows]
+        if not ids:
+            return []
         return get_all_join_query(session).filter(
-            SecondaryCoil.CreateTime >= start_time, SecondaryCoil.CreateTime
-            <= end_time).order_by(SecondaryCoil.Id.desc()).all()
+            SecondaryCoil.Id.in_(ids)).order_by(SecondaryCoil.Id.desc()).all()
 
 
 def get_join_query(session: Session, by_coil=True):
@@ -275,9 +378,13 @@ def replace_defects(defects: List[dict],
     _sync_summary_counts([secondary_coil_id])
 
 
-def get_secondary_coil_by_id(id_):
+def get_secondary_coil_by_id(id_, limit: Optional[int] = None, desc: bool = False) -> List[SecondaryCoil]:
     with Session() as session:
-        return session.query(SecondaryCoil).where(SecondaryCoil.Id > id_)
+        query = session.query(SecondaryCoil).where(SecondaryCoil.Id > id_)
+        query = query.order_by(SecondaryCoil.Id.desc() if desc else SecondaryCoil.Id.asc())
+        if limit is not None:
+            query = query.limit(limit)
+        return query.all()
 
 
 def get_coil(num):
@@ -328,6 +435,32 @@ def searchByCoilId(coil_id, end_coil_id=None):
         return query.filter(SecondaryCoil.Id == coil_id).all()
 
 
+def get_secondary_coil_ids_by_range(start_id: int,
+                                    end_id: int,
+                                    max_count: Optional[int] = None) -> List[int]:
+    """Return only IDs for a range, rejecting oversized results when bounded."""
+    start_id = int(start_id)
+    end_id = int(end_id)
+    if end_id < start_id:
+        start_id, end_id = end_id, start_id
+
+    with Session() as session:
+        query = session.query(SecondaryCoil.Id).filter(
+            SecondaryCoil.Id >= start_id,
+            SecondaryCoil.Id <= end_id,
+        ).order_by(SecondaryCoil.Id.desc())
+        if max_count is not None:
+            max_count = int(max_count)
+            if max_count < 1:
+                raise ValueError("max_count must be positive")
+            rows = query.limit(max_count + 1).all()
+            if len(rows) > max_count:
+                raise QueryResultLimitExceeded(max_count)
+        else:
+            rows = query.all()
+        return [row[0] for row in rows]
+
+
 def searchByDateTime(start_time, end_timeq):
     with Session() as session:
         query = get_join_query(session)
@@ -376,7 +509,9 @@ def get_all_defects(coil_id):
         return [dict(row) for row in session.execute(stmt).mappings().all()]
 
 
-def get_defects(coil_id, direction):
+def get_defects(coil_id,
+                direction,
+                max_count: Optional[int] = None):
     with Session() as session:
         stmt = select(
             CoilDefect.Id,
@@ -396,10 +531,20 @@ def get_defects(coil_id, direction):
             CoilDefect.secondaryCoilId == coil_id,
             CoilDefect.surface == direction,
         ).order_by(CoilDefect.Id.asc())
-        return [dict(row) for row in session.execute(stmt).mappings().all()]
+        if max_count is not None:
+            max_count = int(max_count)
+            if max_count < 1:
+                raise ValueError("max_count must be positive")
+            stmt = stmt.limit(max_count + 1)
+        rows = session.execute(stmt).mappings().all()
+        if max_count is not None and len(rows) > max_count:
+            raise QueryResultLimitExceeded(max_count)
+        return [dict(row) for row in rows]
 
 
-def get_defects_all(start_coil_id, end_coil_id):
+def get_defects_all(start_coil_id,
+                    end_coil_id,
+                    max_count: Optional[int] = None):
     with Session() as session:
         stmt = select(
             CoilDefect.Id,
@@ -419,12 +564,20 @@ def get_defects_all(start_coil_id, end_coil_id):
             CoilDefect.secondaryCoilId >= start_coil_id,
             CoilDefect.secondaryCoilId <= end_coil_id,
         ).order_by(CoilDefect.secondaryCoilId.asc(), CoilDefect.Id.asc())
-        return [dict(row) for row in session.execute(stmt).mappings().all()]
+        if max_count is not None:
+            max_count = int(max_count)
+            if max_count < 1:
+                raise ValueError("max_count must be positive")
+            stmt = stmt.limit(max_count + 1)
+        rows = session.execute(stmt).mappings().all()
+        if max_count is not None and len(rows) > max_count:
+            raise QueryResultLimitExceeded(max_count)
+        return [dict(row) for row in rows]
 
 
 def defects():
     with Session() as session:
-        return session.query(CoilDefect)
+        return session.query(CoilDefect).all()
 
 
 def get_defect_class_dict():
@@ -490,22 +643,26 @@ def get_last_coil():
             SecondaryCoil.CreateTime.desc()).first()
 
 
-def get_point_data(coil_id, surface_key=None):
+def get_point_data(coil_id,
+                   surface_key=None,
+                   max_count: Optional[int] = None):
     with Session() as session:
         que = session.query(PointData).filter(
             PointData.secondaryCoilId == coil_id)
         if surface_key:
             que = que.filter(PointData.surface == surface_key)
-        return que.all()
+        return _limited_query_all(que, max_count)
 
 
-def get_line_data(coil_id, surface_key=None):
+def get_line_data(coil_id,
+                  surface_key=None,
+                  max_count: Optional[int] = None):
     with Session() as session:
         que = session.query(LineData).filter(
             LineData.secondaryCoilId == coil_id)
         if surface_key:
             que = que.filter(LineData.surface == surface_key)
-        return que.all()
+        return _limited_query_all(que, max_count)
 
 
 def get_coil_status_by_coil_id(coil_id):
@@ -701,7 +858,9 @@ def get_manual_defects(coil_id: int, surface: str = None):
         return query.all()
 
 
-def get_manual_defect_dicts(coil_id: int, surface: str = None):
+def get_manual_defect_dicts(coil_id: int,
+                            surface: str = None,
+                            max_count: Optional[int] = None):
     with Session() as session:
         stmt = select(
             ManualDefect.Id,
@@ -723,8 +882,16 @@ def get_manual_defect_dicts(coil_id: int, surface: str = None):
         if surface:
             stmt = stmt.where(ManualDefect.surface == surface)
         stmt = stmt.order_by(ManualDefect.Id.asc())
+        if max_count is not None:
+            max_count = int(max_count)
+            if max_count < 1:
+                raise ValueError("max_count must be positive")
+            stmt = stmt.limit(max_count + 1)
+        rows = session.execute(stmt).mappings().all()
+        if max_count is not None and len(rows) > max_count:
+            raise QueryResultLimitExceeded(max_count)
         result = []
-        for row in session.execute(stmt).mappings().all():
+        for row in rows:
             item = dict(row)
             item["type"] = "manual"
             if item["defectTime"]:
@@ -733,7 +900,9 @@ def get_manual_defect_dicts(coil_id: int, surface: str = None):
         return result
 
 
-def get_all_defects_including_manual(coil_id: int, surface: str):
+def get_all_defects_including_manual(coil_id: int,
+                                     surface: str,
+                                     max_count: Optional[int] = None):
     """
     获取所有缺陷（包括自动检测和手动标注）
 
@@ -745,10 +914,13 @@ def get_all_defects_including_manual(coil_id: int, surface: str):
         包含自动检测缺陷和手动标注缺陷的列表
     """
     result = []
-    for item in get_defects(coil_id, surface):
+    for item in get_defects(coil_id, surface, max_count=max_count):
         item["type"] = "auto"
         if item["defectTime"]:
             item["defectTime"] = item["defectTime"].isoformat()
         result.append(item)
-    result.extend(get_manual_defect_dicts(coil_id, surface))
+    result.extend(
+        get_manual_defect_dicts(coil_id, surface, max_count=max_count))
+    if max_count is not None and len(result) > max_count:
+        raise QueryResultLimitExceeded(max_count)
     return result

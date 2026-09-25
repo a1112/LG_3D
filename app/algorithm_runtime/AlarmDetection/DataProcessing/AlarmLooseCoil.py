@@ -27,13 +27,30 @@ def group_consecutive(arr):
 
 
 class AlarmLooseData:
+
     def __init__(self, lineDatas):
         self.dataIntegrationList = [d[0] for d in lineDatas]
         self.lineDatas = [d[1] for d in lineDatas]
         self.lineDataDicts = {}
-        for rotate in self.lineDatas[0]:
-            # 假设角度一一对应
-            self.lineDataDicts[rotate] = [self.lineDatas[0][rotate], self.lineDatas[1][rotate]]
+        common_rotations = set(self.lineDatas[0]).intersection(
+            self.lineDatas[1])
+        missing_by_surface = [
+            sorted(set(line_data) - common_rotations)
+            for line_data in self.lineDatas
+        ]
+        if any(missing_by_surface):
+            logger.warning(
+                "loose coil rotation mismatch: coil=%s surfaces=%s "
+                "common=%s unmatched=%s",
+                self.dataIntegrationList[0].coilId,
+                [data.surface for data in self.dataIntegrationList],
+                sorted(common_rotations),
+                missing_by_surface,
+            )
+        for rotate in sorted(common_rotations):
+            self.lineDataDicts[rotate] = [
+                self.lineDatas[0][rotate], self.lineDatas[1][rotate]
+            ]
 
     def detection(self):
         for rotate in self.lineDataDicts:
@@ -50,6 +67,7 @@ class AlarmLooseData:
             # # for index,point in enumerate(ray1):
             # #     hasData=lineData1.mmNoneData(point[2])
 
+
 def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
     for d in data_integration.detectionLineData:
         d.dataIntegration = data_integration
@@ -57,24 +75,32 @@ def _detectionAlarmLooseCoil_(data_integration: DataIntegration):
         addAlarmLooseCoil(d.get_alarm_loose_coil())
 
 
-def _detectionAlarmLooseCoilAll_(data_integration_list: Union[DataIntegrationList, DataIntegration]):
+def _detectionAlarmLooseCoilAll_(
+        data_integration_list: Union[DataIntegrationList, DataIntegration]):
     """
     获取 LineData 数据假设同角度检测
     """
     line_datas = []
     for dataIntegration in data_integration_list:
-        line_datas.append([dataIntegration, dataIntegration.alarmData.lineDataDict])
-        addAlarmLooseCoil(AlarmLooseCoil(
-            secondaryCoilId = dataIntegration.coilId,
-            surface=dataIntegration.surface,
-            max_width=5,
-            rotation_angle=0
-
-        ))
+        line_datas.append(
+            [dataIntegration, dataIntegration.alarmData.lineDataDict])
+        addAlarmLooseCoil(
+            AlarmLooseCoil(secondaryCoilId=dataIntegration.coilId,
+                           surface=dataIntegration.surface,
+                           max_width=5,
+                           rotation_angle=0))
 
     if len(line_datas) == 2:
         alarm_loose_data = AlarmLooseData(line_datas)
+        if not alarm_loose_data.lineDataDicts:
+            logger.warning(
+                "skip loose coil cross-surface detection without common rotations: coil=%s",
+                line_datas[0][0].coilId,
+            )
+            return
         alarm_loose_data.detection()
     else:
-        logger.debug("loose coil cross-surface detection requires exactly 2 surfaces, got %s", len(line_datas))
+        logger.debug(
+            "loose coil cross-surface detection requires exactly 2 surfaces, got %s",
+            len(line_datas))
         return

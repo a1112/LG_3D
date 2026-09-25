@@ -1,12 +1,15 @@
 import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-Label{
-Layout.fillWidth: true
+Label {
+    id: root
+    Layout.fillWidth: true
 
     background: Rectangle {
-        color: coreStyle.isDark?"black":"#eee"
-        radius: 5
+        color: root.palette.alternateBase
+        border.color: root.palette.mid
+        border.width: 1
+        radius: 3
     }
 
 }

@@ -150,16 +150,16 @@ function MainLayout() {
   }, [testModeStatus])
 
   const { data: cameraAlarmData } = useQuery({
-    queryKey: ['globalAlarm', 'cameraAlarm', 'summary'],
+    queryKey: ['globalAlarm', 'cameraAlarm'],
     queryFn: systemApi.getCameraAlarm,
     retry: 1,
-    refetchInterval: 10_000,
+    refetchInterval: globalAlarmOpen ? false : 10_000,
   })
   const { data: hardwareAlarmData } = useQuery({
-    queryKey: ['globalAlarm', 'hardware', 'summary'],
+    queryKey: ['globalAlarm', 'hardware'],
     queryFn: systemApi.getHardware,
     retry: 1,
-    refetchInterval: 10_000,
+    refetchInterval: globalAlarmOpen ? false : 10_000,
   })
   const globalAlarmView = buildGlobalAlarmViewModel({
     cameraAlarm: cameraAlarmData,
@@ -434,7 +434,10 @@ function MainLayout() {
       </header>
 
       <main className="motion-main">
-        <OperationSidebar onOpenConnectSettings={() => setConnectSettingsOpen(true)} />
+        <OperationSidebar
+          apiDelayView={apiDelayView}
+          onOpenConnectSettings={() => setConnectSettingsOpen(true)}
+        />
         <section className="workspace">
           <Outlet />
         </section>

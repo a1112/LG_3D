@@ -97,6 +97,45 @@ def test_camera_control_reads_live_status(monkeypatch, tmp_path):
     assert status["paramFile"] == str(camera.camera_param_file)
 
 
+def test_camera_control_reads_native_camera_params(monkeypatch, tmp_path):
+    control, camera = make_control(monkeypatch, tmp_path)
+    camera.get_params = lambda: {
+        "exposureTime": 350,
+        "gain": 12,
+    }
+
+    status = control.get_2d_status()
+
+    assert status["params"] == {
+        "exposureTime": 350,
+        "gain": 12,
+    }
+    assert status["source"] == "camera"
+
+
+def test_camera_control_status_does_not_wait_for_frame_sdk_lock(
+        monkeypatch, tmp_path):
+    control, camera = make_control(monkeypatch, tmp_path)
+
+    class BusyLock:
+
+        def acquire(self, blocking=True):
+            assert blocking is False
+            return False
+
+        def release(self):
+            raise AssertionError("unacquired lock must not be released")
+
+    camera._sdk_lock = BusyLock()
+
+    status = control.get_2d_status()
+
+    assert status["ok"] is True
+    assert status["connected"] is True
+    assert status["source"] == "config"
+    assert status["params"] == {"exposureTime": 321, "gain": 8}
+
+
 def test_camera_control_sets_exposure_gain_and_saves(monkeypatch, tmp_path):
     control, camera = make_control(monkeypatch, tmp_path)
 
@@ -121,6 +160,16 @@ def test_camera_control_refuses_stale_disconnected_capter(monkeypatch, tmp_path)
     assert status["message"] == "lost connection"
     with pytest.raises(RuntimeError, match="not connected"):
         control.set_2d_params(exposure_time=500)
+
+
+def test_camera_control_reconnect_is_queued(monkeypatch, tmp_path):
+    control, camera = make_control(monkeypatch, tmp_path)
+
+    status = control.reconnect_2d()
+
+    assert camera.reconnect_requested is True
+    assert status["action"] == "reconnect2D"
+    assert status["queued"] is True
 
 
 def test_camera_adjustment_api_handles_capture_service_url_edges():
@@ -286,6 +335,40 @@ def test_camera_adjustment_http_routes_forward_to_capture_services(monkeypatch, 
     ]
 
 
+def test_camera_alarm_returns_config_error_when_camera_config_missing(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    missing_config = tmp_path / "missing" / "CapTure.json"
+    monkeypatch.setattr(ApiDataBase.CONFIG, "isLoc", False)
+    monkeypatch.delattr(ApiDataBase.CONFIG, "CameraList", raising=False)
+    monkeypatch.delattr(ApiDataBase.CONFIG, "cameraList", raising=False)
+    monkeypatch.setattr(ApiDataBase, "_capture_config_file", lambda: missing_config)
+
+    response = TestClient(ApiDataBase.app).get("/cameraAlarm")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "相机配置" in payload
+    assert payload["相机配置"]["level"] == 2
+    assert payload["相机配置"]["ok"] is False
+
+
+def test_camera_alarm_falls_back_to_legacy_camera_list(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    missing_config = tmp_path / "missing" / "CapTure.json"
+    monkeypatch.setattr(ApiDataBase.CONFIG, "isLoc", False)
+    monkeypatch.setattr(ApiDataBase.CONFIG, "CameraList", [{"key": "Legacy_A", "name": "LegacyCam"}], raising=False)
+    monkeypatch.setattr(ApiDataBase, "_capture_config_file", lambda: missing_config)
+
+    response = TestClient(ApiDataBase.app).get("/cameraAlarm")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "LegacyCam" in payload
+    assert payload["LegacyCam"]["cameraKey"] == "Legacy_A"
+
+
 def test_camera_adjustment_settings_ui_is_wired():
     setting_view = (MOTION_STUDIO_ROOT / "qml" / "SettingPage" / "SettingPageView.qml").read_text(
         encoding="utf-8",
@@ -294,20 +377,32 @@ def test_camera_adjustment_settings_ui_is_wired():
     camera_qml = (
         MOTION_STUDIO_ROOT / "qml" / "SettingPage" / "CameraSetting" / "CameraSetting.qml"
     ).read_text(encoding="utf-8")
+    camera_row_qml = (
+        MOTION_STUDIO_ROOT
+        / "qml"
+        / "SettingPage"
+        / "CameraSetting"
+        / "CameraAdjustmentRow.qml"
+    ).read_text(encoding="utf-8")
     qrc = (MOTION_STUDIO_ROOT / "qml.qrc").read_text(encoding="utf-8")
 
     assert 'import "CameraSetting"' in setting_view
     assert 'qsTr("相机调整")' in setting_view
-    assert "CameraSetting {}" in setting_view
+    assert "CameraSetting {" in setting_view
+    assert "apiClient: root.apiClient" in setting_view
+    assert "style: root.style" in setting_view
     assert "qml/SettingPage/CameraSetting/CameraSetting.qml" in qrc
     assert "function getCameraAdjustments" in api_qml
     assert "function setCameraAdjustment" in api_qml
     assert "function reconnectCameraAdjustment" in api_qml
-    assert "app.api.getCameraAdjustments" in camera_qml
-    assert "app.api.setCameraAdjustment" in camera_qml
+    assert "required property var apiClient" in camera_qml
+    assert "app.api." not in camera_qml
+    assert "root.apiClient.getCameraAdjustments" in camera_qml
+    assert "root.apiClient.setCameraAdjustment" in camera_qml
     assert "exposureTime: paramValue" in camera_qml
     assert "gain: paramValue" in camera_qml
-    assert 'qsTr("曝光时间")' in camera_qml
-    assert 'qsTr("增益")' in camera_qml
-    assert 'qsTr("在线")' in camera_qml
-    assert 'qsTr("离线")' in camera_qml
+    assert "delegate: CameraAdjustmentRow {" in camera_qml
+    assert 'qsTr("曝光时间")' in camera_row_qml
+    assert 'qsTr("增益")' in camera_row_qml
+    assert 'qsTr("在线")' in camera_row_qml
+    assert 'qsTr("离线")' in camera_row_qml

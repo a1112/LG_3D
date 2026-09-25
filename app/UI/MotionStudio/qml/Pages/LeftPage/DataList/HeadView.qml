@@ -4,6 +4,16 @@ import QtQuick.Layouts
 import "../../../btns"
 import "../../Header"
 Item {
+    id: root
+
+    required property var style
+    required property var coreController
+    required property var modelController
+    required property var leftController
+    required property var popupManager
+    required property var apiClient
+    required property bool showFilterIcon
+
     Layout.fillWidth: true
     height: 30
     Pane {
@@ -23,10 +33,12 @@ Item {
         anchors.fill: parent
         spacing: 5
         Label{
-        text:(coreModel.currentCoilListIndex==0? "实时: " :"历史: ")+coreModel.currentCoilListModel.count
+        text: (root.modelController.currentCoilListIndex === 0
+               ? qsTr("实时: ") : qsTr("历史: "))
+              + root.modelController.currentCoilListModel.count
         font.pixelSize: 18
         font.bold:true
-        color: coreModel.currentCoilListTextColor
+        color: root.modelController.currentCoilListTextColor
         Layout.alignment: Qt.AlignVCenter
 
         }
@@ -39,14 +51,14 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             }
             Label{
-            text:core.currentCoilModel.coilNo
+            text: root.coreController.currentCoilModel.coilNo
             font.pixelSize: 17
             font.family: "Arial"
             font.bold:true
             color: Material.color(Material.Blue)
             }
             Label{
-            text: "     " +core.currentCoilModel.coilId
+            text: "     " + root.coreController.currentCoilModel.coilId
             font.pixelSize: 15
 
             anchors.verticalCenter: parent.verticalCenter
@@ -64,7 +76,8 @@ Item {
         }
 
         CheckRec{
-            visible:coreModel.isListHistoryModel
+            style: root.style
+            visible: root.modelController.isListHistoryModel
             id:its
             height: 26
             checked: false
@@ -72,12 +85,14 @@ Item {
             checkColor:Material.color(Material.Orange)
             fillWidth:true
             onClicked: {
-             coreModel.listToRealModel()
+             root.modelController.listToRealModel()
             }
         }
 
         FliterBtn{  // 筛选
-            visible: showFilterIcon
+            visible: root.showFilterIcon
+            style: root.style
+            leftController: root.leftController
         }
 
         // Item{
@@ -96,11 +111,12 @@ Item {
                height: parent.height
                width: height
         FlushButton{
+            style: root.style
             tipText: qsTr("刷新")
             visible:true //! leftCore.searchViewShow
             anchors.fill: parent
             onClicked: {
-                core.flushList()
+                root.coreController.flushList()
             }
         }
         }
@@ -109,6 +125,9 @@ Item {
 
 ListToolMenu{
     id:listToolMenu
+    modelController: root.modelController
+    apiClient: root.apiClient
+    popupManager: root.popupManager
 // 脚本
 
 }

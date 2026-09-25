@@ -1,277 +1,75 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Controls.Material
-Item {
 
-    property bool hasCoil: true  // 从 coilModel.hasCoil 传入
-    property var alarmInfo: null  // 从 coilModel.coilData.alarmInfo 传入（QML属性名不能用大写开头）
-    property string maxDefectName: ""  // 从 coilModel.maxDefectName 传入
-    property int maxDefectLevel: 0  // 从 coilModel.maxDefectLevel 传入
+QtObject {
+    id: root
+
+    required property var style
+
+    property bool hasCoil: true
+    property var alarmInfo: null
+    property string maxDefectName: ""
+    property int maxDefectLevel: 0
     property string maxDefectSurface: ""
 
-    property bool hasAlarmData:true// hasalarmInfo
-    property bool hasCoilData: hasCoil
+    readonly property bool hasAlarmData: Boolean(alarmInfo && (alarmInfo.S || alarmInfo.L))
+    readonly property bool hasCoilData: hasCoil
+    readonly property color defectNameColor: defectLevel2Color(maxDefectLevel)
 
-    // 根据缺陷等级计算颜色
-    function defectLevel2Color(level){
-        if(level<=2){
+    readonly property string nullCoilString: qsTr("无数据")
+    readonly property string nullAlarmString: qsTr("未识别")
+    readonly property color detectionStatuColor: !hasCoilData
+                                                   ? style.labelColor
+                                                   : !hasAlarmData
+                                                     ? style.statusWarningColor
+                                                     : style.statusSuccessColor
+
+    function defectLevel2Color(level) {
+        if (level <= 0) {
+            return style.statusSuccessColor
+        }
+        if (level <= 2) {
             return Material.color(Material.LightBlue)
-        }else if(level<=3){
-            return Material.color(Material.Yellow)
-        }else if(level<=4){
-            return Material.color(Material.Orange)
-        }else{
-            return Material.color(Material.Red)
         }
-    }
-
-    property color defectNameColor: defectLevel2Color(maxDefectLevel)
-
-    function level2Color(level){
-        if(level<=1){
-            return Material.color(Material.Green)
-        }else if(level==2){
-            return Material.color(Material.Orange)
-        }else if(level>=3){
-            return Material.color(Material.Red)
+        if (level === 3) {
+            return style.statusWarningColor
         }
+        return style.statusErrorColor
     }
-    function level2Source(level){
-        return ""
-        if(level<=1){
-            return ""
-        }else if(level==2){
-            return coreStyle.getIcon("warning_1")
-        }else if(level>=3){
-            return coreStyle.getIcon("warning_1")
+
+    function level2Color(level) {
+        if (level <= 1) {
+            return style.statusSuccessColor
         }
-    }
-
-    property string nullCoilString: "无数据"
-    property string nullAlarmString: "未识别"
-    property string detectionStatuColor:
-        !hasCoilData?
-            Material.color(Material.Grey)
-
-
-                    :
-        !hasAlarmData?Material.color(Material.Yellow)
-                     :
-        "#5AEDFF"
-
-    property ListModel alarmNodel:
-    ListModel{
-    }
-
-    property int defectGrad:Math.max(alarmInfoItemS.defectGrad,alarmInfoItemL.defectGrad)
-    property int grad:Math.max(alarmInfoItemS.grad,alarmInfoItemL.grad)
-    property int taperShapeGrad:Math.max(alarmInfoItemS.taperShapeGrad,alarmInfoItemL.taperShapeGrad)
-    property int looseCoilGrad:Math.max(alarmInfoItemS.looseCoilGrad,alarmInfoItemL.looseCoilGrad)
-    property int flatRollGrad:Math.max(alarmInfoItemS.flatRollGrad,alarmInfoItemL.flatRollGrad)
-
-    property string defectMsg:"S: "+alarmInfoItemS.defectMsg+"\nL: "+alarmInfoItemL.defectMsg
-    property string taperShapeMsg:"S: "+alarmInfoItemS.taperShapeMsg+"\nL: "+alarmInfoItemL.taperShapeMsg
-    property string looseCoilMsg:"S: "+alarmInfoItemS.looseCoilMsg+"\nL: "+alarmInfoItemL.looseCoilMsg
-    property string flatRollMsg:"S: "+alarmInfoItemS.flatRollMsg+"\nL: "+alarmInfoItemL.flatRollMsg
-
-    property string errorMsg: "扁卷:\n"+flatRollMsg+"\n塔形\n"+taperShapeMsg+"\n松卷:\n"+looseCoilMsg+"\n缺陷:\n"+defectMsg
-
-    property AlarmInfoItem alarmInfoItemS: AlarmInfoItem{
-        data:alarmInfo["S"]
-    }
-
-    property AlarmInfoItem alarmInfoItemL: AlarmInfoItem{
-        data:alarmInfo["L"]
-    }
-    Component.onCompleted:{
-        alarmNodel.clear()
-        let keyList=[]
-        for (let key in alarmInfo) {
-            keyList.push(key)
+        if (level === 2) {
+            return style.statusWarningColor
         }
-
-        for (let key in alarmInfo) {
-            let item=alarmInfo[key]
-            for(let itemKey in item){
-                keyList.forEach((key_)=>{
-                                })
-
-            }
-            break
-
-        }
+        return style.statusErrorColor
     }
 
-    // property var testData:    {
-    //     "hasCoil": true,
-    //     "hasalarmInfo": true,
-    //     "DefectCountS": 0,
-    //     "Id": 23053,
-    //     "DefectCountL": 0,
-    //     "Status_L": 0,
-    //     "Grade": 0,
-    //     "SecondaryCoilId": 23053,
-    //     "DetectionTime": {
-    //         "year": 2024,
-    //         "month": 11,
-    //         "weekday": 4,
-    //         "day": 1,
-    //         "hour": 16,
-    //         "minute": 49,
-    //         "second": 14
-    //     },
-    //     "CheckStatus": 0,
-    //     "Status_S": 0,
-    //     "Msg": "",
-    //     "alarmInfo": {
-    //         "L": {
-    //             "nextCode": "2",
-    //             "secondaryCoilId": 23053,
-    //             "Id": 41,
-    //             "nextName": "冷轧基板",
-    //             "taperShapeGrad": 2,
-    //             "looseCoilGrad": 1,
-    //             "flatRollGrad": 1,
-    //             "defectGrad": 1,
-    //             "grad": 2,
-    //             "data": null,
-    //             "surface": "L",
-    //             "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
-    //             "looseCoilMsg": "",
-    //             "flatRollMsg": "正常",
-    //             "defectMsg": "",
-    //             "crateTime": {
-    //                 "year": 2024,
-    //                 "month": 11,
-    //                 "weekday": 4,
-    //                 "day": 1,
-    //                 "hour": 16,
-    //                 "minute": 49,
-    //                 "second": 11
-    //             }
-    //         },
-    //         "S": {
-    //             "nextCode": "2",
-    //             "secondaryCoilId": 23053,
-    //             "Id": 42,
-    //             "nextName": "冷轧基板",
-    //             "taperShapeGrad": 1,
-    //             "looseCoilGrad": 1,
-    //             "flatRollGrad": 1,
-    //             "defectGrad": 1,
-    //             "grad": 1,
-    //             "data": null,
-    //             "surface": "S",
-    //             "taperShapeMsg": "正常",
-    //             "looseCoilMsg": "",
-    //             "flatRollMsg": "正常",
-    //             "defectMsg": "",
-    //             "crateTime": {
-    //                 "year": 2024,
-    //                 "month": 11,
-    //                 "weekday": 4,
-    //                 "day": 1,
-    //                 "hour": 16,
-    //                 "minute": 49,
-    //                 "second": 12
-    //             }
-    //         }
-    //     },
-    //     "Thickness": 2.9,
-    //     "Width": 1273,
-    //     "Weight": 50,
-    //     "ActWidth": 1288,
-    //     "CoilType": "DX51D-2",
-    //     "CreateTime": {
-    //         "year": 2024,
-    //         "month": 10,
-    //         "weekday": 3,
-    //         "day": 17,
-    //         "hour": 23,
-    //         "minute": 21,
-    //         "second": 1
-    //     },
-    //     "CoilNo": "4V08312800",
-    //     "CoilInside": 762,
-    //     "CoilDia": 1936,
-    //     "childrenCoil": [
-    //         {
-    //             "DefectCountS": 0,
-    //             "Id": 42827,
-    //             "DefectCountL": 0,
-    //             "Status_L": 0,
-    //             "Grade": 0,
-    //             "SecondaryCoilId": 23053,
-    //             "DetectionTime": {
-    //                 "year": 2024,
-    //                 "month": 11,
-    //                 "weekday": 4,
-    //                 "day": 1,
-    //                 "hour": 16,
-    //                 "minute": 49,
-    //                 "second": 14
-    //             },
-    //             "CheckStatus": 0,
-    //             "Status_S": 0,
-    //             "Msg": ""
-    //         }
-    //     ],
-    //     "childrenalarmInfo": [
-    //         {
-    //             "nextCode": "2",
-    //             "secondaryCoilId": 23053,
-    //             "Id": 41,
-    //             "nextName": "冷轧基板",
-    //             "taperShapeGrad": 2,
-    //             "looseCoilGrad": 1,
-    //             "flatRollGrad": 1,
-    //             "defectGrad": 1,
-    //             "grad": 2,
-    //             "data": null,
-    //             "surface": "L",
-    //             "taperShapeMsg": "正常内径最高值 63.045618659850106 >= 60 检测角度180 \n",
-    //             "looseCoilMsg": "",
-    //             "flatRollMsg": "正常",
-    //             "defectMsg": "",
-    //             "crateTime": {
-    //                 "year": 2024,
-    //                 "month": 11,
-    //                 "weekday": 4,
-    //                 "day": 1,
-    //                 "hour": 16,
-    //                 "minute": 49,
-    //                 "second": 11
-    //             }
-    //         },
-    //         {
-    //             "nextCode": "2",
-    //             "secondaryCoilId": 23053,
-    //             "Id": 42,
-    //             "nextName": "冷轧基板",
-    //             "taperShapeGrad": 1,
-    //             "looseCoilGrad": 1,
-    //             "flatRollGrad": 1,
-    //             "defectGrad": 1,
-    //             "grad": 1,
-    //             "data": null,
-    //             "surface": "S",
-    //             "taperShapeMsg": "正常",
-    //             "looseCoilMsg": "",
-    //             "flatRollMsg": "正常",
-    //             "defectMsg": "",
-    //             "crateTime": {
-    //                 "year": 2024,
-    //                 "month": 11,
-    //                 "weekday": 4,
-    //                 "day": 1,
-    //                 "hour": 16,
-    //                 "minute": 49,
-    //                 "second": 12
-    //             }
-    //         }
-    //     ],
-    //     "NextCode": "2",
-    //     "NextInfo": "冷轧基板"
-    // }
+    function level2Source(level) {
+        return level > 1 ? style.getIcon("warning_1") : ""
+    }
 
+    property AlarmInfoItem alarmInfoItemS: AlarmInfoItem {
+        data: root.alarmInfo && root.alarmInfo.S ? root.alarmInfo.S : null
+    }
+    property AlarmInfoItem alarmInfoItemL: AlarmInfoItem {
+        data: root.alarmInfo && root.alarmInfo.L ? root.alarmInfo.L : null
+    }
+
+    readonly property int defectGrad: Math.max(alarmInfoItemS.defectGrad, alarmInfoItemL.defectGrad)
+    readonly property int grad: Math.max(alarmInfoItemS.grad, alarmInfoItemL.grad)
+    readonly property int taperShapeGrad: Math.max(alarmInfoItemS.taperShapeGrad, alarmInfoItemL.taperShapeGrad)
+    readonly property int looseCoilGrad: Math.max(alarmInfoItemS.looseCoilGrad, alarmInfoItemL.looseCoilGrad)
+    readonly property int flatRollGrad: Math.max(alarmInfoItemS.flatRollGrad, alarmInfoItemL.flatRollGrad)
+
+    readonly property string defectMsg: "S: " + alarmInfoItemS.defectMsg + "\nL: " + alarmInfoItemL.defectMsg
+    readonly property string taperShapeMsg: "S: " + alarmInfoItemS.taperShapeMsg + "\nL: " + alarmInfoItemL.taperShapeMsg
+    readonly property string looseCoilMsg: "S: " + alarmInfoItemS.looseCoilMsg + "\nL: " + alarmInfoItemL.looseCoilMsg
+    readonly property string flatRollMsg: "S: " + alarmInfoItemS.flatRollMsg + "\nL: " + alarmInfoItemL.flatRollMsg
+    readonly property string errorMsg: qsTr("扁卷:\n") + flatRollMsg
+                                       + qsTr("\n塔形:\n") + taperShapeMsg
+                                       + qsTr("\n松卷:\n") + looseCoilMsg
+                                       + qsTr("\n缺陷:\n") + defectMsg
 }

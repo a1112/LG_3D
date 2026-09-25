@@ -5,7 +5,20 @@ from pathlib import Path
 from threading import Thread
 
 sys_path = Path(fr"D:\CONFIG_3D\configs\area_join.json")
-if sys_path.exists():
+try:
+    system_config_available = sys_path.exists()
+except OSError as exc:
+    # A disconnected/protected production drive must not prevent the 2D
+    # service (or its watchdog) from importing and falling back to local
+    # configuration.
+    logging.getLogger(__name__).warning(
+        "cannot access system 2D config %s, using local config: %s",
+        sys_path,
+        exc,
+    )
+    system_config_available = False
+
+if system_config_available:
     CONFIG_FOLDER = sys_path.parent
 else:
     CONFIG_FOLDER = Path("config")
@@ -50,6 +63,7 @@ def _env_int(name: str, default: int) -> int:
 add_to_database = _env_bool("ALG_2D_ADD_TO_DATABASE", True)
 area_detection_tile_size = _env_int("ALG_2D_AREA_DETECTION_TILE_SIZE", 1024)
 area_detection_image_size = _env_int("ALG_2D_AREA_DETECTION_IMAGE_SIZE", area_detection_tile_size)
+area_detection_batch_size = max(_env_int("ALG_2D_AREA_DETECTION_BATCH_SIZE", 2), 1)
 enable_classifier = _env_bool("ALG_2D_ENABLE_CLASSIFIER", True)
 classifier_config = os.getenv("ALG_2D_CLASSIFIER_CONFIG")
 classifier_crop_margin = _env_int("ALG_2D_CLASSIFIER_CROP_MARGIN", 5)

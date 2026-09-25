@@ -26,7 +26,8 @@ def addAlarmLooseCoil(alarmLooseCoil):
 
 def getAlarmTaperShape(coilId):
     with Session() as session:
-        return session.query(AlarmTaperShape).where(coilId == AlarmTaperShape.secondaryCoilId)
+        return session.query(AlarmTaperShape).where(
+            coilId == AlarmTaperShape.secondaryCoilId).all()
 
 
 def getAlarmLooseCoil(coilId):

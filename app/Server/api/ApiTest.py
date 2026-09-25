@@ -46,11 +46,18 @@ async def upload_test(file: UploadFile = File(...)):
     """
     start_time = time.time()
     # 读取上传的文件内容
-    content = await file.read()
+    # Stream the spooled upload. Reading it without a size argument duplicates
+    # the complete request body in RAM.
+    file_size_bytes = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        file_size_bytes += len(chunk)
     end_time = time.time()
 
-    file_size = len(content) / (1024 * 1024)  # 文件大小（MB）
-    upload_time = end_time - start_time  # 上传时间（秒）
+    file_size = file_size_bytes / (1024 * 1024)  # 文件大小（MB）
+    upload_time = max(end_time - start_time, 1e-9)  # 上传时间（秒）
     upload_speed = file_size / upload_time  # 上传速度（MB/s）
 
     return {

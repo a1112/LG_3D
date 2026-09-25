@@ -5,38 +5,37 @@ import QtQuick.Layouts
 import "../../../Input"
 
 Menu {
+    id: root
+
+    required property var modelController
+    required property var apiClient
+    required property var popupManager
 
     MenuItem{
-        text: coreModel.isListRealModel?">历史模式":">实时模式"
+        text: root.modelController.isListRealModel
+              ? qsTr(">历史模式") : qsTr(">实时模式")
         onClicked: {
-            coreModel.switchListModel()
+            root.modelController.switchListModel()
 
         }
     }
     MenuItem{
         text: "查看数据源"
         onClicked: {
-            Qt.openUrlExternally(api.getLastUrlByKey("coilList"))
+            Qt.openUrlExternally(root.apiClient.getLastUrlByKey("coilList"))
         }
     }
 
     MenuItem{
         text: "图像备份"
         onClicked: {
-           popManage.popupBackupDataView()
+           root.popupManager.popupBackupDataView()
         }
     }
     MenuItem{
         text: "全部重新识别"
         onClicked: {
-            popManage.popupReDetectionView()
-        }
-    }
-
-    MenuItem{
-        text: "变化曲线"
-        onClicked: {
-            popManage.popupListValueChangeView()
+            root.popupManager.popupReDetectionView()
         }
     }
 

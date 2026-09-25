@@ -5,7 +5,17 @@ import QtQuick.Layouts
 import "../../Labels"
 import "../../Model"
 Menu {
-    property  bool isHoved: leftCore.isHoved
+    id: root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var hoverController
+    required property var modelStore
+    required property var toolService
+    required property var globalContext
+    required property var apiClient
+
+    property bool isHoved: root.hoverController.isHoved
     onIsHovedChanged: {
             if  (isHoved){
                  popup()
@@ -13,13 +23,18 @@ Menu {
             }
     }
     visible: isHoved
-    id:root
-    x: left.width+20
-    y:Math.max(20,Math.min(leftCore.hoverPoint.y,leftCore.hoverPoint.y-height-20))
-    width:620 //col.width+20
-    height:col.height+30
-    property int body_width:width-20
-    property CoilModel coilModel:leftCore.hovedCoilModel
+    x: root.style.leftWidth + root.adaptiveMetrics.headerSideGap
+    y: Math.max(
+           root.adaptiveMetrics.headerSideGap,
+           Math.min(
+               root.hoverController.hoverPoint.y,
+               root.hoverController.hoverPoint.y - height
+               - root.adaptiveMetrics.headerSideGap))
+    width: root.adaptiveMetrics.boundedWidth(620, 460, 760)
+    height: col.height + root.adaptiveMetrics.mainSpacing * 3
+    property int body_width:
+        width - root.adaptiveMetrics.mainSpacing * 2
+    property CoilModel coilModel: root.hoverController.hovedCoilModel
 
     // onClosed:{
     //     leftCore.isHoved = false
@@ -41,32 +56,39 @@ Menu {
             color:Material.color(Material.Blue)
             Layout.alignment:Qt.AlignHCenter
             anchors.horizontalCenter:parent.horizontalCenter
-            font.pointSize: 20
+            font.pointSize: root.adaptiveMetrics.fontMetric(20, 16, 24)
         }
         ImageRow{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
+            style: root.style
         }
         AreaRow{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
+            modelStore: root.modelStore
+            style: root.style
         }
         CoilInfo{
             width:parent.width
             Layout.fillWidth:true
-            height: 100
+            height: root.adaptiveMetrics.scaleMetric(100, 80, 130)
             coilModel: root.coilModel
         }
         AlarmInfo{
             width:parent.width
             Layout.fillWidth:true
+            hoverController: root.hoverController
         }
         // 塔形数据表格（显示所有数据）
         TaperShapeTable{
             width:parent.width
             Layout.fillWidth:true
-            height: 120
+            height: root.adaptiveMetrics.scaleMetric(120, 95, 155)
             coilModel: root.coilModel
+            style: root.style
         }
         // TextArea{
         //     text:leftCore.leftMsg
@@ -76,7 +98,11 @@ Menu {
             Layout.fillWidth:true
             coilModel: root.coilModel
             respectFilter: false
-            thumbnailSize: 96
+            thumbnailSize: root.adaptiveMetrics.scaleMetric(96, 72, 120)
+            toolService: root.toolService
+            filterController: root.hoverController
+            globalContext: root.globalContext
+            apiClient: root.apiClient
         }
 
     }

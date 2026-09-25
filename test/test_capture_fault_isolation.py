@@ -1,5 +1,6 @@
 import importlib.util
 import logging
+import socket
 import sys
 import time
 from pathlib import Path
@@ -260,6 +261,80 @@ def test_capture_status_reports_degraded_service_without_marking_it_dead(
     assert status["healthyCameraCount"] == 1
     assert status["failedCameraCount"] == 1
     assert status["failedCameraKeys"] == ["Cap_S_D"]
+
+
+def test_capture_health_restarts_only_for_process_level_stall(monkeypatch):
+    module = _load_server_module(monkeypatch)
+    healthy = SimpleNamespace(get_liveness_status=lambda: {
+        "ok": True,
+        "requiresProcessRestart": False,
+        "stalledComponents": [],
+    })
+    stalled = SimpleNamespace(get_liveness_status=lambda: {
+        "ok": False,
+        "requiresProcessRestart": True,
+        "stalledComponents": ["camera3D.nativeSdk"],
+    })
+    server = module.CaptureApiServer(
+        SimpleNamespace(apiServerIp="0.0.0.0", apiServerPort=6100),
+        {
+            "Cap_S_M": healthy,
+            "Cap_S_D": stalled,
+        },
+    )
+
+    status = server._all_liveness()
+
+    assert status["ok"] is False
+    assert status["requiresProcessRestart"] is True
+    assert status["restartCameraKeys"] == ["Cap_S_D"]
+    assert status["processId"] > 0
+    assert "watchdogToken" in status
+
+
+def test_capture_health_detects_signal_poll_stall(monkeypatch):
+    module = _load_server_module(monkeypatch)
+    signal_listener = SimpleNamespace(
+        ident=123,
+        get_status=lambda: {
+            "alive": True,
+            "stalled": True,
+            "pollAge": 61,
+        },
+    )
+    server = module.CaptureApiServer(
+        SimpleNamespace(apiServerIp="0.0.0.0", apiServerPort=6100),
+        {},
+        signal_listener=signal_listener,
+    )
+
+    status = server._all_liveness()
+
+    assert status["ok"] is False
+    assert status["signalRequiresProcessRestart"] is True
+    assert status["restartCameraKeys"] == []
+
+
+def test_capture_api_refuses_occupied_port_before_starting_worker(monkeypatch):
+    module = _load_server_module(monkeypatch)
+    started = []
+    monkeypatch.setattr(module.CaptureApiServer, "start",
+                        lambda self: started.append(True))
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+        capture_config = SimpleNamespace(apiServerIp="127.0.0.1",
+                                         apiServerPort=port)
+        try:
+            module.start_capture_api(capture_config, {})
+        except OSError:
+            pass
+        else:
+            raise AssertionError("occupied capture API port must fail startup")
+
+    assert started == []
 
 
 def _load_cap_all_module(monkeypatch):

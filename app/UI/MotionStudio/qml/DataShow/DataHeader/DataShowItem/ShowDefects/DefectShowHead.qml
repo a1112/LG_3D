@@ -3,6 +3,10 @@ import QtQuick.Layouts
 import QtQuick.Controls.Material
 Item {
     id:root
+
+    required property var controller
+    required property var defectClassController
+
     height:25
     Layout.fillWidth: true
 
@@ -14,12 +18,16 @@ Item {
     RowLayout{
         anchors.fill:parent
         ShowDefectNamesRow{
-            model: dataShowCore.defecClassListModel // global.defectClassProperty.defectDictModel // dataShowCore.currentDefectDictModel
+            model: root.controller.defecClassListModel
+            controller: root.controller
+            defectClassController: root.defectClassController
             Layout.fillWidth: true
             Layout.fillHeight:true
         }
         ShowTools{
            Layout.fillHeight:true
+           controller: root.controller
+           defectClassController: root.defectClassController
         }
     }
 }

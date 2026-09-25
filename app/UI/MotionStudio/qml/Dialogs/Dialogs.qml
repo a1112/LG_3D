@@ -1,9 +1,13 @@
 import QtQuick
 
 Item {
+    id: root
 
+    required property var toolService
 
-    property SaveFileDuialog saveFileDuialog: SaveFileDuialog{}
+    property SaveFileDuialog saveFileDuialog: SaveFileDuialog {
+        toolService: root.toolService
+    }
 
     SelectColorDialog{
         id:selectColorDialog

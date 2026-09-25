@@ -1,10 +1,13 @@
 import QtQuick
 
 Item {
+    id: root
+
+    required property var dataShowCore
     // 移动值
 
-    property real objectScaleZ: dataShowCore.controls3D.scaleZ
-    property vector3d objectScale: Qt.vector3d(1, 1, objectScaleZ)
+    property real objectScaleZ: root.dataShowCore.controls3D.scaleZ
+    property vector3d objectScale: Qt.vector3d(1, 1, root.objectScaleZ)
     property real objectOffsetY: 0
     property real objectOffsetX: 0
     property real objectOffsetZ: 0
@@ -56,7 +59,7 @@ Item {
 
     function setMouseMoveEnd(x, y) {
         tempOfseetX = 0
-        tempOfseetX = 0
+        tempOfseetY = 0
     }
 
     property real objectRotationX: 0
@@ -79,7 +82,7 @@ Item {
 
     function setMouseRotateMoveEnd(x, y) {
         tempOfseetX = 0
-        tempOfseetX = 0
+        tempOfseetY = 0
     }
 
 }

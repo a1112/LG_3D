@@ -114,7 +114,7 @@ def _configured_taper_rotations(data_integration: DataIntegration):
     except Exception as e:
         coil_id, surface = _data_integration_log_fields(data_integration)
         warning = f"塔形配置角度读取失败，使用默认全角度检测: {e}"
-        logger.warning("%s %s %s", coil_id, surface, warning)
+        logger.warning(f"{coil_id} {surface} {warning}")
         _append_taper_shape_warning(data_integration, warning)
         return []
     return normalize_taper_angles(getattr(taper_config_item, "angles", None))
@@ -141,7 +141,7 @@ def _detection_taper_shape_(data_integration: DataIntegration):
         except TAPER_ANGLE_RECOVERABLE_ERRORS as e:
             coil_id, surface = _data_integration_log_fields(data_integration)
             taper_shape_errors.append(f"{_format_rotation_angle(rotate)}度: {e}")
-            logger.warning("%s %s 塔形角度 %s 跳过: %s", coil_id, surface, rotate, e)
+            logger.warning(f"{coil_id} {surface} 塔形角度 {rotate} 跳过: {e}")
 
 
     # inner_max_point_values = np.array([line.inner_max_point.z for line in lineDataList])
@@ -306,7 +306,7 @@ def count_taper(data, img, angle_num=36, roll_num=100, in_r=750, fe=0.35):
             cv2.circle(img_2d_exp_color, (cx, cy), r - roll_num, (0, 0, 255), 2)
             cv2.namedWindow("img_2d_exp_color", 0)
             cv2.imshow("img_2d_exp_color", img_2d_exp_color)
-            cv2.waitKey(0)
+            cv2.waitKey(1)
 
         img_3d_roll_roi = (img_3d_exp * mask)
         ind = np.argwhere(img_3d_roll_roi > 10)
@@ -516,7 +516,8 @@ def _normalize_taper_shape_type(value):
     if isinstance(value, (int, float)) and float(value).is_integer():
         int_value = int(value)
         if int_value < 0:
-            logger.warning("invalid taper_shape_type=%s, fallback to LINE_TYPE", value)
+            logger.warning(
+                f"invalid taper_shape_type={value}, fallback to LINE_TYPE")
             return DetectionTaperShapeType.LINE_TYPE
         if int_value == 0:
             return DetectionTaperShapeType.NONE
@@ -561,15 +562,20 @@ def _normalize_taper_shape_type(value):
             result = member if result is None else result | member
         if result is not None:
             if unknown_names:
-                logger.warning("unknown taper_shape_type item=%s, ignore unknown items", ",".join(unknown_names))
+                logger.warning(
+                    "unknown taper_shape_type item="
+                    f"{','.join(unknown_names)}, ignore unknown items")
             return result
         if unknown_names:
-            logger.warning("unknown taper_shape_type item=%s, fallback to LINE_TYPE", ",".join(unknown_names))
+            logger.warning(
+                "unknown taper_shape_type item="
+                f"{','.join(unknown_names)}, fallback to LINE_TYPE")
             return DetectionTaperShapeType.LINE_TYPE
     try:
         return DetectionTaperShapeType(value)
     except (TypeError, ValueError):
-        logger.warning("invalid taper_shape_type=%s, fallback to LINE_TYPE", value)
+        logger.warning(
+            f"invalid taper_shape_type={value}, fallback to LINE_TYPE")
         return DetectionTaperShapeType.LINE_TYPE
 
 
@@ -612,7 +618,9 @@ def _detection_taper_shape_all_(data_integration_list: Union[DataIntegrationList
         _clear_taper_shape_errors(dataIntegration)
         if _taper_shape_type_is_disabled(taper_shape_type):
             if taper_shape_type != DetectionTaperShapeType.NONE:
-                logger.warning("taper_shape_type contains NONE, disable taper detection: %s", taper_shape_type)
+                logger.warning(
+                    "taper_shape_type contains NONE, disable taper detection: "
+                    f"{taper_shape_type}")
             dataIntegration.alarmData.taper_shape_disabled = True
             dataIntegration.alarmData.set_line_data_dict({})
             continue

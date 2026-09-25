@@ -1,63 +1,78 @@
 import QtQuick
-import "../../btns"
-import "../../DataShow/Foot"
+import "../../DataShow/Foot" as Foot
 
 RowBase {
-    visible:auth.isAdmin
-    spacing: 15
+    id: root
+
+    required property var adaptiveMetrics
+    required property var modelStore
+    required property var authManager
+    visible: root.authManager.isAdmin
+    spacing: root.adaptiveMetrics.headerSpacing
     Row{
-        ItemDelegateItem {
-            height: 35
+        Foot.ItemDelegateItem {
+            style: root.style
+            height: root.adaptiveMetrics.headerTabHeight
             text: "2D视图"
             onClicked: {
-                coreModel.surfaceL.rootViewIndex = 0
-                coreModel.surfaceS.rootViewIndex = 0
+                root.modelStore.surfaceL.rootViewIndex = 0
+                root.modelStore.surfaceS.rootViewIndex = 0
             }
         }
-        ItemDelegateItem {
-            height: 35
+        Foot.ItemDelegateItem {
+            style: root.style
+            height: root.adaptiveMetrics.headerTabHeight
             text: "3D视图"
             onClicked: {
-                coreModel.surfaceL.rootViewIndex = 1
-                coreModel.surfaceS.rootViewIndex = 1
+                root.modelStore.surfaceL.rootViewIndex = 1
+                root.modelStore.surfaceS.rootViewIndex = 1
             }
         }
     }
 
     CheckRec{
-        implicitWidth: 35
+        style: root.style
+        id: maskToggle
+        implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         typeIndex:1
         checkColor: "#FFCB3D"
         text: "MASK"
-        checked:  coreModel.imageMaskChecked
-        onCheckedChanged: coreModel.imageMaskChecked = checked
+        checked: root.modelStore.imageMaskChecked
+        onCheckedChanged: root.modelStore.imageMaskChecked = maskToggle.checked
     }
     CheckRec{
-        visible: !coreModel.imageMaskChecked
-        implicitWidth: 35
+        style: root.style
+        id: quickToggle
+        visible: !root.modelStore.imageMaskChecked
+        implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         typeIndex:1
         checkColor: "#CB3DFF"
         text: "QUICK"
-        checked:  coreModel.quickLyImage
-        onCheckedChanged: coreModel.quickLyImage = quickLyImage
+        checked: root.modelStore.quickLyImage
+        onCheckedChanged: root.modelStore.quickLyImage = quickToggle.checked
     }
 
     SeparatorLine{
-        color: "#CAF143"
+        style: root.style
+        color: root.style.statusSuccessColor
     }
 
     CheckRec{
-        implicitWidth: 35
+        style: root.style
+        id: surfaceSToggle
+        implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         text: "S端"
-        checked:  coreModel.surfaceS.show_visible
-        onCheckedChanged: coreModel.surfaceS.show_visible = checked
+        checked: root.modelStore.surfaceS.show_visible
+        onCheckedChanged: root.modelStore.surfaceS.show_visible = surfaceSToggle.checked
     }
 
 
     CheckRec{
-        implicitWidth: 35
+        style: root.style
+        id: surfaceLToggle
+        implicitWidth: root.adaptiveMetrics.scaleMetric(35, 30, 46)
         text: "L端"
-        checked:  coreModel.surfaceL.show_visible
-        onCheckedChanged: coreModel.surfaceL.show_visible = checked
+        checked: root.modelStore.surfaceL.show_visible
+        onCheckedChanged: root.modelStore.surfaceL.show_visible = surfaceLToggle.checked
     }
 }

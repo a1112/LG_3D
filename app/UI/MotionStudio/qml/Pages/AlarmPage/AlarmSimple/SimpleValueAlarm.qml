@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Controls.Material
 import "../../../Labels"
 RowLayout {
     id:root
@@ -26,9 +27,11 @@ RowLayout {
             ToolTip.visible:hovered && root.toolTipText != ""
             ToolTip.text:root.toolTipText
         }
-        font.pointSize: 14
-        font.bold: true
-        font.family: "Microsoft YaHei"
+        font: Qt.font({
+            family: "Microsoft YaHei",
+            pointSize: 14,
+            bold: true
+        })
         color:root.levelColor// Material.color(Material.Blue)
         id:title_id
         text: ""

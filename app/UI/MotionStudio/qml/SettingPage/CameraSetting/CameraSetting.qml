@@ -1,13 +1,22 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../../Core/JsonUtils.js" as JsonUtils
 
 ScrollView {
     id: root
+    required property var apiClient
+    required property var style
+
     clip: true
 
     property bool loading: false
+    property int actionCount: 0
+    property int requestGeneration: 0
     property string statusText: ""
+    readonly property bool busy: loading || actionCount > 0
 
     ListModel {
         id: cameraModel
@@ -19,22 +28,6 @@ ScrollView {
         repeat: true
         running: root.visible
         onTriggered: root.refresh()
-    }
-
-    function safeParse(data) {
-        try {
-            return JSON.parse(data)
-        } catch (e) {
-            return null
-        }
-    }
-
-    function formatAge(value) {
-        let age = Number(value)
-        if (!isFinite(age)) {
-            return "-"
-        }
-        return age.toFixed(1) + " s"
     }
 
     function paramValue(params, key) {
@@ -77,23 +70,28 @@ ScrollView {
     }
 
     function refresh() {
-        if (loading) {
+        if (root.busy) {
             return
         }
-        loading = true
-        statusText = qsTr("刷新中")
-        app.api.getCameraAdjustments(function(data) {
-            loading = false
-            let payload = safeParse(data)
+        let generation = ++root.requestGeneration
+        root.loading = true
+        root.statusText = qsTr("刷新中")
+        root.apiClient.getCameraAdjustments(function(data) {
+            if (generation !== root.requestGeneration)
+                return
+            root.loading = false
+            let payload = JsonUtils.parse(data, null, "camera adjustments")
             if (payload && payload.cameras) {
-                syncModel(payload.cameras)
-                statusText = qsTr("已刷新")
+                root.syncModel(payload.cameras)
+                root.statusText = qsTr("已刷新")
             } else {
-                statusText = qsTr("相机状态解析失败")
+                root.statusText = qsTr("相机状态解析失败")
             }
         }, function(error) {
-            loading = false
-            statusText = qsTr("相机状态获取失败")
+            if (generation !== root.requestGeneration)
+                return
+            root.loading = false
+            root.statusText = qsTr("相机状态获取失败")
             console.log("getCameraAdjustments failed", error)
         })
     }
@@ -104,14 +102,16 @@ ScrollView {
         }
         let item = cameraModel.get(index)
         cameraModel.setProperty(index, "busy", true)
-        statusText = item.key + qsTr(" 保存中")
-        app.api.setCameraAdjustment(item.key, exposureTime, gain, true, function(data) {
-            cameraModel.setProperty(index, "busy", false)
-            statusText = item.key + qsTr(" 已保存")
+        root.actionCount += 1
+        root.statusText = item.key + qsTr(" 保存中")
+        root.apiClient.setCameraAdjustment(
+                    item.key, exposureTime, gain, true, function(data) {
+            root.finishAction(index, item.key)
+            root.statusText = item.key + qsTr(" 已保存")
             root.refresh()
         }, function(error) {
-            cameraModel.setProperty(index, "busy", false)
-            statusText = item.key + qsTr(" 保存失败")
+            root.finishAction(index, item.key)
+            root.statusText = item.key + qsTr(" 保存失败")
             console.log("setCameraAdjustment failed", error)
         })
     }
@@ -122,26 +122,25 @@ ScrollView {
         }
         let item = cameraModel.get(index)
         cameraModel.setProperty(index, "busy", true)
-        statusText = item.key + qsTr(" 重连中")
-        app.api.reconnectCameraAdjustment(item.key, function(data) {
-            cameraModel.setProperty(index, "busy", false)
-            statusText = item.key + qsTr(" 已发送重连")
+        root.actionCount += 1
+        root.statusText = item.key + qsTr(" 重连中")
+        root.apiClient.reconnectCameraAdjustment(item.key, function(data) {
+            root.finishAction(index, item.key)
+            root.statusText = item.key + qsTr(" 已发送重连")
             root.refresh()
         }, function(error) {
-            cameraModel.setProperty(index, "busy", false)
-            statusText = item.key + qsTr(" 重连失败")
+            root.finishAction(index, item.key)
+            root.statusText = item.key + qsTr(" 重连失败")
             console.log("reconnectCameraAdjustment failed", error)
         })
     }
 
-    function statusColor(connected, ok) {
-        if (connected && ok) {
-            return "#2EAD4B"
+    function finishAction(index, cameraKey) {
+        root.actionCount = Math.max(0, root.actionCount - 1)
+        if (index >= 0 && index < cameraModel.count
+                && cameraModel.get(index).key === cameraKey) {
+            cameraModel.setProperty(index, "busy", false)
         }
-        if (connected) {
-            return "#D88912"
-        }
-        return "#B3261E"
     }
 
     ColumnLayout {
@@ -163,14 +162,14 @@ ScrollView {
 
                 Label {
                     text: qsTr("状态") + ": " + root.statusText
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     font.pixelSize: 13
                     Layout.fillWidth: true
                 }
 
                 Button {
-                    text: root.loading ? qsTr("刷新中") : qsTr("刷新")
-                    enabled: !root.loading
+                    text: root.busy ? qsTr("处理中") : qsTr("刷新")
+                    enabled: !root.busy
                     onClicked: root.refresh()
                 }
             }
@@ -178,147 +177,20 @@ ScrollView {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
-                color: coreStyle.headerBorderColor
+                color: root.style.headerBorderColor
             }
 
             Repeater {
                 model: cameraModel
 
-                delegate: Rectangle {
-                    id: rowRoot
-                    Layout.fillWidth: true
-                    implicitHeight: rowLayout.implicitHeight + 18
-                    color: "transparent"
-                    border.color: coreStyle.headerBorderColor
-                    border.width: 1
-                    radius: coreStyle.controlRadius
-
-                    RowLayout {
-                        id: rowLayout
-                        anchors.fill: parent
-                        anchors.margins: 9
-                        spacing: 12
-
-                        Rectangle {
-                            Layout.preferredWidth: 10
-                            Layout.preferredHeight: 38
-                            radius: 5
-                            color: root.statusColor(model.connected, model.ok)
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.minimumWidth: 220
-                            spacing: 4
-
-                            RowLayout {
-                                spacing: 8
-                                Layout.fillWidth: true
-
-                                Label {
-                                    text: model.key
-                                    color: coreStyle.titleColor
-                                    font.pixelSize: 15
-                                    font.bold: true
-                                }
-
-                                Label {
-                                    text: model.connected ? qsTr("在线") : qsTr("离线")
-                                    color: root.statusColor(model.connected, model.ok)
-                                    font.pixelSize: 13
-                                }
-                            }
-
-                            Label {
-                                text: (model.name || "-") + "  SN: " + (model.sn || "-")
-                                color: coreStyle.labelColor
-                                font.pixelSize: 12
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            Label {
-                                text: qsTr("最近帧") + ": " + root.formatAge(model.lastFrameAge)
-                                      + "    3D: " + root.formatAge(model.lastFrameAge3D)
-                                      + "    " + qsTr("参数源") + ": " + (model.source || "-")
-                                color: coreStyle.labelColor
-                                opacity: 0.76
-                                font.pixelSize: 12
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            Label {
-                                text: model.message || model.lastError3D || model.serviceUrl || model.paramFile || model.yamlConfig
-                                color: coreStyle.labelColor
-                                opacity: 0.68
-                                font.pixelSize: 11
-                                elide: Text.ElideMiddle
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 6
-                            Layout.preferredWidth: 150
-
-                            Label {
-                                text: qsTr("曝光时间")
-                                color: coreStyle.labelColor
-                                font.pixelSize: 12
-                            }
-
-                            SpinBox {
-                                id: exposureBox
-                                from: 1
-                                to: 1000000
-                                value: model.exposureTime
-                                editable: true
-                                enabled: model.writable && !model.busy
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 6
-                            Layout.preferredWidth: 120
-
-                            Label {
-                                text: qsTr("增益")
-                                color: coreStyle.labelColor
-                                font.pixelSize: 12
-                            }
-
-                            SpinBox {
-                                id: gainBox
-                                from: 0
-                                to: 1000
-                                value: model.gain
-                                editable: true
-                                enabled: model.writable && !model.busy
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 6
-                            Layout.preferredWidth: 88
-
-                            Button {
-                                text: model.busy ? qsTr("处理中") : qsTr("保存")
-                                enabled: model.writable && !model.busy
-                                Layout.fillWidth: true
-                                onClicked: root.updateCamera(index, exposureBox.value, gainBox.value)
-                            }
-
-                            Button {
-                                text: qsTr("重连")
-                                enabled: !model.busy
-                                Layout.fillWidth: true
-                                onClicked: root.reconnectCamera(index)
-                            }
-                        }
-                    }
+                delegate: CameraAdjustmentRow {
+                    style: root.style
+                    onSaveRequested:
+                        (rowIndex, exposureTime, gain) =>
+                            root.updateCamera(
+                                rowIndex, exposureTime, gain)
+                    onReconnectRequested:
+                        rowIndex => root.reconnectCamera(rowIndex)
                 }
             }
         }
@@ -329,7 +201,7 @@ ScrollView {
         }
     }
 
-    Component.onCompleted: refresh()
+    Component.onCompleted: root.refresh()
 
     component Section: Rectangle {
         id: section
@@ -338,10 +210,10 @@ ScrollView {
 
         Layout.fillWidth: true
         implicitHeight: sectionLayout.implicitHeight + 28
-        color: coreStyle.panelElevatedColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelElevatedColor
+        border.color: root.style.headerBorderColor
         border.width: 1
-        radius: coreStyle.controlRadius
+        radius: root.style.controlRadius
 
         ColumnLayout {
             id: sectionLayout
@@ -351,7 +223,7 @@ ScrollView {
 
             Label {
                 text: section.title
-                color: coreStyle.titleColor
+                color: root.style.titleColor
                 font.pixelSize: 16
                 font.bold: true
                 Layout.fillWidth: true

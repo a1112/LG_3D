@@ -1,9 +1,17 @@
 import QtQuick.Window
 
 WindowCaptionButton {
-    buttonType: control.isMaximized || control.isFullScreen ? "restore" : "maximize"
-    tipText: control.isMaximized || control.isFullScreen ? "还原" : "最大化"
+    id: root
+
+    required property var viewControl
+
+    buttonType: root.viewControl.isMaximized || root.viewControl.isFullScreen
+                ? "restore" : "maximize"
+    tipText: root.viewControl.isMaximized || root.viewControl.isFullScreen
+             ? qsTr("还原") : qsTr("最大化")
     onClicked: {
-        control.visibility = control.isMaximized || control.isFullScreen ? Window.Windowed : Window.Maximized
+        root.viewControl.visibility =
+                root.viewControl.isMaximized || root.viewControl.isFullScreen
+                ? Window.Windowed : Window.Maximized
     }
 }

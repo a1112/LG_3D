@@ -15,13 +15,18 @@ def _finite_float(value) -> Optional[float]:
 
 
 def get_camera_z_calibration(camera_data) -> Optional[tuple[float, float]]:
-    json_items = camera_data.get("json") if isinstance(camera_data, dict) else None
+    json_items = camera_data.get("json") if isinstance(camera_data,
+                                                       dict) else None
     if not json_items:
         return None
 
-    try:
-        coordinate_z = json_items[0]["bdConfig"]["CoordinateC"]
-    except (KeyError, IndexError, TypeError):
+    coordinate_z = next(
+        (item.get("bdConfig", {}).get("CoordinateC") for item in json_items
+         if isinstance(item, dict) and isinstance(item.get("bdConfig"), dict)
+         and isinstance(item.get("bdConfig", {}).get("CoordinateC"), dict)),
+        None,
+    )
+    if coordinate_z is None:
         return None
 
     scale = _finite_float(coordinate_z.get("Scan3dCoordinateScale"))
@@ -31,10 +36,8 @@ def get_camera_z_calibration(camera_data) -> Optional[tuple[float, float]]:
     return scale, offset
 
 
-def depth_to_reference_units(depth_data: np.ndarray,
-                             source_scale: float,
-                             source_offset: float,
-                             reference_scale: float,
+def depth_to_reference_units(depth_data: np.ndarray, source_scale: float,
+                             source_offset: float, reference_scale: float,
                              reference_offset: float) -> np.ndarray:
     source_scale = _finite_float(source_scale)
     source_offset = _finite_float(source_offset)
@@ -57,10 +60,8 @@ def depth_to_reference_units(depth_data: np.ndarray,
         return depth_data
 
     converted = np.zeros_like(depth_data)
-    values = (
-        depth_data[valid_mask].astype(np.float32) * source_scale +
-        source_offset - reference_offset
-    ) / reference_scale
+    values = (depth_data[valid_mask].astype(np.float32) * source_scale +
+              source_offset - reference_offset) / reference_scale
 
     if np.issubdtype(depth_data.dtype, np.integer):
         dtype_info = np.iinfo(depth_data.dtype)
@@ -71,8 +72,7 @@ def depth_to_reference_units(depth_data: np.ndarray,
     return converted
 
 
-def align_camera_depth_planes(datas,
-                              reference_scale: float,
+def align_camera_depth_planes(datas, reference_scale: float,
                               reference_offset: float) -> list[dict]:
     reference_scale = _finite_float(reference_scale)
     reference_offset = _finite_float(reference_offset)
@@ -90,21 +90,27 @@ def align_camera_depth_planes(datas,
             continue
         source_scale, source_offset = calibration
         aligned_depth = depth_to_reference_units(depth_data, source_scale,
-                                                source_offset,
-                                                reference_scale,
-                                                reference_offset)
+                                                 source_offset,
+                                                 reference_scale,
+                                                 reference_offset)
         if aligned_depth is depth_data:
             continue
 
         data["3D"] = aligned_depth
         adjustments.append({
-            "index": index,
-            "camera": str(data.get("camera", "")),
-            "sourceScaleZ": float(source_scale),
-            "sourceOffsetZ": float(source_offset),
-            "referenceScaleZ": float(reference_scale),
-            "referenceOffsetZ": float(reference_offset),
-            "rawOffsetToReference": float(
-                (source_offset - reference_offset) / reference_scale),
+            "index":
+            index,
+            "camera":
+            str(data.get("camera", "")),
+            "sourceScaleZ":
+            float(source_scale),
+            "sourceOffsetZ":
+            float(source_offset),
+            "referenceScaleZ":
+            float(reference_scale),
+            "referenceOffsetZ":
+            float(reference_offset),
+            "rawOffsetToReference":
+            float((source_offset - reference_offset) / reference_scale),
         })
     return adjustments

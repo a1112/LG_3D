@@ -70,8 +70,8 @@ def _is_file_access_error(error: Exception) -> bool:
                                                         None) == 32
 
 
-def _zip_camera_data_(folder):
-    if not _is_quiet_folder(folder):
+def _zip_camera_data_(folder, require_quiet=True):
+    if require_quiet and not _is_quiet_folder(folder):
         return False
 
     image_folder = _resolve_child_dir(folder, "2D")
@@ -108,6 +108,20 @@ def _zip_camera_data_(folder):
                 return False
             logger.warning("skip uncompressible 3D data %s: %s", d3Url, e)
     return compressed
+
+
+def compress_camera_data_once(path: Path,
+                              reserve_num=0,
+                              require_quiet=True) -> int:
+    """Run one bounded compression pass and return the changed folder count."""
+    compressed_count = 0
+    for folder in _old_folders(Path(path), reserve_num)[::-1]:
+        try:
+            if _zip_camera_data_(folder, require_quiet=require_quiet):
+                compressed_count += 1
+        except Exception as e:
+            logger.exception("camera data compression failed: %s", e)
+    return compressed_count
 
 def _zip_save_data_(folder):
     if not _is_quiet_folder(folder):
@@ -159,15 +173,13 @@ class ZipAndDeletionCameraData(Globs.control.SaveAndDeleteCameraDataBase):
 
     def run(self):
         while self._run_:
-            for folder in _old_folders(self.path, self.reserve_num)[::-1]:
-                try:
-                    s_time = time.time()
-                    zip_state = _zip_camera_data_(folder)
-                    e_time = time.time()
-                    if zip_state:
-                        logger.info("camera data compressed: %s elapsed=%.3fs", folder, e_time - s_time)
-                except Exception as e:
-                    logger.exception("camera data compression failed: %s", e)
+            compressed_count = compress_camera_data_once(
+                self.path,
+                self.reserve_num,
+            )
+            if compressed_count:
+                logger.info("camera compression pass changed %s folders: %s",
+                            compressed_count, self.path)
             logger.debug("camera compression pass finished: %s", self.path)
             time.sleep(6000)
 

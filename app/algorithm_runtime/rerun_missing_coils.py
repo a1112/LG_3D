@@ -55,6 +55,8 @@ def main() -> None:
     logger_process = LoggerProcess(log_file="log/rerun_missing_coils.log")
     logger_process.start()
 
+    queue = None
+    image_mosaic_thread = None
     try:
         queue: multiprocessing.Queue = multiprocessing.Queue(maxsize=100)
         image_mosaic_thread = ImageMosaicThread(queue, logger_process)
@@ -64,6 +66,13 @@ def main() -> None:
             end_id=args.end_id,
         )
     finally:
+        if image_mosaic_thread is not None:
+            image_mosaic_thread.stop()
+            for mosaic in image_mosaic_thread.imageMosaicList:
+                mosaic.join(timeout=5)
+        if queue is not None:
+            queue.close()
+            queue.cancel_join_thread()
         logger_process.stop()
 
 

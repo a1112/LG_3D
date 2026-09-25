@@ -231,36 +231,57 @@ def run(*, base_dir: Path) -> int:
             return True
 
         def _do_download(self, task: _DownloadTask) -> None:
+            partial_path: Optional[Path] = None
+            resp = None
             try:
                 import requests
 
                 save_path = Path(task.save_path)
                 save_path.parent.mkdir(parents=True, exist_ok=True)
+                partial_path = save_path.with_name(
+                    f"{save_path.name}.part.{threading.get_ident()}"
+                )
 
                 if task.payload is None:
-                    resp = requests.get(task.url, stream=True, timeout=60)
+                    resp = requests.get(task.url, stream=True, timeout=(30, 600))
                 else:
                     resp = requests.post(
                         task.url,
                         data=task.payload.encode("utf-8"),
                         headers={"Content-Type": "application/json"},
                         stream=True,
-                        timeout=60,
+                        timeout=(30, 600),
                     )
                 resp.raise_for_status()
 
                 total = int(resp.headers.get("Content-Length") or 0)
                 received = 0
-                with open(save_path, "wb") as f:
+                with open(partial_path, "wb") as f:
                     for chunk in resp.iter_content(chunk_size=1024 * 128):
                         if not chunk:
                             continue
                         f.write(chunk)
                         received += len(chunk)
                         self.downloadProgress.emit(received, total)
+                    f.flush()
+                    os.fsync(f.fileno())
+                if total > 0 and received != total:
+                    raise IOError(
+                        f"Incomplete download: expected {total} bytes, received {received}"
+                    )
+                os.replace(partial_path, save_path)
+                partial_path = None
                 self.downloadFinished.emit()
             except Exception as exc:
                 self.downloadError.emit(str(exc))
+            finally:
+                if resp is not None:
+                    resp.close()
+                if partial_path is not None:
+                    try:
+                        partial_path.unlink(missing_ok=True)
+                    except OSError as exc:
+                        logger.warning("Failed to remove partial download %s: %s", partial_path, exc)
 
     class _ClipboardController(QObject):
         @Slot(str)

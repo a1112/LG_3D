@@ -3,6 +3,9 @@ import QtQuick
 Item {
     id: root
 
+    required property var globalContext
+    required property var apiClient
+
     property int id_
     property int coilId
     property string surface
@@ -25,12 +28,14 @@ Item {
             return apiDefectLevel
         }
         if (configDefectName || defectName) {
-            return global.defectClassProperty.getDefectLevelByDefectName(configDefectName || defectName)
+            return root.globalContext.defectClassProperty.getDefectLevelByDefectName(
+                        configDefectName || defectName)
         }
         return 0
     }
 
-    property color defectColor: global.defectClassProperty.getColorByName(configDefectName || defectName)
+    property color defectColor: root.globalContext.defectClassProperty.getColorByName(
+                                    configDefectName || defectName)
     property string defect_url: ""
 
     function init(item) {
@@ -69,9 +74,11 @@ Item {
         defectSource = item.defectSource || 0
         defectData = item.defectData
         apiDefectLevel = item.defectLevel !== undefined ? item.defectLevel : -1
-        isArea = (item.is_area ?? false) || global.defectClassProperty.is_area_defect_name(configDefectName)
+        isArea = (item.is_area ?? false)
+                || root.globalContext.defectClassProperty.is_area_defect_name(
+                    configDefectName)
         if (isArea) {
-            defect_url = api.defect_url(
+            defect_url = root.apiClient.defect_url(
                 coilId,
                 surface,
                 "AREA",
@@ -81,7 +88,7 @@ Item {
                 defectH
             )
         } else {
-            defect_url = api.get_defect_url(
+            defect_url = root.apiClient.get_defect_url(
                 surface,
                 coilId,
                 defectName,

@@ -1,56 +1,96 @@
 import QtQuick
 
 Item {
-    property int app_index: app_core.appIndex
-    property ListModel currentListModel: defectCoreModel.currentListModel
+    id: root
+
+    required property var appController
+    required property var apiClient
+    required property var defectModel
+
+    readonly property int appIndex: root.appController.appIndex
+    readonly property ListModel currentListModel: root.defectModel.currentListModel
     property string lastRangeKey: ""
     property bool loading: false
+    property bool refreshQueued: false
+    property int requestGeneration: 0
 
-    onApp_indexChanged: requestRefresh()
+    onAppIndexChanged: root.requestRefresh()
     Connections {
-        target: defectCoreModel
-        function onCurrentListStartIndexChanged() { requestRefresh() }
-        function onCurrentListEndIndexChanged() { requestRefresh() }
+        target: root.defectModel
+        function onCurrentListStartIndexChanged() { root.requestRefresh() }
+        function onCurrentListEndIndexChanged() { root.requestRefresh() }
     }
 
     Timer {
         id: refreshTimer
         interval: 120
         repeat: false
-        onTriggered: flush_defects()
+        onTriggered: root.flushDefects()
     }
 
     function requestRefresh() {
         refreshTimer.restart()
     }
 
-    function flush_defects() {
-        if (!currentListModel || currentListModel.count <= 0) {
-            defectCoreModel.setDefectJson([])
-            lastRangeKey = ""
+    function forceRefresh() {
+        root.lastRangeKey = ""
+        root.requestRefresh()
+    }
+
+    function flushDefects() {
+        if (!root.currentListModel || root.currentListModel.count <= 0) {
+            root.requestGeneration += 1
+            root.loading = false
+            root.refreshQueued = false
+            root.defectModel.setDefectJson([])
+            root.lastRangeKey = ""
             return
         }
 
-        let startId = defectCoreModel.currentListStartIndex
-        let endId = defectCoreModel.currentListEndIndex
+        let startId = root.defectModel.currentListStartIndex
+        let endId = root.defectModel.currentListEndIndex
         let rangeKey = `${startId}_${endId}`
 
-        if (loading || rangeKey === lastRangeKey) {
+        if (root.loading) {
+            root.refreshQueued = true
+            return
+        }
+        if (rangeKey === root.lastRangeKey) {
             return
         }
 
-        loading = true
-        api.getDefectsByCoilId(
+        root.loading = true
+        root.requestGeneration += 1
+        let generation = root.requestGeneration
+        root.apiClient.getDefectsByCoilId(
             startId,
             endId,
             (text) => {
-                lastRangeKey = rangeKey
-                loading = false
-                defectCoreModel.setDefectJson(JSON.parse(text))
+                if (generation !== root.requestGeneration) {
+                    return
+                }
+                root.loading = false
+                try {
+                    root.defectModel.setDefectJson(JSON.parse(text))
+                    root.lastRangeKey = rangeKey
+                } catch (error) {
+                    console.warn("defect response parse failed:", error)
+                }
+                if (root.refreshQueued) {
+                    root.refreshQueued = false
+                    Qt.callLater(root.flushDefects)
+                }
             },
             (err) => {
-                loading = false
-                console.log("flush_defects error", err)
+                if (generation !== root.requestGeneration) {
+                    return
+                }
+                root.loading = false
+                console.warn("defect refresh failed:", err)
+                if (root.refreshQueued) {
+                    root.refreshQueued = false
+                    Qt.callLater(root.flushDefects)
+                }
             }
         )
     }

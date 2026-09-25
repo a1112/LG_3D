@@ -1,60 +1,65 @@
 import QtQuick
 import QtQuick.Controls
 Row {
+    id: root
+
+    required property var controller
+    required property var defectClassController
+
     spacing:2
 
 
     CheckDelegate{
         height:parent.height
         text:"2D类"
-        checked: dataShowCore.defectManage.area_defect_show
+        checked: root.controller.defectManage.area_defect_show
         onCheckedChanged:{
-            if(dataShowCore.defectManage.area_defect_show !== checked){
+            if(root.controller.defectManage.area_defect_show !== checked){
                 if (checked){
-                    global.defectClassProperty.select_area_defect()
+                    root.defectClassController.select_area_defect()
                 }
                 else{
-                    global.defectClassProperty.un_select_area_defect()
+                    root.defectClassController.un_select_area_defect()
                 }
             }
         }
         onClicked:{
-            dataShowCore.defectManage.area_defect_show = checked
+            root.controller.defectManage.area_defect_show = checked
         }
     }
 
     CheckDelegate{
         height:parent.height
         text:qsTr("屏蔽类")
-        checked: dataShowCore.defectManage.un_defect_show
+        checked: root.controller.defectManage.un_defect_show
         onCheckedChanged:{
-            if(dataShowCore.defectManage.un_defect_show !== checked){
+            if(root.controller.defectManage.un_defect_show !== checked){
                 if (checked){
-                    global.defectClassProperty.selecct_all_un_defect_show()
+                    root.defectClassController.selecct_all_un_defect_show()
                 }
                 else{
-                    global.defectClassProperty.un_selecct_all_un_defect_show()
+                    root.defectClassController.un_selecct_all_un_defect_show()
                 }
             }
         }
         onClicked:{
-            dataShowCore.defectManage.un_defect_show = checked
+            root.controller.defectManage.un_defect_show = checked
         }
     }
 
 
     DefectNumLabel{
-        defect_num:dataShowCore.un_show_num
+        defect_num: root.controller.un_show_num
     }
     ItemDelegate{
         height:parent.height
         text:qsTr("取消")
-        onClicked: dataShowCore.defectManage.setAllDefectShow(false)
+        onClicked: root.controller.defectManage.setAllDefectShow(false)
 
     }
     ItemDelegate{
         text:qsTr("全选")
         height:parent.height
-        onClicked: dataShowCore.defectManage.setAllDefectShow(true)
+        onClicked: root.controller.defectManage.setAllDefectShow(true)
     }
 }

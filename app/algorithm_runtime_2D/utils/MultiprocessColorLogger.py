@@ -1,6 +1,9 @@
+import atexit
 import logging
 import os
 import sys
+import threading
+import time
 from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from multiprocessing import Queue
 from pathlib import Path
@@ -9,7 +12,7 @@ from typing import Dict, Optional
 
 import colorlog
 
-from configs import CONFIG
+from algorithm_runtime_2D.configs import CONFIG
 
 
 class DroppingQueueHandler(QueueHandler):
@@ -17,11 +20,7 @@ class DroppingQueueHandler(QueueHandler):
         try:
             self.queue.put_nowait(record)
         except Full:
-            if record.levelno >= logging.ERROR:
-                try:
-                    self.queue.put(record, block=True, timeout=0.2)
-                except Full:
-                    pass
+            pass
 
 
 class EnhancedMultiProcessLogger:
@@ -81,6 +80,8 @@ class EnhancedMultiProcessLogger:
         self.interval = interval
         self.encoding = encoding
         self.queue_maxsize = self._resolve_queue_maxsize(queue_maxsize)
+        self._shutdown = False
+        self._shutdown_lock = threading.Lock()
 
         # 日志格式设置
         self.log_format = log_format or (
@@ -105,6 +106,7 @@ class EnhancedMultiProcessLogger:
 
         # 设置日志系统
         self._setup_logging_system()
+        atexit.register(self.shutdown)
         self._initialized = True
 
     @staticmethod
@@ -146,9 +148,12 @@ class EnhancedMultiProcessLogger:
         self.queue_listener = QueueListener(self.log_queue, *handlers)
         self.queue_listener.start()
 
-        # 为主记录器添加处理器（主进程直接记录）
-        for handler in handlers:
-            self.logger.addHandler(handler)
+        # Producers, including the main process, must never call console/file
+        # handlers directly. A paused console or slow disk must only delay the
+        # listener thread, not camera/API/algorithm work.
+        self.queue_handler = DroppingQueueHandler(self.log_queue)
+        self.queue_handler.setLevel(self.log_level)
+        self.logger.addHandler(self.queue_handler)
 
     def _create_console_handler(self) -> logging.Handler:
         """创建彩色控制台处理器"""
@@ -220,8 +225,39 @@ class EnhancedMultiProcessLogger:
 
     def shutdown(self):
         """优雅关闭日志系统"""
-        self.queue_listener.stop()
-        logging.shutdown()
+        with self._shutdown_lock:
+            if self._shutdown:
+                return
+            self._shutdown = True
+            for handler in self.logger.handlers[:]:
+                self.logger.removeHandler(handler)
+
+            listener_thread = getattr(self.queue_listener, "_thread", None)
+            sentinel_sent = False
+            deadline = time.monotonic() + 1.0
+            while listener_thread is not None and time.monotonic() < deadline:
+                try:
+                    self.queue_listener.enqueue_sentinel()
+                    sentinel_sent = True
+                    break
+                except Full:
+                    time.sleep(0.01)
+            if sentinel_sent:
+                listener_thread.join(timeout=1.0)
+                if not listener_thread.is_alive():
+                    self.queue_listener._thread = None
+
+            for handler in self.queue_listener.handlers:
+                try:
+                    handler.flush()
+                    handler.close()
+                except Exception:
+                    pass
+            try:
+                self.log_queue.close()
+                self.log_queue.cancel_join_thread()
+            except (AttributeError, OSError, ValueError):
+                pass
 
     @classmethod
     def get_logger(cls) -> logging.Logger:

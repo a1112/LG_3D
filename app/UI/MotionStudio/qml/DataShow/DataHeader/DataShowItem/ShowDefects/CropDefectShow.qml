@@ -5,13 +5,27 @@ import "../../../../Model/server"
 ItemDelegate {
 
     id:root
-    property ServerDefectModel defect: ServerDefectModel{}
-    readonly property int defectImageWidth: defect.isArea
-                                            ? (dataShowCore.dataShowAreaCore.sourceWidth || dataShowCore.sourceWidth || 5000)
-                                            : (dataShowCore.sourceWidth || 5000)
-    readonly property int defectImageHeight: defect.isArea
-                                             ? (dataShowCore.dataShowAreaCore.sourceHeight || dataShowCore.sourceHeight || 5000)
-                                             : (dataShowCore.sourceHeight || 5000)
+    required property var model
+    required property var controller
+    required property var areaController
+    required property var surfaceData
+    required property var style
+    required property var apiClient
+    required property var defectClassController
+
+    readonly property ServerDefectModel defect: ServerDefectModel {
+        controller: root.controller
+        defectClassController: root.defectClassController
+        rawDefect: root.model
+    }
+    readonly property int defectImageWidth: root.defect.isArea
+                                            ? (root.controller.dataShowAreaCore.sourceWidth
+                                               || root.controller.sourceWidth || 5000)
+                                            : (root.controller.sourceWidth || 5000)
+    readonly property int defectImageHeight: root.defect.isArea
+                                             ? (root.controller.dataShowAreaCore.sourceHeight
+                                                || root.controller.sourceHeight || 5000)
+                                             : (root.controller.sourceHeight || 5000)
 
 
     property real px_width:Math.min(Math.min(body.width,defect.defect_w)/defect.defect_w,
@@ -41,12 +55,12 @@ ItemDelegate {
                     asynchronous:true
                     fillMode: Image.PreserveAspectFit
                     source: {
-                        let x_ = defect.defect_x
-                        let w_ = defect.defect_w
+                        let x_ = root.defect.defect_x
+                        let w_ = root.defect.defect_w
                         let imgW = root.defectImageWidth
 
-                        if ( px_width * defect.defect_w < body.width ){
-                            let out_w = body.width/px_width-defect.defect_w
+                        if (root.px_width * root.defect.defect_w < body.width ){
+                            let out_w = body.width / root.px_width - root.defect.defect_w
                             let left_expand = out_w/2
                             let right_expand = out_w/2
 
@@ -70,12 +84,12 @@ ItemDelegate {
                             w_ = parseInt(w_+left_expand+right_expand)
                         }
 
-                        let y_ = defect.defect_y
-                        let h_ = defect.defect_h
+                        let y_ = root.defect.defect_y
+                        let h_ = root.defect.defect_h
                         let imgH = root.defectImageHeight
 
-                        if (px_width*defect.defect_h <body.height){
-                            let out_h = body.height / px_width - defect.defect_h
+                        if (root.px_width * root.defect.defect_h < body.height){
+                            let out_h = body.height / root.px_width - root.defect.defect_h
                             let top_expand = out_h/2
                             let bottom_expand = out_h/2
 
@@ -99,11 +113,12 @@ ItemDelegate {
                             h_=parseInt(h_+top_expand+bottom_expand)
                         }
 
-                        let viewKey = defect.isArea ? "AREA" : dataShowCore.currentViewKey
-                        return api.defect_url(dataShowCore.coilId, dataShowCore.key,
-                                              viewKey,
-                                              x_,  y_, w_, h_
-                                              )
+                        let viewKey = root.defect.isArea
+                                      ? "AREA" : root.controller.currentViewKey
+                        return root.apiClient.defect_url(
+                                    root.controller.coilId,
+                                    root.controller.key,
+                                    viewKey, x_, y_, w_, h_)
                     }
 
                 }
@@ -112,34 +127,35 @@ ItemDelegate {
                     border.color : "#88FF0000"
                     color : "#00000000"
                     anchors.centerIn : parent
-                    width : px_width*defectW
-                    height : px_width*defectH
+                    width : root.px_width * root.defect.defect_w
+                    height : root.px_width * root.defect.defect_h
                 }
 
                 MouseArea{
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     anchors.fill:parent
-                    onClicked:{
+                    onClicked: function(mouse) {
 
-                        if(defect.isArea)
-                            surfaceData.rootViewtoArea()
-                        else if (!defect.isArea){
-                            surfaceData.rootViewto2D()
+                        if(root.defect.isArea)
+                            root.surfaceData.rootViewtoArea()
+                        else {
+                            root.surfaceData.rootViewto2D()
                         }
 
                         if (mouse.button === Qt.LeftButton){
-                            dataShowCore_.setDefectShowView(  defect )
+                            root.areaController.setDefectShowView(root.defect)
                         }
                         if (mouse.button === Qt.RightButton)
                         {
-                            dataShowCore.setToMinScale()
+                            root.controller.setToMinScale()
                         }
                     }
 
                 }
             }
             DefectInfos{
-
+                defect: root.defect
+                defectClassController: root.defectClassController
             }
         }
     }
@@ -148,8 +164,8 @@ ItemDelegate {
         color: "#00000000"
         border.width: 2
         opacity: 0.5
-        border.color: "blue"
-        visible: defect.isArea
+        border.color: root.style.accentColor
+        visible: root.defect.isArea
     }
 
 }

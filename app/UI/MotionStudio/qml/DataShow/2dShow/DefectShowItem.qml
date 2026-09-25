@@ -1,34 +1,36 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
-import "../../Model/server"
-Rectangle{
-    property DefectItemModel defectItem: DefectItemModel{
-    }
-    // property ServerDefectModel srverDefectModel: ServerDefectModel{
-    // }
+Rectangle {
+    id: root
+    required property var model
+    required property var controller
+    required property var defectClassController
+    required property var style
 
-    visible: dataShowCore.defect_show(defectName)
-    x: defectItem.defectX*dataShowCore.canvasScale
-    y: defectItem.defectY*dataShowCore.canvasScale
-    width: defectItem.defectW*dataShowCore.canvasScale
-    height: defectItem.defectH*dataShowCore.canvasScale
-    border.color: defectItem.defectColor
+    readonly property string defectName: root.model.configDefectName || root.model.defectName || ""
+    readonly property color defectColor: root.defectClassController.getColorByName(root.defectName)
+    visible: root.controller.defect_show(root.defectName)
+    x: (Number(root.model.defectX) || 0) * root.controller.canvasScale
+    y: (Number(root.model.defectY) || 0) * root.controller.canvasScale
+    width: Math.max(0, Number(root.model.defectW) || 0) * root.controller.canvasScale
+    height: Math.max(0, Number(root.model.defectH) || 0) * root.controller.canvasScale
+    border.color: root.defectColor
     border.width: 2
-    opacity:0.7
+    opacity: 0.8
     color: "transparent"
-    // visible: global.defectClassProperty.defectDictAll[defectName]??false
-    Label{
-        visible:global.defectClassProperty.defeftDrawShowLasbel
-        color: Qt.lighter(defectItem.defectColor)
-        text: defectItem.defectName
+    Label {
+        visible: root.defectClassController.defeftDrawShowLasbel
+        color: Qt.lighter(root.defectColor)
+        text: root.model.defectName || root.defectName
         font.pixelSize: 15
         anchors.left: parent.right
-        background: Rectangle{
-            opacity:1
-            color:"#000"
+        background: Rectangle {
+            color: root.style.infoOverlayColor
+            border.color: root.style.infoOverlayBorderColor
+            border.width: 1
+            radius: 2
         }
-    }
-    Component.onCompleted:{
-        defectItem.init(dataShowCore.defectModel.get(index))
     }
 }

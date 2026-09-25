@@ -4,43 +4,50 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 Row {
     id: root
-    // 直接绑定到 listItemCoil.maxDefectName，避免手动同步
-    property string maxDefectName: listItemCoil.maxDefectName || ""
-    property string maxDefectSurface: listItemCoil.maxDefectSurface || ""
-    property int maxDefectLevel: listItemCoil.maxDefectLevel || 0
-    property int defectCount: coilModel ? coilModel.coilDefectCountTotal : 0
-    property int defectCountS: coilModel ? coilModel.coilDefectCountS : 0
-    property int defectCountL: coilModel ? coilModel.coilDefectCountL : 0
-    property bool hasMaxDefectName: maxDefectName.length > 0
-    property string maxDefectLabel: hasMaxDefectName
-                                    ? ((maxDefectSurface ? maxDefectSurface + ":" : "") + maxDefectName)
-                                    : ""
-    property string statusText: hasMaxDefectName ? defectCount + " / " + maxDefectLabel : defectCount + ""
-    property int statusMinimumWidth: listItemCoil.hasCoilData && defectCount > 0 && hasMaxDefectName ? 150 : 34
-    property string defectStatusTip: "S: " + defectCountS
-                                    + "  L: " + defectCountL
-                                    + (maxDefectName ? "\n最严重缺陷: " + maxDefectName : "")
-                                    + (maxDefectSurface ? " (" + maxDefectSurface + ")" : "")
-                                    + (maxDefectLevel > 0 ? "  等级: " + maxDefectLevel : "")
+    required property var coilModel
+    required property var summary
 
-    Layout.minimumWidth: statusMinimumWidth
-    Layout.preferredWidth: listItemCoil.hasCoilData
-                           ? Math.min(230, Math.max(statusMinimumWidth, statusTextLabel.implicitWidth + 22))
+    readonly property string maxDefectName: root.summary.maxDefectName || ""
+    readonly property string maxDefectSurface: root.summary.maxDefectSurface || ""
+    readonly property int maxDefectLevel: root.summary.maxDefectLevel || 0
+    readonly property int defectCount: root.coilModel ? root.coilModel.coilDefectCountTotal : 0
+    readonly property int defectCountS: root.coilModel ? root.coilModel.coilDefectCountS : 0
+    readonly property int defectCountL: root.coilModel ? root.coilModel.coilDefectCountL : 0
+    readonly property bool hasMaxDefectName: root.maxDefectName.length > 0
+    readonly property string maxDefectLabel: root.hasMaxDefectName
+                                    ? ((root.maxDefectSurface ? root.maxDefectSurface + ":" : "")
+                                       + root.maxDefectName)
+                                    : ""
+    readonly property string statusText: root.hasMaxDefectName
+        ? root.defectCount + " / " + root.maxDefectLabel : String(root.defectCount)
+    readonly property int statusMinimumWidth:
+        root.summary.hasCoilData && root.defectCount > 0
+        && root.hasMaxDefectName ? 150 : 34
+    readonly property string defectStatusTip: "S: " + root.defectCountS
+                                    + "  L: " + root.defectCountL
+                                    + (root.maxDefectName ? "\n最严重缺陷: " + root.maxDefectName : "")
+                                    + (root.maxDefectSurface ? " (" + root.maxDefectSurface + ")" : "")
+                                    + (root.maxDefectLevel > 0 ? "  等级: " + root.maxDefectLevel : "")
+
+    Layout.minimumWidth: root.statusMinimumWidth
+    Layout.preferredWidth: root.summary.hasCoilData
+                           ? Math.min(230, Math.max(root.statusMinimumWidth,
+                                                    statusTextLabel.implicitWidth + 22))
                            : implicitWidth
     Layout.maximumWidth: 250
     clip: true
     spacing:1
     Label{
-        visible:!listItemCoil.hasCoilData
-        text: listItemCoil.nullCoilString
+        visible:!root.summary.hasCoilData
+        text: root.summary.nullCoilString
         color:Material.color(Material.Amber)
         font.bold:true
         font.family:"Microsoft YaHei"
     }
 
     Label{
-        visible: !listItemCoil.hasAlarmData
-        text: listItemCoil.nullAlarmString
+        visible: !root.summary.hasAlarmData
+        text: root.summary.nullAlarmString
         color: Material.color(Material.Lime)
         font.bold: true
         font.family: "Microsoft YaHei"
@@ -50,16 +57,17 @@ Row {
         spacing:4
         Label{
             id: statusTextLabel
-            visible: listItemCoil.hasCoilData
+            visible: root.summary.hasCoilData
             width: Math.min(225, implicitWidth)
             text: root.statusText
             elide: Text.ElideRight
             font.pointSize: 11
-            color: defectCount > 0 ? listItemCoil.defectNameColor : Material.color(Material.Lime)
+            color: root.defectCount > 0
+                   ? root.summary.defectNameColor : Material.color(Material.Lime)
             font.bold: true
             font.family: "Microsoft YaHei"
             ToolTip.visible: ma.containsMouse
-            ToolTip.text: defectStatusTip
+            ToolTip.text: root.defectStatusTip
             MouseArea {
                 id: ma
                 anchors.fill: parent
@@ -68,12 +76,13 @@ Row {
             }
         }
         AlarmRectangleItem{
+            summary: root.summary
             anchors.verticalCenter:parent.verticalCenter
             level:Math.max(
-                      listItemCoil.flatRollGrad,
-                      listItemCoil.taperShapeGrad,
-                      listItemCoil.looseCoilGrad,
-                      listItemCoil.defectGrad
+                      root.summary.flatRollGrad,
+                      root.summary.taperShapeGrad,
+                      root.summary.looseCoilGrad,
+                      root.summary.defectGrad
                       )
         }
     }

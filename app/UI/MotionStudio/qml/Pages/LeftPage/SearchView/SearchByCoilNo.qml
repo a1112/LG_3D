@@ -3,10 +3,15 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../../Header"
 ColumnLayout {
+    id: root
+
+    required property var modelStore
+    required property var style
+
     height: 35
     RowLayout {
         Label{
-            color:Material.color(Material.Blue)
+            color: root.style.titleColor
             font.bold:true
             font.family: "Microsoft YaHei UI"
             font.pointSize: 14
@@ -30,11 +35,12 @@ ColumnLayout {
             height: 30
             width: 60
         CheckRec {
+            style: root.style
             fillWidth: true
              height: 30
            text: qsTr("查询")
             onClicked: {
-                coreModel.searchByCoilNo(textField.text)
+                root.modelStore.searchByCoilNo(textField.text)
             }
        }
         }

@@ -3,6 +3,11 @@ import QtQuick3D
 import QtQuick.Layouts
 import QtQuick3D.Helpers
 Item {
+    id: root
+
+    required property var surfaceData
+    required property var view3DController
+
     View3D {
         id: view3D
         anchors.fill: parent
@@ -32,10 +37,11 @@ Item {
 
         Node3D {
             id:modelNode
-            z: core3D.objectOffsetZ
-            x: core3D.objectOffsetX
-            y: core3D.objectOffsetY
-            scale: core3D.objectScale
+            surfaceData: root.surfaceData
+            z: root.view3DController.objectOffsetZ
+            x: root.view3DController.objectOffsetX
+            y: root.view3DController.objectOffsetY
+            scale: root.view3DController.objectScale
             eulerRotation.y:-75
         }
 

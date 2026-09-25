@@ -1,16 +1,24 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtCharts
 import "../../Labels"
 import "../../Input"
+import "../../Core/JsonUtils.js" as JsonUtils
 
 ApplicationWindow {
     id: root
+    required property var apiClient
+    required property var modelStore
+    required property var style
+
     visible: false
     width: 1600
     height: 720
     title: qsTr("设备曲线")
+    color: style.appBackgroundColor
 
     property int defaultLimit: 200
     property int selectedIndex: -1
@@ -22,6 +30,8 @@ ApplicationWindow {
     property real totalLengthAvg: 0
     property real distanceSAvg: 0
     property real distanceLAvg: 0
+    property bool loading: false
+    property int requestGeneration: 0
 
     function openCurve(){
         visible = true
@@ -30,21 +40,27 @@ ApplicationWindow {
     }
 
     function initRange(){
-        if (coreModel && coreModel.realCoilListModel && coreModel.realCoilListModel.count > 0){
-            startInput.text = coreModel.getMinCoilId()
-            endInput.text = coreModel.getMaxCoilId()
+        if (root.modelStore && root.modelStore.realCoilListModel
+                && root.modelStore.realCoilListModel.count > 0){
+            startInput.text = root.modelStore.getMinCoilId()
+            endInput.text = root.modelStore.getMaxCoilId()
         }
         limitInput.text = defaultLimit
     }
 
     function loadCurve(){
+        let generation = ++root.requestGeneration
+        root.loading = true
         let startId = parseInt(startInput.text)
         let endId = parseInt(endInput.text)
         let limit = parseInt(limitInput.text)
-        api.getPlcCurveAllData(startId, endId, limit,
+        root.apiClient.getPlcCurveAllData(startId, endId, limit,
             function(result){
-                let payload = {}
-                try { payload = JSON.parse(result) } catch (e) { payload = {} }
+                if (generation !== root.requestGeneration)
+                    return
+                root.loading = false
+                let payload = JsonUtils.parse(
+                        result, {}, "device curve data")
                 curveModel.clear()
                 totalLengthAvg = 0
                 distanceSAvg = 0
@@ -109,6 +125,9 @@ ApplicationWindow {
                 updateChart()
             },
             function(err){
+                if (generation !== root.requestGeneration)
+                    return
+                root.loading = false
                 console.log("getPlcCurveAllData error", err)
                 curveModel.clear()
                 totalLengthAvg = 0
@@ -240,34 +259,34 @@ ApplicationWindow {
 
             CheckBox{
                 text: qsTr("S端位置")
-                checked: drawS
+                checked: root.drawS
                 onCheckedChanged: {
-                    drawS = checked
-                    updateChart()
+                    root.drawS = checked
+                    root.updateChart()
                 }
             }
             CheckBox{
                 text: qsTr("L端位置")
-                checked: drawL
+                checked: root.drawL
                 onCheckedChanged: {
-                    drawL = checked
-                    updateChart()
+                    root.drawL = checked
+                    root.updateChart()
                 }
             }
             CheckBox{
                 text: qsTr("激光距离")
-                checked: drawLaser
+                checked: root.drawLaser
                 onCheckedChanged: {
-                    drawLaser = checked
-                    updateChart()
+                    root.drawLaser = checked
+                    root.updateChart()
                 }
             }
             CheckBox{
                 text: qsTr("\u5bbd\u5ea6")
-                checked: drawWidth
+                checked: root.drawWidth
                 onCheckedChanged: {
-                    drawWidth = checked
-                    updateChart()
+                    root.drawWidth = checked
+                    root.updateChart()
                 }
             }
         }
@@ -283,8 +302,9 @@ ApplicationWindow {
             Label{ text: qsTr("数量") }
             TextFieldBase{ id: limitInput; implicitWidth: 80 }
             Button{
-                text: qsTr("刷新")
-                onClicked: loadCurve()
+                text: root.loading ? qsTr("加载中...") : qsTr("刷新")
+                enabled: !root.loading
+                onClicked: root.loadCurve()
             }
             Button{
                 text: qsTr("关闭")
@@ -308,7 +328,7 @@ ApplicationWindow {
                 axisY: axisY
                 name: qsTr("S端位置")
                 color: "#3ba4ff"
-                visible: drawS
+                visible: root.drawS
             }
             LineSeries{
                 id: seriesL
@@ -316,7 +336,7 @@ ApplicationWindow {
                 axisY: axisY
                 name: qsTr("L端位置")
                 color: "#5ad16b"
-                visible: drawL
+                visible: root.drawL
             }
             LineSeries{
                 id: seriesLaser
@@ -324,7 +344,7 @@ ApplicationWindow {
                 axisY: axisY
                 name: qsTr("激光距离")
                 color: "#ff9b3b"
-                visible: drawLaser
+                visible: root.drawLaser
             }
             LineSeries{
                 id: seriesDistanceS
@@ -346,7 +366,7 @@ ApplicationWindow {
                 axisY: axisY
                 name: qsTr("\u5bbd\u5ea6")
                 color: "#8bd450"
-                visible: drawWidth
+                visible: root.drawWidth
             }
         }
 
@@ -355,7 +375,7 @@ ApplicationWindow {
             Layout.fillHeight: true
             color: "transparent"
             border.width: 1
-            border.color: "#334455"
+            border.color: root.style.headerBorderColor
 
             ColumnLayout{
                 anchors.fill: parent
@@ -364,23 +384,29 @@ ApplicationWindow {
                 Rectangle{
                     Layout.fillWidth: true
                     height: 30
-                    color: "#1b2a3a"
+                    color: root.style.headerBackgroundColor
 
                     RowLayout{
                         anchors.fill: parent
                         spacing: 8
-                        Label{ Layout.preferredWidth: 90; text: qsTr("Coil ID"); color: "white" }
-                        Label{ Layout.preferredWidth: 160; text: qsTr("时间"); color: "white" }
-                        Label{ Layout.preferredWidth: 90; text: qsTr("宽度"); color: "white" }
-                        Label{ Layout.preferredWidth: 110; text: qsTr("S端位置"); color: "white" }
-                        Label{ Layout.preferredWidth: 110; text: qsTr("L端位置"); color: "white" }
-                        Label{ Layout.preferredWidth: 110; text: qsTr("激光距离"); color: "white" }
-                        Label{ Layout.preferredWidth: 120; text: qsTr("S端距离(mm)"); color: "white" }
-                        Label{ Layout.preferredWidth: 120; text: qsTr("L端距离(mm)"); color: "white" }
-                        Label{ Layout.preferredWidth: 140; text: qsTr("总长"); color: "white" }
-                        Label{ Layout.preferredWidth: 150; text: qsTr("平均误差"); color: "white" }
-                        Label{ Layout.preferredWidth: 150; text: qsTr("S端距离平均误差"); color: "white" }
-                        Label{ Layout.preferredWidth: 150; text: qsTr("L端距离平均误差"); color: "white" }
+                        HeaderCell { cellWidth: 90; text: qsTr("Coil ID") }
+                        HeaderCell { cellWidth: 160; text: qsTr("时间") }
+                        HeaderCell { cellWidth: 90; text: qsTr("宽度") }
+                        HeaderCell { cellWidth: 110; text: qsTr("S端位置") }
+                        HeaderCell { cellWidth: 110; text: qsTr("L端位置") }
+                        HeaderCell { cellWidth: 110; text: qsTr("激光距离") }
+                        HeaderCell { cellWidth: 120; text: qsTr("S端距离(mm)") }
+                        HeaderCell { cellWidth: 120; text: qsTr("L端距离(mm)") }
+                        HeaderCell { cellWidth: 140; text: qsTr("总长") }
+                        HeaderCell { cellWidth: 150; text: qsTr("平均误差") }
+                        HeaderCell {
+                            cellWidth: 150
+                            text: qsTr("S端距离平均误差")
+                        }
+                        HeaderCell {
+                            cellWidth: 150
+                            text: qsTr("L端距离平均误差")
+                        }
                     }
                 }
 
@@ -389,36 +415,16 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    model: curveModel
-                    currentIndex: selectedIndex
-                    delegate: Rectangle{
+                    model: root.curveModel
+                    currentIndex: root.selectedIndex
+                    delegate: DeviceCurveTableRow {
                         width: tableView.width
                         height: 28
-                        color: index === selectedIndex ? "#1f3b52" : (index % 2 === 0 ? "#0f1a24" : "#13212f")
-
-                        RowLayout{
-                            anchors.fill: parent
-                            spacing: 8
-                            Label{ Layout.preferredWidth: 90; text: coil_id; color: "white" }
-                            Label{ Layout.preferredWidth: 160; text: time; color: "white" }
-                            Label{ Layout.preferredWidth: 90; text: formatValue(width_); color: "white" }
-                            Label{ Layout.preferredWidth: 110; text: formatValue(location_S); color: "white" }
-                            Label{ Layout.preferredWidth: 110; text: formatValue(location_L); color: "white" }
-                            Label{ Layout.preferredWidth: 110; text: formatValue(location_laser); color: "white" }
-                            Label{ Layout.preferredWidth: 120; text: formatValue(median_3d_mm_S); color: "white" }
-                            Label{ Layout.preferredWidth: 120; text: formatValue(median_3d_mm_L); color: "white" }
-                            Label{ Layout.preferredWidth: 140; text: formatValue(total_length); color: "white" }
-                            Label{ Layout.preferredWidth: 150; text: formatValue(total_error); color: "white" }
-                            Label{ Layout.preferredWidth: 150; text: formatValue(distance_s_error); color: "white" }
-                            Label{ Layout.preferredWidth: 150; text: formatValue(distance_l_error); color: "white" }
-                        }
-
-                        MouseArea{
-                            anchors.fill: parent
-                            onClicked:{
-                                selectedIndex = index
-                                loadAround(Number(coil_id))
-                            }
+                        style: root.style
+                        selectedIndex: root.selectedIndex
+                        onActivated: function(rowIndex, coilId) {
+                            root.selectedIndex = rowIndex
+                            root.loadAround(Number(coilId))
                         }
                     }
                 }
@@ -426,10 +432,12 @@ ApplicationWindow {
         }
     }
 
-    function formatValue(val){
-        let num = Number(val)
-        if (!isFinite(num)) return ""
-        return num.toFixed(3)
+    component HeaderCell: Label {
+        required property real cellWidth
+        Layout.preferredWidth: cellWidth
+        color: root.style.titleColor
+        font.bold: true
+        elide: Text.ElideRight
     }
 
  

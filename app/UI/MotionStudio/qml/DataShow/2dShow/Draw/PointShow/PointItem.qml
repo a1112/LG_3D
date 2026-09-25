@@ -1,19 +1,27 @@
 import QtQuick
-import "../../../../Model/server"
-Item {
-    property PointData pointData: PointData{}
-    property var label_point:findPoint(p_x,p_y,type)
-    PointItemPointShow{}
-    PointItemLabelShow{}
-    Component.onCompleted:{
-        pointData.x_=p_x
-        pointData.y_=p_y
-        pointData.z_=p_z
-        pointData.z_mm = z_mm
-        pointData.id_=Id
-        pointData.type_ = type
-        pointData.secondaryCoilId_ = secondaryCoilId
-        pointData.surface_=surface
 
+Item {
+    id: root
+
+    required property var dataShowCore
+    required property var pointProjector
+    required property real p_x
+    required property real p_y
+    required property real z_mm
+    required property string type
+
+    readonly property point labelPoint:
+        root.pointProjector.findPoint(root.p_x, root.p_y, root.type)
+
+    PointItemPointShow {
+        dataShowCore: root.dataShowCore
+        pointX: root.p_x
+        pointY: root.p_y
+    }
+
+    PointItemLabelShow {
+        dataShowCore: root.dataShowCore
+        labelPoint: root.labelPoint
+        zMm: root.z_mm
     }
 }

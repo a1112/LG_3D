@@ -2,6 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
 Popup {
+    id: root
+
+    required property var style
+
     dim: true
     modal: true
     // 设置父对象为 Overlay 的根元素，避免被裁剪
@@ -24,7 +28,10 @@ Popup {
         return 100
     }
     background: Rectangle{
-        color: "#E0201F28"
+        color: root.style.panelElevatedColor
+        border.color: root.style.headerBorderColor
+        border.width: 1
+        radius: 6
     }
 
     function popup() {

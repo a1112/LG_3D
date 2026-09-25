@@ -4,7 +4,11 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 RowLayout {
-    id:root
+    id: root
+
+    required property var style
+    required property var toolService
+
     property alias value :value_id.text
     property string text: ""
     property string select_text: "选择..."
@@ -19,7 +23,7 @@ RowLayout {
         fileMode : FileDialog.SaveFile
         onAccepted:{
             if (fileMode == FileDialog.SaveFile) {
-                let s_text =tool.url_to_str(selectedFile)
+                let s_text = root.toolService.url_to_str(selectedFile)
                 if (!s_text.toLowerCase().endsWith(selectedNameFilter.name.toLowerCase())) {
                         value_id.text= s_text + selectedNameFilter.name
                     }
@@ -29,7 +33,7 @@ RowLayout {
                 }
             }
             else{
-            value_id.text=tool.url_to_str(selectedFile)
+            value_id.text = root.toolService.url_to_str(selectedFile)
             }
         }
     }
@@ -43,6 +47,7 @@ RowLayout {
         Layout.fillWidth:true
     }
     CheckRec{
+        style: root.style
         fillWidth: true
         text:root.select_text
         onClicked:{

@@ -2,14 +2,23 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtGraphs
 import "../../Base"
 import "../../Comp/Card"
 CardBase {
-    id:root
+    id: root
+
+    required property var viewController
+    required property var style
+    required property var authManager
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
+
+    readonly property var defectModel: root.viewController.defectCoreModel
+
     Layout.fillWidth: true
-    max_height:100//col.height+10
-    title:  ""       //"当前卷信息"
+    max_height: 100
+    title: qsTr("缺陷概览")
 
     content_body:Item{
         id:col
@@ -24,22 +33,22 @@ CardBase {
 
             FlowRowItem{
                 title:qsTr("缺陷数量")
-                value:core.currentCoilModel["coilId"]
+                value: root.defectModel.defectsModelAll.count
             }
 
             FlowRowItem{
-                title:"卷数"
-                value:core.currentCoilModel.nextInfo
+                title: qsTr("当前显示")
+                value: root.defectModel.defectsModel.count
             }
 
             FlowRowItem{
-                title:"识别率 "
-                value:core.currentCoilModel.coilNo
+                title: qsTr("卷数")
+                value: root.defectModel.currentListModel.count
             }
 
             FlowRowItem{
-                title:"卷识别率 "
-                value:core.currentCoilModel.coilType
+                title: qsTr("缺陷类别")
+                value: root.defectModel.defectDictModel.count
             }
         }
     }

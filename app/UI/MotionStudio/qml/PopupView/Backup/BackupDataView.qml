@@ -7,15 +7,22 @@ import "../../Input"
 import "../../Labels"
 import "../../Pages/Header"
 import QtCore
-Menu{
+Menu {
+    id: root
+
+    required property var adaptiveMetrics
+    required property var modelStore
+    required property var apiClient
+    required property var style
+    required property var toolService
 
     property BackupStatus backupStatu: BackupStatus{}
+    property bool connected: false
     dim:true
 
     x:parent.width
-    id:root
-    width: 590
-    height: col.height+80
+    width: root.adaptiveMetrics.boundedWidth(590, 460, 760)
+    height: col.height + root.adaptiveMetrics.scaleMetric(80, 56, 110)
 
     property string outputFolder:(""+StandardPaths.writableLocation(StandardPaths.DesktopLocation)).substring(8)
     property string outputName:Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
@@ -23,7 +30,7 @@ Menu{
     property string outputUrl:outputFolder+"/"+outputName
 
     onOpened:{
-        let mmList = coreModel.getCurrentCoilListModelMinMaxId()
+        let mmList = root.modelStore.getCurrentCoilListModelMinMaxId()
         from_id.value=mmList[0]
         to_id.value=mmList[1]
         outputName=Qt.formatDateTime(new Date(), "备份_yyyy_MM_dd hh_mm_ss")
@@ -32,13 +39,13 @@ Menu{
     ColumnLayout{
         id:col
         width:parent.width
-        spacing:20
+        spacing: root.adaptiveMetrics.headerSideGap
         Row{
-            spacing:10
+            spacing: root.adaptiveMetrics.mainSpacing
             Layout.alignment: Qt.AlignHCenter
             Label{
             text: "数据备份"
-            font.pixelSize: 25
+            font.pixelSize: root.adaptiveMetrics.fontMetric(25, 20, 32)
             font.family:"Microsoft YaHei"
             font.bold: true
 
@@ -72,9 +79,11 @@ Menu{
             enabled: root.backupStatu.canChange
             id:folder_id
             text:"保存位置"
-            value:outputUrl
-            onValueChanged:outputUrl=value
+            value: root.outputUrl
+            onValueChanged: root.outputUrl = folder_id.value
             placeholderText:"桌面/"+ root.outputName
+            style: root.style
+            toolService: root.toolService
         }
     }
     // onAccepted:{
@@ -106,6 +115,7 @@ Menu{
                     root.backupStatu.errorStr
             }
             CheckRecButton{
+                style: root.style
                 text: "打开文件夹"
                 onClicked:{
                     Qt.openUrlExternally("file:///"+root.outputUrl)}
@@ -119,6 +129,7 @@ Menu{
 
         }
         CheckRecButton{
+            style: root.style
             Layout.alignment: Qt.AlignVCenter
             text: "备份"
             enabled: root.backupStatu.canChange
@@ -141,7 +152,7 @@ Menu{
 
     WebSocket{
         id:ws_id
-        url:api.getWsBackupImageUrl()
+        url: root.apiClient.getWsBackupImageUrl()
         onTextMessageReceived:(message)=>{
                                   root.backupStatu.setRunning()
                                   if (parseInt(message)>=100) {

@@ -2,15 +2,19 @@ import QtQuick
 import QtQuick.Controls.Material
 import "_base_"
 import "Surface"
+import "JsonUtils.js" as JsonUtils
 CoreModel_ {
+    id: modelRoot
 
-    property CoreGlobalError coreGlobalError:CoreGlobalError{}
+    property CoreGlobalError coreGlobalError: CoreGlobalError {
+        model: modelRoot
+    }
 
     property int maxCoilListModelLen: 300
 
     property int currentCoilListIndex: 0
     onCurrentCoilListIndexChanged:{
-        core.flushListItem()
+        modelRoot.coreController.flushListItem()
     }
 
 
@@ -77,12 +81,24 @@ CoreModel_ {
 
 
     property SurfaceData surfaceL: SurfaceData{
-        currentCoilModel: core.currentCoilModel
+        modelStore: modelRoot
+        apiClient: modelRoot.apiClient
+        settings: modelRoot.settings
+        coreController: modelRoot.coreController
+        imageCacheService: modelRoot.imageCacheService
+        scriptLauncher: modelRoot.scriptLauncher
+        currentCoilModel: modelRoot.coreController.currentCoilModel
         key:"L"
     }
 
     property SurfaceData surfaceS: SurfaceData{
-        currentCoilModel: core.currentCoilModel
+        modelStore: modelRoot
+        apiClient: modelRoot.apiClient
+        settings: modelRoot.settings
+        coreController: modelRoot.coreController
+        imageCacheService: modelRoot.imageCacheService
+        scriptLauncher: modelRoot.scriptLauncher
+        currentCoilModel: modelRoot.coreController.currentCoilModel
         key:"S"
     }
 
@@ -98,16 +114,21 @@ CoreModel_ {
     }
 
     function getMinCoilId(){
+        if (!realCoilListModel || realCoilListModel.count <= 0) {
+            return 0
+        }
         return realCoilListModel.get(realCoilListModel.count-1).Id
     }
 
     function getLastCoilId(){
-        let max_i=0
-        if (realCoilListModel.count===0){
-
+        if (!realCoilListModel || realCoilListModel.count <= 0) {
+            return 0
         }
-        for(let i =0;i<5;i++){
-            let id_ = realCoilListModel.get(0).Id
+        let max_i=0
+        let checkCount = Math.min(realCoilListModel.count, 5)
+        for(let i =0;i<checkCount;i++){
+            let item = realCoilListModel.get(i)
+            let id_ = item && item.Id ? item.Id : 0
             if (id_>max_i){
                 max_i=id_
             }
@@ -117,16 +138,12 @@ CoreModel_ {
 
     function updateData(upData){
         // 如果正在加载初始数据，跳过更新（防止竞态条件）
-        if (app && app.init && app.init.isListLoading) {
+        if (modelRoot.initController.isListLoading) {
             console.log("List is loading, skipping updateData")
             return
         }
 
-        while(coilListModel.count > maxCoilListModelLen){
-            coilListModel.remove(coilListModel.count-1,1)
-        }
-
-        if (upData["coilList"] === undefined){
+        if (!upData || !Array.isArray(upData["coilList"])){
             return -2
         }
 
@@ -164,8 +181,12 @@ CoreModel_ {
             realCoilListModel.insert(0, toInsert[i])
         }
 
-        if (keepLatest){
-            core.setCoilIndex(0)
+        while(coilListModel.count > maxCoilListModelLen){
+            coilListModel.remove(coilListModel.count-1,1)
+        }
+
+        if (keepLatest && realCoilListModel.count > 0){
+            modelRoot.coreController.setCoilIndex(0)
         }
     }
 
@@ -179,21 +200,21 @@ CoreModel_ {
             historyCoilListModel.insert(0,data[i])
         }
         // core.setCoilIndex(1)
-        core.setCoilIndex(0)
+        modelRoot.coreController.setCoilIndex(0)
     }
 
     function searchByCoilNo(coilNo){
-        api.searchByCoilNo(coilNo,
+        modelRoot.apiClient.searchByCoilNo(coilNo,
                            (result)=>{
-                                setSearch(JSON.parse(result))
+                                setSearch(JsonUtils.parse(result, [], "search by coil number"))
                            },
                            (error)=>{}
                            )
     }
     function searchByCoilId(coilId){
-        api.searchByCoilId(coilId,
+        modelRoot.apiClient.searchByCoilId(coilId,
                            (result)=>{
-                               setSearch(JSON.parse(result))
+                               setSearch(JsonUtils.parse(result, [], "search by coil id"))
 
                            },
                            (error)=>{}
@@ -202,10 +223,10 @@ CoreModel_ {
     }
 
     function searchByCoilDateTime(start,end){
-        api.searchByTime(start,end,
+        modelRoot.apiClient.searchByTime(start,end,
                            (result)=>{
                                      // console.log(result)
-                                     setSearch(JSON.parse(result))
+                                     setSearch(JsonUtils.parse(result, [], "search by time"))
                                  },
                            (error)=>{}
         )
@@ -218,6 +239,34 @@ CoreModel_ {
 
     property var has_data // 是否数据存在
     property int hasDataCoilId: 0
+    property var hasDataCache: ({})
+    property var hasDataCacheOrder: []
+    property int hasDataCacheMax: 400
+
+    function getHasDataCache(coilId){
+        let cache = hasDataCache || {}
+        let cacheKey = String(coilId)
+        return cache[cacheKey] || null
+    }
+
+    function setHasDataCache(coilId, data){
+        if (!coilId || !data) {
+            return
+        }
+        let cache = hasDataCache || {}
+        let order = hasDataCacheOrder || []
+        let cacheKey = String(coilId)
+        if (cache[cacheKey] === undefined) {
+            order.push(cacheKey)
+        }
+        cache[cacheKey] = data
+        while (order.length > hasDataCacheMax) {
+            let oldKey = order.shift()
+            delete cache[oldKey]
+        }
+        hasDataCache = cache
+        hasDataCacheOrder = order
+    }
 
     // 待定位的缺陷（从缺陷页面跳转时设置）
     property var pendingDefect: null

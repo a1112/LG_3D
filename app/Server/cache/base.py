@@ -10,8 +10,10 @@ from typing import Any, Optional
 import cv2
 import numpy as np
 from PIL import Image
-from cachetools import TTLCache, cached
 from testdata_config import get_testdata_asset_dir, get_testdata_dir
+
+from .bounded_cache import (MemoryBoundedTTLCache, memory_budget_bytes,
+                            singleflight_cached)
 
 # 解除 PIL 对单张图片像素数量的安全限制，避免大幅面图像触发 DecompressionBombError。
 Image.MAX_IMAGE_PIXELS = None
@@ -149,13 +151,35 @@ class BaseImageCache(CacheComponent):
     Subclasses only implement `_load_image_bytes`.
     """
 
-    def __init__(self, cache_size: int = 128, ttl: int = 600) -> None:
+    _CACHE_BUDGET_PERCENT = {
+        "bytes": 30,
+        "pil": 40,
+        "clip": 20,
+        "mask": 10,
+    }
+
+    def __init__(self,
+                 cache_size: int = 128,
+                 ttl: int = 600,
+                 max_memory_mb: Optional[int] = None) -> None:
         self.cache_size = cache_size
         self.ttl = ttl
+        if max_memory_mb is None:
+            self.max_memory_bytes = memory_budget_bytes(
+                "CACHE_IMAGE_INSTANCE_MAX_MB", 128)
+        else:
+            self.max_memory_bytes = max(int(max_memory_mb), 1) * 1024 * 1024
         self._cache_image_byte = self._build_image_byte_cache()
         self._mask_cache_image_byte = self._build_mask_image_cache()
         self._cache_image_pil = self._build_pil_cache()
         self._cache_image_clip = self._build_clip_cache()
+
+    def _new_cache(self, kind: str) -> MemoryBoundedTTLCache:
+        percent = self._CACHE_BUDGET_PERCENT[kind]
+        max_bytes = max(self.max_memory_bytes * percent // 100, 1)
+        return MemoryBoundedTTLCache(max_bytes=max_bytes,
+                                     max_entries=self.cache_size,
+                                     ttl=self.ttl)
 
     @abstractmethod
     def _load_image_bytes(self, path: str) -> Optional[bytes]:
@@ -194,8 +218,34 @@ class BaseImageCache(CacheComponent):
         self._cache_image_pil.cache_clear()
         self._cache_image_clip.cache_clear()
 
+    def shutdown(self) -> None:
+        self.clear_cache()
+
+    def cache_stats(self) -> dict:
+        layers = {
+            "bytes": self._cache_image_byte.cache,
+            "pil": self._cache_image_pil.cache,
+            "clip": self._cache_image_clip.cache,
+            "mask": self._mask_cache_image_byte.cache,
+        }
+        detail = {
+            name: {
+                "entries": len(cache),
+                "bytes": cache.currsize,
+                "maxBytes": cache.maxsize,
+                "maxEntries": cache.max_entries,
+            }
+            for name, cache in layers.items()
+        }
+        return {
+            "entries": sum(item["entries"] for item in detail.values()),
+            "bytes": sum(item["bytes"] for item in detail.values()),
+            "maxBytes": sum(item["maxBytes"] for item in detail.values()),
+            "layers": detail,
+        }
+
     def _build_image_byte_cache(self):
-        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
+        @singleflight_cached(self._new_cache("bytes"))
         def _load_image_byte(path: str) -> Optional[bytes]:
             start = time.perf_counter()
             data = self._load_image_bytes(path)
@@ -208,16 +258,25 @@ class BaseImageCache(CacheComponent):
             normalized_path = str(Path(path).resolve())
             return _load_image_byte(normalized_path)
 
+        # Keep the cachetools management API on the normalizing wrapper.  The
+        # previous wrapper dropped ``cache_clear``, making provider shutdown
+        # and the AREA cache-clear endpoint fail with AttributeError.
+        _load_image_byte_wrapper.cache = _load_image_byte.cache
+        _load_image_byte_wrapper.cache_clear = _load_image_byte.cache_clear
+        _load_image_byte_wrapper.cache_info = _load_image_byte.cache_info
+        _load_image_byte_wrapper.cache_lock = _load_image_byte.cache_lock
+
         return _load_image_byte_wrapper
 
     def _build_pil_cache(self):
-        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
+        @singleflight_cached(self._new_cache("pil"))
         def _load_image_pil(path: str) -> Optional[Image.Image]:
             image_byte = self._cache_image_byte(path)
             if image_byte is None:
                 return None
             start = time.perf_counter()
-            pil_img = Image.open(io.BytesIO(image_byte)).convert("L")
+            with Image.open(io.BytesIO(image_byte)) as source_image:
+                pil_img = source_image.convert("L")
             elapsed = time.perf_counter() - start
             logging.info("cache miss image pil %s took %.2fs", path, elapsed)
             return pil_img
@@ -225,7 +284,7 @@ class BaseImageCache(CacheComponent):
         return _load_image_pil
 
     def _build_clip_cache(self):
-        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
+        @singleflight_cached(self._new_cache("clip"))
         def _load_image_clip(path: str, count: int) -> Optional[dict]:
             start = time.perf_counter()
             image_bytes = self._cache_image_byte(path)
@@ -239,10 +298,16 @@ class BaseImageCache(CacheComponent):
             h, w = image.shape[:2]
             w_width = w // count
             h_height = h // count
+            if w_width <= 0 or h_height <= 0:
+                return None
             re_dict = defaultdict(dict)
             for row in range(count):
                 for col in range(count):
-                    tile = image[col * h_height:(col + 1) * h_height, row * w_width:(row + 1) * w_width]
+                    x1 = col * w_width
+                    y1 = row * h_height
+                    x2 = w if col == count - 1 else x1 + w_width
+                    y2 = h if row == count - 1 else y1 + h_height
+                    tile = image[y1:y2, x1:x2]
                     ok, buf = cv2.imencode(".jpg", tile)
                     if not ok:
                         logging.error("cv2 imencode failed for %s row=%s col=%s", path, row, col)
@@ -255,7 +320,7 @@ class BaseImageCache(CacheComponent):
         return _load_image_clip
 
     def _build_mask_image_cache(self):
-        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
+        @singleflight_cached(self._new_cache("mask"))
         def _load_mask_image_byte(path: str, mask_path: str) -> Optional[bytes]:
             start = time.perf_counter()
             base_image_bytes = self._cache_image_byte(path)
@@ -265,16 +330,19 @@ class BaseImageCache(CacheComponent):
             if mask_image_bytes is None:
                 return None
 
-            image = Image.open(io.BytesIO(base_image_bytes))
-            mask_image = Image.open(io.BytesIO(mask_image_bytes))
+            with Image.open(io.BytesIO(base_image_bytes)) as source_image:
+                with Image.open(io.BytesIO(mask_image_bytes)) as mask_image:
+                    image = source_image.convert("RGBA")
+                    alpha = Image.new("L", image.size, 255)
+                    try:
+                        alpha.paste(mask_image, (0, 0))
+                        image.putalpha(alpha)
 
-            image = image.convert("RGBA")
-            alpha = Image.new("L", image.size, 255)
-            alpha.paste(mask_image, (0, 0))
-            image.putalpha(alpha)
-
-            png_byte_arr = io.BytesIO()
-            image.save(png_byte_arr, format="PNG")
+                        png_byte_arr = io.BytesIO()
+                        image.save(png_byte_arr, format="PNG")
+                    finally:
+                        alpha.close()
+                        image.close()
             png_byte_arr.seek(0)
             elapsed = time.perf_counter() - start
             logging.info("cache miss mask image %s + %s took %.2fs", path, mask_path, elapsed)

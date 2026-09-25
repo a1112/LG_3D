@@ -2,13 +2,20 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 Item {
+    id: root
+
+    required property var controller
+    required property var chartController
+    required property var style
+
     width: row.width
     height: 25
 
     Pane{
         anchors.fill: parent
         Material.elevation: 5
-        Material.background: hh.hovered ? coreStyle.buttonHoverColor : coreStyle.panelElevatedColor
+        Material.background: hh.hovered ? root.style.buttonHoverColor
+                                        : root.style.panelElevatedColor
     }
     Frame{
     anchors.fill: parent
@@ -24,34 +31,36 @@ Item {
         id:row
         spacing: 2
         ItemDelegate{
-            text: ["网格 ▼","高低 ▼"][dataShowCore.chartShowType]
+            text: root.controller.chartShowType === 1
+                  ? qsTr("高低 ▼") : qsTr("网格 ▼")
             font.family: "Material Icons"
             height: 25
             onClicked:{
                 menu_type.popup()
             }
             Rectangle{
-                border.color: coreStyle.headerBorderColor
+                border.color: root.style.headerBorderColor
                 border.width: 1
-                color: parent.hovered ? coreStyle.buttonHoverColor : coreStyle.panelElevatedColor
+                color: parent.hovered ? root.style.buttonHoverColor
+                                      : root.style.panelElevatedColor
                 anchors.fill: parent
             }
         }
 
         ItemDelegate{
             height: 25
-            text: "网格: "+(coreCharts.tickSizeZ).toFixed(1)+ " mm"
+            text: qsTr("网格: %1 mm").arg(root.chartController.tickSizeZ.toFixed(1))
         }
 
         ItemDelegate{
             height: 25
-            text: "偏移: "+(coreCharts.offsetZ).toFixed(1)+ " mm"
+            text: qsTr("偏移: %1 mm").arg(root.chartController.offsetZ.toFixed(1))
         }
         ItemDelegate{
             height: 25
-            text: "重置"
+            text: qsTr("重置")
             onClicked: {
-                coreCharts.reset()
+                root.chartController.reset()
             }
         }
     }
@@ -59,16 +68,16 @@ Item {
         id:menu_type
         MenuItem{
             text: "网格类型"
-            font.bold: dataShowCore.chartShowType == 0
+            font.bold: root.controller.chartShowType === 0
             onClicked:{
-                dataShowCore.chartShowType = 0
+                root.controller.chartShowType = 0
             }
         }
         MenuItem{
             text: "高低值"
-            font.bold: dataShowCore.chartShowType ==1
+            font.bold: root.controller.chartShowType === 1
             onClicked:{
-                dataShowCore.chartShowType = 1
+                root.controller.chartShowType = 1
             }
         }
 

@@ -238,15 +238,15 @@ export default function SystemDiagnosticsPage() {
     queryKey: ['runtime', 'reDetectionStatus', 'system'],
     queryFn: runtimeApi.getReDetectionStatus,
     enabled: !reDetectionWsReady,
-    retry: 1,
-    refetchInterval: reDetectionWsReady ? false : 1000,
+    retry: false,
+    refetchInterval: reDetectionWsReady ? false : 5000,
   })
   const serverStateQuery = useQuery({
     queryKey: ['runtime', 'serverState', 'system'],
     queryFn: runtimeApi.getServerState,
     enabled: !serverStateWsReady,
-    retry: 1,
-    refetchInterval: serverStateWsReady ? false : 1000,
+    retry: false,
+    refetchInterval: serverStateWsReady ? false : 5000,
   })
   const testModeQuery = useQuery({
     queryKey: ['settings', 'testModeStatus'],
@@ -257,68 +257,98 @@ export default function SystemDiagnosticsPage() {
 
   useEffect(() => {
     let closed = false
-    const socket = new WebSocket(resolveServerStateWsUrl(serviceBaseUrls.apiWsBaseUrl, buildServerStateWsPath()))
-    setServerStateWsReady(false)
+    let activeSocket: WebSocket | null = null
+    let reconnectTimer: number | undefined
+    let reconnectDelayMs = 1000
 
-    socket.onopen = () => {
-      if (!closed) setServerStateWsReady(true)
+    const connect = () => {
+      if (closed) return
+      let reconnectScheduled = false
+      const socket = new WebSocket(resolveServerStateWsUrl(serviceBaseUrls.apiWsBaseUrl, buildServerStateWsPath()))
+      activeSocket = socket
+      setServerStateWsReady(false)
+
+      const scheduleReconnect = () => {
+        if (closed || reconnectScheduled) return
+        reconnectScheduled = true
+        setServerStateWsReady(false)
+        if (socket.readyState < WebSocket.CLOSING) socket.close()
+        const delayMs = reconnectDelayMs
+        reconnectDelayMs = Math.min(30_000, reconnectDelayMs * 2)
+        reconnectTimer = window.setTimeout(connect, delayMs)
+      }
+
+      socket.onopen = () => {
+        if (!closed) {
+          reconnectDelayMs = 1000
+          setServerStateWsReady(true)
+        }
+      }
+      socket.onmessage = (event) => {
+        if (!closed) setServerStateWsData(parseServerStateWebSocketMessage(String(event.data)))
+      }
+      socket.onerror = scheduleReconnect
+      socket.onclose = scheduleReconnect
     }
-    socket.onmessage = (event) => {
-      if (!closed) setServerStateWsData(parseServerStateWebSocketMessage(String(event.data)))
-    }
-    socket.onerror = () => {
-      if (!closed) setServerStateWsReady(false)
-    }
-    socket.onclose = () => {
-      if (!closed) setServerStateWsReady(false)
-    }
+    connect()
 
     return () => {
       closed = true
       setServerStateWsReady(false)
-      socket.close()
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer)
+      activeSocket?.close()
     }
   }, [])
 
   useEffect(() => {
     let closed = false
-    const socket = new WebSocket(resolveReDetectionWsUrl(serviceBaseUrls.apiWsBaseUrl, buildReDetectionWsPath()))
-    reDetectionSocketRef.current = socket
+    let reconnectTimer: number | undefined
+    let reconnectDelayMs = 1000
     setReDetectionWsReady(false)
     setReDetectionWsStatus(null)
 
-    socket.onopen = () => {
-      if (!closed) {
-        setReDetectionWsReady(true)
-        setReDetectionWsStatus({})
-      }
-    }
-    socket.onmessage = (event) => {
-      if (!closed) setReDetectionWsStatus(parseReDetectionWebSocketMessage(String(event.data)))
-    }
-    socket.onerror = () => {
-      if (!closed) {
+    const connect = () => {
+      if (closed) return
+      let reconnectScheduled = false
+      const socket = new WebSocket(resolveReDetectionWsUrl(serviceBaseUrls.apiWsBaseUrl, buildReDetectionWsPath()))
+      reDetectionSocketRef.current = socket
+
+      const scheduleReconnect = () => {
+        if (closed || reconnectScheduled) return
+        reconnectScheduled = true
         setReDetectionWsReady(false)
         setReDetectionWsStatus({ error: '连接断开!' })
+        if (socket.readyState < WebSocket.CLOSING) socket.close()
+        if (reDetectionSocketRef.current === socket) {
+          reDetectionSocketRef.current = null
+        }
+        const delayMs = reconnectDelayMs
+        reconnectDelayMs = Math.min(30_000, reconnectDelayMs * 2)
+        reconnectTimer = window.setTimeout(connect, delayMs)
       }
+
+      socket.onopen = () => {
+        if (!closed) {
+          reconnectDelayMs = 1000
+          setReDetectionWsReady(true)
+          setReDetectionWsStatus({})
+        }
+      }
+      socket.onmessage = (event) => {
+        if (!closed) setReDetectionWsStatus(parseReDetectionWebSocketMessage(String(event.data)))
+      }
+      socket.onerror = scheduleReconnect
+      socket.onclose = scheduleReconnect
     }
-    socket.onclose = () => {
-      if (!closed) {
-        setReDetectionWsReady(false)
-        setReDetectionWsStatus({ error: '连接断开!' })
-      }
-      if (reDetectionSocketRef.current === socket) {
-        reDetectionSocketRef.current = null
-      }
-    }
+    connect()
 
     return () => {
       closed = true
       setReDetectionWsReady(false)
-      if (reDetectionSocketRef.current === socket) {
-        reDetectionSocketRef.current = null
-      }
-      socket.close()
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer)
+      const activeSocket = reDetectionSocketRef.current
+      reDetectionSocketRef.current = null
+      activeSocket?.close()
     }
   }, [reDetectionReconnectSerial])
 

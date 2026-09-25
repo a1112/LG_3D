@@ -7,14 +7,12 @@ import numpy as np
 import pytest
 from PIL import Image
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "app" / "algorithm_runtime"))
 
 from SplicingService.capture_paths import (  # noqa: E402
-    capture_complete,
-    resolve_capture_dir,
-    sorted_indexed_files,
+    LINE_SCAN_TWO_D_DIR_NAMES, TWO_D_DIR_NAMES, capture_complete,
+    resolve_capture_dir, sorted_indexed_files,
 )
 
 
@@ -39,6 +37,34 @@ def test_capture_complete_accepts_old_jpg_files_in_lowercase_2d_dir(tmp_path):
     assert capture_complete(source, "193113", quiet_seconds=3.2) is True
 
 
+def test_capture_complete_accepts_area_capture_dir(tmp_path):
+    source = tmp_path / "Cap_S_U"
+    image_dir = source / "193113" / "area"
+    image_dir.mkdir(parents=True)
+    old_time = time.time() - 10
+    for index in range(4):
+        image_path = image_dir / f"{index}.jpg"
+        image_path.write_bytes(b"fake")
+        os.utime(image_path, (old_time, old_time))
+
+    assert resolve_capture_dir(source, "193113", TWO_D_DIR_NAMES) == image_dir
+    assert capture_complete(source, "193113", quiet_seconds=3.2) is True
+    assert capture_complete(source,
+                            "193113",
+                            quiet_seconds=3.2,
+                            dir_names=LINE_SCAN_TWO_D_DIR_NAMES) is False
+
+
+def test_resolve_capture_dir_prefers_raw_2d_over_area(tmp_path):
+    source = tmp_path / "Cap_S_U"
+    area_dir = source / "193113" / "area"
+    raw_dir = source / "193113" / "2d"
+    area_dir.mkdir(parents=True)
+    raw_dir.mkdir(parents=True)
+
+    assert resolve_capture_dir(source, "193113", TWO_D_DIR_NAMES) == raw_dir
+
+
 def test_capture_complete_rejects_recent_files(tmp_path):
     source = tmp_path / "Cap_S_U"
     image_dir = source / "193113" / "2d"
@@ -53,7 +79,10 @@ def test_sorted_indexed_files_orders_numeric_stems(tmp_path):
     for name in ("10.jpg", "2.jpg", "1.bmp"):
         (tmp_path / name).write_bytes(b"fake")
 
-    assert [path.name for path in sorted_indexed_files(tmp_path, ("*.jpg", "*.bmp"))] == [
+    assert [
+        path.name
+        for path in sorted_indexed_files(tmp_path, ("*.jpg", "*.bmp"))
+    ] == [
         "1.bmp",
         "2.jpg",
         "10.jpg",
@@ -75,15 +104,20 @@ def test_local_from_dataset_has_expected_camera_layout():
         "Cap_S_U",
     }
 
-    assert {path.name for path in dataset.iterdir() if path.is_dir()} == expected_cameras
+    assert {path.name
+            for path in dataset.iterdir() if path.is_dir()} == expected_cameras
     for camera in expected_cameras:
         coil_dir = dataset / camera / "193113"
         assert (coil_dir / "json").exists()
-        assert resolve_capture_dir(dataset / camera, "193113", ("2D", "2d")).name == "2d"
-        assert resolve_capture_dir(dataset / camera, "193113", ("3D", "3d")).name == "3d"
-        assert len(sorted_indexed_files(coil_dir / "json", ("*.json",))) == 11
-        assert len(sorted_indexed_files(coil_dir / "2d", ("*.jpg", "*.bmp"))) == 11
-        assert len(sorted_indexed_files(coil_dir / "3d", ("*.npz", "*.npy"))) == 11
+        assert resolve_capture_dir(dataset / camera, "193113",
+                                   ("2D", "2d")).name == "2d"
+        assert resolve_capture_dir(dataset / camera, "193113",
+                                   ("3D", "3d")).name == "3d"
+        assert len(sorted_indexed_files(coil_dir / "json", ("*.json", ))) == 11
+        assert len(sorted_indexed_files(coil_dir / "2d",
+                                        ("*.jpg", "*.bmp"))) == 11
+        assert len(sorted_indexed_files(coil_dir / "3d",
+                                        ("*.npz", "*.npy"))) == 11
 
 
 @pytest.mark.skipif(
@@ -92,9 +126,11 @@ def test_local_from_dataset_has_expected_camera_layout():
 )
 def test_local_from_dataset_sample_files_are_readable():
     dataset = PROJECT_ROOT / "TestData" / "from"
-    for camera_dir in sorted(path for path in dataset.iterdir() if path.is_dir()):
+    for camera_dir in sorted(path for path in dataset.iterdir()
+                             if path.is_dir()):
         coil_dir = camera_dir / "193113"
-        image_path = sorted_indexed_files(coil_dir / "2d", ("*.jpg", "*.bmp"))[0]
+        image_path = sorted_indexed_files(coil_dir / "2d",
+                                          ("*.jpg", "*.bmp"))[0]
         npz_path = sorted_indexed_files(coil_dir / "3d", ("*.npz", "*.npy"))[0]
 
         with Image.open(image_path) as image:

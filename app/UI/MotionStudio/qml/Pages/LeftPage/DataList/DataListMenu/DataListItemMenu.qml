@@ -1,14 +1,30 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Material
 import "../../../../Model"
 import "../../../../Controls/Menu"
 Menu{
-    id:lefeListMemu
+    id: root
+    required property var apiClient
+    required property var modelStore
+    required property var clipboardService
+    required property var toolService
+    required property var popupManager
     property CoilModel coilModel
+
+    function copyText(value) {
+        root.clipboardService.setText(value === undefined || value === null
+                                      ? "" : String(value))
+    }
+
+    function selectedCoilId() {
+        return root.coilModel ? root.coilModel.coilId : 0
+    }
+
     MenuItem{
         text: "复制卷号"
         onClicked:{
-            cpp.clipboard.setText(coilModel.coilNo)
+            root.copyText(root.coilModel ? root.coilModel.coilNo : "")
         }
     }
 
@@ -20,14 +36,14 @@ Menu{
         MenuItem{
             text: "打开 S端 保存位置"
             onClicked: {
-                coreModel.surfaceS.openSaveFolderById(coilModel.coilId)
+                root.modelStore.surfaceS.openSaveFolderById(root.selectedCoilId())
             }
 
         }
         MenuItem{
             text: "打开 L端 保存位置"
             onClicked: {
-                coreModel.surfaceL.openSaveFolderById(coilModel.coilId)
+                root.modelStore.surfaceL.openSaveFolderById(root.selectedCoilId())
             }
         }
         MenuSeparator{}
@@ -36,13 +52,15 @@ Menu{
             MenuItem{
                 text: qsTr("S端")
                 onClicked: {
-                     cpp.clipboard.setText(tool.url_to_str(coreModel.surfaceS.getBaseUrl(coilModel.coilId)+""))
+                    root.copyText(root.toolService.url_to_str(
+                                      root.modelStore.surfaceS.getBaseUrl(root.selectedCoilId()) + ""))
                 }
             }
             MenuItem{
                 text: qsTr("L端")
                 onClicked: {
-                    cpp.clipboard.setText(tool.url_to_str(coreModel.surfaceL.getBaseUrl(coilModel.coilId)+""))
+                    root.copyText(root.toolService.url_to_str(
+                                      root.modelStore.surfaceL.getBaseUrl(root.selectedCoilId()) + ""))
                 }
             }
         }
@@ -54,40 +72,25 @@ Menu{
         MenuItem{
             text: "卷号"
             onClicked:{
-                cpp.clipboard.setText(coilModel.coilNo)
+                root.copyText(root.coilModel ? root.coilModel.coilNo : "")
         }
         }
 
         MenuItem{
             text: "流水号"
             onClicked:{
-                cpp.clipboard.setText(coilModel.coilId)
+                root.copyText(root.selectedCoilId())
             }
         }
 
         MenuItem{
             text: "时间"
             onClicked:{
-                cpp.clipboard.setText(coilModel.coilCreateTime.str)
+                root.copyText(root.coilModel && root.coilModel.coilCreateTime
+                              ? root.coilModel.coilCreateTime.str : "")
             }
 
         }
-
-
-        // MenuItem{
-        //     text: "打开 S端 保存位置"
-        //     onClicked: {
-        //         Qt.openUrlExternally(coreModel.surfaceS.getBaseUrl(Id))
-        //     }
-
-        // }
-        // MenuItem{
-        //     text: "打开 L端 保存位置"
-        //     onClicked: {
-        //         Qt.openUrlExternally(coreModel.surfaceL.getBaseUrl(Id))
-        //     }
-        // }
-
     }
 
     Menu{
@@ -97,18 +100,21 @@ Menu{
 
                 text: qsTr("返修")
                 selectdColor:Material.color(Material.Red)
-                selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 2
+                selectd:root.coilModel && root.coilModel.coilCheck
+                         && root.coilModel.coilCheck.status === 2
 
         }
         SelectMenuItem{
                 text: qsTr("未确认")
                 selectdColor:Material.color(Material.Yellow)
-                selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 0
+                selectd:root.coilModel && root.coilModel.coilCheck
+                         && root.coilModel.coilCheck.status === 0
         }
         SelectMenuItem{
                     text: qsTr("通过")
                     selectdColor:Material.color(Material.Green)
-                    selectd:coilModel && coilModel.coilCheck && coilModel.coilCheck.status == 1
+                selectd:root.coilModel && root.coilModel.coilCheck
+                         && root.coilModel.coilCheck.status === 1
         }
     }
 
@@ -119,42 +125,46 @@ Menu{
                 MenuItem{
                     text: qsTr("S端")
                     onClicked:{
-                        api.clipMaxImage(coilModel.coilId,coreModel.surfaceS.key)
-                        coreModel.surfaceS.openSaveFolderById(coilModel.coilId)
+                        root.apiClient.clipMaxImage(root.selectedCoilId(),
+                                                    root.modelStore.surfaceS.key)
+                        root.modelStore.surfaceS.openSaveFolderById(root.selectedCoilId())
                     }
                 }
                 MenuItem{
                     text: qsTr("L端")
                     onClicked:{
-                     api.clipMaxImage(coilModel.coilId,coreModel.surfaceL.key)
-                        coreModel.surfaceL.openSaveFolderById(coilModel.coilId)
+                        root.apiClient.clipMaxImage(root.selectedCoilId(),
+                                                    root.modelStore.surfaceL.key)
+                        root.modelStore.surfaceL.openSaveFolderById(root.selectedCoilId())
                     }
                 }
         }
         MenuItem{
             text: qsTr("重新拼接AREA图像")
             onClicked: {
-                api.rejoinArea(coilModel.coilId)
+                root.apiClient.rejoinArea(root.selectedCoilId())
             }
         }
         MenuItem{
             text: "重新检测该卷"
             onClicked: {
                 // 打开重新识别窗口，仅针对当前卷
-                popManage.popupReDetectionView(coilModel.coilId, coilModel.coilId)
+                const coilId = root.selectedCoilId()
+                root.popupManager.popupReDetectionView(coilId, coilId)
             }
         }
         MenuItem{
             text: "全部重新识别"
             onClicked: {
                 // 打开重新识别窗口，对当前列表所有卷
-                popManage.popupReDetectionView()
+                root.popupManager.popupReDetectionView()
             }
         }
         MenuItem{
             text: "查看原始返回数据"
             onClicked:{
-                Qt.openUrlExternally(api.getSearchByCoilIdUrl(coilModel.coilId))
+                Qt.openUrlExternally(
+                            root.apiClient.getSearchByCoilIdUrl(root.selectedCoilId()))
             }
         }
     }

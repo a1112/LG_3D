@@ -3,6 +3,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item{
+    id: root
+
+    required property var defect
+    required property var defectClassController
+
     Layout.fillWidth: true
     height: col.height
 
@@ -13,30 +18,17 @@ Item{
         RowLayout{
             Layout.alignment:Qt.AlignHCenter
 
-            CheckButtonOk{
-                visible:hovrHanller.hovered
-            }
             Label{
                 text:"2D "
                 font.pointSize: 15
                 color: "blue"
-                visible: defect.isArea
+                visible: root.defect.isArea
             }
             Label{
-                text:defect.defect_name
+                text: root.defect.defect_name
                 font.pointSize: 20
-                MouseArea{
-                    anchors.fill:parent
-                    acceptedButtons:Qt.RightButton
-                    onClicked:{
-                        defectMenu.popup()
-                    }
-                }
             }
 
-            CheckButtonNo{
-                visible:hovrHanller.hovered
-            }
         }
         Item{
             Layout.fillWidth: true
@@ -58,30 +50,23 @@ Item{
                     msgModel.clear()
                     msgModel.append({
                                         key:"x",
-                                        value:defect.defect_x_mm
+                                        value: root.defect.defect_x_mm
                                     })
                     msgModel.append({
                                         key:"y",
-                                        value:defect.defect_y_mm
+                                        value: root.defect.defect_y_mm
                                     })
                     msgModel.append({
                                         key:"宽",
-                                        value:defect.defect_w_mm
+                                        value: root.defect.defect_w_mm
                                     })
                     msgModel.append({
                                         key:"高",
-                                        value:defect.defect_h_mm
+                                        value: root.defect.defect_h_mm
                                     })
                 }
             }
         }
-    }
-
-    HoverHandler{
-        id : hovrHanller
-    }
-    DefectSelectMenu{
-        id : defectMenu
     }
 
 }

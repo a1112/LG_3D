@@ -1,37 +1,41 @@
 import QtQuick
 
 Item {
+    id: root
+    required property var modelStore
+    required property var leftController
+    required property var toolService
 
-    property var listModel:coreModel.currentCoilListModel
+    property var listModel: root.modelStore.currentCoilListModel
     onListModelChanged:setCheckCoilCount()
-    property int listModelCount:coreModel.currentCoilListModel.count
+    property int listModelCount: root.modelStore.currentCoilListModel.count
     onListModelCountChanged:setCheckCoilCount()
 
 
     function setCheckCoilCount(){
-        leftCore.userErrCoilCount = 0
-        leftCore.userUnowCoilCount = 0
-        leftCore.userOkCoilCount = 0
+        root.leftController.userErrCoilCount = 0
+        root.leftController.userUnowCoilCount = 0
+        root.leftController.userOkCoilCount = 0
 
-        tool.for_list_model(listModel,
+        root.toolService.for_list_model(root.listModel,
                             (item)=>{
                                 let childrenCoilCheck = item["childrenCoilCheck"]
-                                if (childrenCoilCheck.count<1){
-                                    leftCore.userUnowCoilCount+=1
+                                if (!childrenCoilCheck || childrenCoilCheck.count < 1){
+                                    root.leftController.userUnowCoilCount += 1
+                                    return
                                 }
 
-                                tool.for_list_model(childrenCoilCheck,
+                                root.toolService.for_list_model(childrenCoilCheck,
                                                     (childrenCoilCheckItem)=>{
                                                         let status = childrenCoilCheckItem["status"]
                                                         if (status == 0){
-                                                            leftCore.userUnowCoilCount += 1
+                                                            root.leftController.userUnowCoilCount += 1
                                                         }
-                                                        if (status == 1){
-                                                            leftCore.userOkCoilCount +=1
-
+                                                        else if (status == 1){
+                                                            root.leftController.userOkCoilCount += 1
                                                         }
                                                         else{
-                                                            leftCore.userErrCoilCount+=1
+                                                            root.leftController.userErrCoilCount += 1
                                                         }
                                                     }
                                                     )

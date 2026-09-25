@@ -62,6 +62,72 @@ def test_db_pool_settings_are_environment_configurable(monkeypatch):
     }
 
 
+def test_database_driver_timeouts_are_finite_and_configurable(monkeypatch):
+    from CoilDataBase.db_settings import sqlalchemy_connect_args
+
+    monkeypatch.setenv("DB_CONNECT_TIMEOUT", "7")
+    monkeypatch.setenv("DB_OPERATION_TIMEOUT", "11")
+    monkeypatch.setenv("DB_LOCK_TIMEOUT", "3")
+
+    assert sqlalchemy_connect_args(
+        "postgresql+psycopg://user:secret@127.0.0.1/coil") == {
+            "connect_timeout": 7,
+            "options": "-c statement_timeout=11000 -c lock_timeout=3000",
+        }
+    assert sqlalchemy_connect_args(
+        "mysql+pymysql://user:secret@127.0.0.1/coil") == {
+            "connect_timeout": 7,
+            "read_timeout": 11,
+            "write_timeout": 11,
+        }
+    assert sqlalchemy_connect_args(
+        "mssql+pymssql://user:secret@127.0.0.1/coil") == {
+            "login_timeout": 7,
+            "timeout": 11,
+        }
+    assert sqlalchemy_connect_args("sqlite:///coil.db") == {"timeout": 3}
+
+
+def test_database_operation_timeout_can_be_disabled(monkeypatch):
+    from CoilDataBase.db_settings import sqlalchemy_connect_args
+
+    monkeypatch.setenv("DB_OPERATION_TIMEOUT", "0")
+    monkeypatch.setenv("DB_LOCK_TIMEOUT", "0")
+
+    assert sqlalchemy_connect_args(
+        "postgresql+psycopg://user:secret@127.0.0.1/coil") == {
+            "connect_timeout": 10,
+        }
+
+
+def test_database_timeout_url_covers_helper_created_engines(monkeypatch):
+    from CoilDataBase.db_settings import sqlalchemy_timeout_url
+
+    monkeypatch.setenv("DB_CONNECT_TIMEOUT", "7")
+    monkeypatch.setenv("DB_OPERATION_TIMEOUT", "11")
+    monkeypatch.setenv("DB_LOCK_TIMEOUT", "3")
+
+    parsed = sqlalchemy_timeout_url(
+        "postgresql+psycopg://user:secret@127.0.0.1/coil")
+
+    assert parsed.query["connect_timeout"] == "7"
+    assert parsed.query["options"] == (
+        "-c statement_timeout=11000 -c lock_timeout=3000")
+
+
+def test_explicit_database_url_timeout_is_not_overridden(monkeypatch):
+    from CoilDataBase.db_settings import (sqlalchemy_connect_args,
+                                          sqlalchemy_timeout_url)
+
+    monkeypatch.setenv("DB_CONNECT_TIMEOUT", "7")
+    url = (
+        "postgresql+psycopg://user:secret@127.0.0.1/coil"
+        "?connect_timeout=19")
+
+    assert "connect_timeout" not in sqlalchemy_connect_args(url)
+    assert sqlalchemy_timeout_url(url).query["connect_timeout"] == "19"
+
+
 def test_database_url_env_overrides_config_url(monkeypatch):
     from CoilDataBase.config import Config, get_url
 

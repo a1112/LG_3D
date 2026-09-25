@@ -2,21 +2,25 @@ import QtQuick
 import QtQuick.Controls.Material
 import "../../Pages/Header"
 CheckRec {
+    id: root
+
+    required property var controller
+
     width:30
     fillWidth:true
     property int currentShowModel: 0
 
-    checked:dataShowCore.topDataManage.currentShowModel==currentShowModel
+    checked: root.controller.topDataManage.currentShowModel === root.currentShowModel
 
     MouseArea{
         anchors.fill:parent
         onClicked:{
-            dataShowCore.topDataManage.currentShowModel = currentShowModel
+            root.controller.topDataManage.currentShowModel = root.currentShowModel
         }
     }
 
     property bool selected:checked
-    color:selected?Material.color(Material.Teal):coreStyle.labelsColor
+    color: selected ? Material.color(Material.Teal) : style.labelsColor
 
-    checkColor:selected?coreStyle.accentColor:coreStyle.headerBorderColor
+    checkColor: selected ? style.accentColor : style.headerBorderColor
 }

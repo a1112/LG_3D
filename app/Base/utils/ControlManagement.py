@@ -6,7 +6,7 @@ from Base.property.Types import DetectionTaperShapeType, LevelingType, Detection
 from Base.property.WorkerBase import WorkerThreadBase, WorkerProcessBase
 
 ThreadClass = WorkerThreadBase
-ProcessClass = WorkerThreadBase # WorkerProcessBase
+ProcessClass = WorkerThreadBase  # WorkerProcessBase
 
 
 class ControlManagement(ThreadClass):
@@ -17,16 +17,16 @@ class ControlManagement(ThreadClass):
         super().__init__()
         self.config = controlConfigProperty.config
         self.configFile = controlConfigFile
-        self.ImageSaverWorkNum = 2
+        self.ImageSaverWorkNum = 4
         self.minMaskDetectErrorSize = 2000  # mask 检测最小报警值
         self.median_filter_size = 5
         self.downsampleSize = 7  # 如果下采样 1，数据将会非常庞大
         self.BaseImageMosaic = ThreadClass
-        self.ImageSaverThreadType = "ThreadClass" # multiprocessing
+        self.ImageSaverThreadType = "ThreadClass"  # multiprocessing
         self.D3SaverWorkNum = 3
         self.D3SaverThreadType = "ThreadClass"  # multiprocessing
         self.D3SaverThreadMaxsize = 5
-        self.ImageSaverQueueSize = 5
+        self.ImageSaverQueueSize = 16
         self.BaseDataFolder = ProcessClass
         self.baseTimeFormat = "%Y-%m-%d %H:%M:%S"
         self.exportTimeFormat = self.baseTimeFormat
@@ -50,10 +50,10 @@ class ControlManagement(ThreadClass):
 
         self.get_file_type = GetFileTypeJpg
 
-        self.out_side_px = 0 #  拓展 像素
+        self.out_side_px = 0  #  拓展 像素
         self.loc_sleep_time = 5
         hostname = socket.gethostname()
-        if hostname=="DESKTOP-94ADH1G":
+        if hostname == "DESKTOP-94ADH1G":
             self.ImageSaverWorkNum = 1
             self.median_filter_size = 7
             self.D3SaverWorkNum = 1

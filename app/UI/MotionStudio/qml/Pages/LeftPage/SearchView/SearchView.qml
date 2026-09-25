@@ -8,15 +8,25 @@ import "../../../Comp/Card"
 import "../../../btns"
 CardBase{
     id:root
+
+    required property var adaptiveMetrics
+    required property var style
+    required property var leftController
+    required property var authManager
+    required property var modelStore
+
+    cardStyle: root.style
+    cardAuthManager: root.authManager
+
     title: qsTr("     查询      ")
     max_height: 95
     content_head_tool:
         ComboBox{
         implicitHeight: 30
         y:5
-        currentIndex: leftCore.searchPageIndex
+        currentIndex: root.leftController.searchPageIndex
         onCurrentIndexChanged: {
-            leftCore.searchPageIndex = currentIndex
+            root.leftController.searchPageIndex = currentIndex
         }
 
         model: ListModel{
@@ -31,21 +41,27 @@ CardBase{
         clip: true
         Layout.fillWidth: true
         Layout.fillHeight: true
-        currentIndex: leftCore.searchPageIndex
+        currentIndex: root.leftController.searchPageIndex
         width: root.width-5
         id:swipe
         onCurrentIndexChanged: {
-            leftCore.searchPageIndex = currentIndex
-            max_height = [95,130,95][currentIndex]
+            root.leftController.searchPageIndex = swipe.currentIndex
+            root.max_height = [95,130,95][swipe.currentIndex]
         }
 
         SearchByCoilNo {
             width: root.width
+            modelStore: root.modelStore
+            style: root.style
         }
         SearchByDataTime {
             id: secondPage
+            modelStore: root.modelStore
+            style: root.style
         }
         SearchByCoilId {
+            modelStore: root.modelStore
+            style: root.style
         }
     }
     Item{
@@ -62,7 +78,8 @@ CardBase{
                 tipText:qsTr("筛选")
                 width: parent.width
                 height: parent.height
-                source:coreStyle.isDark?coreStyle.getIcon("filter_light"):coreStyle.getIcon("filter")
+                source: root.style.isDark ? root.style.getIcon("filter_light")
+                                          : root.style.getIcon("filter")
                 onClicked: {
                     fliterView.open()
                     }
@@ -72,6 +89,8 @@ CardBase{
         FilterView{
             x: fliterBtn.x
             id:fliterView
+            adaptiveMetrics: root.adaptiveMetrics
+            style: root.style
         }
     }
 

@@ -1,14 +1,22 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../Base"
+import "../../Core/JsonUtils.js" as JsonUtils
+import "HardwareMonitorFormat.js" as Format
 
 PopupBase {
     id: root
 
-    width: adaptive.boundedWidth(1500, 1100, 1780)
-    height: adaptive.boundedHeight(880, 700, 1000)
+    required property var apiClient
+    required property var adaptiveMetrics
+    required property var style
+
+    width: adaptiveMetrics.boundedWidth(1500, 1100, 1780)
+    height: adaptiveMetrics.boundedHeight(880, 700, 1000)
     anchors.centerIn: parent
     modal: true
     focus: true
@@ -62,14 +70,6 @@ PopupBase {
         onTriggered: root.refresh()
     }
 
-    function safeParse(data) {
-        try {
-            return JSON.parse(data)
-        } catch (e) {
-            return null
-        }
-    }
-
     function numberValue(value) {
         let result = Number(value)
         return isFinite(result) ? result : 0
@@ -81,98 +81,6 @@ PopupBase {
         }
         let result = Number(value)
         return isFinite(result) ? result : null
-    }
-
-    function formatAge(value) {
-        if (value === undefined || value === null) {
-            return "-"
-        }
-        let age = Number(value)
-        return isFinite(age) ? age.toFixed(1) + " s" : "-"
-    }
-
-    function formatRate(value) {
-        let bytes = numberValue(value)
-        if (bytes >= 1073741824) {
-            return (bytes / 1073741824).toFixed(1) + " GB/s"
-        }
-        if (bytes >= 1048576) {
-            return (bytes / 1048576).toFixed(1) + " MB/s"
-        }
-        if (bytes >= 1024) {
-            return (bytes / 1024).toFixed(1) + " KB/s"
-        }
-        return bytes.toFixed(0) + " B/s"
-    }
-
-    function formatBytes(value) {
-        let bytes = numberValue(value)
-        if (bytes >= 1073741824) {
-            return (bytes / 1073741824).toFixed(1) + " GB"
-        }
-        if (bytes >= 1048576) {
-            return (bytes / 1048576).toFixed(0) + " MB"
-        }
-        if (bytes >= 1024) {
-            return (bytes / 1024).toFixed(0) + " KB"
-        }
-        return bytes.toFixed(0) + " B"
-    }
-
-    function formatDuration(value) {
-        let seconds = Math.max(numberValue(value), 0)
-        let days = Math.floor(seconds / 86400)
-        let hours = Math.floor((seconds % 86400) / 3600)
-        let minutes = Math.floor((seconds % 3600) / 60)
-        if (days > 0) {
-            return days + "天 " + hours + "小时"
-        }
-        if (hours > 0) {
-            return hours + "小时 " + minutes + "分"
-        }
-        return minutes + "分"
-    }
-
-    function formatTemperature(available, value, stale) {
-        if (!available || value === null || value === undefined) {
-            return "-- °C"
-        }
-        return Number(value).toFixed(1) + " °C" + (stale ? " 旧" : "")
-    }
-
-    function temperatureAvailabilityText(error) {
-        if (!error) {
-            return ""
-        }
-        if (error.indexOf("0x80000106") >= 0
-                || error.indexOf("0x80000100") >= 0) {
-            return "设备未提供可读温度节点"
-        }
-        return error
-    }
-
-    function networkControlReason(reason) {
-        if (reason === "loopback adapter cannot be controlled") {
-            return "回环网卡不可控制"
-        }
-        if (reason === "network adapter control is only supported on Windows") {
-            return "仅 Windows 支持网卡控制"
-        }
-        return reason
-    }
-
-    function temperatureColor(available, value, stale) {
-        if (!available || stale) {
-            return "#90A4AE"
-        }
-        let temperature = numberValue(value)
-        if (temperature >= 70) {
-            return "#EF5350"
-        }
-        if (temperature >= 55) {
-            return "#FFB74D"
-        }
-        return "#4CAF69"
     }
 
     function syncCameras(cameras) {
@@ -313,9 +221,9 @@ PopupBase {
         }
         root.loading = true
         root.statusText = "刷新中"
-        app.api.getHardwareMonitor(function(data) {
+        root.apiClient.getHardwareMonitor(function(data) {
             root.loading = false
-            let payload = root.safeParse(data)
+            let payload = JsonUtils.parse(data, null, "hardware monitor")
             if (!payload) {
                 root.statusText = "状态解析失败"
                 return
@@ -372,11 +280,11 @@ PopupBase {
             console.log("camera control failed", error)
         }
         if (action === "reconnect2d") {
-            app.api.reconnectCamera2D(item.cameraKey, success, failure)
+            root.apiClient.reconnectCamera2D(item.cameraKey, success, failure)
         } else if (action === "reconnect3d") {
-            app.api.reconnectCamera3D(item.cameraKey, success, failure)
+            root.apiClient.reconnectCamera3D(item.cameraKey, success, failure)
         } else if (action === "reset3d") {
-            app.api.resetCamera3D(item.cameraKey, success, failure)
+            root.apiClient.resetCamera3D(item.cameraKey, success, failure)
         }
     }
 
@@ -387,7 +295,8 @@ PopupBase {
         let item = networkModel.get(index)
         networkModel.setProperty(index, "busy", true)
         root.statusText = item.adapterName + " 控制中"
-        app.api.controlNetworkAdapter(item.adapterName, action, function(data) {
+        root.apiClient.controlNetworkAdapter(
+                    item.adapterName, action, function(data) {
             networkModel.setProperty(index, "busy", false)
             root.statusText = item.adapterName + " 控制命令已完成"
             root.refresh()
@@ -405,7 +314,7 @@ PopupBase {
         let item = serviceModel.get(index)
         serviceModel.setProperty(index, "busy", true)
         root.statusText = item.serviceName + " 重启中"
-        app.api.restartService(item.serviceKey, function(data) {
+        root.apiClient.restartService(item.serviceKey, function(data) {
             serviceModel.setProperty(index, "busy", false)
             root.statusText = item.serviceName + " 已提交重启"
             refreshDelayTimer.restart()
@@ -456,17 +365,17 @@ PopupBase {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: adaptive.mainSpacing
+        anchors.margins: root.adaptiveMetrics.mainSpacing
         spacing: 8
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: adaptive.mainSpacing
+            spacing: root.adaptiveMetrics.mainSpacing
 
             Label {
                 text: "设备与服务实时监控"
-                color: coreStyle.titleColor
-                font.pixelSize: adaptive.fontMetric(21, 18, 26)
+                color: root.style.titleColor
+                font.pixelSize: root.adaptiveMetrics.fontMetric(21, 18, 26)
                 font.bold: true
                 Layout.fillWidth: true
             }
@@ -492,34 +401,38 @@ PopupBase {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 46
-            color: coreStyle.panelAlternateColor
-            border.color: coreStyle.headerBorderColor
-            radius: coreStyle.controlRadius
+            color: root.style.panelAlternateColor
+            border.color: root.style.headerBorderColor
+            radius: root.style.controlRadius
 
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 9
                 spacing: 22
 
-                CompactSummary {
+                MonitorCompactSummary {
+                    style: root.style
                     label: "3D"
                     value: root.camera3DOnline + "/" + root.camera3DCount
                     healthy: root.camera3DOnline === root.camera3DCount
                 }
 
-                CompactSummary {
+                MonitorCompactSummary {
+                    style: root.style
                     label: "2D"
                     value: root.camera2DOnline + "/" + root.camera2DCount
                     healthy: root.camera2DOnline === root.camera2DCount
                 }
 
-                CompactSummary {
+                MonitorCompactSummary {
+                    style: root.style
                     label: "网卡"
                     value: root.networkOnline + "/" + root.networkCount
                     healthy: root.networkOnline === root.networkCount
                 }
 
-                CompactSummary {
+                MonitorCompactSummary {
+                    style: root.style
                     label: "服务"
                     value: root.serviceOnline + "/" + root.serviceCount
                     healthy: root.serviceOnline === root.serviceCount
@@ -530,7 +443,8 @@ PopupBase {
                           + (root.maxTemperatureAvailable
                              ? root.maxTemperature.toFixed(1) + " °C"
                              : "-- °C")
-                    color: root.temperatureColor(
+                    color: Format.temperatureColor(
+                               root.style,
                                root.maxTemperatureAvailable,
                                root.maxTemperature,
                                false)
@@ -539,7 +453,7 @@ PopupBase {
 
                 Label {
                     text: root.statusText
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     Layout.fillWidth: true
                     elide: Text.ElideRight
                 }
@@ -550,7 +464,7 @@ PopupBase {
                                 new Date(root.updatedAt * 1000),
                                 "yyyy-MM-dd hh:mm:ss")
                           : "-"
-                    color: coreStyle.labelColor
+                    color: root.style.secondaryTextColor
                     opacity: 0.72
                 }
             }
@@ -593,57 +507,63 @@ PopupBase {
                         Layout.fillWidth: true
                         spacing: 8
 
-                        KpiCard {
+                        MonitorKpiCard {
+                            style: root.style
                             title: "3D 相机"
                             value: root.camera3DOnline + " / "
                                    + root.camera3DCount
                             detail: "连接并采集中"
-                            accent: root.camera3DOnline
-                                    === root.camera3DCount
-                                    ? "#4CAF69" : "#FFB74D"
+                            accent: root.camera3DOnline === root.camera3DCount
+                                    ? root.style.statusSuccessColor
+                                    : root.style.statusWarningColor
                         }
 
-                        KpiCard {
+                        MonitorKpiCard {
+                            style: root.style
                             title: "2D 相机"
                             value: root.camera2DOnline + " / "
                                    + root.camera2DCount
                             detail: "连接 / 等待触发"
-                            accent: root.camera2DOnline
-                                    === root.camera2DCount
-                                    ? "#4CAF69" : "#FFB74D"
+                            accent: root.camera2DOnline === root.camera2DCount
+                                    ? root.style.statusSuccessColor
+                                    : root.style.statusWarningColor
                         }
 
-                        KpiCard {
+                        MonitorKpiCard {
+                            style: root.style
                             title: "设备温度"
                             value: root.maxTemperatureAvailable
                                    ? root.maxTemperature.toFixed(1) + " °C"
                                    : "-- °C"
                             detail: root.temperatureSensorCount
                                     + " 个温度传感器"
-                            accent: root.temperatureColor(
+                            accent: Format.temperatureColor(
+                                        root.style,
                                         root.maxTemperatureAvailable,
                                         root.maxTemperature,
                                         false)
                         }
 
-                        KpiCard {
+                        MonitorKpiCard {
+                            style: root.style
                             title: "网卡"
                             value: root.networkOnline + " / "
                                    + root.networkCount
                             detail: "在线适配器"
-                            accent: root.networkOnline
-                                    === root.networkCount
-                                    ? "#4CAF69" : "#FFB74D"
+                            accent: root.networkOnline === root.networkCount
+                                    ? root.style.statusSuccessColor
+                                    : root.style.statusWarningColor
                         }
 
-                        KpiCard {
+                        MonitorKpiCard {
+                            style: root.style
                             title: "服务"
                             value: root.serviceOnline + " / "
                                    + root.serviceCount
                             detail: "核心进程 / 端口"
-                            accent: root.serviceOnline
-                                    === root.serviceCount
-                                    ? "#4CAF69" : "#EF5350"
+                            accent: root.serviceOnline === root.serviceCount
+                                    ? root.style.statusSuccessColor
+                                    : root.style.statusErrorColor
                         }
                     }
 
@@ -655,6 +575,7 @@ PopupBase {
                         rowSpacing: 8
 
                         MonitorPanel {
+                            style: root.style
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             Layout.rowSpan: 2
@@ -670,95 +591,16 @@ PopupBase {
                                 model: cameraModel
                                 ScrollBar.vertical: ScrollBar {}
 
-                                delegate: Rectangle {
+                                delegate: MonitorOverviewCameraCard {
                                     width: GridView.view.cellWidth - 8
                                     height: GridView.view.cellHeight - 8
-                                    color: coreStyle.panelAlternateColor
-                                    border.color: model.healthy
-                                                  ? "#3F8F63" : "#A85A50"
-                                    radius: coreStyle.controlRadius
-
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 8
-                                        spacing: 3
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-
-                                            StatusDot {
-                                                active: model.healthy
-                                            }
-                                            Label {
-                                                text: model.cameraKey
-                                                      + "  "
-                                                      + model.cameraName
-                                                color: coreStyle.titleColor
-                                                font.bold: true
-                                                Layout.fillWidth: true
-                                                elide: Text.ElideRight
-                                            }
-                                            Label {
-                                                text: model.captureRunning
-                                                      ? "采集中" : "待采集"
-                                                color: model.captureRunning
-                                                       ? "#4CAF69"
-                                                       : "#90A4AE"
-                                            }
-                                        }
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            Label {
-                                                text: "3D "
-                                                      + (model.camera3DOk
-                                                         ? "正常" : "异常")
-                                                      + "  "
-                                                      + root.formatTemperature(
-                                                          model.temperature3DAvailable,
-                                                          model.temperature3D,
-                                                          model.temperature3DStale)
-                                                color: model.camera3DOk
-                                                       ? "#4CAF69"
-                                                       : "#FFB74D"
-                                                Layout.fillWidth: true
-                                            }
-                                            Label {
-                                                text: "2D "
-                                                      + (model.camera2DOk
-                                                         ? "正常" : "异常")
-                                                      + "  "
-                                                      + root.formatTemperature(
-                                                          model.temperature2DAvailable,
-                                                          model.temperature2D,
-                                                          model.temperature2DStale)
-                                                color: model.camera2DOk
-                                                       ? "#4CAF69"
-                                                       : "#FFB74D"
-                                                Layout.fillWidth: true
-                                            }
-                                        }
-
-                                        Label {
-                                            text: model.error3D
-                                                  || model.error2D
-                                                  || "运行正常"
-                                            color: model.error3D
-                                                   || model.error2D
-                                                   ? "#EF5350"
-                                                   : coreStyle.labelColor
-                                            opacity: model.error3D
-                                                     || model.error2D
-                                                     ? 1 : 0.62
-                                            Layout.fillWidth: true
-                                            elide: Text.ElideMiddle
-                                        }
-                                    }
+                                    style: root.style
                                 }
                             }
                         }
 
                         MonitorPanel {
+                            style: root.style
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             Layout.preferredWidth: 520
@@ -773,46 +615,16 @@ PopupBase {
                                 model: serviceModel
                                 ScrollBar.vertical: ScrollBar {}
 
-                                delegate: Rectangle {
+                                delegate: MonitorOverviewServiceRow {
                                     width: ListView.view.width
                                     height: 34
-                                    color: index % 2
-                                           ? coreStyle.panelAlternateColor
-                                           : "transparent"
-                                    radius: 3
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 7
-                                        anchors.rightMargin: 7
-
-                                        StatusDot { active: model.online }
-                                        Label {
-                                            text: model.serviceName
-                                            color: coreStyle.titleColor
-                                            font.bold: true
-                                            Layout.fillWidth: true
-                                            elide: Text.ElideRight
-                                        }
-                                        Label {
-                                            text: model.hasPort
-                                                  ? ":" + model.port : ""
-                                            color: coreStyle.labelColor
-                                            opacity: 0.65
-                                        }
-                                        Label {
-                                            text: model.online
-                                                  ? "运行中" : "未运行"
-                                            color: model.online
-                                                   ? "#4CAF69"
-                                                   : "#EF5350"
-                                        }
-                                    }
+                                    style: root.style
                                 }
                             }
                         }
 
                         MonitorPanel {
+                            style: root.style
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             panelTitle: "网卡运行"
@@ -826,50 +638,10 @@ PopupBase {
                                 model: networkModel
                                 ScrollBar.vertical: ScrollBar {}
 
-                                delegate: Rectangle {
+                                delegate: MonitorOverviewNetworkRow {
                                     width: ListView.view.width
                                     height: 42
-                                    color: index % 2
-                                           ? coreStyle.panelAlternateColor
-                                           : "transparent"
-                                    radius: 3
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 7
-                                        anchors.rightMargin: 7
-
-                                        StatusDot { active: model.isUp }
-                                        ColumnLayout {
-                                            spacing: 0
-                                            Layout.fillWidth: true
-                                            Label {
-                                                text: model.adapterName
-                                                color: coreStyle.titleColor
-                                                font.bold: true
-                                                Layout.fillWidth: true
-                                                elide: Text.ElideRight
-                                            }
-                                            Label {
-                                                text: (model.ipv4 || "-")
-                                                      + "  "
-                                                      + model.speedMbps
-                                                      + " Mbps"
-                                                color: coreStyle.labelColor
-                                                opacity: 0.62
-                                                font.pixelSize: 11
-                                            }
-                                        }
-                                        Label {
-                                            text: "↓"
-                                                  + root.formatRate(
-                                                      model.rxBytesPerSecond)
-                                                  + "  ↑"
-                                                  + root.formatRate(
-                                                      model.txBytesPerSecond)
-                                            color: coreStyle.labelColor
-                                        }
-                                    }
+                                    style: root.style
                                 }
                             }
                         }
@@ -879,6 +651,7 @@ PopupBase {
 
             Item {
                 MonitorPanel {
+                    style: root.style
                     anchors.fill: parent
                     panelTitle: "3D 相机"
                     panelCaption: "连接、采集、温度、帧状态及独立控制"
@@ -891,125 +664,15 @@ PopupBase {
                         model: cameraModel
                         ScrollBar.vertical: ScrollBar {}
 
-                        delegate: Rectangle {
-                            visible: model.cap3D
+                        delegate: MonitorCamera3DCard {
                             width: GridView.view.cellWidth - 10
                             height: GridView.view.cellHeight - 10
-                            color: coreStyle.panelAlternateColor
-                            border.color: model.camera3DOk
-                                          ? "#3F8F63" : "#A85A50"
-                            radius: coreStyle.controlRadius
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StatusDot {
-                                        active: model.camera3DOk
-                                    }
-                                    Label {
-                                        text: model.cameraKey + "  "
-                                              + model.cameraName
-                                        color: coreStyle.titleColor
-                                        font.bold: true
-                                        font.pixelSize: 15
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        text: model.camera3DAcquiring
-                                              ? "采集中"
-                                              : model.camera3DConnected
-                                                ? "已连接" : "离线"
-                                        color: model.camera3DOk
-                                               ? "#4CAF69"
-                                               : "#EF5350"
-                                        font.bold: true
-                                    }
-                                }
-
-                                Label {
-                                    text: "SN: " + (model.sn || "-")
-                                          + "    最近帧: "
-                                          + (model.hasFrame3D
-                                             ? root.formatAge(
-                                                   model.lastFrameAge3D)
-                                             : "-")
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
-                                    color: coreStyle.panelElevatedColor
-                                    radius: 4
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 8
-                                        Label {
-                                            text: "设备温度"
-                                            color: coreStyle.labelColor
-                                            Layout.fillWidth: true
-                                        }
-                                        Label {
-                                            text: root.formatTemperature(
-                                                      model.temperature3DAvailable,
-                                                      model.temperature3D,
-                                                      model.temperature3DStale)
-                                            color: root.temperatureColor(
-                                                       model.temperature3DAvailable,
-                                                       model.temperature3D,
-                                                       model.temperature3DStale)
-                                            font.pixelSize: 19
-                                            font.bold: true
-                                        }
-                                    }
-                                }
-
-                                Label {
-                                    text: "启动失败: "
-                                          + model.startFailures
-                                          + "    最后动作: "
-                                          + (model.last3DAction || "-")
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                }
-
-                                Label {
-                                    text: model.error3D
-                                          || model.temperature3DError
-                                          || "运行正常"
-                                    color: model.error3D
-                                           ? "#EF5350"
-                                           : coreStyle.labelColor
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideMiddle
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Item { Layout.fillWidth: true }
-                                    Button {
-                                        text: "重连 3D"
-                                        enabled: !model.busy
-                                        onClicked: root.runCameraAction(
-                                                       index, "reconnect3d")
-                                    }
-                                    Button {
-                                        text: "复位 3D"
-                                        enabled: !model.busy
-                                        onClicked:
-                                            root.confirmCameraReset(index)
-                                    }
-                                }
-                            }
+                            style: root.style
+                            onReconnectRequested:
+                                rowIndex => root.runCameraAction(
+                                    rowIndex, "reconnect3d")
+                            onResetRequested:
+                                rowIndex => root.confirmCameraReset(rowIndex)
                         }
                     }
                 }
@@ -1017,6 +680,7 @@ PopupBase {
 
             Item {
                 MonitorPanel {
+                    style: root.style
                     anchors.fill: parent
                     panelTitle: "2D 相机"
                     panelCaption: "连接、触发等待、温度、帧计数与采集参数"
@@ -1029,160 +693,13 @@ PopupBase {
                         model: cameraModel
                         ScrollBar.vertical: ScrollBar {}
 
-                        delegate: Rectangle {
-                            visible: model.cap2D
+                        delegate: MonitorCamera2DCard {
                             width: GridView.view.cellWidth - 10
                             height: GridView.view.cellHeight - 10
-                            color: coreStyle.panelAlternateColor
-                            border.color: model.camera2DOk
-                                          ? "#3F8F63" : "#A85A50"
-                            radius: coreStyle.controlRadius
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StatusDot {
-                                        active: model.camera2DOk
-                                    }
-                                    Label {
-                                        text: model.cameraKey + "  "
-                                              + model.cameraName
-                                        color: coreStyle.titleColor
-                                        font.bold: true
-                                        font.pixelSize: 15
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        text: model.camera2DConnected
-                                              ? (model.state2D
-                                                 === "waiting_trigger"
-                                                 ? "等待触发" : "采集中")
-                                              : "离线"
-                                        color: model.camera2DOk
-                                               ? "#4CAF69"
-                                               : "#EF5350"
-                                        font.bold: true
-                                    }
-                                }
-
-                                Label {
-                                    text: "最近帧: "
-                                          + (model.hasFrame2D
-                                             ? root.formatAge(
-                                                   model.lastFrameAge2D)
-                                             : "-")
-                                          + "    分辨率: "
-                                          + (model.width2D > 0
-                                             ? model.width2D + " × "
-                                               + model.height2D
-                                             : "-")
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 48
-                                    color: coreStyle.panelElevatedColor
-                                    radius: 4
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 8
-                                        Label {
-                                            text: "设备温度"
-                                            color: coreStyle.labelColor
-                                            Layout.fillWidth: true
-                                        }
-                                        Label {
-                                            text: root.formatTemperature(
-                                                      model.temperature2DAvailable,
-                                                      model.temperature2D,
-                                                      model.temperature2DStale)
-                                            color: root.temperatureColor(
-                                                       model.temperature2DAvailable,
-                                                       model.temperature2D,
-                                                       model.temperature2DStale)
-                                            font.pixelSize: 19
-                                            font.bold: true
-                                        }
-                                    }
-                                }
-
-                                GridLayout {
-                                    Layout.fillWidth: true
-                                    columns: 2
-                                    columnSpacing: 12
-                                    rowSpacing: 2
-
-                                    Label {
-                                        text: "帧号 "
-                                              + model.frameId2D
-                                        color: coreStyle.labelColor
-                                    }
-                                    Label {
-                                        text: "空帧 "
-                                              + model.emptyFrames2D
-                                        color: coreStyle.labelColor
-                                    }
-                                    Label {
-                                        text: "错误 "
-                                              + model.frameErrors2D
-                                              + " / 丢弃 "
-                                              + model.droppedFrames2D
-                                        color: coreStyle.labelColor
-                                    }
-                                    Label {
-                                        text: "队列 "
-                                              + model.queueSize2D
-                                              + " / 重连 "
-                                              + model.connectAttempts2D
-                                        color: coreStyle.labelColor
-                                    }
-                                    Label {
-                                        text: "曝光 "
-                                              + (model.exposureTime2D
-                                                 === null
-                                                 ? "-"
-                                                 : model.exposureTime2D)
-                                        color: coreStyle.labelColor
-                                    }
-                                    Label {
-                                        text: "增益 "
-                                              + (model.gain2D === null
-                                                 ? "-" : model.gain2D)
-                                        color: coreStyle.labelColor
-                                    }
-                                }
-
-                                Label {
-                                    text: model.error2D
-                                          || root.temperatureAvailabilityText(
-                                              model.temperature2DError)
-                                          || "运行正常"
-                                    color: model.error2D
-                                           ? "#EF5350"
-                                           : coreStyle.labelColor
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideMiddle
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Item { Layout.fillWidth: true }
-                                    Button {
-                                        text: "重连 2D"
-                                        enabled: !model.busy
-                                        onClicked: root.runCameraAction(
-                                                       index, "reconnect2d")
-                                    }
-                                }
-                            }
+                            style: root.style
+                            onReconnectRequested:
+                                rowIndex => root.runCameraAction(
+                                    rowIndex, "reconnect2d")
                         }
                     }
                 }
@@ -1190,6 +707,7 @@ PopupBase {
 
             Item {
                 MonitorPanel {
+                    style: root.style
                     anchors.fill: parent
                     panelTitle: "网卡"
                     panelCaption: "链路、地址、实时吞吐、错误 / 丢包与控制"
@@ -1202,108 +720,13 @@ PopupBase {
                         model: networkModel
                         ScrollBar.vertical: ScrollBar {}
 
-                        delegate: Rectangle {
+                        delegate: MonitorNetworkCard {
                             width: GridView.view.cellWidth - 10
                             height: GridView.view.cellHeight - 10
-                            color: coreStyle.panelAlternateColor
-                            border.color: model.isUp
-                                          ? "#3F8F63" : "#6B7785"
-                            radius: coreStyle.controlRadius
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StatusDot { active: model.isUp }
-                                    Label {
-                                        text: model.adapterName
-                                        color: coreStyle.titleColor
-                                        font.bold: true
-                                        font.pixelSize: 15
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        text: model.isUp ? "在线" : "离线"
-                                        color: model.isUp
-                                               ? "#4CAF69" : "#90A4AE"
-                                        font.bold: true
-                                    }
-                                }
-
-                                Label {
-                                    text: "IPv4: " + (model.ipv4 || "-")
-                                    color: coreStyle.labelColor
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideMiddle
-                                }
-                                Label {
-                                    text: "MAC: " + (model.mac || "-")
-                                          + "    链路: "
-                                          + (model.speedMbps > 0
-                                             ? model.speedMbps
-                                               + " Mbps" : "-")
-                                          + "    MTU: " + model.mtu
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                }
-                                Label {
-                                    text: "↓ "
-                                          + root.formatRate(
-                                              model.rxBytesPerSecond)
-                                          + "    ↑ "
-                                          + root.formatRate(
-                                              model.txBytesPerSecond)
-                                          + "    错误 " + model.errors
-                                          + " / 丢包 " + model.drops
-                                    color: coreStyle.labelColor
-                                }
-                                Label {
-                                    text: "累计接收 "
-                                          + root.formatBytes(
-                                              model.bytesReceived)
-                                          + " / 发送 "
-                                          + root.formatBytes(
-                                              model.bytesSent)
-                                    color: coreStyle.labelColor
-                                    opacity: 0.62
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Label {
-                                        text: model.canControl
-                                              ? ""
-                                              : root.networkControlReason(
-                                                  model.controlReason)
-                                        color: "#FFB74D"
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Button {
-                                        text: model.isUp ? "禁用" : "启用"
-                                        enabled: model.canControl
-                                                 && !model.busy
-                                        onClicked:
-                                            root.confirmNetworkAction(
-                                                index,
-                                                model.isUp
-                                                ? "disable" : "enable")
-                                    }
-                                    Button {
-                                        text: "重启"
-                                        visible: model.isUp
-                                        enabled: model.canControl
-                                                 && !model.busy
-                                        onClicked:
-                                            root.confirmNetworkAction(
-                                                index, "restart")
-                                    }
-                                }
-                            }
+                            style: root.style
+                            onActionRequested:
+                                (rowIndex, action) =>
+                                    root.confirmNetworkAction(rowIndex, action)
                         }
                     }
                 }
@@ -1311,6 +734,7 @@ PopupBase {
 
             Item {
                 MonitorPanel {
+                    style: root.style
                     anchors.fill: parent
                     panelTitle: "服务"
                     panelCaption: "现场核心、算法、通信、加速、基础与守护服务"
@@ -1323,102 +747,12 @@ PopupBase {
                         model: serviceModel
                         ScrollBar.vertical: ScrollBar {}
 
-                        delegate: Rectangle {
+                        delegate: MonitorServiceCard {
                             width: GridView.view.cellWidth - 10
                             height: GridView.view.cellHeight - 10
-                            color: coreStyle.panelAlternateColor
-                            border.color: model.online
-                                          ? "#3F8F63" : "#A85A50"
-                            radius: coreStyle.controlRadius
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StatusDot { active: model.online }
-                                    Label {
-                                        text: model.serviceName
-                                        color: coreStyle.titleColor
-                                        font.bold: true
-                                        font.pixelSize: 15
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Rectangle {
-                                        implicitWidth: categoryText.width + 12
-                                        implicitHeight: 23
-                                        color: coreStyle.panelElevatedColor
-                                        radius: 3
-                                        Label {
-                                            id: categoryText
-                                            anchors.centerIn: parent
-                                            text: model.category
-                                            color: coreStyle.labelColor
-                                            font.pixelSize: 11
-                                        }
-                                    }
-                                    Label {
-                                        text: model.online
-                                              ? "运行中" : model.stateText
-                                        color: model.online
-                                               ? "#4CAF69" : "#EF5350"
-                                        font.bold: true
-                                    }
-                                }
-
-                                Label {
-                                    text: model.hasPort
-                                          ? "端点 "
-                                            + model.host + ":"
-                                            + model.port
-                                          : "后台进程"
-                                    color: coreStyle.labelColor
-                                }
-                                Label {
-                                    text: "PID "
-                                          + (model.hasPid
-                                             ? model.pid : "-")
-                                          + "    "
-                                          + (model.processName || "-")
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                }
-                                Label {
-                                    text: "运行 "
-                                          + (model.hasUptime
-                                             ? root.formatDuration(
-                                                   model.uptimeSeconds)
-                                             : "-")
-                                          + "    内存 "
-                                          + root.formatBytes(
-                                              model.memoryBytes)
-                                    color: coreStyle.labelColor
-                                    opacity: 0.72
-                                }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Label {
-                                        text: model.message
-                                              || model.commandLine
-                                              || "-"
-                                        color: model.online
-                                               ? coreStyle.labelColor
-                                               : "#EF5350"
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideMiddle
-                                    }
-                                    Button {
-                                        visible: model.canRestart
-                                        enabled: !model.busy
-                                        text: model.busy ? "重启中" : "重启"
-                                        Material.background: Material.Orange
-                                        onClicked: root.confirmServiceRestart(index)
-                                    }
-                                }
-                            }
+                            style: root.style
+                            onRestartRequested:
+                                rowIndex => root.confirmServiceRestart(rowIndex)
                         }
                     }
                 }
@@ -1441,136 +775,21 @@ PopupBase {
 
         contentItem: Label {
             text: confirmDialog.message
-            color: coreStyle.labelColor
+            color: root.style.labelColor
             wrapMode: Text.WordWrap
             padding: 18
         }
 
         standardButtons: Dialog.Ok | Dialog.Cancel
         onAccepted: {
-            if (targetKind === "camera") {
-                root.runCameraAction(targetIndex, targetAction)
-            } else if (targetKind === "network") {
-                root.runNetworkAction(targetIndex, targetAction)
-            } else if (targetKind === "service") {
-                root.runServiceRestart(targetIndex)
-            }
-        }
-    }
-
-    component StatusDot: Rectangle {
-        property bool active: false
-        implicitWidth: 10
-        implicitHeight: 10
-        radius: 5
-        color: active ? "#4CAF69" : "#EF5350"
-    }
-
-    component CompactSummary: RowLayout {
-        id: compactSummary
-
-        property string label: ""
-        property string value: ""
-        property bool healthy: false
-
-        spacing: 5
-        StatusDot { active: compactSummary.healthy }
-        Label {
-            text: compactSummary.label
-            color: coreStyle.labelColor
-        }
-        Label {
-            text: compactSummary.value
-            color: compactSummary.healthy ? "#4CAF69" : "#FFB74D"
-            font.bold: true
-        }
-    }
-
-    component KpiCard: Rectangle {
-        id: kpiCard
-
-        property string title: ""
-        property string value: ""
-        property string detail: ""
-        property color accent: "#4CAF69"
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 72
-        color: coreStyle.panelAlternateColor
-        border.color: accent
-        border.width: 1
-        radius: coreStyle.controlRadius
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 10
-            Rectangle {
-                Layout.preferredWidth: 4
-                Layout.fillHeight: true
-                color: kpiCard.accent
-                radius: 2
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 1
-                Label {
-                    text: kpiCard.title
-                    color: coreStyle.labelColor
-                    opacity: 0.72
-                }
-                Label {
-                    text: kpiCard.value
-                    color: kpiCard.accent
-                    font.pixelSize: 20
-                    font.bold: true
-                }
-                Label {
-                    text: kpiCard.detail
-                    color: coreStyle.labelColor
-                    opacity: 0.58
-                    font.pixelSize: 11
-                }
-            }
-        }
-    }
-
-    component MonitorPanel: Rectangle {
-        id: panel
-        property string panelTitle: ""
-        property string panelCaption: ""
-        default property alias content: panelBody.data
-
-        color: coreStyle.panelElevatedColor
-        border.color: coreStyle.headerBorderColor
-        border.width: 1
-        radius: coreStyle.controlRadius
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 9
-            spacing: 6
-
-            RowLayout {
-                Layout.fillWidth: true
-                Label {
-                    text: panel.panelTitle
-                    color: coreStyle.titleColor
-                    font.bold: true
-                    font.pixelSize: 15
-                }
-                Label {
-                    text: panel.panelCaption
-                    color: coreStyle.labelColor
-                    opacity: 0.58
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
-            }
-
-            Item {
-                id: panelBody
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            if (confirmDialog.targetKind === "camera") {
+                root.runCameraAction(confirmDialog.targetIndex,
+                                     confirmDialog.targetAction)
+            } else if (confirmDialog.targetKind === "network") {
+                root.runNetworkAction(confirmDialog.targetIndex,
+                                      confirmDialog.targetAction)
+            } else if (confirmDialog.targetKind === "service") {
+                root.runServiceRestart(confirmDialog.targetIndex)
             }
         }
     }

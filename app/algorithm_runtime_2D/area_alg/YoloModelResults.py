@@ -7,12 +7,17 @@ class YoloModelResultsBase:
     def __init__(self, image, result):
         self.result:Results = result
         if isinstance(image, str):
-            self.image = cv2.imread(image)
-        if isinstance(image, Image.Image):
+            image_data = cv2.imread(image)
+            if image_data is None:
+                raise FileNotFoundError(image)
+            self.image = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        elif isinstance(image, Image.Image):
             self.image = np.array(image)
         else:
             self.image = image
         self.image: np.ndarray
+        if hasattr(self.result, "orig_img"):
+            self.result.orig_img = None
 
 
     @property
@@ -65,10 +70,9 @@ class YoloModelSegResults(YoloModelResultsBase):
         """
         if self.result.masks is None:
             return None
-        mask = self.result.masks.data.cpu().numpy()
-        mask = np.sum(mask, axis=0)
+        mask_data = self.result.masks.data.cpu().numpy()
+        mask = np.any(mask_data > 0.5, axis=0).astype(np.uint8) * 255
         mask = np.squeeze(mask)
-        mask = (mask * 255).astype(np.uint8)
         # 只保留最大轮廓
         gray = mask
         # 3. 图像二值化
@@ -96,7 +100,7 @@ class YoloModelSegResults(YoloModelResultsBase):
             # 7. （可选）应用掩码到原图，只保留最大轮廓区域
             # 按位与操作，掩码中白色区域保留原图，黑色区域置为0（黑）
             # result = cv2.bitwise_and(gray, gray, mask=mask)
-        mask = cv2.resize(mask, (512,512))
+        mask = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
         return mask
 
 

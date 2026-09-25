@@ -1,12 +1,15 @@
+import asyncio
 import logging
+import math
 from io import BytesIO
 from pathlib import Path
 import os
 
 import xlsxwriter
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
 from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from starlette.background import BackgroundTask
 
 from CoilDataBase import Coil
 from Base.utils import export
@@ -14,6 +17,19 @@ from .api_core import app
 
 router = APIRouter(tags=["兼容服务"])
 logger = logging.getLogger(__name__)
+_simple_export_semaphore = asyncio.Semaphore(1)
+
+
+def _positive_float_env(name: str, default: float) -> float:
+    try:
+        value = float(os.getenv(name, str(default)))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return value if math.isfinite(value) and value > 0 else default
+
+
+_SIMPLE_EXPORT_ADMISSION_TIMEOUT = _positive_float_env(
+    "SIMPLE_EXPORT_ADMISSION_TIMEOUT", 2.0)
 
 
 def _env(name: str, default: str = "") -> str:
@@ -42,19 +58,37 @@ def _is_plain_download_file_name(file_name: str) -> bool:
     )
 
 
+async def _close_simple_export_response(output: BytesIO) -> None:
+    try:
+        output.close()
+    finally:
+        _simple_export_semaphore.release()
+
+
 def _stream_xlsx(output: BytesIO, file_size: int, filename: str) -> StreamingResponse:
     headers = {
         "Content-Disposition": f"attachment; filename={filename}",
         "Content-Length": str(file_size),
     }
-    return StreamingResponse(
-        output,
-        headers=headers,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    try:
+        return StreamingResponse(
+            output,
+            headers=headers,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            background=BackgroundTask(_close_simple_export_response, output),
+        )
+    except Exception:
+        output.close()
+        _simple_export_semaphore.release()
+        raise
 
 
 def _export_error_response(exc: Exception) -> PlainTextResponse:
+    if isinstance(exc, HTTPException):
+        return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
+    if isinstance(exc, export.ExportDefectLimitExceeded):
+        logger.warning("exportDataSimple rejected: %s", exc)
+        return PlainTextResponse(str(exc), status_code=413)
     logger.exception("exportDataSimple failed: %s", exc)
     return PlainTextResponse("export xlsx failed", status_code=500)
 
@@ -66,7 +100,7 @@ async def docs_oauth2_redirect_html():
 
 @router.get("/software_update/manifest")
 async def software_update_manifest():
-    package_path = _software_update_package_path()
+    package_path = await asyncio.to_thread(_software_update_package_path)
     package_file_name = package_path.name if package_path else ""
     version = _env("RUST_API_SOFTWARE_UPDATE_VERSION", "0.1.1")
     download_url = _env("RUST_API_SOFTWARE_UPDATE_URL")
@@ -94,7 +128,7 @@ async def software_update_manifest():
 
 @router.get("/updates/{file_name}")
 async def updates(file_name: str):
-    package_path = _software_update_package_path()
+    package_path = await asyncio.to_thread(_software_update_package_path)
     if package_path is None:
         return PlainTextResponse("file not found", status_code=404)
 
@@ -109,16 +143,68 @@ async def updates(file_name: str):
 
 @router.get("/exportDataSimple")
 async def export_data_simple():
+    output = None
     try:
-        output = BytesIO()
-        workbook = xlsxwriter.Workbook(output, {"in_memory": True})
-        secondary_coil_list = Coil.get_all_join_data_by_num(50)
-        export.export_data_by_coil_id_list(secondary_coil_list, workbook, export_type="3D")
-        workbook.close()
-        output.seek(0)
+        try:
+            await asyncio.wait_for(
+                _simple_export_semaphore.acquire(),
+                timeout=_SIMPLE_EXPORT_ADMISSION_TIMEOUT,
+            )
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="simple export capacity is busy",
+            ) from exc
+        loop = asyncio.get_running_loop()
+        try:
+            future = loop.run_in_executor(None, _build_simple_export)
+        except Exception:
+            _simple_export_semaphore.release()
+            raise
+        try:
+            output = await asyncio.shield(future)
+        except asyncio.CancelledError:
+
+            def _cleanup_cancelled_export(completed_future) -> None:
+                try:
+                    completed_output = completed_future.result()
+                    completed_output.close()
+                except Exception:
+                    pass
+                finally:
+                    _simple_export_semaphore.release()
+
+            future.add_done_callback(_cleanup_cancelled_export)
+            raise
+        except Exception:
+            _simple_export_semaphore.release()
+            raise
         return _stream_xlsx(output, output.getbuffer().nbytes, "exportDataSimple.xlsx")
     except Exception as exc:
         return _export_error_response(exc)
+
+
+def _build_simple_export() -> BytesIO:
+    output = BytesIO()
+    try:
+        workbook = xlsxwriter.Workbook(output, {"in_memory": True})
+        try:
+            secondary_coil_list = Coil.get_all_join_data_by_num(
+                50,
+                max_defects=export.DEFAULT_MAX_EXPORT_DEFECTS,
+            )
+        except Coil.QueryDefectLimitExceeded as exc:
+            raise export.ExportDefectLimitExceeded(
+                export.DEFAULT_MAX_EXPORT_DEFECTS) from exc
+        export.export_data_by_coil_id_list(secondary_coil_list,
+                                           workbook,
+                                           export_type="3D")
+        workbook.close()
+        output.seek(0)
+        return output
+    except Exception:
+        output.close()
+        raise
 
 
 app.include_router(router)

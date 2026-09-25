@@ -2,10 +2,12 @@ import QtQuick
 import QtQuick.Controls
 import "../../Model"
 Column {
+    id: root
+
     property AlarmItemInfo alarmItemInfo:AlarmItemInfo{}
     Row{
     Label{
-        text: alarmItemInfo.taperShapeMsg
+        text: root.alarmItemInfo.taperShapeMsg
     }
     }
 }

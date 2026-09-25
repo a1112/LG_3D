@@ -2,19 +2,24 @@ import QtQuick
 import "../../../btns"
 import "../../Header"
 ImageButton{
-    id:fliterBtn
-    property bool selectd: leftCore.fliterEnable
+    id: root
+
+    required property var style
+    required property var leftController
+
+    readonly property bool selected: root.leftController.fliterEnable
     tipText:"筛选"
-    opacity: leftCore.fliterEnable?1:0.65
+    opacity: root.selected ? 1 : 0.65
     height: parent.height
     width: height
-    source:coreStyle.isDark?coreStyle.getIcon("filter_light"):coreStyle.getIcon("filter")
-    onClicked: leftCore.fliterEnable=!leftCore.fliterEnable
+    source: root.style.isDark ? root.style.getIcon("filter_light")
+                              : root.style.getIcon("filter")
+    onClicked: root.leftController.fliterEnable = !root.leftController.fliterEnable
     Rectangle{
-        visible:leftCore.fliterEnable
+        visible: root.selected
         width:parent.width
         height:5
-        color:coreStyle.accentColor
+        color: root.style.accentColor
         anchors.bottom:parent.bottom
     }
 }

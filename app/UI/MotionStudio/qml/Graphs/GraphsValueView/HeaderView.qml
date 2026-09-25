@@ -3,6 +3,10 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 Item {
+    id: root
+
+    required property var graphController
+
     height: 50
     Pane{
         Material.elevation: 6
@@ -18,12 +22,12 @@ Item {
         }
         CoilTextInput{
             title:qsTr("起始")
-            value:graphsCore.stratCoilId
+            value:root.graphController.stratCoilId
 
         }
         CoilTextInput{
             title:qsTr("结束")
-            value:graphsCore.endCoilId
+            value:root.graphController.endCoilId
         }
     }
 }

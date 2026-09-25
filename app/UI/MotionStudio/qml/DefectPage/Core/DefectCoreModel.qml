@@ -3,22 +3,29 @@ import QtQuick
 Item {
     id: root
 
-    property ListModel globDefectDictModel: global.defectClassProperty.defectDictModel
-    property int globDefectDictModelCount: globDefectDictModel.count
+    required property var modelStore
+    required property var globalContext
+    required property var toolService
+    required property var classItemConverter
+    required property var filterController
+
+    readonly property ListModel globDefectDictModel: root.globalContext.defectClassProperty.defectDictModel
+    readonly property int globDefectDictModelCount: root.globDefectDictModel.count
     onGlobDefectDictModelCountChanged: {
-        initDefectDictModel()
+        root.initDefectDictModel()
     }
 
     property ListModel defectDictModel: ListModel {
         dynamicRoles: true
     }
-    property ListModel currentListModel: coreModel.currentCoilListModel
+    readonly property ListModel currentListModel: root.modelStore.currentCoilListModel
 
-    readonly property int top_: currentListModel.count ? currentListModel.get(0).Id : 0
-    readonly property int end_: currentListModel.count ? currentListModel.get(currentListModel.count - 1).Id : 0
+    readonly property int top_: root.currentListModel.count ? root.currentListModel.get(0).Id : 0
+    readonly property int end_: root.currentListModel.count
+                                ? root.currentListModel.get(root.currentListModel.count - 1).Id : 0
 
-    property int currentListStartIndex: Math.min(top_, end_)
-    property int currentListEndIndex: Math.max(top_, end_)
+    readonly property int currentListStartIndex: Math.min(root.top_, root.end_)
+    readonly property int currentListEndIndex: Math.max(root.top_, root.end_)
 
     property var defectsModelAll: ListModel {
         dynamicRoles: true
@@ -31,74 +38,76 @@ Item {
     property var defectJson: []
 
     function initDefectDictModel() {
-        defectDictModel.clear()
-        tool.for_list_model(globDefectDictModel, (item) => {
-            let it = globalDefectClassItemModel.itemTodict(item)
+        root.defectDictModel.clear()
+        root.toolService.for_list_model(root.globDefectDictModel, (item) => {
+            let it = root.classItemConverter.itemTodict(item)
             let cleanIt = {}
             for (let key in it) {
                 if (it[key] !== null && it[key] !== undefined) {
                     cleanIt[key] = it[key]
                 }
             }
-            defectDictModel.append(cleanIt)
+            root.defectDictModel.append(cleanIt)
         })
-        updateDefectCounts()
-        filterCore.resetFilterDict()
+        root.updateDefectCounts()
+        root.filterController.resetFilterDict()
     }
 
     function updateDefectCounts() {
         let counts = {}
-        tool.for_list_model(defectDictModel, (item) => {
+        root.toolService.for_list_model(root.defectDictModel, (item) => {
             counts[item["name"]] = 0
         })
 
-        tool.for_list_model(defectsModelAll, (item) => {
-            let name = item["defectName"]
+        root.toolService.for_list_model(root.defectsModelAll, (item) => {
+            let name = root.globalContext.defectClassProperty.shared_defect_name(item["defectName"])
             if (name && counts[name] !== undefined) {
                 counts[name]++
             }
         })
 
-        for (let i = 0; i < defectDictModel.count; i++) {
-            let item = defectDictModel.get(i)
+        for (let i = 0; i < root.defectDictModel.count; i++) {
+            let item = root.defectDictModel.get(i)
             item["num"] = counts[item["name"]] || 0
-            defectDictModel.set(i, item)
+            root.defectDictModel.set(i, item)
         }
     }
 
     function flushModel() {
-        defectsModel.clear()
-        tool.for_list_model(defectsModelAll, (item) => {
-            if (filterCore.itemIsShow(item)) {
+        root.defectsModel.clear()
+        root.toolService.for_list_model(root.defectsModelAll, (item) => {
+            if (root.filterController.itemIsShow(item)) {
                 let cleanItem = {}
                 for (let key in item) {
                     if (item[key] !== null && item[key] !== undefined) {
                         cleanItem[key] = item[key]
                     }
                 }
-                defectsModel.append(cleanItem)
+                root.defectsModel.append(cleanItem)
             }
         })
     }
 
     function flushModelAll() {
-        defectsModelAll.clear()
+        root.defectsModelAll.clear()
 
-        defectJson.forEach((value) => {
+        root.defectJson.forEach((value) => {
             if (value !== null && value !== undefined) {
-                if (global.defectClassProperty.is_area_defect_name(value.defectName)) {
-                    global.defectClassProperty.ensure_defect_class_item(value.defectName)
+                if (root.globalContext.defectClassProperty.is_area_defect_name(value.defectName)) {
+                    root.globalContext.defectClassProperty.ensure_defect_class_item(value.defectName)
                 }
+                value.configDefectName =
+                        root.globalContext.defectClassProperty.shared_defect_name(value.defectName)
                 root.defectsModelAll.append(value)
             }
         })
 
-        updateDefectCounts()
-        flushModel()
+        root.updateDefectCounts()
+        root.flushModel()
     }
 
     function setDefectJson(data) {
-        defectJson = Array.isArray(data) ? data : []
-        flushModelAll()
+        root.defectJson = Array.isArray(data) ? data : []
+        root.flushModelAll()
     }
 }

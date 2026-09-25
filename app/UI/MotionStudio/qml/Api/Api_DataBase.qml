@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtWebSockets
 Api_Base {
@@ -5,48 +7,120 @@ Api_Base {
 
 
     property string oldHeightDatUrl:""
+    property int _heightPointReconnectDelayMs: 1000
+    readonly property int _heightPointReconnectMaxDelayMs: 30000
+    readonly property int _heightPointPendingLimit: 16
+    property bool _heightPointFailureHandling: false
+    property bool _heightPointConnectEnabled: true
 
     Timer {
         id: heightPointReconnectTimer
         interval: 1000
         repeat: false
         onTriggered: {
-            if (!coreSetting.useRustTestServer) {
+            if (!api_database.settings.useRustTestServer) {
                 return
             }
-            heightPointSocket.active = false
-            heightPointSocket.active = true
+            // Keep the WebSocket.active binding intact. Assigning active
+            // directly here permanently detached it from useRustTestServer.
+            _heightPointConnectEnabled = true
         }
     }
 
     function _scheduleHeightPointReconnect(){
-        if (coreSetting.useRustTestServer && !heightPointReconnectTimer.running) {
+        if (api_database.settings.useRustTestServer && !heightPointReconnectTimer.running) {
+            heightPointReconnectTimer.interval = _heightPointReconnectDelayMs
             heightPointReconnectTimer.restart()
+            _heightPointReconnectDelayMs = Math.min(_heightPointReconnectMaxDelayMs,
+                                                    _heightPointReconnectDelayMs * 2)
+        }
+    }
+
+    Connections {
+        target: api_database.settings
+        function onUseRustTestServerChanged() {
+            heightPointReconnectTimer.stop()
+            api_database._heightPointReconnectDelayMs = 1000
+            if (api_database.settings.useRustTestServer) {
+                _heightPointConnectEnabled = true
+                return
+            }
+
+            _heightPointConnectEnabled = false
+            let latestRequestId = _heightPointPendingOrder.length > 0
+                    ? _heightPointPendingOrder[_heightPointPendingOrder.length - 1] : -1
+            for (let key in _heightPointRequests) {
+                let cb = _heightPointRequests[key]
+                if (cb && cb.failure) {
+                    cb.failure(Number(key) === Number(latestRequestId)
+                               ? "ws error" : "superseded")
+                }
+            }
+            _heightPointRequests = {}
+            _heightPointQueue = []
+            _heightPointPendingOrder = []
+        }
+    }
+
+    function _removeHeightPointPendingId(reqId) {
+        let nextOrder = []
+        for (let i = 0; i < _heightPointPendingOrder.length; ++i) {
+            if (_heightPointPendingOrder[i] !== reqId) {
+                nextOrder.push(_heightPointPendingOrder[i])
+            }
+        }
+        _heightPointPendingOrder = nextOrder
+    }
+
+    function _trimHeightPointPending() {
+        while (_heightPointPendingOrder.length >= _heightPointPendingLimit) {
+            let reqId = _heightPointPendingOrder.shift()
+            let cb = _heightPointRequests[reqId]
+            delete _heightPointRequests[reqId]
+            if (cb && cb.failure) {
+                cb.failure("superseded")
+            }
+        }
+        while (_heightPointQueue.length >= _heightPointPendingLimit) {
+            _heightPointQueue.shift()
         }
     }
 
     property WebSocket heightPointSocket: WebSocket{
         id: heightPointWs
-        url: apiConfig.url(apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
-        active: coreSetting.useRustTestServer
+        url: api_database.apiConfig.url(
+                 api_database.apiConfig.wsServerUrl, "ws", "coilData", "heightPoint")
+        active: api_database.settings.useRustTestServer && api_database._heightPointConnectEnabled
         onStatusChanged: function(status) {
             if (status === WebSocket.Open) {
-                while (_heightPointQueue.length > 0) {
-                    let payload = _heightPointQueue.shift()
+                api_database._heightPointReconnectDelayMs = 1000
+                while (api_database._heightPointQueue.length > 0) {
+                    let payload = api_database._heightPointQueue.shift()
                     sendTextMessage(payload)
                 }
-            } else if (coreSetting.useRustTestServer && (status === WebSocket.Error || status === WebSocket.Closed)) {
+            } else if (api_database.settings.useRustTestServer
+                       && (status === WebSocket.Error || status === WebSocket.Closed)) {
+                if (_heightPointFailureHandling) {
+                    return
+                }
+                _heightPointFailureHandling = true
                 console.log("heightPoint ws closed/error", status, errorString)
-                heightPointSocket.active = false
-                // flush pending with failure
+                _heightPointConnectEnabled = false
+                // Only the newest hover request may fall back to HTTP. Older
+                // requests are obsolete and would otherwise create a burst.
+                let latestRequestId = _heightPointPendingOrder.length > 0
+                        ? _heightPointPendingOrder[_heightPointPendingOrder.length - 1] : -1
                 for (let key in _heightPointRequests) {
                     let cb = _heightPointRequests[key]
                     if (cb && cb.failure) {
-                        cb.failure("ws error")
+                        cb.failure(Number(key) === Number(latestRequestId)
+                                   ? "ws error" : "superseded")
                     }
                 }
                 _heightPointRequests = {}
                 _heightPointQueue = []
+                _heightPointPendingOrder = []
+                _heightPointFailureHandling = false
                 _scheduleHeightPointReconnect()
             }
         }
@@ -54,8 +128,9 @@ Api_Base {
             try{
                 let data = JSON.parse(message)
                 let reqId = data.id
-                let cb = _heightPointRequests[reqId]
-                delete _heightPointRequests[reqId]
+                let cb = api_database._heightPointRequests[reqId]
+                delete api_database._heightPointRequests[reqId]
+                _removeHeightPointPendingId(reqId)
                 if (!cb) return
                 if (data.error !== undefined){
                     cb.failure && cb.failure(data.error)
@@ -77,19 +152,22 @@ Api_Base {
     property int _heightPointReqId: 0
     property var _heightPointRequests: ({})
     property var _heightPointQueue: []
+    property var _heightPointPendingOrder: []
 
     function _sendHeightPointWs(payload, success, failure){
-        if (!coreSetting.useRustTestServer){
+        if (!api_database.settings.useRustTestServer){
             let url = apiConfig.url(apiConfig.serverUrlData, "coilData", "heightPoint", payload.surface_key, payload.coil_id)
                     + `?x=${payload.x}&y=${payload.y}`
             return ajax.get(url, success, failure)
         }
         _heightPointReqId += 1
         payload.id = _heightPointReqId
+        _trimHeightPointPending()
         _heightPointRequests[payload.id] = {
             success: success,
             failure: failure
         }
+        _heightPointPendingOrder.push(payload.id)
         let text = JSON.stringify(payload)
         if (heightPointSocket.status === WebSocket.Open){
             heightPointSocket.sendTextMessage(text)
@@ -114,12 +192,15 @@ Api_Base {
 
     function get_zValueData(_key_,coilId_,x1,y1,success,failure){
         // Prefer WebSocket for low-latency single-point queries; fallback to HTTP.
-        _sendHeightPointWs({
+        return _sendHeightPointWs({
                               "surface_key": _key_,
                               "coil_id": coilId_,
                               "x": x1,
                               "y": y1
                           }, success, function(err){
+                              if (err === "superseded") {
+                                  return
+                              }
                               let url =  apiConfig.url(apiConfig.serverUrlData,"coilData","heightPoint",_key_,coilId_)+`?x=${x1}&y=${y1}`
                               let failureCb = failure ? failure : function(e){console.log("heightPoint http error", e, err)}
                               return ajax.get(url,function(val){
@@ -350,11 +431,6 @@ Api_Base {
     //      return ajax.get(apiConfig.url("defectClasses"),success,failure)
     // }
 
-    function getCoilListValueChangeKeys(success,failure){
-        // 获取变化曲线数值键
-        return ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"coil_list_value_change_keys"),success,failure)
-    }
-
     function getCoilStatus(coil_id,success,failure){
         return  ajax.get(apiConfig.url(apiConfig.serverUrlDaaBase,"check","get_coil_status",coil_id),success,failure)
     }
@@ -439,34 +515,6 @@ Api_Base {
     // 导出标记缺陷图像
     function exportManualDefects(data, success, failure){
         return ajax.post(apiConfig.url(apiConfig.serverUrlDaaBase,"export_defects"),data,success,failure)
-    }
-
-    // ==================== 一键导出功能 ====================
-
-    // 导出最近1小时的数据
-    function export1h(exportType, success, failure){
-        let args = exportType ? "?export_type=" + exportType : ""
-        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_1h") + args
-        // 直接下载，通过window.open或iframe
-        return url
-    }
-
-    // 导出最近24小时的数据
-    function export24h(exportType, success, failure){
-        let args = exportType ? "?export_type=" + exportType : ""
-        let url = apiConfig.url(apiConfig.serverUrlDaaBase,"export_24h") + args
-        return url
-    }
-
-    // 执行浏览器下载
-    function downloadExport(url){
-        let iframe = document.createElement("iframe")
-        iframe.style.display = "none"
-        iframe.src = url
-        document.body.appendChild(iframe)
-        setTimeout(function(){
-            document.body.removeChild(iframe)
-        }, 1000)
     }
 
 }

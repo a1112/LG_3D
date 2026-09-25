@@ -4,11 +4,16 @@ import QtQuick.Layouts 1.15
 import "../../Header"
 
 ColumnLayout {
+    id: root
+
+    required property var modelStore
+    required property var style
+
     height: 35
     RowLayout {
         Label{
             text: "流水号:"
-            color:Material.color(Material.Blue)
+            color: root.style.titleColor
             font.bold:true
             font.family: "Microsoft YaHei UI"
             font.pointSize: 14
@@ -31,11 +36,12 @@ ColumnLayout {
             implicitWidth: 50
             implicitHeight: 30
         CheckRec {
+            style: root.style
             fillWidth: true
              height: 30
            text: qsTr("查询")
             onClicked: {
-                coreModel.searchByCoilId(textField.text)
+                root.modelStore.searchByCoilId(textField.text)
             }
        }
         }

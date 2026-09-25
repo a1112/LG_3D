@@ -5,10 +5,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-from cachetools import TTLCache, cached
-
 from Base.CONFIG import serverConfigProperty
 from .base import _resolve_image_path
+from .bounded_cache import singleflight_cached
 from .memory_cache import MemoryImageCache
 
 
@@ -20,10 +19,17 @@ class DiskAreaImageCache(MemoryImageCache):
     Server 端只负责读取，不再生成瓦片缓存。
     """
 
-    def __init__(self, cache_size: int = 32, ttl: int = 200, tile_count: int = 3, max_coils: int = 100) -> None:
+    def __init__(self,
+                 cache_size: int = 32,
+                 ttl: int = 200,
+                 tile_count: int = 3,
+                 max_coils: int = 100,
+                 max_memory_mb: Optional[int] = None) -> None:
         self.tile_count = tile_count
         self.max_coils = max_coils
-        super().__init__(cache_size=cache_size, ttl=ttl)
+        super().__init__(cache_size=cache_size,
+                         ttl=ttl,
+                         max_memory_mb=max_memory_mb)
 
     def _tile_cache_base_dir(self, path: str) -> Path:
         """获取瓦片缓存基础目录"""
@@ -32,6 +38,8 @@ class DiskAreaImageCache(MemoryImageCache):
             coil_dir = path_obj.parent.parent
         else:
             coil_dir = path_obj.parent
+        if path_obj.stem.upper() != "AREA":
+            return coil_dir / "cache" / "area" / path_obj.stem.upper() / "tild"
         return coil_dir / "cache" / "area" / "tild"
 
     def _tile_cache_dir(self, path: str, level: int = 4) -> Path:
@@ -49,6 +57,24 @@ class DiskAreaImageCache(MemoryImageCache):
         except OSError as e:
             logging.warning("Failed to read AREA tile cache %s: %s", tile_path, e)
             return None
+
+    @staticmethod
+    def _tile_is_fresh(source_path: Path, tile_path: Path) -> bool:
+        """Reject tiles generated before the current source image."""
+        try:
+            source_mtime_ns = source_path.stat().st_mtime_ns
+        except FileNotFoundError:
+            # Legacy deployments may retain only the tile cache.
+            return True
+        except OSError as e:
+            logging.debug("Failed to stat AREA source %s: %s", source_path, e)
+            return False
+
+        try:
+            return tile_path.stat().st_mtime_ns >= source_mtime_ns
+        except OSError as e:
+            logging.debug("Failed to stat AREA tile %s: %s", tile_path, e)
+            return False
 
     def _read_tile_cache(self, cache_dir: Path, count: int) -> Optional[dict]:
         """读取指定目录下的所有瓦片"""
@@ -77,13 +103,13 @@ class DiskAreaImageCache(MemoryImageCache):
         count = self.tile_count
         cache_dir = self._tile_cache_dir(path, level)
 
-        # 从缓存读取
         tile_path = self._tile_path(cache_dir, col, row)
-        if tile_path.exists():
+        source_path = _resolve_image_path(path)
+        if tile_path.exists() and self._tile_is_fresh(source_path, tile_path):
             return self._read_tile_bytes(tile_path)
 
-        # 缓存不存在，记录日志并返回 None
-        logging.debug("Tile cache not found: L%s tile (%s,%s) for %s", level, col, row, path)
+        logging.debug("Tile cache missing or stale: L%s tile (%s,%s) for %s",
+                      level, col, row, path)
         return None
 
     def get_all_tiles(self, path: str, count: int) -> Optional[dict]:
@@ -97,7 +123,7 @@ class DiskAreaImageCache(MemoryImageCache):
         return self._read_tile_cache(cache_dir, count)
 
     def _build_clip_cache(self):
-        @cached(cache=TTLCache(maxsize=self.cache_size, ttl=self.ttl))
+        @singleflight_cached(self._new_cache("clip"))
         def _load_image_clip(path: str, count: int) -> Optional[dict]:
             if count <= 0:
                 return None

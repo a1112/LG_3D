@@ -12,13 +12,17 @@ Item {
     visible: coilModel !== undefined
     property bool respectFilter: false
     property int thumbnailSize: 96
+    required property var toolService
+    required property var filterController
+    required property var globalContext
+    required property var apiClient
     property ListModel defectModel:ListModel{}
     property var defectsData:coilModel ? coilModel.defectsData : null
     onDefectsDataChanged:{
         defectModel.clear()
         if (defectsData) {
-            tool.for_list_model(defectsData,(defect)=>{
-                        defectModel.append(defect)
+            root.toolService.for_list_model(root.defectsData,(defect)=>{
+                        root.defectModel.append(defect)
                                 })
         }
     }
@@ -36,6 +40,9 @@ Item {
                 defectData: root.defectModel.get(index)
                 respectFilter: root.respectFilter
                 thumbnailSize: root.thumbnailSize
+                filterController: root.filterController
+                globalContext: root.globalContext
+                apiClient: root.apiClient
             }
 
         }

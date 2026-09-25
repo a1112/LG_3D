@@ -1,7 +1,15 @@
 import QtQuick
 import "../../Model"
+import "../JsonUtils.js" as JsonUtils
 Item {
-    id:root
+    id: root
+    required property var modelStore
+    required property var apiClient
+    required property var settings
+    required property var coreController
+    required property var imageCacheService
+    required property var scriptLauncher
+
     property int rootViewIndex: 0
     readonly property bool is2DrootView : rootViewIndex == 0
     readonly property bool is3DrootView : rootViewIndex == 1
@@ -17,7 +25,14 @@ Item {
         rootViewIndex = 1
     }
     function rootViewtoArea(){
+        refreshAreaSource()
         rootViewIndex = 2
+    }
+
+    onRootViewIndexChanged: {
+        if (rootViewIndex == 2) {
+            refreshAreaSource()
+        }
     }
 
     readonly property real defaultScan3dScaleZ: 0.016229506582021713
@@ -30,6 +45,14 @@ Item {
     property real medianZInt: 0
     property real medianZ: 0.0
     property bool coilInfoReady: false
+    property var heightDataRequest: null
+    property string heightDataRequestKey: ""
+    property double heightDataRetryAfter: 0
+    property int heightDataRequestId: 0
+    property bool heightDataPending: false
+    property var coilInfoRequest: null
+    property var pointDataRequest: null
+    property int surfaceLoadRequestId: 0
 
 
     readonly property int mm_pointValueShowType: 0
@@ -92,7 +115,7 @@ Item {
     property bool quickImage: false
 
     onShowMaxChanged: {
-        coreModel.setShowMax(key,showMax)
+        root.modelStore.setShowMax(key, showMax)
     }
     property bool show_visible: true
     property bool hasData: true
@@ -162,12 +185,65 @@ Item {
         if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2) || !coilId || !key){
             return
         }
-        api.getHeightData(key,coilId,x1,y1,x2,y2,
-                          (result)=>{
-                              lineData = JSON.parse(result)
-                          },(error)=>{
+        let requestKey = `${key}:${coilId}:${x1}:${y1}:${x2}:${y2}`
+        if (heightDataRequest) {
+            if (heightDataRequestKey !== requestKey) {
+                heightDataPending = true
+            }
+            return
+        }
+        let nowMs = new Date().getTime()
+        if (nowMs < heightDataRetryAfter) {
+            if (heightDataRequestKey !== requestKey) {
+                heightDataPending = true
+            }
+            heightDataDebounceTimer.interval = Math.max(100, heightDataRetryAfter - nowMs)
+            heightDataDebounceTimer.restart()
+            return
+        }
+
+        heightDataDebounceTimer.interval = 100
+        heightDataPending = false
+        heightDataRequestId += 1
+        let requestId = heightDataRequestId
+        heightDataRequestKey = requestKey
+        heightDataRequest = root.apiClient.getHeightData(key,coilId,x1,y1,x2,y2,
+                           (result)=>{
+                              if (requestId !== heightDataRequestId) {
+                                  return
+                              }
+                              heightDataRequest = null
+                              heightDataRetryAfter = 0
+                              try {
+                                  lineData = JSON.parse(result)
+                              } catch (error) {
+                                  console.log("getHeightData parse error", error)
+                              }
+                              if (heightDataPending) {
+                                  heightDataPending = false
+                                  heightDataDebounceTimer.restart()
+                              }
+                          },(error,status)=>{
+                              if (requestId !== heightDataRequestId) {
+                                  return
+                              }
+                              heightDataRequest = null
+                              if (status === 0 || status === 429 || status === 503) {
+                                  heightDataRetryAfter = new Date().getTime() + 3000
+                              }
+                              if (heightDataPending) {
+                                  heightDataPending = false
+                                  heightDataDebounceTimer.restart()
+                              }
                               console.log("getHeightData error")
                           })
+    }
+
+    Timer {
+        id: heightDataDebounceTimer
+        interval: 100
+        repeat: false
+        onTriggered: root.updataHeightData()
     }
 
     function perpendicularPoint(p1, p2, p3) {
@@ -220,10 +296,10 @@ Item {
     property var p2: Qt.point(0,0)
 
     onP1Changed: {
-        updataHeightData()
+        heightDataDebounceTimer.restart()
     }
     onP2Changed: {
-        updataHeightData()
+        heightDataDebounceTimer.restart()
     }
 
 
@@ -243,11 +319,15 @@ Item {
     property int coilId:0
 
 
-    readonly property bool imageMask: coreModel.imageMaskChecked
-    readonly property string areaViewKey: imageMask ? "AREA_MASK" : "AREA"
+    readonly property bool imageMask: root.modelStore.imageMaskChecked
+    readonly property string requestedAreaViewKey: imageMask ? "AREA_MASK" : "AREA"
+    readonly property string areaViewKey: requestedAreaViewKey === "AREA_MASK" && hasViewData("AREA_MASK") ? "AREA_MASK" : "AREA"
     onImageMaskChanged: {
         source = getSource(coilId,currentViewKey)
-        area_source = getSource(coilId,areaViewKey)
+        refreshAreaSource()
+    }
+    onAreaViewKeyChanged: {
+        refreshAreaSource()
     }
 
     property string default_key: "GRAY"
@@ -257,38 +337,93 @@ Item {
     property bool error_visible: false
     property bool error_auto: false
     property int tower_warning_show_opacity: 50
+    property var viewHasDataMap: ({})
+    property int viewHasDataVersion: 0
+    property var dataAvailabilitySource: root.modelStore.hasDataCoilId === coilId
+                                     && root.modelStore.has_data && key
+                                     ? root.modelStore.has_data[key] : null
+
+    onDataAvailabilitySourceChanged: rebuildViewHasData()
+    onKeyChanged: {
+        rebuildViewHasData()
+        refreshAreaSource()
+    }
+
+    function normalizeViewKey(viewKey) {
+        return viewKey === "2D" ? "AREA" : viewKey
+    }
+
+    function resolveViewHasData(surfaceHasData, viewKey) {
+        viewKey = normalizeViewKey(viewKey)
+        if (!surfaceHasData || !viewKey) {
+            return false
+        }
+        if (surfaceHasData[viewKey] === true) {
+            return true
+        }
+        if (viewKey === "GRAY" || viewKey === "JET" || viewKey === "JPG") {
+            return surfaceHasData["JPG"] === true || surfaceHasData["3D"] === true
+        }
+        if (viewKey === "AREA") {
+            return surfaceHasData["2D"] === true
+        }
+        if (viewKey === "AREA_MASK") {
+            return surfaceHasData["AREA_MASK"] === true || surfaceHasData["2D_MASK"] === true
+        }
+        return false
+    }
+
+    function refreshViewDataModelAvailability() {
+        for (let index = 0; index < viewDataModel.count; index++) {
+            let item = viewDataModel.get(index)
+            viewDataModel.setProperty(index, "has_data", hasViewData(item.key))
+        }
+    }
+
+    function rebuildViewHasData() {
+        let surfaceHasData = dataAvailabilitySource
+        let nextMap = {}
+        let viewKeys = root.modelStore ? root.modelStore.allViewKeys || [] : []
+        viewKeys.forEach(function(viewKey) {
+            nextMap[viewKey] = resolveViewHasData(surfaceHasData, viewKey)
+        })
+        nextMap["AREA"] = resolveViewHasData(surfaceHasData, "AREA")
+        nextMap["2D"] = nextMap["AREA"]
+        nextMap["AREA_MASK"] = resolveViewHasData(surfaceHasData, "AREA_MASK")
+        viewHasDataMap = nextMap
+        viewHasDataVersion += 1
+        refreshViewDataModelAvailability()
+    }
 
 
     function getSouceByKey(_viewKey_,preView=false){
         return getSource(coilId,_viewKey_,preView)
     }
     function setViewSource(_viewKey_){
+        _viewKey_ = normalizeViewKey(_viewKey_)
+        if (_viewKey_ === "AREA" || _viewKey_ === "AREA_MASK") {
+            rootViewtoArea()
+            return
+        }
 
         default_key=_viewKey_
         currentViewKey = _viewKey_
         source = getSouceByKey(_viewKey_)
-        area_source = getSouceByKey(areaViewKey)
+        refreshAreaSource()
     }
 
     function hasViewData(viewKey){
-        if (!coreModel || coreModel.hasDataCoilId !== coilId || !coreModel.has_data
-                || !key || !coreModel.has_data[key]) {
-            return false
-        }
+        viewKey = normalizeViewKey(viewKey)
+        viewHasDataVersion
+        return viewHasDataMap && viewHasDataMap[viewKey] === true
+    }
 
-        let surfaceHasData = coreModel.has_data[key]
-        if (surfaceHasData[viewKey] === true) {
-            return true
+    function refreshAreaSource() {
+        if (coilId > 0 && key) {
+            area_source = getSource(coilId, areaViewKey, false)
+        } else {
+            area_source = ""
         }
-
-        if (viewKey === "GRAY" || viewKey === "JET" || viewKey === "JPG") {
-            return surfaceHasData["JPG"] === true || surfaceHasData["3D"] === true
-        }
-        if (viewKey === "AREA" || viewKey === "AREA_MASK") {
-            return surfaceHasData["2D"] === true
-        }
-
-        return false
     }
 
     property CoilModel currentCoilModel
@@ -296,17 +431,39 @@ Item {
     function setCoilId(coilId_){
         // 切换时进行的设置
         let type_= default_key
+        surfaceLoadRequestId += 1
+        heightDataRequestId += 1
+        if (heightDataRequest) {
+            heightDataRequest.abort()
+            heightDataRequest = null
+        }
+        if (coilInfoRequest) {
+            coilInfoRequest.abort()
+            coilInfoRequest = null
+        }
+        if (pointDataRequest) {
+            pointDataRequest.abort()
+            pointDataRequest = null
+        }
+        heightDataRequestKey = ""
+        heightDataRetryAfter = 0
+        heightDataPending = false
         coilId = coilId_
         coilInfoReady = false
         medianZInt = 0
         medianZ = 0
         error_visible = false
+        rebuildViewHasData()
         source = getSource(coilId_,type_,false)
-        area_source = getSource(coilId_,areaViewKey,false)
+        refreshAreaSource()
 
         viewDataModel.clear()
-        coreModel.allViewKeys.forEach(function(viewKey){
-            viewDataModel.append({"image_source":getSource(coilId,viewKey,true),"key":viewKey})
+        root.modelStore.allViewKeys.forEach(function(viewKey){
+            viewDataModel.append({
+                "image_source": getSource(coilId, viewKey, true),
+                "key": viewKey,
+                "has_data": hasViewData(viewKey)
+            })
         })
 
         // 延迟加载其他数据，优先保证图像加载
@@ -318,33 +475,69 @@ Item {
         id: delayDataLoadTimer
         interval: 500  // 图像加载开始后500ms再加载其他数据
         onTriggered: {
+            let requestedCoilId = coilId
+            let requestedKey = key
+            let requestId = surfaceLoadRequestId
             // 预缓存所有视图（延迟）
-            coreModel.allViewKeys.forEach(function(viewKey){
+            root.modelStore.allViewKeys.forEach(function(viewKey){
                 if (hasViewData(viewKey)) {
-                    imageCache.pushCache(getSource(coilId,viewKey,false))
+                    root.imageCacheService.pushCache(getSource(coilId,viewKey,false))
                 }
             })
 
             // 获取钢卷信息
-            api.getCoilInfo(coilId,key,
+            coilInfoRequest = root.apiClient.getCoilInfo(requestedCoilId,requestedKey,
                             (result)=>{
-                                setCoilInfo(JSON.parse(result))
+                                if (requestId !== surfaceLoadRequestId
+                                        || requestedCoilId !== coilId || requestedKey !== key) {
+                                    return
+                                }
+                                coilInfoRequest = null
+                                let payload = JsonUtils.parse(result, null, "coil surface info")
+                                if (payload !== null) {
+                                    setCoilInfo(payload)
+                                }
                             },
                             (error)=>{
+                                if (requestId === surfaceLoadRequestId) {
+                                    coilInfoRequest = null
+                                }
                                 console.log("error")
                             }
                             )
 
             // 获取点数据
             pointTool.clear()
-            api.getPointDatas(
-                        coilId,key,(result)=>{
-                            pointTool.setDatas(JSON.parse(result))
+            pointDataRequest = root.apiClient.getPointDatas(
+                        requestedCoilId,requestedKey,(result)=>{
+                            if (requestId !== surfaceLoadRequestId
+                                    || requestedCoilId !== coilId || requestedKey !== key) {
+                                return
+                            }
+                            pointDataRequest = null
+                            pointTool.setDatas(JsonUtils.parse(result, [], "coil point data"))
                         },
                         (error)=>{
+                            if (requestId === surfaceLoadRequestId) {
+                                pointDataRequest = null
+                            }
                             console.log("getPointDatas error")
                         }
                         )
+        }
+    }
+
+    Component.onDestruction: {
+        heightDataRequestId += 1
+        surfaceLoadRequestId += 1
+        if (heightDataRequest) {
+            heightDataRequest.abort()
+        }
+        if (coilInfoRequest) {
+            coilInfoRequest.abort()
+        }
+        if (pointDataRequest) {
+            pointDataRequest.abort()
         }
     }
 
@@ -356,26 +549,28 @@ Item {
     }
 
     function getSourceByNet(_key_,_coilId_,_viewKey_, preView=false){ // 从网络获取
-        return api.getFileSource(_key_,_coilId_,_viewKey_,preView=preView,imageMask)
+        return root.apiClient.getFileSource(_key_, _coilId_, normalizeViewKey(_viewKey_), preView, imageMask)
     }
 
     function getSourceByLocal(_key_,_coilId_,_viewKey_,preView=false){ // 本机
         let baseFolder = "/jpg/"
-        let baseType= ".jpg"
-        if (!coreModel.quickLyImage){
-                let baseFolder = "/png/"
-                let baseType= ".png"
-            }
-        return locRootSource+"/"+coilId+baseFolder+_viewKey_+baseType
+        let baseType = ".jpg"
+        if (!root.modelStore.quickLyImage){
+            baseFolder = "/png/"
+            baseType = ".png"
+        }
+        return locRootSource + "/" + _coilId_ + baseFolder + _viewKey_ + baseType
     }
 
     // 共享文件夹根路径（UNC），用于远程服务器访问
     function getSharedFolderBase(__key__,_coilId_){
-        return "file:////" + api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + __key__ + "/" + _coilId_
+        return "file:////" + root.apiClient.apiConfig.hostname + "/" + root.settings.sharedFolderBaseName
+                + __key__ + "/" + _coilId_
     }
 
     // 当前服务器是否在本机（127.0.0.1 / localhost）
-    readonly property bool serverIsLocal: api.apiConfig.hostname === "127.0.0.1" || api.apiConfig.hostname === "localhost"
+    readonly property bool serverIsLocal: root.apiClient.apiConfig.hostname === "127.0.0.1"
+                                          || root.apiClient.apiConfig.hostname === "localhost"
 
     // 本机保存目录：基于服务端返回的 saveFolder 构造
     function getLocalFolderBase(__key__, _coilId_) {
@@ -406,30 +601,31 @@ Item {
             if (imageMask){
                 return baseFolder+"/mask/"+_viewKey_+".png"
             }
-            if (coreModel.quickLyImage){
-                let baseFolderName = "/jpg/"
-                let baseType= ".jpg"
-                }
-            return baseFolder+baseFolderName+_viewKey_+baseType
+            if (root.modelStore.quickLyImage){
+                baseFolderName = "/jpg/"
+                baseType = ".jpg"
+            }
+            return baseFolder + baseFolderName + _viewKey_ + baseType
 
         }
 
     }
 
     function getSource(_coilId_,_viewKey_, preView=false){
+        _viewKey_ = normalizeViewKey(_viewKey_)
         let res_url=""
         if ("AREA"==_viewKey_ || "AREA_MASK"==_viewKey_){// 2D AREA 瓦片视图必须使用 HTTP
-            res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+            res_url = getSourceByNet(key, _coilId_, _viewKey_, preView)
         }
-        else if(coreSetting.useLoc){
-            res_url = getSourceByLocal(key,_coilId_,_viewKey_, preView=preView)
+        else if(root.settings.useLoc){
+            res_url = getSourceByLocal(key, _coilId_, _viewKey_, preView)
         }
         else{
-            if (coreSetting.useSharedFolder){
-                res_url = getSourceBySharedFolder(key,_coilId_,_viewKey_, preView=preView)
+            if (root.settings.useSharedFolder){
+                res_url = getSourceBySharedFolder(key, _coilId_, _viewKey_, preView)
             }
             else
-                res_url = getSourceByNet(key,_coilId_,_viewKey_, preView=preView)
+                res_url = getSourceByNet(key, _coilId_, _viewKey_, preView)
         }
         return res_url
     }
@@ -557,15 +753,21 @@ Item {
     function openSaveFolderById(coilId){
         return Qt.openUrlExternally(getBaseUrl(coilId))
     }
-    readonly property string productionMeshPath: "\\\\"+ api.apiConfig.hostname + "/" + coreSetting.sharedFolderBaseName + key + "/"+coilId + "/meshes/defaultobject_mesh.mesh"
-    readonly property string productionMeshUrl: "file:////"+api.apiConfig.hostname+"/"+coreSetting.sharedFolderBaseName+key+"/"+coilId+"/meshes/defaultobject_mesh.mesh"
-    readonly property string testDataMeshPath: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshPath(key, coilId) : ""
-    readonly property string testDataMeshUrl: ScriptLauncher && core.developer_mode ? ScriptLauncher.testDataMeshUrl(key, coilId) : ""
-    readonly property string meshUrl: core.developer_mode && testDataMeshUrl !== "" ? testDataMeshUrl : productionMeshUrl
+    readonly property string productionMeshPath: "\\\\" + root.apiClient.apiConfig.hostname + "/"
+                                                 + root.settings.sharedFolderBaseName + key + "/" + coilId
+                                                 + "/meshes/defaultobject_mesh.mesh"
+    readonly property string productionMeshUrl: getSharedFolderBase(key, coilId)
+                                                + "/meshes/defaultobject_mesh.mesh"
+    readonly property string testDataMeshPath: root.scriptLauncher && root.coreController.developer_mode
+                                               ? root.scriptLauncher.testDataMeshPath(key, coilId) : ""
+    readonly property string testDataMeshUrl: root.scriptLauncher && root.coreController.developer_mode
+                                              ? root.scriptLauncher.testDataMeshUrl(key, coilId) : ""
+    readonly property string meshUrl: root.coreController.developer_mode && testDataMeshUrl !== ""
+                                      ? testDataMeshUrl : productionMeshUrl
 
-    property bool meshExits: ScriptLauncher
-                            ? (core.developer_mode
-                               ? ScriptLauncher.testDataMeshExists(key, coilId)
-                               : ScriptLauncher.fileExists(productionMeshPath))
+    property bool meshExits: root.scriptLauncher
+                            ? (root.coreController.developer_mode
+                               ? root.scriptLauncher.testDataMeshExists(key, coilId)
+                               : root.scriptLauncher.fileExists(productionMeshPath))
                             : false
 }

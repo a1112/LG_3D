@@ -9,28 +9,44 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "Alarm"
-import "HistoryView"
 import "DefectInfo"
-import "../Pages/Card"
-import "../Pages/AlarmPage"
-import "../Pages/AlarmPage/AlarmItemSimple"
-import "../Pages/AlarmPage/AlarmCheckInfo"
 import "../Pages/LeftPage/DataList"
 import "../Pages/LeftPage/SearchView"
-import "../Pages/LeftPage/FliterSelect"
 import "../Pages/LeftPage"
 SplitView{
-      SplitView.preferredWidth: 400
+      id: root
+      required property var adaptiveMetrics
+      required property var defectController
+      required property var style
+      required property var leftController
+      required property var apiClient
+      required property var modelController
+      required property var popupManager
+      required property var coreController
+      required property var authManager
+      required property var globalContext
+
+      SplitView.preferredWidth: root.adaptiveMetrics.scaleMetric(400, 320, 520)
        SplitView.fillHeight: true
        orientation: Qt.Vertical
        DefectInfoView{
+           viewController: root.defectController
+           style: root.style
+           authManager: root.authManager
        }
        DefectClassInfoView{
+           viewController: root.defectController
+           style: root.style
+           authManager: root.authManager
        }
 
        SearchView{ // 查询界面
-           visible: leftCore.searchViewShow
+           visible: root.leftController.searchViewShow
+           adaptiveMetrics: root.adaptiveMetrics
+           style: root.style
+           leftController: root.leftController
+           authManager: root.authManager
+           modelStore: root.modelController
            Layout.fillWidth: true
            SplitView.fillWidth: true
        }
@@ -46,11 +62,22 @@ SplitView{
            id : dataList
            Layout.fillWidth : true
            Layout.fillHeight : true
+           style: root.style
+           coreController: root.coreController
+           modelController: root.modelController
+           leftController: root.leftController
+           popupManager: root.popupManager
+           apiClient: root.apiClient
+           globalContext: root.globalContext
        }
 
        FootView{
+           apiClient: root.apiClient
+           style: root.style
+           model: root.modelController
+           popupManager: root.popupManager
            SplitView.fillWidth: true
-           SplitView.preferredHeight: 25
+           SplitView.preferredHeight: root.adaptiveMetrics.scaleMetric(25, 22, 34)
        }
 
       // Item{

@@ -1,16 +1,21 @@
 import QtQuick
 import QtQuick.Controls
 ItemDelegate{
+    id: root
+
+    required property var controller
+    required property var menuController
+
     height: 20
     font.pointSize: 15
-    text: "缩放：" + ( dataShowCore_.canvasScale*100).toFixed(0) + "%"
+    text: qsTr("缩放：%1%").arg((root.controller.canvasScale * 100).toFixed(0))
     onClicked: {
-        menu_scale.popup()
+        root.menuController.popup()
     }
     Rectangle{
         anchors.fill: parent
-        color:dataShowCore_.errorScaleColor
-        opacity: dataShowCore_.errorScaleSignal?1:0
+        color: root.controller.errorScaleColor
+        opacity: root.controller.errorScaleSignal ? 1 : 0
         Behavior on opacity {
             NumberAnimation {
                 duration: 800
@@ -18,9 +23,9 @@ ItemDelegate{
         }
         Timer{
             interval: 800
-            running:dataShowCore_.errorScaleSignal
+            running: root.controller.errorScaleSignal
             onTriggered: {
-                dataShowCore_.errorScaleSignal = false
+                root.controller.errorScaleSignal = false
             }
         }
     }

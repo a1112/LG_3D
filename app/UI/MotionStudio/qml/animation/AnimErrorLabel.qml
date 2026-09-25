@@ -11,7 +11,7 @@ LabelBase {
 
     SequentialAnimation on color{
          loops: Animation.Infinite
-         running:root.running
+         running: root.running && root.visible
     ColorAnimation {
         from: root.baseColor
         to: root.errorColor

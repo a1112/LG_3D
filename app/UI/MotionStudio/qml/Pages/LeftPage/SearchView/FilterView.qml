@@ -4,16 +4,20 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "../../../Labels"
 Popup {
-        id: popup
-        width:350
-        height:400
+        id: root
+
+        required property var adaptiveMetrics
+        required property var style
+
+        width: root.adaptiveMetrics.boundedWidth(350, 300, 460)
+        height: root.adaptiveMetrics.boundedHeight(400, 320, 520)
         ColumnLayout{
-                anchors.fill:parent
-                spacing:5
+        anchors.fill:parent
+                spacing: root.style.headerButtonGap
             TitleLabel{
                 Layout.alignment:Qt.AlignHCenter
                 text: qsTr("查询条件")
-                color: app.coreStyle.cardBorderColor
+                color: root.style.cardBorderColor
             }
             Item{
                 Layout.fillWidth:true
@@ -24,19 +28,19 @@ Popup {
             }
             RowLayout{
                 Layout.fillWidth:true
-                implicitHeight:40
+                implicitHeight: root.adaptiveMetrics.scaleMetric(40, 34, 54)
 
                 Item{
                     Layout.fillWidth:true
-                     implicitHeight:40
+                     implicitHeight: root.adaptiveMetrics.scaleMetric(40, 34, 54)
                 }
                 Button{
                     text: "   重置   "
                     Material.background: Material.color(Material.Green)
                 }
                 Item{
-                    implicitWidth:50
-                     implicitHeight:10
+                    implicitWidth: root.adaptiveMetrics.headerLargeGap
+                     implicitHeight: root.adaptiveMetrics.mainSpacing
                 }
                 Button{
                     text: "   确认   "

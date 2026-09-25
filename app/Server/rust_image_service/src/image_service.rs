@@ -3,6 +3,7 @@ use std::io::Cursor;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use axum::body::Body;
 use axum::extract::{Path as AxumPath, RawQuery, State};
@@ -12,12 +13,13 @@ use bytes::Bytes;
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use image::{
-    DynamicImage, GrayImage, ImageFormat, ImageReader, Luma, Rgb, RgbImage, Rgba, RgbaImage,
+    DynamicImage, GrayImage, ImageFormat, ImageReader, Limits, Luma, Rgb, RgbImage, Rgba, RgbaImage,
 };
 use lru::LruCache;
 use quick_xml::de::from_str;
 use serde::Deserialize;
 use serde::Serialize;
+use tokio::sync::Semaphore;
 use tracing::warn;
 
 use crate::app_config::{RuntimeConfig, SurfaceConfig};
@@ -29,6 +31,26 @@ pub struct AppState {
     file_cache: Arc<Mutex<LruCache<String, Bytes>>>,
     area_gray_cache: Arc<Mutex<LruCache<String, Arc<GrayImage>>>>,
     tile_bytes_cache: Arc<Mutex<LruCache<String, Bytes>>>,
+    image_operation_semaphore: Arc<Semaphore>,
+    image_saturated_since: Arc<Mutex<Option<Instant>>>,
+    image_last_completed: Arc<Mutex<Instant>>,
+    image_stall_health_threshold: Duration,
+}
+
+const IMAGE_OPERATION_ADMISSION_TIMEOUT: Duration = Duration::from_secs(3);
+const MAX_IMAGE_FILE_BYTES: u64 = 256 * 1024 * 1024;
+const MAX_FILE_CACHE_ENTRY_BYTES: usize = 16 * 1024 * 1024;
+const MAX_TILE_CACHE_ENTRY_BYTES: usize = 8 * 1024 * 1024;
+const MAX_IMAGE_DECODE_DIMENSION: u32 = 200_000;
+const MAX_IMAGE_DECODE_ALLOC_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_DEFECT_CROP_DIMENSION: i32 = 4096;
+
+fn bounded_env_usize(name: &str, default_value: usize, max_value: usize) -> usize {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(default_value)
+        .clamp(1, max_value)
 }
 
 impl AppState {
@@ -36,14 +58,26 @@ impl AppState {
         Self {
             config,
             file_cache: Arc::new(Mutex::new(LruCache::new(
-                NonZeroUsize::new(64).expect("non-zero"),
+                NonZeroUsize::new(bounded_env_usize("RUST_IMAGE_FILE_CACHE_ITEMS", 16, 128))
+                    .expect("non-zero"),
             ))),
             area_gray_cache: Arc::new(Mutex::new(LruCache::new(
                 NonZeroUsize::new(1).expect("non-zero"),
             ))),
             tile_bytes_cache: Arc::new(Mutex::new(LruCache::new(
-                NonZeroUsize::new(64).expect("non-zero"),
+                NonZeroUsize::new(bounded_env_usize("RUST_IMAGE_TILE_CACHE_ITEMS", 24, 128))
+                    .expect("non-zero"),
             ))),
+            image_operation_semaphore: Arc::new(Semaphore::new(bounded_env_usize(
+                "RUST_IMAGE_OPERATION_CONCURRENCY",
+                2,
+                8,
+            ))),
+            image_saturated_since: Arc::new(Mutex::new(None)),
+            image_last_completed: Arc::new(Mutex::new(Instant::now())),
+            image_stall_health_threshold: Duration::from_secs(
+                bounded_env_usize("RUST_IMAGE_STALL_HEALTH_SECONDS", 120, 3600).max(10) as u64,
+            ),
         }
     }
 
@@ -82,6 +116,85 @@ impl AppState {
 pub struct HealthResponse {
     status: &'static str,
     service: &'static str,
+    #[serde(rename = "apiVersion")]
+    api_version: u32,
+    #[serde(rename = "packageVersion")]
+    package_version: &'static str,
+}
+
+async fn run_image_operation<F>(state: Arc<AppState>, operation: F) -> Response
+where
+    F: FnOnce(&AppState) -> Response + Send + 'static,
+{
+    if state.image_operation_semaphore.available_permits() > 0 {
+        if let Ok(mut saturated_since) = state.image_saturated_since.lock() {
+            *saturated_since = None;
+        }
+    }
+    let permit = match tokio::time::timeout(
+        IMAGE_OPERATION_ADMISSION_TIMEOUT,
+        state.image_operation_semaphore.clone().acquire_owned(),
+    )
+    .await
+    {
+        Ok(Ok(permit)) => permit,
+        Ok(Err(_)) => return python_internal_server_error_response(),
+        Err(_) => {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                "image service is busy; retry later",
+            )
+                .into_response();
+        }
+    };
+    if state.image_operation_semaphore.available_permits() == 0 {
+        if let Ok(mut saturated_since) = state.image_saturated_since.lock() {
+            saturated_since.get_or_insert_with(Instant::now);
+        }
+    }
+
+    match tokio::task::spawn_blocking(move || {
+        // If the HTTP request is cancelled, the blocking operation cannot be
+        // cancelled safely. Keeping the permit here prevents abandoned work
+        // from allowing more expensive jobs to enter.
+        let response = operation(&state);
+        drop(permit);
+        if let Ok(mut last_completed) = state.image_last_completed.lock() {
+            *last_completed = Instant::now();
+        }
+        if state.image_operation_semaphore.available_permits() > 0 {
+            if let Ok(mut saturated_since) = state.image_saturated_since.lock() {
+                *saturated_since = None;
+            }
+        }
+        response
+    })
+    .await
+    {
+        Ok(response) => response,
+        Err(error) => {
+            warn!("image operation worker failed: {error}");
+            python_internal_server_error_response()
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct CacheClearResponse {
+    ok: bool,
+}
+
+pub async fn clear_cache(State(state): State<Arc<AppState>>) -> axum::Json<CacheClearResponse> {
+    if let Ok(mut cache) = state.file_cache.lock() {
+        cache.clear();
+    }
+    if let Ok(mut cache) = state.area_gray_cache.lock() {
+        cache.clear();
+    }
+    if let Ok(mut cache) = state.tile_bytes_cache.lock() {
+        cache.clear();
+    }
+    axum::Json(CacheClearResponse { ok: true })
 }
 
 #[derive(Debug, Deserialize)]
@@ -213,31 +326,74 @@ struct BoundingBox {
     ymax: i32,
 }
 
-pub async fn health() -> impl IntoResponse {
-    axum::Json(HealthResponse {
-        status: "ok",
+pub async fn health(State(state): State<Arc<AppState>>) -> Response {
+    let saturated_for = state
+        .image_saturated_since
+        .lock()
+        .ok()
+        .and_then(|started| started.as_ref().map(Instant::elapsed));
+    let last_progress = state
+        .image_last_completed
+        .lock()
+        .map(|completed| completed.elapsed())
+        .unwrap_or_default();
+    let stalled = state.image_operation_semaphore.available_permits() == 0
+        && saturated_for
+            .map(|duration| duration >= state.image_stall_health_threshold)
+            .unwrap_or(false)
+        && last_progress >= state.image_stall_health_threshold;
+    let payload = axum::Json(HealthResponse {
+        status: if stalled { "degraded" } else { "ok" },
         service: "rust_image_service",
-    })
+        api_version: 2,
+        package_version: env!("CARGO_PKG_VERSION"),
+    });
+    if stalled {
+        (StatusCode::SERVICE_UNAVAILABLE, payload).into_response()
+    } else {
+        (StatusCode::OK, payload).into_response()
+    }
 }
 
 pub async fn preview_image(
     State(state): State<Arc<AppState>>,
     AxumPath((surface_key, coil_id, type_)): AxumPath<(String, String, String)>,
 ) -> Response {
-    match resolve_preview_path(&state, &surface_key, &coil_id, &type_) {
-        Some(path) => serve_file(&state, path),
-        None => missing_image_response(),
-    }
+    run_image_operation(state, move |state| {
+        match resolve_preview_path(state, &surface_key, &coil_id, &type_) {
+            Some(path) => serve_file(state, path),
+            None => missing_image_response(),
+        }
+    })
+    .await
 }
 
 pub async fn source_image(
     State(state): State<Arc<AppState>>,
     AxumPath((surface_key, coil_id, type_)): AxumPath<(String, String, String)>,
+    RawQuery(raw_query): RawQuery,
 ) -> Response {
-    match resolve_source_path(&state, &surface_key, &coil_id, &type_, false) {
-        Some(path) => serve_file(&state, path),
-        None => missing_image_response(),
-    }
+    let query = parse_raw_query(raw_query.as_deref().unwrap_or_default());
+    let mask = match parse_optional_bool_query(&query, "mask") {
+        Ok(mask) => mask.unwrap_or(false),
+        Err(response) => return response,
+    };
+    let thumbnail = match parse_optional_bool_query(&query, "thumbnail") {
+        Ok(thumbnail) => thumbnail.unwrap_or(false),
+        Err(response) => return response,
+    };
+    run_image_operation(state, move |state| {
+        let path = if thumbnail {
+            resolve_preview_path(state, &surface_key, &coil_id, &type_)
+        } else {
+            resolve_source_path(state, &surface_key, &coil_id, &type_, mask)
+        };
+        match path {
+            Some(path) => serve_file(state, path),
+            None => missing_image_response(),
+        }
+    })
+    .await
 }
 
 pub async fn classifier_image(
@@ -256,34 +412,42 @@ pub async fn classifier_image(
         Ok(coil_id) => coil_id,
         Err(response) => return response,
     };
-    if let Some(production_surface_dir) =
-        state.production_surface_dir_for_coil(&surface_key, coil_id)
-    {
-        if let Some(path) =
-            cached_classifier_image_path(&production_surface_dir, &class_name, coil_id, x, y)
+    run_image_operation(state, move |state| {
+        if let Some(production_surface_dir) =
+            state.production_surface_dir_for_coil(&surface_key, coil_id)
         {
-            return serve_file(&state, path);
+            if let Some(path) =
+                cached_classifier_image_path(&production_surface_dir, &class_name, coil_id, x, y)
+            {
+                return serve_file(state, path);
+            }
         }
-    }
+        if !valid_crop_dimensions(w, h) {
+            return missing_image_response();
+        }
 
-    let Some(surface_dir) = state.main_api_surface_dir_for_request(&surface_key, coil_id) else {
-        return missing_image_response();
-    };
+        let Some(surface_dir) = state.main_api_surface_dir_for_request(&surface_key, coil_id)
+        else {
+            return missing_image_response();
+        };
 
-    let Some(source) = load_named_rgb_image_from_surface_dir(&state, &surface_dir, "GRAY") else {
-        return missing_image_response();
-    };
-    let Some((clip_x, clip_y, clip_w, clip_h)) =
-        image_clip_box(x, y, w, h, source.width(), source.height())
-    else {
-        return missing_image_response();
-    };
+        let Some(source) = load_named_rgb_image_from_surface_dir(state, &surface_dir, "GRAY")
+        else {
+            return missing_image_response();
+        };
+        let Some((clip_x, clip_y, clip_w, clip_h)) =
+            image_clip_box(x, y, w, h, source.width(), source.height())
+        else {
+            return missing_image_response();
+        };
 
-    let crop = image::imageops::crop_imm(&source, clip_x, clip_y, clip_w, clip_h).to_image();
-    match encode_jpeg(DynamicImage::ImageRgb8(crop), 90) {
-        Some(bytes) => jpeg_bytes_response(bytes),
-        None => missing_image_response(),
-    }
+        let crop = image::imageops::crop_imm(&source, clip_x, clip_y, clip_w, clip_h).to_image();
+        match encode_jpeg(DynamicImage::ImageRgb8(crop), 90) {
+            Some(bytes) => jpeg_bytes_response(bytes),
+            None => missing_image_response(),
+        }
+    })
+    .await
 }
 
 pub async fn render_image(
@@ -295,11 +459,14 @@ pub async fn render_image(
         Ok(query) => query,
         Err(response) => return response,
     };
-    let Some(surface_dir) = image_request_coil_dir(&state, &surface_key, &coil_id) else {
-        return render_placeholder_response(&query);
-    };
-    render_image_from_surface_dir(&state, &surface_dir, &query)
-        .unwrap_or_else(|| render_placeholder_response(&query))
+    run_image_operation(state, move |state| {
+        let Some(surface_dir) = image_request_coil_dir(state, &surface_key, &coil_id) else {
+            return render_placeholder_response(&query);
+        };
+        render_image_from_surface_dir(state, &surface_dir, &query)
+            .unwrap_or_else(|| render_placeholder_response(&query))
+    })
+    .await
 }
 
 pub async fn error_image(
@@ -311,22 +478,25 @@ pub async fn error_image(
         Ok(query) => query,
         Err(response) => return response,
     };
-    if let Some(path) = resolve_error_cache_path(&state, &surface_key, &coil_id, &query) {
-        return serve_file(&state, path);
-    }
-    if query.force_cache.unwrap_or(false) {
-        return transparent_png_response(100, 100);
-    }
-    let Some(surface_dir) = image_request_coil_dir(&state, &surface_key, &coil_id) else {
-        return transparent_png_response(100, 100);
-    };
-    let Some(depth_map) = load_depth_map_from_dir(&surface_dir) else {
-        return transparent_png_response(100, 100);
-    };
-    if let Some(bytes) = generate_error_png(&depth_map, &query) {
-        return png_bytes_response(bytes);
-    }
-    transparent_png_response(100, 100)
+    run_image_operation(state, move |state| {
+        if let Some(path) = resolve_error_cache_path(state, &surface_key, &coil_id, &query) {
+            return serve_file(state, path);
+        }
+        if query.force_cache.unwrap_or(false) {
+            return transparent_png_response(100, 100);
+        }
+        let Some(surface_dir) = image_request_coil_dir(state, &surface_key, &coil_id) else {
+            return transparent_png_response(100, 100);
+        };
+        let Some(depth_map) = load_depth_map_from_dir(&surface_dir) else {
+            return transparent_png_response(100, 100);
+        };
+        if let Some(bytes) = generate_error_png(&depth_map, &query) {
+            return png_bytes_response(bytes);
+        }
+        transparent_png_response(100, 100)
+    })
+    .await
 }
 
 pub async fn coil_data_area_image(
@@ -346,17 +516,20 @@ pub async fn coil_data_area_image(
     {
         return python_internal_server_error_response();
     }
-    let Some(surface_dir) = image_request_coil_dir(&state, &surface_key, &coil_id) else {
-        return python_internal_server_error_response();
-    };
-    let Some(depth_map) = load_depth_map_from_dir(&surface_dir) else {
-        return python_internal_server_error_response();
-    };
-    let _mask = query.mask.unwrap_or(true);
-    match generate_area_png(&depth_map, &query) {
-        Some(bytes) => png_bytes_response(bytes),
-        None => transparent_png_response(100, 100),
-    }
+    run_image_operation(state, move |state| {
+        let Some(surface_dir) = image_request_coil_dir(state, &surface_key, &coil_id) else {
+            return python_internal_server_error_response();
+        };
+        let Some(depth_map) = load_depth_map_from_dir(&surface_dir) else {
+            return python_internal_server_error_response();
+        };
+        let _mask = query.mask.unwrap_or(true);
+        match generate_area_png(&depth_map, &query) {
+            Some(bytes) => png_bytes_response(bytes),
+            None => transparent_png_response(100, 100),
+        }
+    })
+    .await
 }
 
 pub async fn area_image_compat(
@@ -368,7 +541,10 @@ pub async fn area_image_compat(
         Ok(query) => query,
         Err(response) => return response,
     };
-    area_image_response(&state, &surface_key, &coil_id, "AREA", query)
+    run_image_operation(state, move |state| {
+        area_image_response(state, &surface_key, &coil_id, "AREA", query)
+    })
+    .await
 }
 
 pub async fn area_image_typed(
@@ -381,7 +557,10 @@ pub async fn area_image_typed(
         Ok(query) => query,
         Err(response) => return response,
     };
-    area_image_response(&state, &surface_key, &coil_id, &type_, query)
+    run_image_operation(state, move |state| {
+        area_image_response(state, &surface_key, &coil_id, &type_, query)
+    })
+    .await
 }
 
 fn normalize_area_image_type(type_: &str) -> String {
@@ -533,6 +712,11 @@ fn parse_defect_image_coord(value: &str, default_value: i32) -> Result<i32, ()> 
         return Ok(default_value);
     }
     value.parse::<i32>().map_err(|_| ())
+}
+
+fn valid_crop_dimensions(width: i32, height: i32) -> bool {
+    (1..=MAX_DEFECT_CROP_DIMENSION).contains(&width)
+        && (1..=MAX_DEFECT_CROP_DIMENSION).contains(&height)
 }
 
 fn clip_max_output_dir(raw_query: Option<&str>, surface_dir: &Path) -> PathBuf {
@@ -779,27 +963,34 @@ pub async fn defect_image(
     let Ok(h) = parse_defect_image_coord(&h, 100) else {
         return missing_image_response();
     };
+    run_image_operation(state, move |state| {
+        if let Some(production_surface_dir) =
+            state.production_surface_dir_for_coil(&surface_key, coil_id)
+            && let Some(path) =
+                matching_detection_defect_image_path(&production_surface_dir, coil_id, x, y, w, h)
+        {
+            return serve_file(state, path);
+        }
+        if !valid_crop_dimensions(w, h) {
+            return missing_image_response();
+        }
 
-    if let Some(production_surface_dir) =
-        state.production_surface_dir_for_coil(&surface_key, coil_id)
-        && let Some(path) =
-            matching_detection_defect_image_path(&production_surface_dir, coil_id, x, y, w, h)
-    {
-        return serve_file(&state, path);
-    }
+        let Some(surface_dir) = state.main_api_surface_dir_for_request(&surface_key, coil_id)
+        else {
+            return missing_image_response();
+        };
 
-    let Some(surface_dir) = state.main_api_surface_dir_for_request(&surface_key, coil_id) else {
-        return missing_image_response();
-    };
-
-    let Some(source) = load_named_rgb_image_from_surface_dir(&state, &surface_dir, &type_) else {
-        return missing_image_response();
-    };
-    let crop = defect_image_crop(&source, x, y, w, h);
-    match encode_jpeg(DynamicImage::ImageRgb8(crop), 85) {
-        Some(bytes) => jpeg_bytes_response(bytes),
-        None => missing_image_response(),
-    }
+        let Some(source) = load_named_rgb_image_from_surface_dir(state, &surface_dir, &type_)
+        else {
+            return missing_image_response();
+        };
+        let crop = defect_image_crop(&source, x, y, w, h);
+        match encode_jpeg(DynamicImage::ImageRgb8(crop), 85) {
+            Some(bytes) => jpeg_bytes_response(bytes),
+            None => missing_image_response(),
+        }
+    })
+    .await
 }
 
 pub async fn clip_max_image(
@@ -811,21 +1002,29 @@ pub async fn clip_max_image(
         Ok(coil_id) => coil_id,
         Err(response) => return response,
     };
-    let coil_id_path = coil_id.to_string();
-    let Some(surface_dir) = image_request_coil_dir(&state, &surface_key, &coil_id_path) else {
-        return json_null_response();
-    };
-    let output_dir = clip_max_output_dir(raw_query.as_deref(), &surface_dir);
-    if output_dir.exists() {
-        return json_null_response();
-    }
-    if std::fs::create_dir_all(&output_dir).is_err() {
-        return json_null_response();
-    }
+    run_image_operation(state, move |state| {
+        let coil_id_path = coil_id.to_string();
+        let Some(surface_dir) = image_request_coil_dir(state, &surface_key, &coil_id_path) else {
+            return json_null_response();
+        };
+        let output_dir = clip_max_output_dir(raw_query.as_deref(), &surface_dir);
+        if output_dir.exists() {
+            return json_null_response();
+        }
+        if std::fs::create_dir_all(&output_dir).is_err() {
+            return json_null_response();
+        }
 
-    let _ =
-        clip_max_images_from_surface_dir(&state, &surface_dir, &output_dir, coil_id, &surface_key);
-    json_null_response()
+        let _ = clip_max_images_from_surface_dir(
+            state,
+            &surface_dir,
+            &output_dir,
+            coil_id,
+            &surface_key,
+        );
+        json_null_response()
+    })
+    .await
 }
 
 fn load_named_rgb_image_from_surface_dir(
@@ -926,12 +1125,12 @@ fn defect_image_crop(source: &RgbImage, x: i32, y: i32, w: i32, h: i32) -> RgbIm
         return RgbImage::new(1, 1);
     }
 
-    let requested_w = w.max(1);
-    let requested_h = h.max(1);
+    let requested_w = w.clamp(1, MAX_DEFECT_CROP_DIMENSION);
+    let requested_h = h.clamp(1, MAX_DEFECT_CROP_DIMENSION);
     let mut crop_x = x;
     let mut crop_y = y;
-    let mut crop_w = w;
-    let mut crop_h = h;
+    let mut crop_w = requested_w;
+    let mut crop_h = requested_h;
 
     if crop_x < 0 {
         crop_w += crop_x;
@@ -969,7 +1168,10 @@ fn defect_image_crop(source: &RgbImage, x: i32, y: i32, w: i32, h: i32) -> RgbIm
     )
     .to_image();
 
-    let out_of_bounds = x < 0 || y < 0 || x + w > image_width || y + h > image_height;
+    let out_of_bounds = x < 0
+        || y < 0
+        || i64::from(x) + i64::from(w) > i64::from(image_width)
+        || i64::from(y) + i64::from(h) > i64::from(image_height);
     if !out_of_bounds {
         return crop;
     }
@@ -989,10 +1191,13 @@ fn image_clip_box(
     image_width: u32,
     image_height: u32,
 ) -> Option<(u32, u32, u32, u32)> {
-    let x1 = x.max(0);
-    let y1 = y.max(0);
-    let x2 = (x + w).min(image_width as i32);
-    let y2 = (y + h).min(image_height as i32);
+    if !valid_crop_dimensions(w, h) {
+        return None;
+    }
+    let x1 = i64::from(x.max(0));
+    let y1 = i64::from(y.max(0));
+    let x2 = (i64::from(x) + i64::from(w)).min(i64::from(image_width));
+    let y2 = (i64::from(y) + i64::from(h)).min(i64::from(image_height));
     if x2 <= x1 || y2 <= y1 {
         return None;
     }
@@ -1008,7 +1213,7 @@ fn clip_max_images_from_surface_dir(
 ) -> Result<usize, String> {
     let source = load_named_rgb_image_from_surface_dir(state, surface_dir, "GRAY")
         .ok_or_else(|| "source image not found".to_string())?;
-    let mask = load_mask_image(surface_dir)
+    let mask = load_mask_image(state, surface_dir)
         .unwrap_or_else(|| GrayImage::from_pixel(source.width(), source.height(), Luma([255])));
     let image_width = source.width() as i32;
     let image_height = source.height() as i32;
@@ -1171,7 +1376,7 @@ fn render_image_from_surface_dir(
 ) -> Option<Response> {
     let colormap = query.colormap();
     if !query.thumbnail() {
-        return render_dynamic_response(surface_dir, query);
+        return render_dynamic_response(state, surface_dir, query);
     }
 
     if let Some(path) = falsecolor_thumbnail_path(surface_dir, colormap) {
@@ -1179,10 +1384,10 @@ fn render_image_from_surface_dir(
     }
 
     if query.grayscale() && query.mask() {
-        return render_dynamic_response(surface_dir, &query.with_thumbnail(false));
+        return render_dynamic_response(state, surface_dir, &query.with_thumbnail(false));
     }
 
-    let bytes = render_dynamic_image_from_surface_dir(surface_dir, query)?;
+    let bytes = render_dynamic_image_from_surface_dir(state, surface_dir, query)?;
     write_falsecolor_thumbnail_cache(surface_dir, colormap, &bytes);
     let mut response = jpeg_bytes_response(bytes);
     set_render_headers(&mut response, query, false);
@@ -1220,27 +1425,32 @@ fn write_falsecolor_thumbnail_cache(surface_dir: &Path, colormap: &str, bytes: &
     }
 }
 
-fn render_dynamic_response(surface_dir: &Path, query: &RenderQuery) -> Option<Response> {
-    let bytes = render_dynamic_image_from_surface_dir(surface_dir, query)?;
+fn render_dynamic_response(
+    state: &AppState,
+    surface_dir: &Path,
+    query: &RenderQuery,
+) -> Option<Response> {
+    let bytes = render_dynamic_image_from_surface_dir(state, surface_dir, query)?;
     let mut response = jpeg_bytes_response(bytes);
     set_render_headers(&mut response, query, false);
     Some(response)
 }
 
 fn render_dynamic_image_from_surface_dir(
+    state: &AppState,
     surface_dir: &Path,
     query: &RenderQuery,
 ) -> Option<Vec<u8>> {
     let depth_map = load_depth_map_from_dir(surface_dir)?;
     let mask = if query.mask() {
-        load_mask_image(surface_dir)
+        load_mask_image(state, surface_dir)
     } else {
         None
     };
     generate_render_jpeg(&depth_map, mask.as_ref(), query)
 }
 
-fn load_mask_image(surface_dir: &Path) -> Option<GrayImage> {
+fn load_mask_image(state: &AppState, surface_dir: &Path) -> Option<GrayImage> {
     [
         surface_dir.join("mask").join("MASK.png"),
         surface_dir.join("mask").join("MASK.jpg"),
@@ -1250,7 +1460,7 @@ fn load_mask_image(surface_dir: &Path) -> Option<GrayImage> {
     ]
     .iter()
     .find(|path| path.exists())
-    .and_then(|path| image::open(path).ok())
+    .and_then(|path| load_image(state, path))
     .map(|image| image.to_luma8())
 }
 
@@ -1688,6 +1898,7 @@ fn normalized_scale(scale: Option<f64>) -> f64 {
     scale
         .filter(|value| value.is_finite() && *value > 0.0)
         .unwrap_or(1.0)
+        .min(1.0)
 }
 
 fn resolve_error_cache_path(
@@ -1908,7 +2119,22 @@ fn crop_area_tile_gray(
     // tile and col selects the y-axis tile when no disk cache is available.
     let x = row as u32 * tile_w;
     let y = col as u32 * tile_h;
-    Some(image::imageops::crop_imm(image, x, y, tile_w, tile_h).to_image())
+    let x2 = if row == tile_count - 1 {
+        width
+    } else {
+        x + tile_w
+    };
+    let y2 = if col == tile_count - 1 {
+        height
+    } else {
+        y + tile_h
+    };
+    let crop_w = x2.saturating_sub(x);
+    let crop_h = y2.saturating_sub(y);
+    if crop_w == 0 || crop_h == 0 {
+        return None;
+    }
+    Some(image::imageops::crop_imm(image, x, y, crop_w, crop_h).to_image())
 }
 
 fn write_area_l4_tile_cache_from_source(
@@ -1994,7 +2220,7 @@ fn load_image(state: &AppState, path: &Path) -> Option<DynamicImage> {
     let mut reader = ImageReader::new(Cursor::new(bytes.as_ref()))
         .with_guessed_format()
         .ok()?;
-    reader.no_limits();
+    apply_image_decode_limits(&mut reader);
     reader.decode().ok()
 }
 
@@ -2010,13 +2236,21 @@ fn load_area_gray_image(state: &AppState, path: &Path) -> Option<Arc<GrayImage>>
     let mut reader = ImageReader::new(Cursor::new(bytes.as_ref()))
         .with_guessed_format()
         .ok()?;
-    reader.no_limits();
+    apply_image_decode_limits(&mut reader);
     let image = Arc::new(reader.decode().ok()?.into_luma8());
 
     if let Ok(mut cache) = state.area_gray_cache.lock() {
         cache.put(key, image.clone());
     }
     Some(image)
+}
+
+fn apply_image_decode_limits(reader: &mut ImageReader<Cursor<&[u8]>>) {
+    let mut limits = Limits::default();
+    limits.max_image_width = Some(MAX_IMAGE_DECODE_DIMENSION);
+    limits.max_image_height = Some(MAX_IMAGE_DECODE_DIMENSION);
+    limits.max_alloc = Some(MAX_IMAGE_DECODE_ALLOC_BYTES);
+    reader.limits(limits);
 }
 
 fn encode_jpeg(image: DynamicImage, quality: u8) -> Option<Vec<u8>> {
@@ -2240,6 +2474,23 @@ fn get_file_bytes(state: &AppState, path: &Path) -> Option<Bytes> {
         }
     }
 
+    let file_size = match std::fs::metadata(path) {
+        Ok(metadata) if metadata.len() <= MAX_IMAGE_FILE_BYTES => metadata.len(),
+        Ok(metadata) => {
+            warn!(
+                "refusing oversized image file {:?}: {} bytes (limit {})",
+                path,
+                metadata.len(),
+                MAX_IMAGE_FILE_BYTES
+            );
+            return None;
+        }
+        Err(error) => {
+            warn!("failed to inspect {:?}: {}", path, error);
+            return None;
+        }
+    };
+
     let bytes = match std::fs::read(path) {
         Ok(bytes) => Bytes::from(bytes),
         Err(err) => {
@@ -2247,9 +2498,20 @@ fn get_file_bytes(state: &AppState, path: &Path) -> Option<Bytes> {
             return None;
         }
     };
+    if bytes.len() as u64 > MAX_IMAGE_FILE_BYTES {
+        warn!(
+            "refusing image file that grew while reading {:?}: {} bytes (limit {})",
+            path,
+            bytes.len(),
+            MAX_IMAGE_FILE_BYTES
+        );
+        return None;
+    }
 
-    if let Ok(mut cache) = state.file_cache.lock() {
-        cache.put(key, bytes.clone());
+    if bytes.len() <= MAX_FILE_CACHE_ENTRY_BYTES && bytes.len() as u64 == file_size {
+        if let Ok(mut cache) = state.file_cache.lock() {
+            cache.put(key, bytes.clone());
+        }
     }
     Some(bytes)
 }
@@ -2281,8 +2543,10 @@ fn get_cached_tile_bytes(state: &AppState, key: &str) -> Option<Bytes> {
 }
 
 fn store_tile_bytes(state: &AppState, key: String, bytes: Vec<u8>) -> Vec<u8> {
-    if let Ok(mut cache) = state.tile_bytes_cache.lock() {
-        cache.put(key, Bytes::from(bytes.clone()));
+    if bytes.len() <= MAX_TILE_CACHE_ENTRY_BYTES {
+        if let Ok(mut cache) = state.tile_bytes_cache.lock() {
+            cache.put(key, Bytes::from(bytes.clone()));
+        }
     }
     bytes
 }
@@ -3322,6 +3586,165 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn source_image_thumbnail_query_returns_preview_instead_of_full_source() {
+        let temp_dir = unique_temp_dir();
+        let save_s = temp_dir.join("Save_S");
+        let source_path = save_s.join("42").join("png").join("GRAY.png");
+        let preview_path = save_s.join("42").join("preview").join("GRAY.jpeg");
+        write_png(&source_path, 101, 81, Rgb([80, 90, 100]));
+        write_jpeg(&preview_path, 13, 9, Rgb([20, 30, 40]));
+        let state = Arc::new(AppState::new(RuntimeConfig {
+            surfaces: vec![SurfaceConfig {
+                key: "S".to_string(),
+                save_folder: save_s,
+            }],
+            test_data: None,
+        }));
+        let app = axum::Router::new()
+            .route(
+                "/image/source/{surface_key}/{coil_id}/{type_}",
+                axum::routing::get(source_image),
+            )
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/image/source/S/42/GRAY?thumbnail=true&mask=false")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        let image = image::load_from_memory(&body).expect("preview jpeg");
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "image/jpeg");
+        assert_eq!(image.dimensions(), (13, 9));
+
+        let _ = fs::remove_dir_all(temp_dir);
+    }
+
+    #[tokio::test]
+    async fn source_image_query_rejects_invalid_booleans() {
+        let state = Arc::new(AppState::new(RuntimeConfig {
+            surfaces: vec![SurfaceConfig {
+                key: "S".to_string(),
+                save_folder: unique_temp_dir(),
+            }],
+            test_data: None,
+        }));
+        let app = axum::Router::new()
+            .route(
+                "/image/source/{surface_key}/{coil_id}/{type_}",
+                axum::routing::get(source_image),
+            )
+            .with_state(state);
+
+        for uri in [
+            "/image/source/S/42/GRAY?thumbnail=invalid",
+            "/image/source/S/42/GRAY?mask=invalid",
+        ] {
+            let response = app
+                .clone()
+                .oneshot(
+                    axum::http::Request::builder()
+                        .uri(uri)
+                        .body(Body::empty())
+                        .expect("request"),
+                )
+                .await
+                .expect("response");
+            assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    #[tokio::test]
+    async fn health_reports_stable_api_and_package_versions() {
+        let state = Arc::new(AppState::new(RuntimeConfig {
+            surfaces: Vec::new(),
+            test_data: None,
+        }));
+        let app = axum::Router::new()
+            .route("/health", axum::routing::get(health))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        let status = response.status();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        let payload: serde_json::Value = serde_json::from_slice(&body).expect("health json");
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["service"], "rust_image_service");
+        assert_eq!(payload["apiVersion"], 2);
+        assert_eq!(payload["packageVersion"], env!("CARGO_PKG_VERSION"));
+    }
+
+    #[tokio::test]
+    async fn health_reports_persistent_saturated_workers_as_degraded() {
+        let state = Arc::new(AppState::new(RuntimeConfig {
+            surfaces: Vec::new(),
+            test_data: None,
+        }));
+        let available = state.image_operation_semaphore.available_permits();
+        let _held_permits = (0..available)
+            .map(|_| {
+                state
+                    .image_operation_semaphore
+                    .clone()
+                    .try_acquire_owned()
+                    .expect("test operation permit")
+            })
+            .collect::<Vec<_>>();
+        let stale_at = Instant::now()
+            .checked_sub(state.image_stall_health_threshold + Duration::from_secs(1))
+            .expect("stale instant");
+        *state
+            .image_saturated_since
+            .lock()
+            .expect("saturation state") = Some(stale_at);
+        *state
+            .image_last_completed
+            .lock()
+            .expect("last completion state") = stale_at;
+
+        let app = axum::Router::new()
+            .route("/health", axum::routing::get(health))
+            .with_state(state);
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        let payload: serde_json::Value = serde_json::from_slice(&body).expect("health json");
+        assert_eq!(payload["status"], "degraded");
+    }
+
+    #[tokio::test]
     async fn preview_image_route_reads_jpeg_preview_like_main_api() {
         let temp_dir = unique_temp_dir();
         let save_s = temp_dir.join("Save_S");
@@ -3959,6 +4382,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn defect_image_route_rejects_oversized_crop_before_allocating() {
+        let state = Arc::new(AppState::new(RuntimeConfig {
+            surfaces: Vec::new(),
+            test_data: None,
+        }));
+        let app = axum::Router::new()
+            .route(
+                "/defect_image/{surface_key}/{coil_id}/{type_}/{x}/{y}/{w}/{h}",
+                axum::routing::get(defect_image),
+            )
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/defect_image/S/42/GRAY/0/0/4097/4097")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        assert_eq!(body.as_ref(), PLACEHOLDER_JPEG);
+    }
+
+    #[test]
+    fn normalized_scale_caps_upscaling_to_prevent_unbounded_allocations() {
+        assert_eq!(normalized_scale(Some(1.0)), 1.0);
+        assert_eq!(normalized_scale(Some(10_000.0)), 1.0);
+        assert_eq!(normalized_scale(Some(0.25)), 0.25);
+    }
+
+    #[tokio::test]
     async fn defect_image_route_uses_gray_crop_when_main_api_detection_lookup_misses_surface_detection_dir()
      {
         let temp_dir = unique_temp_dir();
@@ -4514,5 +4973,16 @@ mod tests {
             180,
             "Python's fallback crop uses x=row and y=col"
         );
+    }
+
+    #[test]
+    fn area_tile_crop_keeps_last_swapped_axis_edges() {
+        let image = GrayImage::from_fn(7, 5, |x, y| Luma([(x + y) as u8]));
+
+        let last_x = crop_area_tile_gray(&image, 2, 1, 3).expect("last x-axis tile");
+        assert_eq!(last_x.dimensions(), (3, 1));
+
+        let last_y = crop_area_tile_gray(&image, 1, 2, 3).expect("last y-axis tile");
+        assert_eq!(last_y.dimensions(), (2, 3));
     }
 }

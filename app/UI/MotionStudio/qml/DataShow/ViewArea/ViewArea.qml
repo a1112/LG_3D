@@ -1,11 +1,17 @@
 import QtQuick
 import QtQuick.Controls
 import "../Aerial"
-import "Draw"
 import "../Comps"
-import "ViewTool"
 Item {
     id:root
+
+    required property var dataAreaShowCore
+    required property var style
+    required property var globalContext
+    required property var apiClient
+    required property var settings
+    required property var surfaceData
+
     anchors.fill: parent
 
 
@@ -13,10 +19,10 @@ Item {
         id:flick
         clip: true
         anchors.fill: parent
-        contentWidth: dataAreaShowCore.canvasContentWidth
-        contentHeight: dataAreaShowCore.canvasContentHeight
+        contentWidth: root.dataAreaShowCore.canvasContentWidth
+        contentHeight: root.dataAreaShowCore.canvasContentHeight
         Component.onCompleted: {
-            dataAreaShowCore.flick = this
+            root.dataAreaShowCore.flick = this
         }
         ScrollBar.vertical: ScrollBar {
             id:scrollBarV
@@ -26,25 +32,35 @@ Item {
         }
         Item{
             id:canvas
-            width: dataAreaShowCore.canvasContentWidth
-            height: dataAreaShowCore.canvasContentHeight
+            width: root.dataAreaShowCore.canvasContentWidth
+            height: root.dataAreaShowCore.canvasContentHeight
 
-            ImageView{}
-
-            ShowDefects{ // 缺陷绘制
+            ImageView {
+                areaController: root.dataAreaShowCore
+                apiService: root.apiClient
+                settingsStore: root.settings
+                surfaceData: root.surfaceData
+                appStyle: root.style
             }
-            // DrawView{
-            //     // 绘制
-            // }
-            ControlView{
-            // 控制系统
+
+            ShowDefects { // 缺陷绘制
+                controller: root.dataAreaShowCore
+                defectClassController: root.globalContext.defectClassProperty
+                style: root.style
+            }
+            ControlView {
+                controller: root.dataAreaShowCore
+                flickable: flick
+                style: root.style
             }
         }
 
     }
 
     AerialView{// 鸟亏图
-        source: dataAreaShowCore.pre_source  // 缩略图像
+        source: root.dataAreaShowCore.pre_source  // 缩略图像
+        controller: root.dataAreaShowCore
+        style: root.style
         y:root.height - height-scrollBarH.height
     }
 

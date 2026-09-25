@@ -8,8 +8,14 @@ import QtQuick3D.Helpers
 import QtQuick.Controls.Material
 Item {
     id: root
+
+    required property var surfaceData
+    required property var dataShowCore
+    required property var view3DController
+    required property var style
+
     function getCoilDataValue(keys, defaultValue) {
-        let info = surfaceData.coilInfo || {}
+        let info = root.surfaceData.coilInfo || {}
         let coilData = info.coilData || info
         for (let i = 0; i < keys.length; i++) {
             let key = keys[i]
@@ -28,7 +34,7 @@ Item {
     }
 
     function getPixelOuterDiameter(defaultValue) {
-        let info = surfaceData.coilInfo || {}
+        let info = root.surfaceData.coilInfo || {}
         let cropBox = info.crop_box
         if (cropBox && cropBox.length >= 4) {
             let cropW = Number(cropBox[2])
@@ -58,9 +64,9 @@ Item {
     anchors.fill:parent
     Rectangle{
         anchors.fill: parent
-        color: "#22000000"
+        color: root.style.viewportBackgroundColor
         border.width: 1
-        border.color:Material.color(Material.Blue)
+        border.color: root.style.headerBorderColor
     }
     View3D {
         id: view3D
@@ -107,9 +113,9 @@ Item {
             //     // y: core3D.objectOffsetY
             // }
             PerspectiveCamera {
-                x:core3D.cameraOffsetX
-                y:core3D.cameraOffsetY
-                z:core3D.cameraOffsetZ+450
+                x: root.view3DController.cameraOffsetX
+                y: root.view3DController.cameraOffsetY
+                z: root.view3DController.cameraOffsetZ + 450
                 id: sceneCamera
                 clipFar: 10000000
             }
@@ -117,14 +123,15 @@ Item {
 
         Node {
             id:modelNode
-            z: core3D.objectOffsetZ
-            x: core3D.objectOffsetX
-            y: core3D.objectOffsetY
-            scale: core3D.objectScale
+            z: root.view3DController.objectOffsetZ
+            x: root.view3DController.objectOffsetX
+            y: root.view3DController.objectOffsetY
+            scale: root.view3DController.objectScale
 
             Node3D {
                 id: singleSurfaceFrontNode
-                meshKey: surfaceData.key
+                surfaceData: root.surfaceData
+                meshKey: root.surfaceData.key
                 centerDepth: false
                 alignMinDepthToZero: true
                 modelOffsetX: -(root.surfaceSpacingMm / 2.0)
@@ -132,7 +139,8 @@ Item {
 
             Node3D {
                 id: singleSurfaceBackNode
-                meshKey: surfaceData.key
+                surfaceData: root.surfaceData
+                meshKey: root.surfaceData.key
                 centerDepth: false
                 alignMinDepthToZero: true
                 modelOffsetX: root.surfaceSpacingMm / 2.0
@@ -178,13 +186,13 @@ Item {
         }
     }
     OrbitCameraController {
-        enabled: dataShowCore.controls3D.isRotateModel
+        enabled: root.dataShowCore.controls3D.isRotateModel
         origin: modelNode
         camera: sceneCamera
 
     }
     WasdController {
-        enabled: dataShowCore.controls3D.isMoveModel
+        enabled: root.dataShowCore.controls3D.isMoveModel
         controlledObject: sceneCamera
     }
     // Control3D{}

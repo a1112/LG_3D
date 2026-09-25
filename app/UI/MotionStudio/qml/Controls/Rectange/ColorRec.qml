@@ -10,6 +10,6 @@ Rectangle{
     height: parent.height/3
     anchors.centerIn: parent
     border.width: 1
-    color:recColor
+    color: root.recColor
 }
 }

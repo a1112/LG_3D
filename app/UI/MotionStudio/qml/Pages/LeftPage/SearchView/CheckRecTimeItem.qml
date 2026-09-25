@@ -2,5 +2,5 @@ import "../../../types"
 import "../../Header"
 import "DateTimeSelectPop"
 CheckRec {
-    width:25
+    width: 25
 }

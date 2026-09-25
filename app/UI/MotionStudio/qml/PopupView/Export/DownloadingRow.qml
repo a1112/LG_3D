@@ -5,7 +5,11 @@ import QtQuick.Layouts
 import "../../Labels"
 import "../../Pages/Header"
 RowLayout{
-    id:root
+    id: root
+
+    required property var style
+    required property var toolService
+
     Layout.fillWidth: true
     property real progress:0.0
     property bool finshed:false
@@ -27,6 +31,7 @@ RowLayout{
         text:""+(parseInt(root.progress*100)) +"%"
     }
     CheckRecButton{
+        style: root.style
         visible:root.finshed
         text:"打开"
         onClicked:{
@@ -34,10 +39,12 @@ RowLayout{
         }
     }
     CheckRecButton{
+        style: root.style
         visible:root.finshed
         text:"打开位置..."
         onClicked:{
-            Qt.openUrlExternally("file:///"+tool.fileFolderPath(root.exportUrl))
+            Qt.openUrlExternally(
+                        "file:///" + root.toolService.fileFolderPath(root.exportUrl))
         }
     }
 }

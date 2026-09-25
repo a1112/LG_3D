@@ -8,15 +8,16 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use clap::Parser;
+use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 use crate::app_config::{RuntimeConfig, default_server_config_path};
 use crate::image_service::{
-    AppState, area_image_compat, area_image_typed, classifier_image, clip_max_image,
+    AppState, area_image_compat, area_image_typed, classifier_image, clear_cache, clip_max_image,
     coil_data_area_image, defect_image, error_image, health, preview_image, render_image,
     source_image,
 };
@@ -50,6 +51,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/health", get(health))
+        .route("/cache/clear", post(clear_cache))
         .route(
             "/image/preview/{surface_key}/{coil_id}/{type_}",
             get(preview_image),
@@ -58,10 +60,7 @@ async fn main() -> anyhow::Result<()> {
             "/image/source/{surface_key}/{coil_id}/{type_}",
             get(source_image),
         )
-        .route(
-            "/coilData/Render/{surfaceKey}/{coil_id}",
-            get(render_image),
-        )
+        .route("/coilData/Render/{surfaceKey}/{coil_id}", get(render_image))
         .route(
             "/coilData/Area/{surface_key}/{coil_id}",
             get(coil_data_area_image),
@@ -84,6 +83,7 @@ async fn main() -> anyhow::Result<()> {
             get(defect_image),
         )
         .route("/clipMaxImage/{coil_id}/{key}", get(clip_max_image))
+        .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

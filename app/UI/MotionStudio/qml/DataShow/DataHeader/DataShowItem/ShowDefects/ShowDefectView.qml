@@ -2,8 +2,20 @@ import QtQuick.Controls
 import QtQuick
 import QtQuick.Layouts
 ColumnLayout {
+    id: root
+
+    required property var surfaceData
+    required property var controller
+    required property var areaController
+    required property var style
+    required property var apiClient
+    required property var globalContext
+
     anchors.fill:parent
-    DefectShowHead{}
+    DefectShowHead{
+        controller: root.controller
+        defectClassController: root.globalContext.defectClassProperty
+    }
     Item{
         Layout.fillWidth : true
         Layout.fillHeight : true
@@ -18,17 +30,13 @@ ColumnLayout {
 
         ShowDefectList{
             anchors.fill:parent
-            model:dataShowCore.defectModel
+            model: root.controller.defectModel
+            controller: root.controller
+            areaController: root.areaController
+            surfaceData: root.surfaceData
+            style: root.style
+            apiClient: root.apiClient
+            defectClassController: root.globalContext.defectClassProperty
         }
     }
-    // Rectangle{
-    //     implicitWidth:1
-    //     Layout.fillHeight:true
-    // }
-    // Item{
-    //     Layout.fillHeight:true
-    //     implicitWidth:220
-    //     ShowDefectNames{
-    //     }
-    // }
 }

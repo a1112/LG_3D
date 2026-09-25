@@ -1,17 +1,23 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import "OtherSetting"
-import "D3Setting"
 import "GeneralSetting"
-import "AlarmSetting"
 import "InfoSetting"
 import "StyleSetting"
 import "CameraSetting"
 
 Popup {
     id: root
+    required property var apiClient
+    required property var style
+    required property var settings
+    required property var coreController
+    required property var appInfo
+    required property var downloadClient
     anchors.centerIn: parent
     width: Math.min(parent ? parent.width * 0.72 : 1040, 1120)
     height: Math.min(parent ? parent.height * 0.78 : 720, 760)
@@ -22,8 +28,8 @@ Popup {
     Material.elevation: 12
 
     background: Rectangle {
-        color: coreStyle.panelBackgroundColor
-        border.color: coreStyle.headerBorderColor
+        color: root.style.panelBackgroundColor
+        border.color: root.style.headerBorderColor
         border.width: 1
         radius: 6
     }
@@ -35,7 +41,7 @@ Popup {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 62
-            color: coreStyle.headerBackgroundColor
+            color: root.style.headerBackgroundColor
             radius: 6
 
             Rectangle {
@@ -43,7 +49,7 @@ Popup {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: 1
-                color: coreStyle.headerBorderColor
+                color: root.style.headerBorderColor
             }
 
             RowLayout {
@@ -54,7 +60,7 @@ Popup {
 
                 Label {
                     text: qsTr("设置")
-                    color: coreStyle.titleColor
+                    color: root.style.titleColor
                     font.pixelSize: 24
                     font.bold: true
                     Layout.alignment: Qt.AlignVCenter
@@ -62,7 +68,7 @@ Popup {
 
                 Label {
                     text: qsTr("系统参数与显示配置")
-                    color: coreStyle.labelColor
+                    color: root.style.labelColor
                     opacity: 0.78
                     font.pixelSize: 13
                     Layout.alignment: Qt.AlignVCenter
@@ -84,13 +90,16 @@ Popup {
                     onClicked: root.close()
 
                     background: Rectangle {
-                        color: closeButton.hovered ? "#C42B1C" : coreStyle.panelElevatedColor
-                        radius: coreStyle.controlRadius
+                        color: closeButton.hovered
+                               ? root.style.statusErrorColor
+                               : root.style.panelElevatedColor
+                        radius: root.style.controlRadius
                     }
 
                     contentItem: Text {
                         text: closeButton.text
-                        color: closeButton.hovered ? "#FFFFFF" : coreStyle.labelColor
+                        color: closeButton.hovered
+                               ? "#FFFFFF" : root.style.labelColor
                         font: closeButton.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -104,15 +113,13 @@ Popup {
             Layout.fillWidth: true
             Layout.preferredHeight: 48
             background: Rectangle {
-                color: coreStyle.panelBackgroundColor
+                color: root.style.panelBackgroundColor
             }
 
             Repeater {
                 model: [
                     qsTr("常规"),
                     qsTr("风格"),
-                    qsTr("报警"),
-                    qsTr("3D 渲染"),
                     qsTr("相机调整"),
                     qsTr("信息"),
                     qsTr("其他")
@@ -120,20 +127,26 @@ Popup {
 
                 TabButton {
                     id: tabButton
+                    required property string modelData
                     text: modelData
                     font.pixelSize: 14
                     contentItem: Text {
                         text: tabButton.text
-                        color: tabButton.checked ? coreStyle.titleColor : coreStyle.labelColor
+                        color: tabButton.checked
+                               ? root.style.titleColor : root.style.labelColor
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font: tabButton.font
                     }
                     background: Rectangle {
-                        color: tabButton.checked ? coreStyle.panelElevatedColor : coreStyle.panelBackgroundColor
-                        border.color: tabButton.checked ? coreStyle.titleColor : coreStyle.headerBorderColor
+                        color: tabButton.checked
+                               ? root.style.panelElevatedColor
+                               : root.style.panelBackgroundColor
+                        border.color: tabButton.checked
+                                      ? root.style.titleColor
+                                      : root.style.headerBorderColor
                         border.width: tabButton.checked ? 1 : 0
-                        radius: coreStyle.controlRadius
+                        radius: root.style.controlRadius
                     }
                 }
             }
@@ -142,7 +155,7 @@ Popup {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: coreStyle.headerBorderColor
+            color: root.style.headerBorderColor
         }
 
         StackLayout {
@@ -151,13 +164,30 @@ Popup {
             currentIndex: tabBar.currentIndex
             clip: true
 
-            GeneralSetting {}
-            StyleSetting {}
-            AlarmSetting {}
-            D3Setting {}
-            CameraSetting {}
-            InfoSetting {}
-            OtherSetting {}
+            GeneralSetting {
+                settings: root.settings
+                style: root.style
+            }
+            StyleSetting {
+                style: root.style
+            }
+            CameraSetting {
+                apiClient: root.apiClient
+                style: root.style
+            }
+            InfoSetting {
+                apiClient: root.apiClient
+                settings: root.settings
+                style: root.style
+                coreController: root.coreController
+            }
+            OtherSetting {
+                apiClient: root.apiClient
+                style: root.style
+                settings: root.settings
+                appInfo: root.appInfo
+                downloadClient: root.downloadClient
+            }
         }
     }
 }

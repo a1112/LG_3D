@@ -75,8 +75,11 @@ def _apply_max_defect_summary(summary: CoilSummary, defects, coil_id: int) -> No
         summary.MaxDefectSurface = max_defect.surface or "S"
         summary.MaxDefectIsShown = True
         log.debug(
-            f"Coil {coil_id}: MaxDefect updated to '{summary.MaxDefectName}' "
-            f"(level={max_level}, shown=True)")
+            "Coil %s: MaxDefect updated to '%s' (level=%s, shown=True)",
+            coil_id,
+            summary.MaxDefectName,
+            max_level,
+        )
         return
 
     summary.MaxDefectName = ""
@@ -84,9 +87,9 @@ def _apply_max_defect_summary(summary: CoilSummary, defects, coil_id: int) -> No
     summary.MaxDefectSurface = ""
     summary.MaxDefectIsShown = not defects
     if defects:
-        log.debug(f"Coil {coil_id}: All defects filtered out")
+        log.debug("Coil %s: All defects filtered out", coil_id)
     else:
-        log.debug(f"Coil {coil_id}: No defects found")
+        log.debug("Coil %s: No defects found", coil_id)
 
 
 def _max_defect_json_fields(defects) -> dict:
@@ -171,7 +174,7 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
         # 获取原始数据
         coil = session.query(SecondaryCoil).filter_by(Id=coil_id).first()
         if not coil:
-            log.warning(f"Coil {coil_id} not found for summary sync")
+            log.warning("Coil %s not found for summary sync", coil_id)
             return None
 
         # 只在创建新记录时添加到会话
@@ -317,20 +320,26 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
                 summary.MaxDefectLevel = max_level
                 summary.MaxDefectSurface = max_defect.surface or "S"
                 summary.MaxDefectIsShown = is_shown
-                log.debug(f"Coil {coil_id}: Max defect = {max_defect.defectName}, level = {max_level}, shown = {is_shown}")
+                log.debug(
+                    "Coil %s: Max defect = %s, level = %s, shown = %s",
+                    coil_id,
+                    max_defect.defectName,
+                    max_level,
+                    is_shown,
+                )
             else:
                 # 所有缺陷都被屏蔽了
                 summary.MaxDefectName = ""
                 summary.MaxDefectLevel = 0
                 summary.MaxDefectSurface = ""
                 summary.MaxDefectIsShown = False
-                log.debug(f"Coil {coil_id}: All defects are filtered out")
+                log.debug("Coil %s: All defects are filtered out", coil_id)
         else:
             summary.MaxDefectName = ""
             summary.MaxDefectLevel = 0
             summary.MaxDefectSurface = ""
             summary.MaxDefectIsShown = True
-            log.debug(f"Coil {coil_id}: No defects found")
+            log.debug("Coil %s: No defects found", coil_id)
 
     # 在 no_autoflush 块外执行 flush/commit
     _apply_max_defect_summary(summary, defects, coil_id)
@@ -341,20 +350,20 @@ def _sync_coil_summary_impl(session: Session, coil_id: int, retry_on_duplicate: 
         # 多进程竞态条件：其他进程已经创建了这条记录
         if retry_on_duplicate and 'Duplicate entry' in str(e):
             session.rollback()
-            log.debug(f"Duplicate entry detected for coil {coil_id}, re-querying and updating...")
+            log.debug("Duplicate entry detected for coil %s, re-querying and updating...", coil_id)
             # 重新查询已存在的记录
             summary = session.query(CoilSummary).filter_by(Id=coil_id).first()
             if summary:
                 # 重新填充数据（不设置 is_new，所以不会 add）
                 return _sync_coil_summary_impl(session, coil_id, retry_on_duplicate=False)
             # 如果还是找不到，说明有其他问题
-            log.warning(f"Coil {coil_id} still not found after duplicate error")
+            log.warning("Coil %s still not found after duplicate error", coil_id)
             return None
         else:
             # 其他类型的完整性错误，重新抛出
             raise
 
-    log.info(f"Synced coil summary for {coil_id}: {summary.CoilNo}")
+    log.info("Synced coil summary for %s: %s", coil_id, summary.CoilNo)
     return summary
 
 
@@ -613,7 +622,7 @@ def get_coil_list_original(
                 try:
                     sync_coil_summary(session, coil.Id)
                 except Exception as e:
-                    log.error(f"Failed to sync summary for coil {coil.Id}: {e}")
+                    log.error("Failed to sync summary for coil %s: %s", coil.Id, e)
                     # 回滚当前事务，确保后续操作可以继续
                     session.rollback()
 
@@ -709,11 +718,11 @@ def batch_sync_summaries(limit: int = 1000) -> int:
                     sync_coil_summary(session, coil_id)
                     synced_count += 1
             except Exception as e:
-                log.error(f"Failed to sync summary for coil {coil_id}: {e}")
+                log.error("Failed to sync summary for coil %s: %s", coil_id, e)
                 # 回滚当前事务，确保后续操作可以继续
                 session.rollback()
 
-        log.info(f"Batch synced {synced_count} coil summaries")
+        log.info("Batch synced %s coil summaries", synced_count)
         return synced_count
 
 
@@ -782,7 +791,7 @@ def get_coil_list_hybrid(
                 # sync_coil_summary 内部会检查是否已存在，不存在才创建
                 sync_coil_summary(session, cid)
             except Exception as e:
-                log.error(f"Failed to sync summary for coil {cid}: {e}")
+                log.error("Failed to sync summary for coil %s: %s", cid, e)
                 session.rollback()
 
         # 从摘要表获取最终数据
@@ -951,15 +960,18 @@ def sync_summaries_range(coil_ids: List[int]) -> int:
             defects = session.query(CoilDefect).filter_by(secondaryCoilId=coil_id).all()
             if defects:
                 log.debug(
-                    f"Coil {coil_id}: Found {len(defects)} defects, "
-                    f"updating summary (S={defect_count_s}, L={defect_count_l})"
+                    "Coil %s: Found %s defects, updating summary (S=%s, L=%s)",
+                    coil_id,
+                    len(defects),
+                    defect_count_s,
+                    defect_count_l,
                 )
             else:
-                log.debug(f"Coil {coil_id}: No defects found")
+                log.debug("Coil %s: No defects found", coil_id)
 
             _apply_max_defect_summary(summary, defects, coil_id)
             updated_count += 1
 
         session.commit()
-        log.info(f"Updated {updated_count} coil summaries in range")
+        log.info("Updated %s coil summaries in range", updated_count)
         return updated_count

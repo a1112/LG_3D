@@ -581,7 +581,9 @@ def test_hardware_monitor_qml_popup_is_wired():
     assert "function resetCamera3D" in api_qml
     assert "function controlNetworkAdapter" in api_qml
     assert "interval: 1000" in popup_qml
-    assert "app.api.getHardwareMonitor" in popup_qml
+    assert "required property var apiClient" in popup_qml
+    assert "app.api." not in popup_qml
+    assert "root.apiClient.getHardwareMonitor" in popup_qml
     assert 'text: "总览"' in popup_qml
     assert 'text: "3D 相机  "' in popup_qml
     assert 'text: "2D 相机  "' in popup_qml
@@ -593,9 +595,12 @@ def test_hardware_monitor_qml_popup_is_wired():
     assert "camera3DOnline" in popup_qml
     assert "confirmNetworkAction" in popup_qml
     assert "confirmCameraReset" in popup_qml
-    assert "HardwareMonitorView{id:hardwareMonitorView}" in pops_qml
+    assert "HardwareMonitorView{" in pops_qml
+    assert "apiClient: root.apiClient" in pops_qml
     assert "popupHardwareMonitorView" in pops_qml
-    assert "popManage.popupHardwareMonitorView()" in header_qml
+    assert "required property var popupManager" in header_qml
+    assert "popManage." not in header_qml
+    assert "root.popupManager.popupHardwareMonitorView()" in header_qml
     assert "qml/PopupView/HardwareMonitor/HardwareMonitorView.qml" in qrc
 
 

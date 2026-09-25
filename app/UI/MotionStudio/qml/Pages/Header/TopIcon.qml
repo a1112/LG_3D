@@ -1,16 +1,21 @@
 import QtQuick
 import "../../Base" as Base
 Item{
-    height:root.height+5
+    id: root
+
+    required property var style
+
+    height: root.style.topHeight
     width:ustb.width
     Base.USTB{
+        style: root.style
         id:ustb
         height:parent.height
         MouseArea{
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton
             onClicked: {
-                coreStyle.isDark=!coreStyle.isDark
+                root.style.applyTheme(root.style.isDark ? "light" : "dark")
             }
         }
     }

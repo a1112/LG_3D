@@ -5,10 +5,15 @@ import "../Base"
 Item {
     id: root
 
+    required property var style
+
     property var defectDictData: { return {} }
+    property bool initialized: false
     property ListModel defectDictModel: ListModel {
         dynamicRoles: true
     }
+
+    signal defectConfigurationChanged()
 
     property string unDefectClassItemName: qsTr("无缺陷")
 
@@ -17,7 +22,7 @@ Item {
     property DefectClassItemModel unDefectClassItemModel: DefectClassItemModel {
         defectName: root.unDefectClassItemName
         defectLevel: 0
-        defectColor: coreStyle.labelColor
+        defectColor: root.style.labelColor
     }
 
     property var defectDictAll: { return {} }
@@ -38,10 +43,29 @@ Item {
         return value === true || value === "true"
     }
 
+    function is_defect_enabled(defectName) {
+        let sharedName = shared_defect_name(defectName)
+        if (sharedName in defectDictData) {
+            return is_defect_show(defectDictData[sharedName]["show"])
+        }
+        return initialized ? defaultDefectClass.defectShow : true
+    }
+
     function is_area_defect_name(defectName) {
         return defectName !== undefined
                 && defectName !== null
                 && defectName.indexOf("2D_") === 0
+    }
+
+    function shared_defect_name(defectName) {
+        if (defectName === undefined || defectName === null) {
+            return ""
+        }
+        let name = String(defectName)
+        if (is_area_defect_name(name)) {
+            return name.slice(3)
+        }
+        return name
     }
 
     function normalize_color(value) {
@@ -94,14 +118,54 @@ Item {
         }
     }
 
+    function normalize_defect_dict_data(data) {
+        let normalized = {}
+        for (let key in data) {
+            if (is_area_defect_name(key)) {
+                continue
+            }
+            let item = Object.assign({}, data[key])
+            item["name"] = key
+            normalized[key] = item
+        }
+        for (let key in data) {
+            if (!is_area_defect_name(key)) {
+                continue
+            }
+            let sharedName = shared_defect_name(key)
+            if (sharedName in normalized) {
+                continue
+            }
+            let item = Object.assign({}, data[key])
+            item["name"] = sharedName
+            normalized[sharedName] = item
+        }
+        return normalized
+    }
+
     function setDefectDict(defectData) {
-        defectDictData = defectData["data"]
+        defectDictData = normalize_defect_dict_data(defectData["data"])
         upDefectDictModelByDefectDictData()
         defaultDefectClass.init(defectData["default"])
+        initialized = true
+        defectConfigurationChanged()
+    }
+
+    function updateDefectClass(name, key, value) {
+        if (!name || !(name in root.defectDictData)) {
+            return false
+        }
+        let item = Object.assign({}, root.defectDictData[name])
+        item[key] = String(value)
+        root.defectDictData[name] = item
+        root.upDefectDictModelByDefectDictData()
+        root.defectConfigurationChanged()
+        return true
     }
 
     function ensure_defect_class_item(defectName) {
-        if (!defectName || (defectName in defectDictData)) {
+        let sharedName = shared_defect_name(defectName)
+        if (!sharedName || (sharedName in defectDictData)) {
             return false
         }
 
@@ -109,34 +173,37 @@ Item {
         let defaultLevel = defaultDefectClass.defectLevel || 1
         let defaultColor = normalize_color(defaultDefectClass.defectColor)
         let item = {
-            "name": defectName,
+            "name": sharedName,
             "level": isAreaDefect ? defaultLevel : 1,
             "color": isAreaDefect ? defaultColor : "#FFA500",
             "show": isAreaDefect,
             "num": 0
         }
 
-        defectDictData[defectName] = item
-        if (!(defectName in defectDictAll)) {
-            defectDictAll[defectName] = is_defect_show(item["show"])
+        defectDictData[sharedName] = item
+        if (!(sharedName in defectDictAll)) {
+            defectDictAll[sharedName] = is_defect_show(item["show"])
         }
         upDefectDictModelByDefectDictData()
         flushDefectDictAll()
+        defectConfigurationChanged()
         return true
     }
 
     function getDefectLevelByDefectName(defectName) {
-        if (defectName in defectDictData) {
-            return defectDictData[defectName]["level"] ?? defaultDefectClass.defectLevel
+        let sharedName = shared_defect_name(defectName)
+        if (sharedName in defectDictData) {
+            return defectDictData[sharedName]["level"] ?? defaultDefectClass.defectLevel
         }
         return 1
     }
 
     function getColorByName(name) {
-        if (defectDictData[name] === undefined) {
+        let sharedName = shared_defect_name(name)
+        if (defectDictData[sharedName] === undefined) {
             return "#FFF"
         }
-        return normalize_color(defectDictData[name]["color"])
+        return normalize_color(defectDictData[sharedName]["color"])
     }
 
     function getColorByLevel(level) {
@@ -159,7 +226,7 @@ Item {
                 defectDictAll[value["name"]] = true
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function un_selecct_all_un_defect_show() {
@@ -169,7 +236,7 @@ Item {
                 defectDictAll[value["name"]] = false
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function select_area_defect() {
@@ -179,7 +246,7 @@ Item {
                 defectDictAll[value["name"]] = true
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 
     function un_select_area_defect() {
@@ -189,6 +256,6 @@ Item {
                 defectDictAll[value["name"]] = false
             }
         }
-        coreModel.flushDefectDictAll()
+        root.flushDefectDictAll()
     }
 }

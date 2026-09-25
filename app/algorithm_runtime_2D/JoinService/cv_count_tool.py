@@ -1,3 +1,4 @@
+import math
 from queue import Full, Queue
 import statistics
 
@@ -6,9 +7,9 @@ from collections import defaultdict
 from threading import Thread
 import numpy as np
 
-from utils.MultiprocessColorLogger import logger
+from algorithm_runtime_2D.utils.MultiprocessColorLogger import logger
 
-from configs import CONFIG
+from algorithm_runtime_2D.configs import CONFIG
 
 
 class ThreadImageShow(Thread):
@@ -261,34 +262,91 @@ def draw_debug_image(image,ins_int,d_count):
     image = cv2.putText(image,fr"{ins_int}",(int(w/2)-20,int(h/2)),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),3)
     return image
 
-def hconcat_list(image_list, ins_int_list,debug=False):
+def _normalize_hconcat_images(image_list):
+    if not image_list:
+        return []
+
+    reference = np.asarray(image_list[0])
+    if reference.ndim not in (2, 3):
+        raise ValueError(f"unsupported hconcat image shape: {reference.shape}")
+    target_height = reference.shape[0]
+    target_dtype = reference.dtype
+    target_channels = 1 if reference.ndim == 2 else reference.shape[2]
+    normalized = []
+
+    for index, image in enumerate(image_list):
+        if image is None:
+            raise ValueError(f"hconcat image {index} is None")
+        item = np.asarray(image)
+        if item.ndim == 3 and target_channels == 1:
+            item = item.max(axis=2)
+        elif item.ndim == 2 and target_channels > 1:
+            item = np.repeat(item[:, :, None], target_channels, axis=2)
+        elif item.ndim != reference.ndim or (item.ndim == 3 and item.shape[2] != target_channels):
+            raise ValueError(
+                f"incompatible hconcat image {index}: shape={item.shape}, reference={reference.shape}"
+            )
+
+        if item.shape[0] != target_height:
+            interpolation = cv2.INTER_NEAREST if target_channels == 1 else cv2.INTER_LINEAR
+            logger.warning(
+                "2D hconcat normalized image height: index=%s from=%s to=%s",
+                index,
+                item.shape[0],
+                target_height,
+            )
+            item = cv2.resize(item, (item.shape[1], target_height), interpolation=interpolation)
+        if item.dtype != target_dtype:
+            logger.warning(
+                "2D hconcat normalized image dtype: index=%s from=%s to=%s",
+                index,
+                item.dtype,
+                target_dtype,
+            )
+            if np.issubdtype(item.dtype, np.floating) and np.issubdtype(target_dtype, np.integer):
+                item = np.nan_to_num(item, nan=0.0, posinf=0.0, neginf=0.0)
+                target_info = np.iinfo(target_dtype)
+                if item.size and item.min() >= 0 and item.max() <= 1:
+                    item = item * target_info.max
+                item = np.clip(item, target_info.min, target_info.max)
+            item = item.astype(target_dtype, copy=False)
+        normalized.append(np.ascontiguousarray(item))
+    return normalized
+
+
+def hconcat_list(image_list, ins_int_list, debug=False):
     """
     水平拼接图像列表
     """
     if not image_list:
         return None
-    add_image_list = [image_list[0].copy()]
-    for index in range(len(ins_int_list)):
+    if len(ins_int_list) != len(image_list) - 1:
+        raise ValueError(
+            f"hconcat overlap count mismatch: images={len(image_list)} overlaps={len(ins_int_list)}"
+        )
+
+    normalized_images = _normalize_hconcat_images(image_list)
+    add_image_list = [normalized_images[0]]
+    last_nonzero_overlap = None
+    for index, item_image in enumerate(normalized_images[1:]):
+        width = item_image.shape[1]
+        overlap = ins_int_list[index]
         try:
-            h,w,*_= image_list[index+1].shape
-            ins_int = w
-            for index_ in range(index, -1, -1):
-                if ins_int_list[index_] != 0:
-                    ins_int = ins_int_list[index_]
-                    break
+            overlap = float(overlap)
+        except (TypeError, ValueError):
+            overlap = 0.0
+        if not math.isfinite(overlap):
+            overlap = 0.0
+        if overlap > 0:
+            last_nonzero_overlap = overlap
+        retained_width = last_nonzero_overlap if last_nonzero_overlap is not None else width
+        retained_width = max(0, min(int(round(retained_width)), width))
+        crop_start = 0 if debug else width - retained_width
+        item_image = item_image[:, crop_start:]
 
-            d_count = min(int(w - ins_int),w)
-            if debug:
-                item_image=image_list[index+1]
-            else:
-                item_image = image_list[index + 1][:, d_count:]
-
-            if CONFIG.DEBUG:
-                item_image = draw_debug_image(item_image,ins_int,d_count)
-            add_image_list.append(item_image)
-        except IndexError:
-            # raise
-            logger.error("<hconcat_list IndexError>%s", index + 1)
+        if CONFIG.DEBUG:
+            item_image = draw_debug_image(item_image, retained_width, crop_start)
+        add_image_list.append(item_image)
     count_image = cv2.hconcat(add_image_list)
     return count_image
 
