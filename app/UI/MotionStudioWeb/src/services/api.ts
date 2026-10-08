@@ -83,6 +83,12 @@ export type DataAvailabilitySurface = Record<string, boolean | undefined>
 export type DataAvailabilityBySurface = Partial<Record<SurfaceKey, DataAvailabilitySurface>>
 
 export function buildRuntimeConnectionBaseUrls(settings: RuntimeConnectionSettings): ServiceBaseUrls {
+  if (typeof window !== 'undefined' && window.location.hostname === '175.178.16.90') {
+    const httpBase = window.location.origin + '/apps/lg-3d/api';
+    const wsBase = 'wss://' + window.location.host + '/apps/lg-3d/api';
+    return { apiBaseUrl: httpBase, imageBaseUrl: httpBase, databaseBaseUrl: httpBase, dataBaseUrl: httpBase, plcBaseUrl: httpBase, alg2dBaseUrl: httpBase, apiWsBaseUrl: wsBase, databaseWsBaseUrl: wsBase };
+  }
+
   const host = normalizeRuntimeHost(settings.serverIp)
   const apiPort = normalizeRuntimePort(settings.serverPort, 5011)
   const databasePort = normalizeRuntimePort(settings.databasPort, 6011)

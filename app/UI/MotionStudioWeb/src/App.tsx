@@ -6,7 +6,7 @@ import SystemDiagnosticsPage from './pages/SystemDiagnostics'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<DataShowPage />} />
