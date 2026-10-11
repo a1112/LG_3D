@@ -49,7 +49,15 @@ describe('Tauri development startup configuration', () => {
 
     expect(existsSync(path.join(cwd, 'package.json'))).toBe(true)
     expect(match?.[1]).toBeTruthy()
-    expect(existsSync(path.resolve(cwd, match?.[1] ?? ''))).toBe(true)
+    const declaredScript = match?.[1] ?? ''
+    // The command is intentionally Windows/PowerShell-specific. Resolve its
+    // relative path components on the test host without invoking PowerShell.
+    expect(path.win32.isAbsolute(declaredScript)).toBe(false)
+    for (const spelling of [declaredScript, declaredScript.replace(/\\/g, '/')]) {
+      const resolvedScript = path.resolve(cwd, ...spelling.split(/[\\/]+/))
+      expect(resolvedScript).toBe(startupScriptPath)
+      expect(existsSync(resolvedScript)).toBe(true)
+    }
   })
 
   it('keeps the packaged Tauri shell version aligned with the Rust API current version', () => {
