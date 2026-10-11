@@ -1,10 +1,11 @@
+// Retained web behavior derived from the July 2026 QML design.
+// fec3399 removed the legacy QML dialogs; these checks target real web code,
+// not current QML parity. See docs/rust-tauri-parity.md for scope and history.
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import defectShowSource from './index.tsx?raw'
 
 let defectShowCss = ''
-let defectExportDialogQml = ''
-let manualDefectEditDialogQml = ''
 
 beforeAll(async () => {
   const { readFileSync } = (await import('node:fs')) as {
@@ -12,30 +13,22 @@ beforeAll(async () => {
   }
 
   defectShowCss = readFileSync(new URL('./DefectShow.css', import.meta.url), 'utf8')
-  defectExportDialogQml = readFileSync(
-    new URL('../../../../MotionStudio/qml/Dialogs/DefectExportDialog.qml', import.meta.url),
-    'utf8',
-  )
-  manualDefectEditDialogQml = readFileSync(
-    new URL('../../../../MotionStudio/qml/Dialogs/ManualDefectEditDialog.qml', import.meta.url),
-    'utf8',
-  )
 })
 
-describe('DefectShow QML class filter controls', () => {
-  it('exposes the QML reset action beside all/clear class filters', () => {
+describe('DefectShow retained legacy-derived web controls', () => {
+  it('exposes the legacy-derived reset action beside all/clear class filters', () => {
     expect(defectShowSource).toContain('resetDefectClasses')
     expect(defectShowSource).toContain('ReloadOutlined')
     expect(defectShowSource).toContain('重置')
   })
 
-  it('persists the QML include-background filter through the UI settings store', () => {
+  it('persists the legacy-derived include-background filter through the UI settings store', () => {
     expect(defectShowSource).toContain('state.showAlarmDefectClasses')
     expect(defectShowSource).toContain('state.setShowAlarmDefectClasses')
     expect(defectShowSource).not.toContain('const [showAlarmDefectClasses, setShowAlarmDefectClasses] = useState(false)')
   })
 
-  it('exposes the QML DefectShow toolbar refresh action', () => {
+  it('exposes the legacy-derived DefectShow toolbar refresh action', () => {
     const toolbarStart = defectShowSource.indexOf('<div className="defect-toolbar">')
     const toolbarEnd = defectShowSource.indexOf('<section className="defect-class-summary-panel">', toolbarStart)
     const toolbarSource = defectShowSource.slice(toolbarStart, toolbarEnd)
@@ -45,13 +38,10 @@ describe('DefectShow QML class filter controls', () => {
     expect(toolbarSource).toContain('刷新')
   })
 
-  it('mirrors the QML HeadToolBox title and all-defects export action', () => {
+  it('retains the legacy-derived HeadToolBox title and all-defects export action', () => {
     const toolbarStart = defectShowSource.indexOf('<div className="defect-toolbar">')
     const toolbarEnd = defectShowSource.indexOf('<section className="defect-qml-info-panel"', toolbarStart)
     const toolbarSource = defectShowSource.slice(toolbarStart, toolbarEnd)
-
-    expect(defectExportDialogQml).toContain('title: "导出标记缺陷"')
-    expect(defectExportDialogQml).toContain('width: 500')
     expect(toolbarSource).toContain('<span>缺陷数据分析</span>')
     expect(toolbarSource).toContain('icon={<ExportOutlined />}')
     expect(toolbarSource).toContain('onClick={() => setManualDefectExportOpen(true)}')
@@ -64,11 +54,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('buildManualDefectExportPayload(')
   })
 
-  it('mirrors the QML DefectExportDialog 500x400 shell with an internal scrolling body', () => {
-    expect(defectExportDialogQml).toContain('width: 500')
-    expect(defectExportDialogQml).toContain('height: 400')
-    expect(defectExportDialogQml).toContain('ColumnLayout {')
-    expect(defectExportDialogQml).toContain('anchors.fill: parent')
+  it('retains the legacy-derived DefectExportDialog 500x400 shell with an internal scrolling body', () => {
 
     expect(defectShowSource).toContain('className="manual-defect-export-modal"')
     expect(defectShowSource).toContain('width={500}')
@@ -83,7 +69,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('min-height: 0')
   })
 
-  it('mirrors the QML HeadToolBox left TabBar entry and centered title layout', () => {
+  it('retains the legacy-derived HeadToolBox left TabBar entry and centered title layout', () => {
     const toolbarStart = defectShowSource.indexOf('<div className="defect-toolbar">')
     const toolbarEnd = defectShowSource.indexOf('<section className="defect-qml-info-panel"', toolbarStart)
     const toolbarSource = defectShowSource.slice(toolbarStart, toolbarEnd)
@@ -100,7 +86,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('.defect-toolbar-actions')
   })
 
-  it('keeps the QML HeadToolBox root height at 45px', () => {
+  it('keeps the legacy-derived HeadToolBox root height at 45px', () => {
     const toolbarCssStart = defectShowCss.indexOf('.defect-toolbar {')
     const toolbarCssEnd = defectShowCss.indexOf('.defect-content {', toolbarCssStart)
     const toolbarCssSource = defectShowCss.slice(toolbarCssStart, toolbarCssEnd)
@@ -109,7 +95,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(toolbarCssSource).not.toContain('min-height: 42px')
   })
 
-  it('keeps the QML HeadToolBox 45px height in the mobile toolbar override', () => {
+  it('keeps the legacy-derived HeadToolBox 45px height in the mobile toolbar override', () => {
     expect(defectShowCss).toMatch(
       /@media \(max-width: 700px\)[\s\S]*\.defect-toolbar\s*\{[\s\S]*min-height:\s*45px/,
     )
@@ -118,7 +104,7 @@ describe('DefectShow QML class filter controls', () => {
     )
   })
 
-  it('keeps the QML HeadToolBox title text horizontal in the desktop toolbar', () => {
+  it('keeps the legacy-derived HeadToolBox title text horizontal in the desktop toolbar', () => {
     const titleCssStart = defectShowCss.indexOf('.defect-toolbar-title-center {')
     const titleCssEnd = defectShowCss.indexOf('.defect-toolbar-actions', titleCssStart)
     const titleCssSource = defectShowCss.slice(titleCssStart, titleCssEnd)
@@ -126,7 +112,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(titleCssSource).toContain('white-space: nowrap')
   })
 
-  it('keeps QML HeadToolBox export tied to all loaded defects, not filtered grid rows', () => {
+  it('keeps legacy-derived HeadToolBox export tied to all loaded defects, not filtered grid rows', () => {
     const exportStart = defectShowSource.indexOf('const exportDefects = useMemo')
     const exportEnd = defectShowSource.indexOf('const manualDefectExportCounts', exportStart)
     const exportSource = defectShowSource.slice(exportStart, exportEnd)
@@ -140,14 +126,14 @@ describe('DefectShow QML class filter controls', () => {
     expect(toolbarSource).not.toContain('disabled={filteredDefects.length === 0}')
   })
 
-  it('defaults to QML ControlCore current-list range loading on the defect page', () => {
+  it('defaults to legacy-derived ControlCore current-list range loading on the defect page', () => {
     expect(defectShowSource).toContain("useState<DefectDataMode>('range')")
     expect(defectShowSource).not.toContain("useState<DefectDataMode>('auto')")
     expect(defectShowSource).toContain('queryFn: () => fetchDefectsByMode(defectDataMode, defectApi')
     expect(defectShowSource).toContain("defectDataMode === 'range' ? defectListRange.startId > 0")
   })
 
-  it('opens a QML DefectDataViewMenu-style context menu from each defect row', () => {
+  it('opens a legacy-derived DefectDataViewMenu-style context menu from each defect row', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -161,7 +147,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(listSource).toContain('setSelectedDefectId(defect.id)')
   })
 
-  it('keeps QML defect-row menu labels wired to the defect row actions', () => {
+  it('keeps legacy-derived defect-row menu labels wired to the defect row actions', () => {
     const menuStart = defectShowSource.indexOf('const buildQmlDefectDataViewMenu = (defect: DefectData)')
     const menuEnd = defectShowSource.indexOf('const canSwitchToImage', menuStart)
     const menuSource = defectShowSource.slice(menuStart, menuEnd)
@@ -176,7 +162,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(menuSource).toContain('setSelectedDefectId(defect.id)')
   })
 
-  it('keeps QML DefectDataViewMenu row actions text-only without icons', () => {
+  it('keeps legacy-derived DefectDataViewMenu row actions text-only without icons', () => {
     const menuStart = defectShowSource.indexOf('const buildQmlDefectDataViewMenu = (defect: DefectData)')
     const menuEnd = defectShowSource.indexOf('const canSwitchToImage', menuStart)
     const menuSource = defectShowSource.slice(menuStart, menuEnd)
@@ -187,7 +173,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(menuSource).not.toContain('icon: <FolderOpenOutlined />')
   })
 
-  it('renders the QML defect-list ToolBox range, NUM count, and fullscreen affordance', () => {
+  it('renders the legacy-derived defect-list ToolBox range, NUM count, and fullscreen affordance', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-list-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-list-container">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -216,7 +202,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(fullscreenCssSource).toContain('min-width: 25px')
   })
 
-  it('lays out defect items like the QML DefectDataView 200px GridView cells', () => {
+  it('lays out defect items like the legacy-derived DefectDataView 200px GridView cells', () => {
     const listContainerStart = defectShowCss.indexOf('.defect-list-container {')
     const listContainerEnd = defectShowCss.indexOf('.loading-container', listContainerStart)
     const listContainerSource = defectShowCss.slice(listContainerStart, listContainerEnd)
@@ -235,7 +221,7 @@ describe('DefectShow QML class filter controls', () => {
     )
   })
 
-  it('renders QML DefectItemShow-style defect thumbnails from the crop endpoint', () => {
+  it('renders legacy-derived DefectItemShow-style defect thumbnails from the crop endpoint', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -253,7 +239,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(listSource).toContain('decoding="async"')
   })
 
-  it('overlays the QML DefectItemShow name and coil id labels on each thumbnail', () => {
+  it('overlays the legacy-derived DefectItemShow name and coil id labels on each thumbnail', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -270,7 +256,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('background: rgba(0, 0, 0, 0.53)')
   })
 
-  it('colors QML DefectItemShow defect-name labels from the defect dictionary', () => {
+  it('colors legacy-derived DefectItemShow defect-name labels from the defect dictionary', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -296,7 +282,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(tooltipNameSource).not.toContain('color: #ff4d4f')
   })
 
-  it('adds QML DefectItemShow hover details to each defect row', () => {
+  it('adds legacy-derived DefectItemShow hover details to each defect row', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -312,7 +298,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(listSource).toContain('title={formatDefectItemTitle(defect)}')
   })
 
-  it('renders a visible QML DefectItemShow-style hover detail card for defect rows', () => {
+  it('renders a visible legacy-derived DefectItemShow-style hover detail card for defect rows', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -343,7 +329,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('border: 1px solid #666666')
   })
 
-  it('positions the QML DefectItemShow hover detail card above and centered on the item', () => {
+  it('positions the legacy-derived DefectItemShow hover detail card above and centered on the item', () => {
     expect(defectShowCss).toMatch(
       /\.defect-item-hover-card\s*\{[\s\S]*left:\s*50%[\s\S]*bottom:\s*calc\(100%\s*\+\s*8px\)[\s\S]*transform:\s*translateX\(-50%\)/,
     )
@@ -351,11 +337,11 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).not.toMatch(/\.defect-item-hover-card\s*\{[\s\S]*left:\s*66px/)
   })
 
-  it('uses the QML DefectItemShow tooltip z order above regular grid delegates', () => {
+  it('uses the legacy-derived DefectItemShow tooltip z order above regular grid delegates', () => {
     expect(defectShowCss).toMatch(/\.defect-item-hover-card\s*\{[\s\S]*z-index:\s*1000/)
   })
 
-  it('keeps the QML hover detail card from being clipped in narrow stacked layouts', () => {
+  it('keeps the legacy-derived hover detail card from being clipped in narrow stacked layouts', () => {
     expect(defectShowSource).toContain("className={`defect-content ${tooltipDefectId != null ? 'tooltip-active' : ''}`}")
     expect(defectShowCss).toMatch(
       /@media \(max-width: 700px\)[\s\S]*\.defect-content\.tooltip-active\s*\{[\s\S]*overflow:\s*visible/,
@@ -368,7 +354,7 @@ describe('DefectShow QML class filter controls', () => {
     )
   })
 
-  it('mirrors the QML DefectItemShow hover scale animation', () => {
+  it('retains the legacy-derived DefectItemShow hover scale animation', () => {
     expect(defectShowCss).toContain('transform-origin: center')
     expect(defectShowCss).toContain('transition: transform 450ms ease')
     expect(defectShowCss).toContain('.defect-item:hover,')
@@ -377,7 +363,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('z-index: 10')
   })
 
-  it('mirrors QML DefectItemShow hover currentIndex selection and GridView highlight', () => {
+  it('retains the legacy-derived DefectItemShow hover currentIndex selection and GridView highlight', () => {
     const listContainerStart = defectShowSource.indexOf('<div className="defect-list-container">')
     const listStart = defectShowSource.indexOf('filteredDefects.map((defect) => (', listContainerStart)
     const listEnd = defectShowSource.indexOf('</section>', listStart)
@@ -399,7 +385,7 @@ describe('DefectShow QML class filter controls', () => {
     )
   })
 
-  it('renders the QML DefectInfoView current-coil summary row', () => {
+  it('renders the legacy-derived DefectInfoView current-coil summary row', () => {
     const infoPanelStart = defectShowCss.indexOf('.defect-qml-info-panel {')
     const infoPanelEnd = defectShowCss.indexOf('.defect-qml-info-item {', infoPanelStart)
     const infoPanelSource = defectShowCss.slice(infoPanelStart, infoPanelEnd)
@@ -427,7 +413,7 @@ describe('DefectShow QML class filter controls', () => {
     )
   })
 
-  it('keeps QML DefectInfoView CardBase and FlowRowItem sizing', () => {
+  it('keeps legacy-derived DefectInfoView CardBase and FlowRowItem sizing', () => {
     const infoPanelStart = defectShowCss.indexOf('.defect-qml-info-panel {')
     const infoPanelEnd = defectShowCss.indexOf('.defect-qml-info-item {', infoPanelStart)
     const infoPanelSource = defectShowCss.slice(infoPanelStart, infoPanelEnd)
@@ -443,7 +429,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(infoItemSource).toContain('padding: 0 10px')
   })
 
-  it('mirrors QML DefectInfoView FlowRowItem label and value text styling', () => {
+  it('retains the legacy-derived DefectInfoView FlowRowItem label and value text styling', () => {
     const infoPanelStart = defectShowSource.indexOf('<section className="defect-qml-info-panel"')
     const infoPanelEnd = defectShowSource.indexOf('</section>', infoPanelStart)
     const infoPanelSource = defectShowSource.slice(infoPanelStart, infoPanelEnd)
@@ -461,20 +447,20 @@ describe('DefectShow QML class filter controls', () => {
     expect(valueCssSource).toContain('font-weight: 700')
   })
 
-  it('uses QML showAll semantics for the all-class action', () => {
+  it('uses legacy-derived showAll semantics for the all-class action', () => {
     expect(defectShowSource).toContain('getQmlSelectAllDefectClasses')
     expect(defectShowSource).toContain('includeHidden: showAlarmDefectClasses')
     expect(defectShowSource).not.toContain('setSelectedDefectClasses(filterOptionNames)')
   })
 
-  it('hides hidden/background class options while the QML include-background toggle is off', () => {
+  it('hides hidden/background class options while the legacy-derived include-background toggle is off', () => {
     expect(defectShowSource).toContain('getQmlVisibleFilterOptions')
     expect(defectShowSource).toContain('visibleFilterOptions')
     expect(defectShowSource).toContain('includeHidden: showAlarmDefectClasses')
     expect(defectShowSource).toContain('options={visibleFilterOptions.map')
   })
 
-  it('renders the QML DefectClassInfoView count flow as visible class checkboxes', () => {
+  it('renders the legacy-derived DefectClassInfoView count flow as visible class checkboxes', () => {
     expect(defectShowSource).toContain('toggleDefectClass')
     expect(defectShowSource).toContain('className="defect-class-summary-panel"')
     expect(defectShowSource).toContain('className="panel-title defect-class-summary-title"')
@@ -486,7 +472,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('{defectClassCounts[option.name] ?? 0}')
   })
 
-  it('colors QML DefectFlowRowItem names and counts from the dictionary while selected', () => {
+  it('colors legacy-derived DefectFlowRowItem names and counts from the dictionary while selected', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -507,7 +493,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(itemCssSource).toContain('color: #aaaaaa')
   })
 
-  it('places the QML DefectFlowRowItem checkbox after the name and count', () => {
+  it('places the legacy-derived DefectFlowRowItem checkbox after the name and count', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -519,7 +505,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toMatch(/\.defect-class-summary-item\s*\{[\s\S]*height:\s*25px/)
   })
 
-  it('reserves the QML DefectFlowRowItem 40px checkbox slot', () => {
+  it('reserves the legacy-derived DefectFlowRowItem 40px checkbox slot', () => {
     const itemCssStart = defectShowCss.indexOf('.defect-class-summary-item.ant-checkbox-wrapper {')
     const itemCssEnd = defectShowCss.indexOf('.defect-class-summary-item.selected {', itemCssStart)
     const itemCssSource = defectShowCss.slice(itemCssStart, itemCssEnd)
@@ -532,7 +518,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(itemCssSource).toContain('justify-content: center')
   })
 
-  it('mirrors QML DefectFlowRowItem label font sizes and row spacing', () => {
+  it('retains the legacy-derived DefectFlowRowItem label font sizes and row spacing', () => {
     const itemCssStart = defectShowCss.indexOf('.defect-class-summary-item {')
     const itemCssEnd = defectShowCss.indexOf('.defect-class-summary-empty', itemCssStart)
     const itemCssSource = defectShowCss.slice(itemCssStart, itemCssEnd)
@@ -558,7 +544,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(itemCssSource).toContain('font-size: 12px')
   })
 
-  it('uses the QML DefectFlowRowItem defect color as the checkbox accent', () => {
+  it('uses the legacy-derived DefectFlowRowItem defect color as the checkbox accent', () => {
     const itemCssStart = defectShowCss.indexOf('.defect-class-summary-item.ant-checkbox-wrapper {')
     const itemCssEnd = defectShowCss.indexOf('.defect-class-summary-empty', itemCssStart)
     const itemCssSource = defectShowCss.slice(itemCssStart, itemCssEnd)
@@ -568,7 +554,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(itemCssSource).toContain('border-color: var(--defect-class-color, #00000000)')
   })
 
-  it('keeps QML DefectFlowRowItem rows unframed instead of rendering card chips', () => {
+  it('keeps legacy-derived DefectFlowRowItem rows unframed instead of rendering card chips', () => {
     const itemCssStart = defectShowCss.indexOf('.defect-class-summary-item {')
     const itemCssEnd = defectShowCss.indexOf('.defect-class-summary-item.ant-checkbox-wrapper', itemCssStart)
     const itemCssSource = defectShowCss.slice(itemCssStart, itemCssEnd)
@@ -584,7 +570,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(selectedCssSource).not.toContain('border-color:')
   })
 
-  it('places QML DefectClassInfoView include-background and selection actions inside the summary panel', () => {
+  it('places legacy-derived DefectClassInfoView include-background and selection actions inside the summary panel', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -600,7 +586,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(panelSource).toContain('取消')
   })
 
-  it('keeps the QML DefectClassInfoView action row inside the same Flow as the class rows', () => {
+  it('keeps the legacy-derived DefectClassInfoView action row inside the same Flow as the class rows', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -617,7 +603,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(actionsCssSource).not.toContain('border-top')
   })
 
-  it('keeps QML SelectButtonBase height for DefectClassInfoView selection actions', () => {
+  it('keeps legacy-derived SelectButtonBase height for DefectClassInfoView selection actions', () => {
     const actionsCssStart = defectShowCss.indexOf('.defect-class-summary-actions .ant-btn {')
     const actionsCssEnd = defectShowCss.indexOf('.defect-class-summary-include-background', actionsCssStart)
     const actionsButtonCssSource = defectShowCss.slice(actionsCssStart, actionsCssEnd)
@@ -626,7 +612,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(actionsButtonCssSource).toContain('min-height: 35px')
   })
 
-  it('keeps QML SelectButtonBase selection actions text-only without icons', () => {
+  it('keeps legacy-derived SelectButtonBase selection actions text-only without icons', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -639,7 +625,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(panelSource).not.toContain('icon={<CloseSquareOutlined />}')
   })
 
-  it('keeps the QML DefectClassInfoView expanded CardBase height at 200px', () => {
+  it('keeps the legacy-derived DefectClassInfoView expanded CardBase height at 200px', () => {
     const panelCssStart = defectShowCss.indexOf('.defect-class-summary-panel {')
     const panelCssEnd = defectShowCss.indexOf('.defect-class-summary-title {', panelCssStart)
     const panelCssSource = defectShowCss.slice(panelCssStart, panelCssEnd)
@@ -656,7 +642,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(flowCssSource).toContain('overflow: auto')
   })
 
-  it('uses the QML CardBase top centered title layout for DefectClassInfoView', () => {
+  it('uses the legacy-derived CardBase top centered title layout for DefectClassInfoView', () => {
     const panelStart = defectShowSource.indexOf('<section className="defect-class-summary-panel">')
     const panelEnd = defectShowSource.indexOf('<div className="defect-content">', panelStart)
     const panelSource = defectShowSource.slice(panelStart, panelEnd)
@@ -716,20 +702,20 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).not.toContain('nextSelected.add(name)')
   })
 
-  it('preserves a clear-all class selection when toggling QML include-background visibility', () => {
+  it('preserves a clear-all class selection when toggling legacy-derived include-background visibility', () => {
     expect(defectShowSource).toContain('hasInitializedDefectClassSelectionRef')
     expect(defectShowSource).toContain('preserveEmpty: hasInitializedDefectClassSelectionRef.current')
     expect(defectShowSource).toContain('hasInitializedDefectClassSelectionRef.current = true')
   })
 
-  it('keeps the manual defect export folder input read-only like QML DefectExportDialog', () => {
+  it('keeps the manual defect export folder input read-only like the legacy design DefectExportDialog', () => {
     expect(defectShowSource).toContain('placeholder="选择导出目录..."')
     expect(defectShowSource).toContain('readOnly')
     expect(defectShowSource).toContain('chooseManualDefectExportPath')
     expect(defectShowSource).not.toContain('onChange={(event) => setManualDefectExportPath(event.target.value)}')
   })
 
-  it('opens the manual defect export folder dialog from the QML pictures default location', () => {
+  it('opens the manual defect export folder dialog from the legacy-derived pictures default location', () => {
     expect(defectShowSource).toContain('getNativeDefaultPicturesDirectory')
     expect(defectShowSource).toContain('manualDefectDefaultExportDirectory')
     expect(defectShowSource).toContain('setManualDefectDefaultExportDirectory(defaultDirectory)')
@@ -737,19 +723,19 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('defaultDirectory: manualDefectDefaultExportDirectory')
   })
 
-  it('formats manual defect export errors like QML DefectExportDialog', () => {
+  it('formats manual defect export errors like the legacy design DefectExportDialog', () => {
     expect(defectShowSource).toContain('formatManualDefectExportError(error)')
     expect(defectShowSource).toContain("title: '导出失败'")
     expect(defectShowSource).not.toContain('{JSON.stringify(error)}</pre>')
   })
 
-  it('uses QML result dialog confirmation text for manual defect export results', () => {
+  it('uses legacy-derived result dialog confirmation text for manual defect export results', () => {
     expect(defectShowSource).toContain("title: '导出完成'")
     expect(defectShowSource).toContain("title: '导出失败'")
     expect(defectShowSource.match(/okText: '确定'/g) ?? []).toHaveLength(2)
   })
 
-  it('keeps the manual defect export dialog open after success like QML', () => {
+  it('keeps the manual defect export dialog open after success like the legacy design', () => {
     const successStart = defectShowSource.indexOf('Modal.info({')
     const successEnd = defectShowSource.indexOf('} catch (error)', successStart)
     const successBranch = defectShowSource.slice(successStart, successEnd)
@@ -759,7 +745,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('onCancel={() => setManualDefectExportOpen(false)}')
   })
 
-  it('confirms manual defect deletion like QML ManualDefectEditDialog', () => {
+  it('confirms manual defect deletion like the legacy design ManualDefectEditDialog', () => {
     expect(defectShowSource).toContain('confirmDeleteManualDefect')
     expect(defectShowSource).toContain('Modal.confirm({')
     expect(defectShowSource).toContain("title: '确认删除'")
@@ -772,7 +758,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).not.toContain('onClick={deleteManualDefect}')
   })
 
-  it('disables manual defect edit fields for auto defects like QML editGroup', () => {
+  it('disables manual defect edit fields for auto defects like the legacy design editGroup', () => {
     const formStart = defectShowSource.indexOf('<div className="manual-defect-form">')
     const formEnd = defectShowSource.indexOf('<div className="manual-defect-annotator">', formStart)
     const formSource = defectShowSource.slice(formStart, formEnd)
@@ -780,16 +766,11 @@ describe('DefectShow QML class filter controls', () => {
     expect(formSource.match(/disabled=\{!canEditSelectedManualDefect\}/g) ?? []).toHaveLength(6)
   })
 
-  it('uses QML auto-defect warning text in the manual edit dialog', () => {
+  it('uses legacy-derived auto-defect warning text in the manual edit dialog', () => {
     expect(defectShowSource).toContain('⚠ 此为自动检测缺陷，无法编辑')
   })
 
-  it('mirrors the QML ManualDefectEditDialog 450x400 shell with an internal scrolling body', () => {
-    expect(manualDefectEditDialogQml).toContain('title: "编辑缺陷标注"')
-    expect(manualDefectEditDialogQml).toContain('width: 450')
-    expect(manualDefectEditDialogQml).toContain('height: 400')
-    expect(manualDefectEditDialogQml).toContain('ColumnLayout {')
-    expect(manualDefectEditDialogQml).toContain('anchors.fill: parent')
+  it('retains the legacy-derived ManualDefectEditDialog 450x400 shell with an internal scrolling body', () => {
 
     expect(defectShowSource).toContain('className="manual-defect-edit-modal"')
     expect(defectShowSource).toContain('width={450}')
@@ -804,7 +785,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowCss).toContain('min-height: 0')
   })
 
-  it('exposes the QML manual defect add workflow from the panorama viewer', () => {
+  it('exposes the legacy-derived manual defect add workflow from the panorama viewer', () => {
     expect(defectShowSource).toContain('manualDefectAddMode')
     expect(defectShowSource).toContain('onManualAnnotation={handleManualDefectAnnotation}')
     expect(defectShowSource).toContain('buildManualDefectAddPayload')
@@ -813,7 +794,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('新增标注')
   })
 
-  it('shows a QML-style progress dialog while manual defect export is running', () => {
+  it('shows a legacy-derived progress dialog while manual defect export is running', () => {
     expect(defectShowSource).toContain('manualDefectProgressOpen')
     expect(defectShowSource).toContain('setManualDefectProgressOpen(true)')
     expect(defectShowSource).toContain('setManualDefectProgressOpen(false)')
@@ -824,7 +805,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(defectShowSource).toContain('maskClosable={false}')
   })
 
-  it('passes the QML shared-folder base name when opening a defect image location', () => {
+  it('passes the legacy-derived shared-folder base name when opening a defect image location', () => {
     const openFolderStart = defectShowSource.indexOf('const openDefectImageFolder = (defect: DefectData | null) =>')
     const openFolderEnd = defectShowSource.indexOf('const openSelectedDefectImageFolder', openFolderStart)
     const openFolderSource = defectShowSource.slice(openFolderStart, openFolderEnd)
@@ -833,7 +814,7 @@ describe('DefectShow QML class filter controls', () => {
     expect(openFolderSource).toContain('sharedFolderBaseName,')
   })
 
-  it('mirrors QML DefectDataViewMenu current-list then real-list image navigation lookup', () => {
+  it('retains the legacy-derived DefectDataViewMenu current-list then real-list image navigation lookup', () => {
     expect(defectShowSource).toContain('currentCoilList,')
     expect(defectShowSource).toContain(
       'const qmlCurrentCoilList = currentCoilList.length > 0 ? currentCoilList : coilList',

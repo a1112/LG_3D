@@ -1,3 +1,6 @@
+// Retained web behavior derived from the July 2026 QML design.
+// fec3399 removed the legacy QML dialogs; these checks target real web code,
+// not current QML parity. See docs/rust-tauri-parity.md for scope and history.
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -5,20 +8,10 @@ import { describe, expect, it } from 'vitest'
 
 import source from './index.tsx?raw'
 
-const qmlSource = readFileSync(
-  fileURLToPath(new URL('../../../../MotionStudio/qml/PopupView/ListValueChange/ListValueChangeView.qml', import.meta.url)),
-  'utf8',
-)
-const qmlInputSource = readFileSync(
-  fileURLToPath(new URL('../../../../MotionStudio/qml/PopupView/ListValueChange/ViewChangeInput.qml', import.meta.url)),
-  'utf8',
-)
 const styleSource = readFileSync(fileURLToPath(new URL('./ListValueChangeModal.css', import.meta.url)), 'utf8')
 
-describe('ListValueChangeModal QML parity', () => {
-  it('mirrors QML ListValueChangeView as an 850px popup with an inner TitleLabel', () => {
-    expect(qmlSource).toContain('width:850')
-    expect(qmlSource).toContain('height:500')
+describe('ListValueChangeModal retained legacy-derived web contract', () => {
+  it('retains the legacy-derived ListValueChangeView as an 850px popup with an inner TitleLabel', () => {
     expect(source).toContain('width={850}')
     expect(source).toContain('title={null}')
     expect(source).not.toContain('title="列表数值变化曲线"')
@@ -47,9 +40,7 @@ describe('ListValueChangeModal QML parity', () => {
     expect(styleSource).toContain('overflow: hidden;')
   })
 
-  it('fills the formerly blank QML content area with the list value-change curve', () => {
-    expect(qmlSource).toMatch(/Item\s*\{[\s\S]*id:list[\s\S]*clip:true[\s\S]*\}/)
-    expect(qmlInputSource).toMatch(/Button\s*\{[\s\S]*text:"刷新"[\s\S]*onClicked:\{\s*\}/)
+  it('fills the formerly blank legacy-derived content area with the list value-change curve', () => {
     expect(source).toContain('data-qml-list-value-change-chart')
     expect(source).toContain('buildListValueChangePoints')
     expect(source).toContain('ResponsiveContainer')
