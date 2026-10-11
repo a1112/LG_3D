@@ -71,7 +71,7 @@ describe('ApiHistoryModal QML row parity', () => {
   })
 
   it('renders the QML ApiListItem type field as plain label text instead of a React-only tag', () => {
-    expect(qmlApiListItemSource).toMatch(/Label\s*{\s*text:\s*type\s*}/s)
+    expect(qmlApiListItemSource).toMatch(/Label\s*{[^}]*text:\s*root\.model\.type\s*\|\|\s*""[^}]*}/s)
 
     expect(source).not.toContain('Tag')
     expect(source).toContain('<span className="api-history-method">{entry.method}</span>')
