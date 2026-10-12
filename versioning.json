@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "units": {
+    "motion-studio-web": {
+      "canonical": {
+        "path": "app/UI/MotionStudioWeb/package.json",
+        "adapter": "json",
+        "pointer": "/version",
+        "format": "semver"
+      },
+      "mirrors": [
+        {
+          "path": "app/UI/MotionStudioWeb/package-lock.json",
+          "adapter": "json",
+          "pointer": "/version",
+          "format": "semver"
+        },
+        {
+          "path": "app/UI/MotionStudioWeb/package-lock.json",
+          "adapter": "json",
+          "pointer": "/packages//version",
+          "format": "semver"
+        }
+      ],
+      "notes": "Frontend1.0.0 remains independent of desktop0.1.1."
+    },
+    "motion-studio-desktop": {
+      "canonical": {
+        "path": "app/UI/MotionStudioWeb/src-tauri/Cargo.toml",
+        "adapter": "toml",
+        "table": [
+          "package"
+        ],
+        "key": "version",
+        "format": "semver"
+      },
+      "mirrors": [
+        {
+          "path": "app/UI/MotionStudioWeb/src-tauri/Cargo.lock",
+          "adapter": "cargo-lock",
+          "package": "motion_studio",
+          "format": "semver"
+        },
+        {
+          "path": "app/UI/MotionStudioWeb/src-tauri/tauri.conf.json",
+          "adapter": "json",
+          "pointer": "/version",
+          "format": "semver"
+        }
+      ],
+      "notes": "Desktop0.1.1 stays separate from npm frontend1.0.0."
+    },
+    "api-service": {
+      "canonical": {
+        "path": "app/Server/rust_api_service/Cargo.toml",
+        "adapter": "toml",
+        "table": [
+          "package"
+        ],
+        "key": "version",
+        "format": "semver"
+      },
+      "mirrors": [
+        {
+          "path": "app/Server/rust_api_service/Cargo.lock",
+          "adapter": "cargo-lock",
+          "package": "rust_api_service",
+          "format": "semver"
+        }
+      ]
+    },
+    "image-service": {
+      "canonical": {
+        "path": "app/Server/rust_image_service/Cargo.toml",
+        "adapter": "toml",
+        "table": [
+          "package"
+        ],
+        "key": "version",
+        "format": "semver"
+      },
+      "mirrors": [
+        {
+          "path": "app/Server/rust_image_service/Cargo.lock",
+          "adapter": "cargo-lock",
+          "package": "rust_image_service",
+          "format": "semver"
+        }
+      ]
+    },
+    "service-monitor": {
+      "canonical": {
+        "path": "app/UI/ServiceMonitor/pyproject.toml",
+        "adapter": "toml",
+        "table": [
+          "project"
+        ],
+        "key": "version",
+        "format": "pep440"
+      },
+      "mirrors": [],
+      "notes": "Independent Python distribution; no application imports or build backend execution."
+    }
+  },
+  "unmanaged": [
+    {
+      "name": "coil-database-package",
+      "reason": "Read-only native authority checked by scripts/check_version_sources.py. Read-only existing database client package version; database schema/migration numbers are never application versions.",
+      "paths": [
+        "package/CoilDataBase/setup.cfg"
+      ]
+    },
+    {
+      "name": "qt-motion-studio",
+      "reason": "No project version in the CMake declaration; QML module1.0 is not a product release version.",
+      "paths": [
+        "app/UI/MotionStudio"
+      ]
+    },
+    {
+      "name": "git-submodules",
+      "reason": "External submodules retain their exact Gitlink revisions and their own release authorities.",
+      "paths": [
+        "scripts/train/pytorch-image-models"
+      ]
+    }
+  ],
+  "notes": [
+    "Existing version authorities and independent release units are preserved. This adoption does not assert that a manifest version has been released."
+  ]
+}

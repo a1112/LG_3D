@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "units": {
+    "coil-database-package": {
+      "canonical": {
+        "path": "package/CoilDataBase/setup.cfg",
+        "kind": "ini",
+        "section": "metadata",
+        "key": "version"
+      },
+      "mirrors": [],
+      "reason": "Read-only existing database client package version; database schema/migration numbers are never application versions."
+    }
+  },
+  "assertions": []
+}
