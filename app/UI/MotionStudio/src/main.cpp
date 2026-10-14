@@ -1,3 +1,8 @@
+#include <QWindow>
+#include <QUrl>
+#include <QStandardPaths>
+#include <QVariant>
+#include <QScreen>
 /****************************************************************************
 **
 ** Copyright (C) 2021 The Qt Company Ltd.
@@ -188,6 +193,26 @@ int main(int argc, char *argv[])
     qInfo() << "MotionStudio starting, appDir=" << QCoreApplication::applicationDirPath();
 
     QQmlApplicationEngine engine;
+    QVariantList startupWorkAreas;
+    for (QScreen *screen : QGuiApplication::screens()) {
+        const QRect area = screen->availableGeometry();
+        startupWorkAreas.append(QVariantMap{{"name", screen->name()}, {"screenX", screen->geometry().x()}, {"screenY", screen->geometry().y()}, {"x", area.x()}, {"y", area.y()}, {"width", area.width()}, {"height", area.height()}});
+    }
+    engine.rootContext()->setContextProperty("startupWorkAreas", startupWorkAreas);
+    const QString startupSettingsDirectory = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + "/LG_3D/MotionStudio";
+    QDir().mkpath(startupSettingsDirectory);
+    engine.rootContext()->setContextProperty("startupGeometrySettingsFile", startupSettingsDirectory + "/window-geometry.ini");
+    engine.rootContext()->setContextProperty("startupWindowFrame", QVariantMap{{"left",0}, {"top",0}, {"right",0}, {"bottom",0}});
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated, &engine, [&engine](QObject *root, const QUrl &) {
+        if (auto *window = qobject_cast<QWindow *>(root)) {
+            window->create();
+            const auto frame = window->frameMargins();
+            engine.rootContext()->setContextProperty("startupWindowFrame", QVariantMap{{"left",frame.left()}, {"top",frame.top()}, {"right",frame.right()}, {"bottom",frame.bottom()}});
+        }
+    });
+
+
+
     #ifdef _WIN32
         // 仅在 Windows 系统上启用控制台
     std::string computerName = getComputerName();

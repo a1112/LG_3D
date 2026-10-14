@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QDir, QStandardPaths
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 
@@ -210,6 +211,22 @@ def run_gui(read_only: bool = False) -> int:
         qmlRegisterType(Clipboard, "Clipboard", 1, 0, "Clipboard")
 
         engine = QQmlApplicationEngine()
+        startup_settings_directory = QStandardPaths.writableLocation(QStandardPaths.GenericConfigLocation) + "/LG_3D/ServiceMonitor"
+        QDir().mkpath(startup_settings_directory)
+        engine.rootContext().setContextProperty("startupGeometrySettingsFile", startup_settings_directory + "/window-geometry.ini")
+        engine.rootContext().setContextProperty("startupWindowFrame", {"left":0, "top":0, "right":0, "bottom":0})
+        def capture_startup_frame(root, _url):
+            if root is not None and hasattr(root, "frameMargins"):
+                root.create()
+                frame = root.frameMargins()
+                engine.rootContext().setContextProperty("startupWindowFrame", {"left":frame.left(), "top":frame.top(), "right":frame.right(), "bottom":frame.bottom()})
+        engine.objectCreated.connect(capture_startup_frame)
+
+        engine.rootContext().setContextProperty("startupWorkAreas", [
+            {"name": screen.name(), "screenX": screen.geometry().x(), "screenY": screen.geometry().y(), "x": screen.availableGeometry().x(), "y": screen.availableGeometry().y(),
+             "width": screen.availableGeometry().width(), "height": screen.availableGeometry().height()}
+            for screen in app.screens()
+        ])
         engine.warnings.connect(_record_qml_warnings)
         engine.addImageProvider("icon", IconImageProvider())
         engine.rootContext().setContextProperty("Os", OS())
