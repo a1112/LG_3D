@@ -4,8 +4,7 @@ import "../Base"
 Item {
     id:root
     required property var authManager
-    property var visibility: root.authManager.isAdmin
-                             ? Window.Windowed : Window.FullScreen
+    property var visibility: Window.Windowed
     readonly property bool isFullScreen: visibility === Window.FullScreen
     readonly property bool isMaximized: visibility === Window.Maximized
     readonly property bool isWindowed: visibility === Window.Windowed

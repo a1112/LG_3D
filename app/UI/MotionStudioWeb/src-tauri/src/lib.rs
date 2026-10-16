@@ -48,7 +48,9 @@ struct CommandSpec {
 fn normalize_connection_host(value: &str) -> String {
     let trimmed = value.trim();
     if trimmed.is_empty()
-        || !trimmed.chars().all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+        || !trimmed
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
     {
         return "127.0.0.1".to_string();
     }
@@ -101,7 +103,10 @@ fn read_connection_settings(app: tauri::AppHandle) -> Result<Option<ConnectionSe
 }
 
 #[tauri::command]
-fn write_connection_settings(app: tauri::AppHandle, settings: ConnectionSettings) -> Result<(), String> {
+fn write_connection_settings(
+    app: tauri::AppHandle,
+    settings: ConnectionSettings,
+) -> Result<(), String> {
     let settings_path = resolve_connection_settings_path(&app)?;
     let normalized = normalize_connection_settings(settings);
     let payload = serde_json::to_vec_pretty(&normalized).map_err(|err| err.to_string())?;
@@ -519,7 +524,8 @@ fn launch_maintenance_tool(action: String, host: String) -> Result<String, Strin
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default().plugin(project_window_chrome::init())
+    tauri::Builder::default()
+        .plugin(project_window_chrome::init())
         .plugin(project_resource_monitor::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -544,6 +550,22 @@ pub fn run() {
             write_connection_settings
         ])
         .setup(|app| {
+            #[cfg(mobile)]
+            {
+                use tauri::Manager;
+                if let Some(window) = app.get_webview_window("main") {
+                    window.show()?;
+                }
+            }
+
+            #[cfg(not(mobile))]
+            {
+                use tauri::Manager;
+                if let Some(window) = app.get_webview_window("main") {
+                    startup_geometry::install(&window, (1240.0, 800.0), (960.0, 600.0), false)?;
+                }
+            }
+
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_decorations(false);
             }
@@ -755,3 +777,6 @@ mod tests {
 mod project_resource_monitor;
 
 mod project_window_chrome;
+
+#[cfg(not(mobile))]
+mod startup_geometry;
