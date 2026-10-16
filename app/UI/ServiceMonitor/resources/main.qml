@@ -53,8 +53,8 @@ ApplicationWindow {
                 const rawH = Math.max(1, ah - frame.top - frame.bottom)
                 const fittedW = restored && width <= rawW ? width : Math.min(width, maxW)
                 const fittedH = restored && height <= rawH ? height : Math.min(height, maxH)
-                window.minimumWidth = Math.min(nominalMinimumW, restored ? fittedW : maxW)
-                window.minimumHeight = Math.min(nominalMinimumH, restored ? fittedH : maxH)
+                window.minimumWidth = Math.min(nominalMinimumW, fittedW)
+                window.minimumHeight = Math.min(nominalMinimumH, fittedH)
                 window.width = Math.max(window.minimumWidth, fittedW)
                 window.height = Math.max(window.minimumHeight, fittedH)
                 window.x = restored ? Math.max(sx + frame.left, Math.min(startupGeometry.saved.savedX, sx + aw - window.width - frame.right)) : sx + (aw - window.width + frame.left - frame.right) / 2

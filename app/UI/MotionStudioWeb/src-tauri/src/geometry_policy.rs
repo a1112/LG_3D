@@ -47,6 +47,15 @@ pub fn restored_size(
     )
 }
 
+/// Nominal content minima must not expand a first-run window toward fullscreen
+/// on compact displays. The runtime minimum is clamped to this fitted size.
+pub fn first_size(preferred: (f64, f64), available: (f64, f64), cap: (f64, f64)) -> (f64, f64) {
+    (
+        preferred.0.min(available.0 * 0.82).min(cap.0).max(1.0),
+        preferred.1.min(available.1 * 0.84).min(cap.1).max(1.0),
+    )
+}
+
 /// Convert a logical rectangle for a selected display without depending on
 /// the window's (possibly not yet updated) DPI after a monitor move.
 pub fn physical_size(size: (f64, f64), scale: f64) -> (u32, u32) {
@@ -66,6 +75,33 @@ pub fn logical_frame(inner: (u32, u32), outer: (u32, u32), scale: f64) -> (f64, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn macbook_air_and_compact_work_areas_keep_first_launch_compact() {
+        for scale in [1.0, 2.0] {
+            for available in [(1280.0, 720.0), (960.0, 600.0), (1920.0, 1080.0)] {
+                let cap = (available.0 - 64.0, available.1 - 96.0);
+                let first = first_size((1240.0, 800.0), available, cap);
+                let native = physical_size(first, scale);
+                assert!(first.0 <= available.0 * 0.82 && first.1 <= available.1 * 0.84);
+                assert!(native.0 as f64 <= available.0 * scale);
+                assert!(native.1 as f64 <= available.1 * scale);
+                let minimum = (
+                    1180.0_f64.min(cap.0).min(first.0),
+                    720.0_f64.min(cap.1).min(first.1),
+                );
+                assert!(minimum.0 <= first.0 && minimum.1 <= first.1);
+                assert_eq!(
+                    restored_size((640.0, 400.0), available, (0.0, 32.0), cap),
+                    (640.0, 400.0)
+                );
+                assert_eq!(
+                    restored_size((5000.0, 4000.0), available, (0.0, 32.0), cap),
+                    cap
+                );
+            }
+        }
+    }
+
     #[test]
     fn mixed_dpi_uses_target_physical_size_and_original_frame_scale() {
         let logical = (640.0, 400.0);

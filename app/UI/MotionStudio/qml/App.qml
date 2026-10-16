@@ -59,8 +59,8 @@ AppBase {
                 const rawH = Math.max(1, ah - frame.top - frame.bottom)
                 const fittedW = restored && width <= rawW ? width : Math.min(width, maxW)
                 const fittedH = restored && height <= rawH ? height : Math.min(height, maxH)
-                app.minimumWidth = Math.min(nominalMinimumW, restored ? fittedW : maxW)
-                app.minimumHeight = Math.min(nominalMinimumH, restored ? fittedH : maxH)
+                app.minimumWidth = Math.min(nominalMinimumW, fittedW)
+                app.minimumHeight = Math.min(nominalMinimumH, fittedH)
                 app.width = Math.max(app.minimumWidth, fittedW)
                 app.height = Math.max(app.minimumHeight, fittedH)
                 app.x = restored ? Math.max(sx + frame.left, Math.min(startupGeometry.saved.savedX, sx + aw - app.width - frame.right)) : sx + (aw - app.width + frame.left - frame.right) / 2

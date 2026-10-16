@@ -93,18 +93,7 @@ pub fn install<R: tauri::Runtime>(
                 cap,
             )
         } else {
-            (
-                preferred
-                    .0
-                    .min(available.width * 0.82)
-                    .min(cap.0)
-                    .max(minimum.0.min(cap.0)),
-                preferred
-                    .1
-                    .min(available.height * 0.84)
-                    .min(cap.1)
-                    .max(minimum.1.min(cap.1)),
-            )
+            geometry_policy::first_size(preferred, (available.width, available.height), cap)
         };
         let min_width = minimum.0.min(cap.0).min(size.0);
         let min_height = minimum.1.min(cap.1).min(size.1);
