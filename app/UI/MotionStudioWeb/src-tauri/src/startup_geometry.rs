@@ -1,5 +1,5 @@
 //! Startup geometry uses logical sizes and physical monitor work areas.
-use tauri::{LogicalSize, Manager, PhysicalPosition, Size, WebviewWindow};
+use tauri::{Manager, PhysicalPosition, PhysicalSize, Size, WebviewWindow};
 
 pub fn install<R: tauri::Runtime>(
     window: &WebviewWindow<R>,
@@ -43,7 +43,18 @@ pub fn install<R: tauri::Runtime>(
             (available.width - 64.0).max(1.0),
             (available.height - 96.0).max(1.0),
         );
-        // Move to the target display before applying logical sizes (mixed-DPI monitors).
+        // Native frame measurements still belong to the current display. A move
+        // may deliver its DPI event later, so capture this scale before moving.
+        let current_scale = window.scale_factor()?;
+        let current_inner = window.inner_size()?;
+        let current_outer = window.outer_size()?;
+        let frame = geometry_policy::logical_frame(
+            (current_inner.width, current_inner.height),
+            (current_outer.width, current_outer.height),
+            current_scale,
+        );
+        // Apply target-display physical sizes; logical setters can use a stale
+        // window scale until the cross-display move has been processed.
         if let Some(values) = saved.as_ref().filter(|_| {
             !window.is_maximized().unwrap_or(true) && !window.is_fullscreen().unwrap_or(true)
         }) {
@@ -65,11 +76,6 @@ pub fn install<R: tauri::Runtime>(
             .map(|v| (v[0] as i32, v[1] as i32, v[2], v[3]))
             .unwrap_or((pos.x, pos.y, current.width, current.height));
         let restored = existing_state || saved.is_some();
-        let outer = window.outer_size()?;
-        let frame = (
-            (outer.width as f64 / scale - current.width).max(0.0),
-            (outer.height as f64 / scale - current.height).max(0.0),
-        );
         let fits = restored
             && width > 0.0
             && height > 0.0
@@ -102,10 +108,21 @@ pub fn install<R: tauri::Runtime>(
         };
         let min_width = minimum.0.min(cap.0).min(size.0);
         let min_height = minimum.1.min(cap.1).min(size.1);
-        window.set_min_size(Some(Size::Logical(LogicalSize::new(min_width, min_height))))?;
+        let physical_min = geometry_policy::physical_size((min_width, min_height), scale);
+        window.set_min_size(Some(Size::Physical(PhysicalSize::new(
+            physical_min.0,
+            physical_min.1,
+        ))))?;
         if !window.is_maximized()? && !window.is_fullscreen()? {
-            window.set_size(Size::Logical(LogicalSize::new(size.0, size.1)))?;
-            let outer = window.outer_size()?;
+            let physical = geometry_policy::physical_size(size, scale);
+            window.set_size(Size::Physical(PhysicalSize::new(physical.0, physical.1)))?;
+            // Size/move calls are asynchronous on some platforms. Compute the
+            // intended outer rectangle instead of reading the previous size.
+            let physical_frame = geometry_policy::physical_size(frame, scale);
+            let outer = PhysicalSize::new(
+                physical.0.saturating_add(physical_frame.0),
+                physical.1.saturating_add(physical_frame.1),
+            );
             let max_x = area.position.x + area.size.width.saturating_sub(outer.width) as i32;
             let max_y = area.position.y + area.size.height.saturating_sub(outer.height) as i32;
             let position = if fits {

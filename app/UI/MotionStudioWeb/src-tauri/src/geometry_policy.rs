@@ -47,9 +47,39 @@ pub fn restored_size(
     )
 }
 
+/// Convert a logical rectangle for a selected display without depending on
+/// the window's (possibly not yet updated) DPI after a monitor move.
+pub fn physical_size(size: (f64, f64), scale: f64) -> (u32, u32) {
+    (
+        (size.0 * scale).round() as u32,
+        (size.1 * scale).round() as u32,
+    )
+}
+
+pub fn logical_frame(inner: (u32, u32), outer: (u32, u32), scale: f64) -> (f64, f64) {
+    (
+        outer.0.saturating_sub(inner.0) as f64 / scale,
+        outer.1.saturating_sub(inner.1) as f64 / scale,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn mixed_dpi_uses_target_physical_size_and_original_frame_scale() {
+        let logical = (640.0, 400.0);
+        assert_eq!(physical_size(logical, 2.0), (1280, 800));
+        assert_eq!(physical_size(logical, 1.0), (640, 400));
+        assert_eq!(physical_size(logical, 1.5), (960, 600));
+        // A current 2x title bar remains 32 logical pixels on a target 1x screen.
+        let frame = logical_frame((1280, 800), (1280, 864), 2.0);
+        assert_eq!(frame, (0.0, 32.0));
+        assert_eq!(physical_size(frame, 1.0), (0, 32));
+        assert_eq!(physical_size(frame, 2.0), (0, 64));
+        assert_eq!(logical_frame((640, 400), (640, 432), 1.0), frame);
+    }
+
     #[test]
     fn strict_records() {
         assert_eq!(

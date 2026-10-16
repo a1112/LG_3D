@@ -550,6 +550,14 @@ pub fn run() {
             write_connection_settings
         ])
         .setup(|app| {
+            #[cfg(mobile)]
+            {
+                use tauri::Manager;
+                if let Some(window) = app.get_webview_window("main") {
+                    window.show()?;
+                }
+            }
+
             #[cfg(not(mobile))]
             {
                 use tauri::Manager;
