@@ -37,32 +37,29 @@ interface PointCloudProps {
 }
 
 function PointCloud({ parsedData, zScale }: PointCloudProps) {
-  const meshRef = useRef<THREE.Points>(null)
+  const groupRef = useRef<THREE.Group>(null)
 
   useEffect(() => {
-    if (meshRef.current && parsedData) {
-      const geometry = createPointCloudGeometry(
-        parsedData.positions,
-        parsedData.colors
-      )
+    const group = groupRef.current
+    if (!group) return
 
-      const material = new THREE.PointsMaterial({
-        size: 0.05,
-        vertexColors: true,
-        sizeAttenuation: true,
-      })
+    const geometry = createPointCloudGeometry(parsedData.positions, parsedData.colors)
+    const material = new THREE.PointsMaterial({
+      size: 0.05,
+      vertexColors: true,
+      sizeAttenuation: true,
+    })
+    const points = new THREE.Points(geometry, material)
+    group.add(points)
 
-      meshRef.current.geometry.dispose()
-      meshRef.current.geometry = geometry
-      meshRef.current.material = material
+    return () => {
+      group.remove(points)
+      geometry.dispose()
+      material.dispose()
     }
   }, [parsedData])
 
-  return (
-    <group scale={[1, 1, zScale]}>
-      <points ref={meshRef} />
-    </group>
-  )
+  return <group ref={groupRef} scale={[1, 1, zScale]} />
 }
 
 // 加载指示器
@@ -174,10 +171,10 @@ function Canvas3D({
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    setImageUrl((currentUrl) => {
-      if (currentUrl) URL.revokeObjectURL(currentUrl)
-      return null
-    })
+    let active = true
+    let frame: number | null = null
+    let ownedImageUrl: string | null = null
+    setImageUrl(null)
 
     if (dataSource.kind === 'buffer') {
       const data = dataSource.data
@@ -191,27 +188,28 @@ function Canvas3D({
 
       if (isJpeg || isPng) {
         const blob = new Blob([data], { type: isJpeg ? 'image/jpeg' : 'image/png' })
-        const nextImageUrl = URL.createObjectURL(blob)
-        setImageUrl(nextImageUrl)
+        ownedImageUrl = URL.createObjectURL(blob)
+        setImageUrl(ownedImageUrl)
         setParsedData(null)
         setIsLoading(false)
-        return () => URL.revokeObjectURL(nextImageUrl)
+      } else {
+        setIsLoading(true)
+
+        // 只保留当前输入的解析帧，退役回调不能覆盖新数据。
+        frame = requestAnimationFrame(() => {
+          frame = null
+          if (!active) return
+          try {
+            const parsed = parseHeightData(data)
+            setParsedData(parsed)
+          } catch (error) {
+            console.error('Failed to parse 3D data:', error)
+            setParsedData(null)
+          } finally {
+            setIsLoading(false)
+          }
+        })
       }
-
-      setIsLoading(true)
-
-      // 使用 requestAnimationFrame 避免阻塞 UI
-      requestAnimationFrame(() => {
-        try {
-          const parsed = parseHeightData(data)
-          setParsedData(parsed)
-        } catch (error) {
-          console.error('Failed to parse 3D data:', error)
-          setParsedData(null)
-        } finally {
-          setIsLoading(false)
-        }
-      })
     } else if (dataSource.kind === 'pointCloud') {
       setParsedData(dataSource.pointCloud)
       setIsLoading(false)
@@ -221,10 +219,9 @@ function Canvas3D({
     }
 
     return () => {
-      setImageUrl((currentUrl) => {
-        if (currentUrl) URL.revokeObjectURL(currentUrl)
-        return null
-      })
+      active = false
+      if (frame !== null) cancelAnimationFrame(frame)
+      if (ownedImageUrl) URL.revokeObjectURL(ownedImageUrl)
     }
   }, [dataSource])
 
